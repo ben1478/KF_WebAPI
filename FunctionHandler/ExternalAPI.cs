@@ -17,7 +17,7 @@ namespace KF_WebAPI.FunctionHandle
         /// <returns></returns>
         public HttpRequestMessage CallAPI(string Name, string p_strJson)
         {
-            var str = "";
+            
             var uri = new Uri("https://egateway.tac.com.tw/uat/api/yrc/agent/" + Name);
             var request = new HttpRequestMessage(HttpMethod.Post, uri);
 
