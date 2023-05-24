@@ -162,7 +162,7 @@ namespace KF_WebAPI.FunctionHandler
             }
             else
             {
-                //解密encryptEnterCase
+                //解密encryptEnterCase   h
                 ResultClass<string> m_DecResult = _AE.DecryptAES256(ReqYRClass.encryptEnterCase);
                 if (m_DecResult.ResultCode != "000")
                 {
