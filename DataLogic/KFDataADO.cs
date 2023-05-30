@@ -24,10 +24,15 @@ namespace KF_WebAPI.DataLogic
     public class KFDataADO
     {
         public string _ConnStr = "Data Source=ERP;Initial Catalog=AE_DB;User ID=sa;Password=juestcho;";
+        
+
 
         ADOData _ADO = new();
         Common _Common = new();
       
+
+
+
         public ResultClass<string> GetTestJsonByAPI(string TestID, string API_Name, string User, string form_no, string TransactionId, string subTestID = "")
         {
             ResultClass<string> m_Result = new();
@@ -983,10 +988,11 @@ namespace KF_WebAPI.DataLogic
                 string m_SQL = "  SELECT Q.form_no,Q.qcs_idx,case when CONVERT(varchar(16), Q.Add_date, 120) is null then '' else CONVERT(varchar(16), Q.Add_date, 120) end qcs_time,Q.examStatusExplain explain,Q.transactionId ,ResulType " +
                     " FROM tbQCS Q left join " +
                     "(" +
-                      " select '送件'ResulType,  form_no, transactionId_qcs  from tbReceive union all " +
-                      " select '申覆'ResulType,  form_no, transactionId_qcs  from tbRequestforExam union all  " +
-                      " select '補件'ResulType,  form_no, transactionId_qcs  from tbRequestSupplement  " +
-                    " ) ResulFrom on Q.form_no=ResulFrom.form_no and Q.transactionId=ResulFrom.transactionId_qcs " +
+                      " select '送件'ResulType,  form_no, transactionId_qcs,'' transactionId_qa  from tbReceive union all " +
+                      " select '申覆'ResulType,  form_no, transactionId_qcs,'' transactionId_qa  from tbRequestforExam union all  " +
+                      " select '補件'ResulType,  form_no, transactionId_qcs,'' transactionId_qa  from tbRequestSupplement union all      " +
+                      " select '請款'ResulType,  form_no, transactionId_qcs,isnull(transactionId_qa,'')transactionId_qa  from tbRequestPayment  " +
+                    " ) ResulFrom on Q.form_no=ResulFrom.form_no and Q.transactionId=ResulFrom.transactionId_qcs   " +
                     " where Q.form_no =@form_no  and ResulType <> '' order by qcs_idx ";
 
                 DataTable m_dtQCS = _ADO.ExecuteQuery(m_SQL, Params);
@@ -1003,28 +1009,73 @@ namespace KF_WebAPI.DataLogic
                     m_tbQCS.explain = row["explain"].ToString();
                     m_tbQCS.transactionId = row["transactionId"].ToString();
                     m_tbQCS.resulType = row["resulType"].ToString();
-
                     qcs_idx = row["qcs_idx"].ToString();
 
-
-                    List<SqlParameter> Paramsdtl = new List<SqlParameter>()
-                    {
-                        new SqlParameter() {ParameterName = "@form_no", SqlDbType = SqlDbType.VarChar, Value= form_no},
-                        new SqlParameter() {ParameterName = "@qcs_idx", SqlDbType = SqlDbType.VarChar, Value= qcs_idx}
-                    };
-
-                    DataTable m_dtQCSdtl = _ADO.ExecuteQuery(" SELECT kind+':'+explain +','+comment comment " +
-                       "    FROM tbQCS_reasonSuggestionDetail   where form_no =@form_no and qcs_idx =@qcs_idx order by detail_idx ", Paramsdtl);
+                    List<SqlParameter> Paramsdtl = new();
                     string comment = "";
-                    foreach (DataRow row1 in m_dtQCSdtl.Rows)
+                    if (m_tbQCS.resulType != "請款")
                     {
-                        comment += row1["comment"].ToString();
-                    }
-                    m_tbQCS.comment = comment;
+                        Paramsdtl = new List<SqlParameter>()
+                        {
+                            new SqlParameter() {ParameterName = "@form_no", SqlDbType = SqlDbType.VarChar, Value= form_no},
+                            new SqlParameter() {ParameterName = "@qcs_idx", SqlDbType = SqlDbType.VarChar, Value= qcs_idx}
+                        };
+                        DataTable m_dtQCSdtl = _ADO.ExecuteQuery(" SELECT kind+':'+explain +','+comment comment " +
+                         "    FROM tbQCS_reasonSuggestionDetail   where form_no =@form_no and qcs_idx =@qcs_idx order by detail_idx ", Paramsdtl);
 
+                        foreach (DataRow row1 in m_dtQCSdtl.Rows)
+                        {
+                            comment += row1["comment"].ToString();
+                        }
+                    }
+                    else
+                    {
+                        Paramsdtl = new List<SqlParameter>()
+                        {
+                            new SqlParameter() {ParameterName = "@form_no", SqlDbType = SqlDbType.VarChar, Value= form_no},
+                            new SqlParameter() {ParameterName = "@qcs_idx", SqlDbType = SqlDbType.VarChar, Value= qcs_idx}
+                        };
+                        DataTable m_dtQCSdtl = _ADO.ExecuteQuery(" SELECT  QC.[form_no],QC.[qcs_idx],QC.transactionId,isnull([appropriateDate],'')appropriateDate,isnull( CONVERT(varchar(16),sum([remitAmount])),'')remitAmount" +
+                            " , case when QA.status='A004' then '已撥款' when QA.status='A003' then '申請中' end  status,APCount " +
+                         "     FROM　[tbQCS]　QC left join [tbQCS_capitalApply] QCA on QC.form_no=QCA.form_no and QC.qcs_idx=QCA.qcs_idx " +
+                         "  left join (" +
+                         "    select qa.*,APCount,status FROM   " +
+                         "      (select  form_no,transactionId_qcs,max(qa.qa_idx)qa_idx from tbQueryAppropriation qa group by  form_no,transactionId_qcs)qa" +
+                         "    left join" +
+                         "    (select form_no,qa_idx ,count(form_no+qa_idx)APCount FROM tbQueryAppropriation_APinfo group by form_no,qa_idx) AP " +
+                         "     on qa.form_no=AP.form_no and qa.qa_idx=Ap.qa_idx " +
+                         "     left join " +
+                         "    (select form_no,qa_idx,status  FROM tbQueryAppropriation ) QAS   " +
+                         "   on qa.form_no=QAS.form_no and qa.qa_idx=QAS.qa_idx  " +
+                         ") QA on QC.form_no=QA.form_no and QC.transactionId=QA.transactionId_qcs   " +
+                         "   where   [appropriateDate] is not null and QC.[form_no]=@form_no and QC.[qcs_idx]=@qcs_idx  " +
+                         " group by QC.[form_no]    ,QC.transactionId,QC.[qcs_idx],[appropriateDate],QA.status,APCount   ", Paramsdtl);
+
+                        foreach (DataRow row1 in m_dtQCSdtl.Rows)
+                        {
+                            if (row1["appropriateDate"].ToString() != "")
+                            {
+                                comment = "撥款日期:"+ row1["appropriateDate"].ToString()+";";
+                            }
+                            if (row1["remitAmount"].ToString() != "")
+                            {
+                                if (row1["APCount"].ToString() != "1")
+                                {
+                                    comment += "**";
+                                }
+                                comment += "撥款金額:" + row1["remitAmount"].ToString();
+                            }
+
+                            if (row1["status"].ToString() != "")
+                            {
+                                m_tbQCS.explain = row1["status"].ToString();
+                            }
+                        }
+                    }
+
+                    m_tbQCS.comment = comment;
                     m_listbQCS.Add(m_tbQCS);
                 }
-
                 resultClass.objResult = m_listbQCS;
             }
             catch (Exception ex)

@@ -46,7 +46,7 @@ namespace KF_WebAPI.Controllers
         }
 
 
-        /*
+        
         #region  內部API
         [Route("GetFileBySeq")]
         [HttpPost]
@@ -195,6 +195,8 @@ namespace KF_WebAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<string>> QueryAppropriation([FromBody] QueryAppropriation ReqClass, string Form_No)
         {
+           
+
             string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
 
             if (ReqClass is null)
@@ -676,7 +678,7 @@ namespace KF_WebAPI.Controllers
 
         #endregion
 
-        */
+        
 
         #region  對外API
 
@@ -808,7 +810,7 @@ namespace KF_WebAPI.Controllers
                     ResultClass<string> APIResult = new();
                     if (_isYRAPITest)
                     {
-                        APIResult = _ADO.GetTestJsonByAPI("TEST0004", "QueryCaseStatus", "YuRich", m_Form_No, TransactionId, "TESTQC1");
+                        APIResult = _ADO.GetTestJsonByAPI("TEST0004", "QueryCaseStatus", "YuRich", m_Form_No, TransactionId, "TESTQC001");
                     }
                     else
                     {

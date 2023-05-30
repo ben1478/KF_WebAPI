@@ -22,6 +22,36 @@ namespace KF_WebAPI.FunctionHandler
     public class ADOData
     {
         public string _ConnStr = "Data Source=ERP;Initial Catalog=AE_DB;User ID=sa;Password=juestcho;";
+        public string _ConnStr1 = "Data Source=tcp:192.168.1.27\\SQLEXPRESS,50093;Initial Catalog=EIPDATA;User ID=KFWeb;Password=Kf52611690;";
+
+        public DataTable ExecuteQuery_EIP(string strSQL, List<SqlParameter> Param)
+        {
+            DataTable dtResult = new DataTable();
+            try
+            {
+                using SqlConnection conn = new(_ConnStr1);
+                using (SqlCommand cmd = new SqlCommand(strSQL, conn))
+                {
+                    if (Param != null)
+                    {
+                        foreach (DbParameter param in Param)
+                        {
+                            cmd.Parameters.Add(param);
+                        }
+                    }
+                    using (SqlDataAdapter adapter = new SqlDataAdapter(cmd))
+                    {
+                        adapter.Fill(dtResult);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            return dtResult;
+        }
+
 
 
         public Int32 ExecuteNonQuery(string strSQL, List<SqlParameter> Param)
