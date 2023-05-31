@@ -453,6 +453,75 @@ namespace KF_WebAPI.FunctionHandler
             return resultClass;
         }
 
+        public ResultClass<int> UpdateDataByClass<T>(string p_tbName,string Key, T p_BaseClass)
+        {
+            ResultClass<int> resultClass = new();
+            int m_Execut = 0;
+            using SqlConnection conn = new SqlConnection(_ADO._ConnStr);
+            // 開啟資料庫連線
+            conn.Open();
+            SqlTransaction transaction = conn.BeginTransaction();
+            try
+            {
+                if (p_BaseClass is not null)
+                {
+                    string m_SQL = "";
+
+                    foreach (var prop in p_BaseClass.GetType().GetProperties())
+                    {
+                        if (prop.Name != "attachmentFile" && prop.Name != "FileInfo" && prop.Name != "Action" && prop.Name != "add_date" && prop.Name != "add_user" && prop.Name != Key)
+                        {
+                            if (m_SQL == "")
+                            {
+                                m_SQL = " Update " + p_tbName + " set "+ prop.Name + "=@" + prop.Name;
+                            }
+                            else
+                            {
+                                m_SQL +=", "+ prop.Name + "=@" + prop.Name;
+                            }
+                        }
+                    }
+
+                    m_SQL += " WHERE " + Key + "=@" + Key;
+
+                    // 建立 SQL 命令
+
+                    using SqlCommand command = new SqlCommand(m_SQL, conn, transaction);
+                    // 設定參數
+                    foreach (var prop in p_BaseClass.GetType().GetProperties())
+                    {
+                        if (prop.Name != "attachmentFile" && prop.Name != "FileInfo" && prop.Name != "Action" && prop.Name != "add_date" && prop.Name != "add_user")
+                        {
+                            string value = "";
+                            if (prop.GetValue(p_BaseClass) is not null)
+                            {
+                                value = prop.GetValue(p_BaseClass).ToString();
+                            }
+                            command.Parameters.AddWithValue("@" + prop.Name, value);
+                        }
+                    }
+                    // 執行 SQL 命令
+                    m_Execut += command.ExecuteNonQuery();
+                    transaction.Commit();
+                    // 關閉資料庫連線
+                    conn.Close();
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "";
+                    resultClass.objResult = m_Execut;
+                }
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                resultClass.ResultCode = "999";
+                resultClass.ResultMsg = ex.Message;
+                resultClass.objResult = 0;
+            }
+            return resultClass;
+        }
+
+
+
         public async Task<ResultClass<string>> CallYuRichAPINew(string p_APIName, string p_CallUser, string p_Form_No, string p_JSON, string p_TransactionId, HttpClient p_HttpClient)
         {
             ResultClass<string> resultClass = new();

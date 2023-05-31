@@ -1434,6 +1434,7 @@ namespace KF_WebAPI.BaseClass
     public class objInsertReceive
     {
         public TbReceive? _Receive1 { get; set; }
+       
     }
 
 
@@ -1511,7 +1512,7 @@ namespace KF_WebAPI.BaseClass
 
     public class TbReceive : Receive
     {
-        public string? Action { get; set; }
+        public string? Action { get; set; } = "";
         public string? Case_Company { get; set; }
         public string? child { get; set; }
         public string? childcount { get; set; }
@@ -1522,6 +1523,9 @@ namespace KF_WebAPI.BaseClass
         public string? add_user { get; set; }
         public string? add_date { get; set; }
         public string? upd_user { get; set; }
+        public string? upd_date { get; set; }
+
+        
         public string? status { get; set; }
         public string? casestatus { get; set; }
         public string? transactionId { get; set; }

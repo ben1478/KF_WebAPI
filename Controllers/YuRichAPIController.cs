@@ -12,18 +12,22 @@ using static KF_WebAPI.FunctionHandler.Common;
 
 namespace KF_WebAPI.Controllers
 {
-    public class MyObject
+    public class FileObject
     {
         /// <summary>
         /// 回覆代碼
         /// </summary>
-        public string? p_Key { get; set; }
-
+        public string? form_no { get; set; }
+        public string? salesNo { get; set; }
         /// <summary>
         /// 回覆訊息 
         /// </summary>
         public attachmentFile[]? attachmentFiles { get; set; }
     }
+
+
+
+
 
     [ApiController]
     public class YuRichAPIController : Controller
@@ -31,7 +35,7 @@ namespace KF_WebAPI.Controllers
         /// <summary>
         /// 裕富API測試模式
         /// </summary>
-        public Boolean _isYRAPITest = true;
+        public Boolean _isYRAPITest = false;
 
         private readonly HttpClient _httpClient;
         private readonly string _branchNo = "0001";
@@ -65,7 +69,58 @@ namespace KF_WebAPI.Controllers
             return Ok(resultClass);
         }
 
+        [Route("UpdReceive")]
+        [HttpPost]
+        public ActionResult<ResultClass<BaseResult>> UpdReceive([FromBody] objInsertReceive objects, string form_no, string salesNo)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
 
+                if (objects._Receive1 != null)
+                {
+                    DateTime now = DateTime.Now;
+                    string formattedDateTime = now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+
+                    objects._Receive1.Action = "upd";
+                    objects._Receive1.Case_Company = "KF";
+                    objects._Receive1.form_no = form_no;
+                    objects._Receive1.upd_user = salesNo;
+                    objects._Receive1.upd_date = formattedDateTime;
+                    objects._Receive1.status = "1";
+                    objects._Receive1.casestatus = "0";
+                }
+
+                    ResultClass<int> m_Insert = _Comm.UpdateDataByClass("tbReceive","form_no", objects._Receive1);
+                if (m_Insert.ResultCode == "000")
+                {
+                    if (objects._Receive1.attachmentFile != null)
+                    {
+                        ResultClass<int> m_InsertFile = _ADO.InsertFile(form_no, "Receive", salesNo, "", objects._Receive1.attachmentFile);
+                        if (m_InsertFile.ResultCode != "000")
+                        {
+                            resultClass.ResultCode = "999";
+                            resultClass.ResultMsg ="上傳檔案失敗!!"+ m_InsertFile.ResultMsg;
+                            return Ok(resultClass);
+                        }
+                    }
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = form_no;
+                }
+                else
+                {
+                    resultClass.ResultCode = "999";
+                    resultClass.ResultMsg = "更新失敗;" + m_Insert.ResultMsg;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "999";
+                resultClass.ResultMsg = "更新失敗;" + ex.Message;
+            }
+            return Ok(resultClass);
+        }
 
         [Route("InsertReceive")]
         [HttpPost]
