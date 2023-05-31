@@ -22,7 +22,11 @@ namespace KF_WebAPI.FunctionHandler
     {
         private AesEncryption _AE = new();
         private ADOData _ADO = new();
-        private string _YuRichAPI_URL = "https://egateway.tac.com.tw/uat/api/yrc/agent/";
+        //裕富測試
+        //private string _YuRichAPI_URL = "https://egateway.tac.com.tw/uat/api/yrc/agent/";
+        //裕富正式
+        private string _YuRichAPI_URL = "https://egateway.tac.com.tw/production/api/yrc/agent";
+        
         private readonly string _dealerNo = "MM09";
         private readonly string _source = "52611690";
         private readonly string _version = "2.0";
