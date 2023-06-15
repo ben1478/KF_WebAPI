@@ -41,11 +41,12 @@ else
 
 app.UseCors(builder =>
 {
-
-
-    builder.WithOrigins( "http://erp",
+    builder.WithOrigins(
+        "http://erp",
         "http://192.168.1.240",
-          "http://192.168.1.27/KF_WebAPI/"
+        "http://192.168.1.27/KF_Web/",
+        "http://192.168.1.27/KF_WebAPI/",
+        "https://www.kuofongweb.com.tw/"
         )
            .AllowAnyMethod()
            .AllowAnyHeader();

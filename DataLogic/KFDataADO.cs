@@ -1,22 +1,8 @@
-﻿
-
-using KF_WebAPI.FunctionHandler;
+﻿using KF_WebAPI.FunctionHandler;
 using System.Data;
 using System.Data.SqlClient;
 using KF_WebAPI.BaseClass;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Newtonsoft.Json;
-using Microsoft.AspNetCore.Mvc;
-using System.Reflection;
-using static KF_WebAPI.Controllers.YuRichAPIController;
-using System.Data.Common;
-using Microsoft.AspNetCore.Http;
-using System.Xml.Linq;
-using System.Transactions;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
 
 namespace KF_WebAPI.DataLogic
 {
@@ -24,14 +10,8 @@ namespace KF_WebAPI.DataLogic
     public class KFDataADO
     {
         public string _ConnStr = "Data Source=ERP;Initial Catalog=AE_DB;User ID=sa;Password=juestcho;";
-        
-
-
         ADOData _ADO = new();
         Common _Common = new();
-      
-
-
 
         public ResultClass<string> GetTestJsonByAPI(string TestID, string API_Name, string User, string form_no, string TransactionId, string subTestID = "")
         {
@@ -70,7 +50,7 @@ namespace KF_WebAPI.DataLogic
                         {
                             case "Receive":
                                 Result_R m_Result_R = JsonConvert.DeserializeObject<Result_R>(dr["ResultJSON"].ToString());
-                                m_Result_R.examineNo = form_no.Replace("KF", "TE");
+                                m_Result_R.examineNo = form_no.Replace("KF", "TE").Replace("YL", "TE");
                                 m_Result_R.TransactionId = TransactionId;
                                 m_Result.objResult = JsonConvert.SerializeObject(m_Result_R);
 
@@ -108,9 +88,7 @@ namespace KF_WebAPI.DataLogic
                                 m_RSResult.TransactionId = TransactionId;
                                 m_Result.objResult = JsonConvert.SerializeObject(m_RSResult);
                                 break;
-
                         }
-
                     }
                     var m_CallTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
 
@@ -119,13 +97,11 @@ namespace KF_WebAPI.DataLogic
                     resultClass.objResult = (m_Result.objResult);
                     resultClass.transactionId = TransactionId;
                     _Common.InsertAPILog(API_Name, TransactionId, form_no, "TEST_JSON", m_CallTime, User, resultClass);
-
                 }
                 else
                 {
                     m_Result.ResultCode = "999";
                     m_Result.ResultMsg = "查無資料";
-                    ;
                 }
                 return m_Result;
             }

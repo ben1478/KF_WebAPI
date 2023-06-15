@@ -4,10 +4,7 @@ using Newtonsoft.Json;
 using KF_WebAPI.FunctionHandler;
 using KF_WebAPI.DataLogic;
 using System.Data;
-using Microsoft.AspNetCore.Http;
-using System.Data.SqlClient;
-using static KF_WebAPI.Controllers.YuRichAPIController;
-using System.Transactions;
+
 using static KF_WebAPI.FunctionHandler.Common;
 
 namespace KF_WebAPI.Controllers
@@ -26,17 +23,14 @@ namespace KF_WebAPI.Controllers
     }
 
 
-
-
-
     [ApiController]
     public class YuRichAPIController : Controller
     {
-        /// <summary>
-        /// 裕富API測試模式
-        /// </summary>
-        public Boolean _isYRAPITest = false;
 
+        /// <summary>
+        /// 是否呼叫測試API,true:用資料庫模擬API,false:呼叫裕富API;
+        /// </summary>
+        public Boolean _isCallTESTAPI;
         private readonly HttpClient _httpClient;
         private readonly string _branchNo = "0001";
         private readonly string _dealerNo = "MM09";
@@ -47,10 +41,10 @@ namespace KF_WebAPI.Controllers
         public YuRichAPIController(IHttpClientFactory httpClientFactory)
         {
             _httpClient = httpClientFactory.CreateClient();
+            //定義測試與否
+            _isCallTESTAPI = _Comm.isCallTESTAPI;
         }
 
-
-        
         #region  內部API
         [Route("GetFileBySeq")]
         [HttpPost]
@@ -124,19 +118,19 @@ namespace KF_WebAPI.Controllers
 
         [Route("InsertReceive")]
         [HttpPost]
-        public ActionResult<ResultClass<BaseResult>> InsertReceive([FromBody] objInsertReceive objects, string salesNo)
+        public ActionResult<ResultClass<BaseResult>> InsertReceive([FromBody] objInsertReceive objects, string salesNo,string Case_Company)
         {
            
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
-                ResultClass<string> resultSeq = _ADO.GetSeqNo("KF");
+                ResultClass<string> resultSeq = _ADO.GetSeqNo(Case_Company);
                 if (resultSeq is not null && resultSeq.ResultCode == "000") 
                 {
                     if (objects._Receive1 != null)
                     {
                         objects._Receive1.Action = "Add";
-                        objects._Receive1.Case_Company = "KF";
+                        objects._Receive1.Case_Company = Case_Company;
                         objects._Receive1.form_no = resultSeq.objResult;
                         objects._Receive1.add_user = salesNo;
                         objects._Receive1.upd_user = salesNo;
@@ -210,9 +204,9 @@ namespace KF_WebAPI.Controllers
             {
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
                 ResultClass<string> APIResult = new();
-                if (_isYRAPITest)
+                if (_isCallTESTAPI)
                 {
-                    APIResult = _ADO.GetTestJsonByAPI("TEST0004", "Receive", salesNo, Form_No, TransactionId);
+                    APIResult = _ADO.GetTestJsonByAPI("TEST0001", "Receive", salesNo, Form_No, TransactionId);
                 }
                 else
                 {
@@ -264,9 +258,9 @@ namespace KF_WebAPI.Controllers
                 string m_Uesr = ReqClass.salesNo;
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
                 ResultClass<string> APIResult = new ();
-                if (_isYRAPITest)
+                if (_isCallTESTAPI)
                 {
-                    APIResult  = _ADO.GetTestJsonByAPI("TEST0004", "QueryAppropriation", m_Uesr, Form_No, TransactionId, "TESTQA_1");
+                    APIResult  = _ADO.GetTestJsonByAPI("TEST0001", "QueryAppropriation", m_Uesr, Form_No, TransactionId, "TESTQA001");
                 }
                 else
                 {
@@ -337,9 +331,9 @@ namespace KF_WebAPI.Controllers
             {
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
                 ResultClass<string> APIResult = new();
-                if (_isYRAPITest)
+                if (_isCallTESTAPI)
                 {
-                    APIResult = _ADO.GetTestJsonByAPI("TEST0004", "RequestPayment", m_RPUser, Form_No, TransactionId);
+                    APIResult = _ADO.GetTestJsonByAPI("TEST0001", "RequestPayment", m_RPUser, Form_No, TransactionId);
                 }
                 else
                 {
@@ -413,9 +407,9 @@ namespace KF_WebAPI.Controllers
 
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
                 ResultClass<string> APIResult = new();
-                if (_isYRAPITest)
+                if (_isCallTESTAPI)
                 {
-                    APIResult = _ADO.GetTestJsonByAPI("TEST0004", "RequestforExam", m_REUser,Form_No, TransactionId, "TESTRE_1");
+                    APIResult = _ADO.GetTestJsonByAPI("TEST0001", "RequestforExam", m_REUser,Form_No, TransactionId, "TESTRE001");
                 }
                 else
                 {
@@ -493,9 +487,9 @@ namespace KF_WebAPI.Controllers
 
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
                 ResultClass<string> APIResult = new();
-                if (_isYRAPITest)
+                if (_isCallTESTAPI)
                 {
-                    APIResult = _ADO.GetTestJsonByAPI("TEST0004", "RequestSupplement", m_RSUser, Form_No, TransactionId);
+                    APIResult = _ADO.GetTestJsonByAPI("TEST0001", "RequestSupplement", m_RSUser, Form_No, TransactionId);
                 }
                 else
                 {
@@ -559,9 +553,9 @@ namespace KF_WebAPI.Controllers
             {
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
                 ResultClass<string> APIResult = new();
-                if (_isYRAPITest)
+                if (_isCallTESTAPI)
                 {
-                    APIResult = _ADO.GetTestJsonByAPI("TEST0004", "QueryCaseStatus", m_User, Form_No, TransactionId, "TESTQC_2");
+                    APIResult = _ADO.GetTestJsonByAPI("TEST0001", "QueryCaseStatus", m_User, Form_No, TransactionId, "TESTQC001");
                 }
                 else
                 {
@@ -613,9 +607,9 @@ namespace KF_WebAPI.Controllers
             {
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
                 ResultClass<string> APIResult = new();
-                if (_isYRAPITest)
+                if (_isCallTESTAPI)
                 {
-                    APIResult = _ADO.GetTestJsonByAPI("TEST0004", "reCallout", m_RCUser, Form_No, TransactionId);
+                    APIResult = _ADO.GetTestJsonByAPI("TEST0001", "reCallout", m_RCUser, Form_No, TransactionId);
                 }
                 else
                 {
@@ -694,9 +688,9 @@ namespace KF_WebAPI.Controllers
             {
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
                 ResultClass<string> APIResult = new();
-                if (_isYRAPITest)
+                if (_isCallTESTAPI)
                 {
-                    APIResult = _ADO.GetTestJsonByAPI("TEST0004", "PutFileToExamiePath", m_PTUser, Form_No, TransactionId);
+                    APIResult = _ADO.GetTestJsonByAPI("TEST0001", "PutFileToExamiePath", m_PTUser, Form_No, TransactionId);
                 }
                 else
                 {
@@ -863,9 +857,9 @@ namespace KF_WebAPI.Controllers
                     m_QueryCaseStatus.source = _source;
                     string p_JSON = JsonConvert.SerializeObject(m_QueryCaseStatus);
                     ResultClass<string> APIResult = new();
-                    if (_isYRAPITest)
+                    if (_isCallTESTAPI)
                     {
-                        APIResult = _ADO.GetTestJsonByAPI("TEST0004", "QueryCaseStatus", "YuRich", m_Form_No, TransactionId, "TESTQC001");
+                        APIResult = _ADO.GetTestJsonByAPI("TEST0001", "QueryCaseStatus", "YuRich", m_Form_No, TransactionId, "TESTQC001");
                     }
                     else
                     {

@@ -1,22 +1,6 @@
-﻿using static KF_WebAPI.Controllers.YuRichAPIController;
-
+﻿
 namespace KF_WebAPI.BaseClass
 {
-
-
-    public class YuRichClass
-    {
-        public Receive? Receive { get; set; }
-    }
-
-
-    public class FileInfo
-    {
-        public string? FileName { get; set; }
-        public string? FileIdex { get; set; }
-    }
-
-
     public class YuRichAPI_Class
     {
         /// <summary>

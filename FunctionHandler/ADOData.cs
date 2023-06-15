@@ -1,21 +1,9 @@
 ﻿
-using KF_WebAPI.FunctionHandler;
+
 using System.Data;
 using System.Data.SqlClient;
-using KF_WebAPI.BaseClass;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
-using Newtonsoft.Json;
-using Microsoft.AspNetCore.Mvc;
-using System.Reflection;
-using static KF_WebAPI.Controllers.YuRichAPIController;
 using System.Data.Common;
-using Microsoft.AspNetCore.Http;
-using System.Xml.Linq;
-using System.Transactions;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
+
 
 namespace KF_WebAPI.FunctionHandler
 {

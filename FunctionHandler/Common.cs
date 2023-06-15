@@ -1,20 +1,11 @@
-﻿using System;
+﻿
 using System.Data;
 using System.Data.SqlClient;
-using System.Formats.Asn1;
 using System.IO.Compression;
-using System.Net.Http;
 using System.Reflection;
-using System.Reflection.Metadata;
 using System.Text;
-using System.Xml.Linq;
 using KF_WebAPI.BaseClass;
-using KF_WebAPI.Controllers;
-using KF_WebAPI.DataLogic;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -22,14 +13,33 @@ namespace KF_WebAPI.FunctionHandler
     {
         private AesEncryption _AE = new();
         private ADOData _ADO = new();
-        //裕富測試
-        //private string _YuRichAPI_URL = "https://egateway.tac.com.tw/uat/api/yrc/agent/";
-        //裕富正式
-        private string _YuRichAPI_URL = "https://egateway.tac.com.tw/production/api/yrc/agent";
-        
+        /// <summary>
+        /// 定義裕富API的正式環境or測試環境
+        /// </summary>
+        public bool isYRTestAPI = false;
+        /// <summary>
+        /// 是否呼叫測試API,true:用資料庫模擬API,false:呼叫裕富API;
+        /// </summary>
+        public bool isCallTESTAPI = true;
+
         private readonly string _dealerNo = "MM09";
         private readonly string _source = "52611690";
         private readonly string _version = "2.0";
+
+        public string GetYuRichAPI_URL()
+        {
+            string m_YuRichAPI_URL = "";
+            if (isYRTestAPI)
+            {  //裕富測試
+                m_YuRichAPI_URL = "https://egateway.tac.com.tw/uat/api/yrc/agent/";
+            }
+            else
+            { //裕富正式
+                m_YuRichAPI_URL = "https://egateway.tac.com.tw/production/api/yrc/agent";
+
+            }
+            return m_YuRichAPI_URL;
+        }
 
 
         public string CheckInt(string p_Param)
@@ -97,14 +107,6 @@ namespace KF_WebAPI.FunctionHandler
             return m_YuRichAPI_Class;
         }
 
-        public HttpRequestMessage CallYuRichAPI(string Name, string p_strJson)
-        {
-            var uri = new Uri(_YuRichAPI_URL + Name);
-            var request = new HttpRequestMessage(HttpMethod.Post, uri);
-            var content = new StringContent(p_strJson, Encoding.UTF8, "application/json");
-            request.Content = content;
-            return request;
-        }
 
         public void NotifyLog(string API_Name, string TransactionId, string IP, string Form_No, string m_RequeJSON,  string ResultJSON, string StatusCode)
         {
@@ -539,7 +541,7 @@ namespace KF_WebAPI.FunctionHandler
                 {
                     using (var httpClient = p_HttpClient)
                     {
-                        var uri = new Uri(_YuRichAPI_URL + p_APIName);
+                        var uri = new Uri(GetYuRichAPI_URL() + p_APIName);
                         var request = new HttpRequestMessage(HttpMethod.Post, uri);
                         var content = new StringContent(EncJsonString, Encoding.UTF8, "application/json");
                         request.Content = content;
@@ -682,8 +684,6 @@ namespace KF_WebAPI.FunctionHandler
             return base64String;
         }
 
-        //public ResultClass<int> InsertDataByClass<T>(string p_tbName, T p_BaseClass)
-       
 
 
     }
