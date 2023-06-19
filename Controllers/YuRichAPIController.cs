@@ -260,7 +260,7 @@ namespace KF_WebAPI.Controllers
                 ResultClass<string> APIResult = new ();
                 if (_isCallTESTAPI)
                 {
-                    APIResult  = _ADO.GetTestJsonByAPI("TEST0001", "QueryAppropriation", m_Uesr, Form_No, TransactionId, "TESTQA001");
+                    APIResult  = _ADO.GetTestJsonByAPI("TEST0001", "QueryAppropriation", m_Uesr, Form_No, TransactionId, "TESTQA002");
                 }
                 else
                 {
@@ -555,7 +555,7 @@ namespace KF_WebAPI.Controllers
                 ResultClass<string> APIResult = new();
                 if (_isCallTESTAPI)
                 {
-                    APIResult = _ADO.GetTestJsonByAPI("TEST0001", "QueryCaseStatus", m_User, Form_No, TransactionId, "TESTQC001");
+                    APIResult = _ADO.GetTestJsonByAPI("TEST0001", "QueryCaseStatus", m_User, Form_No, TransactionId, "TESTQC004");
                 }
                 else
                 {

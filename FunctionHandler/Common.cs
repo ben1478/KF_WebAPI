@@ -20,7 +20,7 @@ namespace KF_WebAPI.FunctionHandler
         /// <summary>
         /// 是否呼叫測試API,true:用資料庫模擬API,false:呼叫裕富API;
         /// </summary>
-        public bool isCallTESTAPI = true;
+        public bool isCallTESTAPI = false;
 
         private readonly string _dealerNo = "MM09";
         private readonly string _source = "52611690";
