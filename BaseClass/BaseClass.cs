@@ -23,6 +23,26 @@ namespace KF_WebAPI.BaseClass
         public T? objResult { get; set; }
     }
 
+    
+
+
+        public class APIErrorLog
+    {
+        /// <summary>
+        /// 交易序號
+        /// </summary>
+        public String TransactionId { get; set; } = "";
+        /// <summary>
+        /// API名稱
+        /// </summary>
+     
+        public String API_Name { get; set; } = "";
+        /// <summary>
+        /// 錯誤訊息
+        /// </summary>
+     
+        public String ErrMSG { get; set; } = "";
+    }
 
 
     public class APILog

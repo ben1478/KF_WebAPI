@@ -35,7 +35,7 @@ namespace KF_WebAPI.FunctionHandler
             }
             else
             { //裕富正式
-                m_YuRichAPI_URL = "https://egateway.tac.com.tw/production/api/yrc/agent";
+                m_YuRichAPI_URL = "https://egateway.tac.com.tw/production/api/yrc/agent/";
 
             }
             return m_YuRichAPI_URL;
@@ -252,7 +252,10 @@ namespace KF_WebAPI.FunctionHandler
             Boolean isSame = true;
             try
             {
-
+                if (p_compareOlds == null && p_compareNews == null)
+                {
+                    return true;
+                }
                 if (p_compareOlds == null && p_compareNews != null)
                 {
                     return false;
@@ -355,6 +358,19 @@ namespace KF_WebAPI.FunctionHandler
         }
 
 
+        public void InsertErrorLog(string p_API_Name, string p_TransactionId, string p_ErrMSG)
+        {
+            var m_APIErrLog = new APIErrorLog
+            {
+                API_Name = p_API_Name,
+                TransactionId = p_TransactionId,
+                ErrMSG = p_ErrMSG
+            };
+
+            InsertDataByClass("tbAPIErrorLog", m_APIErrLog);
+        }
+
+
 
         /// <summary>
         /// 寫入APILog檔
@@ -371,7 +387,7 @@ namespace KF_WebAPI.FunctionHandler
                 API_Name = p_API_Name,
                 TransactionId = p_TransactionId,
                 Form_No = p_Form_No,
-                ParamJSON = p_ParamJSON,
+              //  ParamJSON = p_ParamJSON,
                 ResultJSON = p_ResultClass.objResult.ToString(),
                 CallTime = p_CallTime,
                 CallUser = p_CallUser,
@@ -565,7 +581,7 @@ namespace KF_WebAPI.FunctionHandler
                     resultClass.ResultCode = "999";
                     resultClass.ResultMsg = "API Error:" + ex.Message;
                 }
-                InsertAPILog(p_APIName, m_YuRichAPI_Class.transactionId, p_Form_No, EncJsonString, m_CallTime, p_CallUser, resultClass);
+                InsertAPILog(p_APIName, resultClass.transactionId, p_Form_No, EncJsonString, m_CallTime, p_CallUser, resultClass);
             }
             else
             {

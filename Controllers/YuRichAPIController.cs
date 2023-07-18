@@ -6,6 +6,7 @@ using KF_WebAPI.DataLogic;
 using System.Data;
 
 using static KF_WebAPI.FunctionHandler.Common;
+using System.Data.SqlClient;
 
 namespace KF_WebAPI.Controllers
 {
@@ -136,7 +137,7 @@ namespace KF_WebAPI.Controllers
                         objects._Receive1.upd_user = salesNo;
                         objects._Receive1.status = "1";
                         objects._Receive1.casestatus = "0";
-                      
+                        
 
                         ResultClass<int> m_Insert = _Comm.InsertDataByClass("tbReceive", objects._Receive1);
                         if (m_Insert.ResultCode == "000")
@@ -224,6 +225,7 @@ namespace KF_WebAPI.Controllers
                     {
                         resultClass.ResultCode = "999";
                         resultClass.ResultMsg = m_Result.msg;
+                        _Comm.InsertErrorLog("Receive", TransactionId, m_Result.msg);
                     }
                 }
                 else
@@ -352,6 +354,8 @@ namespace KF_WebAPI.Controllers
                     {
                         resultClass.ResultCode = "999";
                         resultClass.ResultMsg = m_Result.msg;
+                        _Comm.InsertErrorLog("RequestPayment", TransactionId, m_Result.msg);
+
                     }
                 }
                 else
@@ -433,6 +437,7 @@ namespace KF_WebAPI.Controllers
                     {
                         resultClass.ResultCode = "999";
                         resultClass.ResultMsg = m_Result.msg;
+                        _Comm.InsertErrorLog("RequestforExam", TransactionId, m_Result.msg);
                     }
                 }
                 else
@@ -517,6 +522,7 @@ namespace KF_WebAPI.Controllers
                     {
                         resultClass.ResultCode = "999";
                         resultClass.ResultMsg = m_Result.msg;
+                        _Comm.InsertErrorLog("RequestSupplement", TransactionId, m_Result.msg);
                     }
                 }
                 else
@@ -568,7 +574,21 @@ namespace KF_WebAPI.Controllers
                     if (m_Result.code == "S001")
                     {
                         resultClass.objResult = m_Result;
-                        _ADO.InsertQCS(Form_No, m_User, m_Result);
+                        if (m_Result.TransactionId == "")
+                        {
+                            m_Result.TransactionId = TransactionId;
+                        }
+                        ResultClass<int> resultQCS = _ADO.InsertQCS(Form_No, m_User, m_Result);
+                        if (resultQCS.ResultCode == "999")
+                        {
+                            resultClass.ResultCode = "999";
+                            resultClass.ResultMsg = resultQCS.ResultMsg;
+                            List<SqlParameter> ParamsR = new List<SqlParameter>()
+                            {
+                                new SqlParameter() {ParameterName = "@TransactionId", SqlDbType = SqlDbType.VarChar, Value= TransactionId}
+                            };
+                            _ADO.ExecuteNonQuery("  delete tbAPILog where TransactionId=@TransactionId ", ParamsR);
+                        }
                     }
                     else
                     {
