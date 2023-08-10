@@ -23,10 +23,13 @@ namespace KF_WebAPI.BaseClass
         public T? objResult { get; set; }
     }
 
-    
 
 
-        public class APIErrorLog
+
+
+
+
+    public class APIErrorLog
     {
         /// <summary>
         /// 交易序號

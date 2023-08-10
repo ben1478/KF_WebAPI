@@ -990,7 +990,7 @@ namespace KF_WebAPI.DataLogic
                     new SqlParameter() {ParameterName = "@form_no", SqlDbType = SqlDbType.VarChar, Value= form_no}
                 };
 
-                string m_SQL = "  SELECT Q.form_no,Q.qcs_idx,case when CONVERT(varchar(16), Q.Add_date, 120) is null then '' else CONVERT(varchar(16), Q.Add_date, 120) end qcs_time,Q.examStatusExplain explain,Q.transactionId ,ResulType " +
+                string m_SQL = "  SELECT Q.examineComment,Q.form_no,Q.qcs_idx,case when CONVERT(varchar(16), Q.Add_date, 120) is null then '' else CONVERT(varchar(16), Q.Add_date, 120) end qcs_time,Q.examStatusExplain explain,Q.transactionId ,ResulType " +
                     " FROM tbQCS Q left join " +
                     "(" +
                       " select '送件'ResulType,  form_no, transactionId_qcs,'' transactionId_qa  from tbReceive union all " +
@@ -1003,7 +1003,7 @@ namespace KF_WebAPI.DataLogic
                 DataTable m_dtQCS = _ADO.ExecuteQuery(m_SQL, Params);
                 List<tbQCS> m_listbQCS = new();
                 string qcs_idx = "";
-
+               
                 tbQCS m_tbQCS = new();
                 foreach (DataRow row in m_dtQCS.Rows)
                 {
@@ -1017,7 +1017,15 @@ namespace KF_WebAPI.DataLogic
                     qcs_idx = row["qcs_idx"].ToString();
 
                     List<SqlParameter> Paramsdtl = new();
+                    List<SqlParameter> Paramsdt2 = new();
                     string comment = "";
+
+                    if (row["examineComment"].ToString() != "")
+                    {
+                        comment = row["examineComment"].ToString()+"<br>";
+                    }
+
+
                     if (m_tbQCS.resulType != "請款")
                     {
                         Paramsdtl = new List<SqlParameter>()
@@ -1032,6 +1040,19 @@ namespace KF_WebAPI.DataLogic
                         {
                             comment += row1["comment"].ToString();
                         }
+
+                        Paramsdt2 = new List<SqlParameter>()
+                        {
+                            new SqlParameter() {ParameterName = "@form_no", SqlDbType = SqlDbType.VarChar, Value= form_no},
+                            new SqlParameter() {ParameterName = "@qcs_idx", SqlDbType = SqlDbType.VarChar, Value= qcs_idx}
+                        };
+                        DataTable m_dtQCSCus = _ADO.ExecuteQuery(" SELECT  name+':'+calloutResult comment FROM tbQCS_Customer    where form_no =@form_no and qcs_idx =@qcs_idx and calloutResult <>'' order by customer_idx ", Paramsdt2);
+
+                        foreach (DataRow row1 in m_dtQCSCus.Rows)
+                        {
+                            comment += "<br>"+ row1["comment"].ToString();
+                        }
+
                     }
                     else
                     {

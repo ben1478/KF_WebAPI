@@ -66,7 +66,7 @@ namespace KF_WebAPI.Controllers
 
         [Route("UpdReceive")]
         [HttpPost]
-        public ActionResult<ResultClass<BaseResult>> UpdReceive([FromBody] objInsertReceive objects, string form_no, string salesNo)
+        public ActionResult<ResultClass<BaseResult>> UpdReceive([FromBody] objInsertReceive objects, string form_no, string salesNo, string Case_Company)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
@@ -78,7 +78,7 @@ namespace KF_WebAPI.Controllers
                     string formattedDateTime = now.ToString("yyyy-MM-dd HH:mm:ss.fff");
 
                     objects._Receive1.Action = "upd";
-                    objects._Receive1.Case_Company = "KF";
+                    objects._Receive1.Case_Company = Case_Company;
                     objects._Receive1.form_no = form_no;
                     objects._Receive1.upd_user = salesNo;
                     objects._Receive1.upd_date = formattedDateTime;
@@ -244,12 +244,9 @@ namespace KF_WebAPI.Controllers
 
         [Route("QueryAppropriation")]
         [HttpPost]
-        public async Task<ActionResult<string>> QueryAppropriation([FromBody] QueryAppropriation ReqClass, string Form_No)
+        public async Task<ActionResult<string>> QueryAppropriation([FromBody] QueryAppropriation ReqClass, string Form_No, bool isUpdDB = true)
         {
-           
-
             string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
-
             if (ReqClass is null)
             {
                 throw new ArgumentNullException(nameof(ReqClass));
@@ -266,7 +263,7 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
-                    APIResult = await _Comm.CallYuRichAPINew("QueryAppropriation", ReqClass.salesNo, Form_No, p_JSON, TransactionId, _httpClient);
+                    APIResult = await _Comm.CallYuRichAPINew("QueryAppropriation", ReqClass.salesNo, Form_No, p_JSON, TransactionId, _httpClient, isUpdDB);
                 }
                 if (APIResult.ResultCode == "000")
                 {
@@ -274,7 +271,10 @@ namespace KF_WebAPI.Controllers
                     if (m_Result.code == "S001")
                     {
                         resultClass.objResult = m_Result;
-                        _ADO.InsertQueryAppropriation(Form_No, m_Uesr, m_Result);
+                        if (isUpdDB)
+                        {
+                            _ADO.InsertQueryAppropriation(Form_No, m_Uesr, m_Result);
+                        }
                     }
                     else
                     {
@@ -541,7 +541,7 @@ namespace KF_WebAPI.Controllers
 
         [Route("QueryCaseStatus")]
         [HttpPost]
-        public async Task<ActionResult<string>> QueryCaseStatus([FromBody] QueryCaseStatus ReqClass, string Form_No)
+        public async Task<ActionResult<string>> QueryCaseStatus([FromBody] QueryCaseStatus ReqClass, string Form_No,bool isUpdDB=true)
         {
             string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
 
@@ -565,7 +565,7 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
-                    APIResult = await _Comm.CallYuRichAPINew("QueryCaseStatus", m_User, Form_No, p_JSON, TransactionId, _httpClient);
+                    APIResult = await _Comm.CallYuRichAPINew("QueryCaseStatus", m_User, Form_No, p_JSON, TransactionId, _httpClient, isUpdDB);
                 }
                 if (APIResult.ResultCode == "000")
                 {
@@ -578,16 +578,19 @@ namespace KF_WebAPI.Controllers
                         {
                             m_Result.TransactionId = TransactionId;
                         }
-                        ResultClass<int> resultQCS = _ADO.InsertQCS(Form_No, m_User, m_Result);
-                        if (resultQCS.ResultCode == "999")
+                        if (isUpdDB)
                         {
-                            resultClass.ResultCode = "999";
-                            resultClass.ResultMsg = resultQCS.ResultMsg;
-                            List<SqlParameter> ParamsR = new List<SqlParameter>()
+                            ResultClass<int> resultQCS = _ADO.InsertQCS(Form_No, m_User, m_Result);
+                            if (resultQCS.ResultCode == "999")
+                            {
+                                resultClass.ResultCode = "999";
+                                resultClass.ResultMsg = resultQCS.ResultMsg;
+                                List<SqlParameter> ParamsR = new List<SqlParameter>()
                             {
                                 new SqlParameter() {ParameterName = "@TransactionId", SqlDbType = SqlDbType.VarChar, Value= TransactionId}
                             };
-                            _ADO.ExecuteNonQuery("  delete tbAPILog where TransactionId=@TransactionId ", ParamsR);
+                                _ADO.ExecuteNonQuery("  delete tbAPILog where TransactionId=@TransactionId ", ParamsR);
+                            }
                         }
                     }
                     else

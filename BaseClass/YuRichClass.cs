@@ -1501,6 +1501,7 @@ namespace KF_WebAPI.BaseClass
         public string? child { get; set; }
         public string? childcount { get; set; }
         public string? marital { get; set; }
+        public string? car_no { get; set; }
         public string? contact_person_company_name_i { get; set; }
         public string? contact_person_company_name_ii { get; set; }
         public string? guarantor_profession_status { get; set; }
@@ -1546,6 +1547,30 @@ namespace KF_WebAPI.BaseClass
     }
 
 
+    public class Appropriation
+    {
+        public String Form_no { get; set; } = "";
+        public String ExamineNo { get; set; } = "";
+        public String Appr_Type { get; set; } = "";
+        public Int32 HandlingFee { get; set; } = 0;
+        public Int32 PathFee { get; set; } = 0;
+        public Int32 CustTotAmt { get; set; } = 0;
+        public Int32 RemitFee { get; set; } = 0;
+        public Int32 ActualAmt { get; set; } = 0;
+        public Int32 PathAmt { get; set; } = 0;
+        public String BankCode { get; set; } = "";
+        public String BankName { get; set; } = "";
+        public String BankID { get; set; } = "";
+        public String AccountID { get; set; } = "";
+        public String AccountName { get; set; } = "";
+        public String Add_User { get; set; } = "";
+        public String Add_date { get; set; } = "";
+        public String Upd_User { get; set; } = "";
+        public String Upd_date { get; set; } = "";
+
+
+
+    }
 
 
 }

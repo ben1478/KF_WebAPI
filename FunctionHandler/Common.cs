@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text;
+using System.Transactions;
 using KF_WebAPI.BaseClass;
 using Newtonsoft.Json;
 
@@ -96,12 +97,12 @@ namespace KF_WebAPI.FunctionHandler
         }
 
 
-        public YuRichAPI_Class SetYuRichAPI_Class(string p_encryptEnterCase)
+        public YuRichAPI_Class SetYuRichAPI_Class(string p_encryptEnterCase, string transactionId)
         {
             YuRichAPI_Class m_YuRichAPI_Class = new();
             m_YuRichAPI_Class.dealerNo = _dealerNo;
             m_YuRichAPI_Class.source = _source;
-            m_YuRichAPI_Class.transactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
+            m_YuRichAPI_Class.transactionId = transactionId;
             m_YuRichAPI_Class.encryptEnterCase = p_encryptEnterCase;
             m_YuRichAPI_Class.version = _version;
             return m_YuRichAPI_Class;
@@ -387,7 +388,7 @@ namespace KF_WebAPI.FunctionHandler
                 API_Name = p_API_Name,
                 TransactionId = p_TransactionId,
                 Form_No = p_Form_No,
-              //  ParamJSON = p_ParamJSON,
+              // ParamJSON = p_ParamJSON,
                 ResultJSON = p_ResultClass.objResult.ToString(),
                 CallTime = p_CallTime,
                 CallUser = p_CallUser,
@@ -544,13 +545,13 @@ namespace KF_WebAPI.FunctionHandler
 
 
 
-        public async Task<ResultClass<string>> CallYuRichAPINew(string p_APIName, string p_CallUser, string p_Form_No, string p_JSON, string p_TransactionId, HttpClient p_HttpClient)
+        public async Task<ResultClass<string>> CallYuRichAPINew(string p_APIName, string p_CallUser, string p_Form_No, string p_JSON, string p_TransactionId, HttpClient p_HttpClient, bool isUpdDB = true)
         {
             ResultClass<string> resultClass = new();
             if (!string.IsNullOrEmpty(p_JSON))
             {
                 string m_AE_Json = _AE.EncryptAES256(p_JSON);
-                YuRichAPI_Class m_YuRichAPI_Class = SetYuRichAPI_Class(m_AE_Json);
+                YuRichAPI_Class m_YuRichAPI_Class = SetYuRichAPI_Class(m_AE_Json, p_TransactionId);
                 var EncJsonString = JsonConvert.SerializeObject(m_YuRichAPI_Class);
                 var m_CallTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
                 try
@@ -581,7 +582,10 @@ namespace KF_WebAPI.FunctionHandler
                     resultClass.ResultCode = "999";
                     resultClass.ResultMsg = "API Error:" + ex.Message;
                 }
-                InsertAPILog(p_APIName, resultClass.transactionId, p_Form_No, EncJsonString, m_CallTime, p_CallUser, resultClass);
+                if (isUpdDB)
+                {
+                    InsertAPILog(p_APIName, resultClass.transactionId, p_Form_No, EncJsonString, m_CallTime, p_CallUser, resultClass);
+                }
             }
             else
             {
