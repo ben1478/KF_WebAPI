@@ -83,7 +83,7 @@ namespace KF_WebAPI.BaseClass
         /// </summary>
         public String CallTime { get; set; } = "";
         /// <summary>
-        /// 傳入參數
+        /// 傳入參數111
         /// </summary>
         public String StatusCode { get; set; } = "";
     }
