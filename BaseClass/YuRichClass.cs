@@ -677,6 +677,15 @@ namespace KF_WebAPI.BaseClass
     }
 
 
+    public class BankInfo
+    {
+        public String? BankCode { get; set; }
+        public String? BankName { get; set; }
+        public String? BankID { get; set; }
+        public String? AccountID { get; set; }
+        public String? AccountName { get; set; }
+    }
+
     /// <summary>
     /// 請款請求(RequestPayment)
     /// </summary>
@@ -721,6 +730,9 @@ namespace KF_WebAPI.BaseClass
         /// 8.附件資料陣列 
         /// </summary>
         public attachmentFile[]? attachmentFile { get; set; }
+       
+
+        
     }
 
 

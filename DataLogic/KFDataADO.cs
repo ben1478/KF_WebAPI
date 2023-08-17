@@ -833,17 +833,22 @@ namespace KF_WebAPI.DataLogic
             return m_Execut;
         }
 
-        public Int32 UpdByRequestPayment(string Form_No, string RP_User, string transactionId)
+        public Int32 UpdByRequestPayment(string Form_No, string RP_User, string transactionId, BankInfo BankInfo)
         {
             Int32 m_Execut = 0;
             try
             {
                 List<SqlParameter> Params = new List<SqlParameter>()
                 {
+                    new SqlParameter() {ParameterName = "@BankCode", SqlDbType = SqlDbType.VarChar, Value= BankInfo.BankCode},
+                    new SqlParameter() {ParameterName = "@BankName", SqlDbType = SqlDbType.VarChar, Value= BankInfo.BankName},
+                    new SqlParameter() {ParameterName = "@BankID", SqlDbType = SqlDbType.VarChar, Value= BankInfo.BankID},
+                    new SqlParameter() {ParameterName = "@AccountID", SqlDbType = SqlDbType.VarChar, Value= BankInfo.AccountID},
+                    new SqlParameter() {ParameterName = "@AccountName", SqlDbType = SqlDbType.NVarChar, Value= BankInfo.AccountName},
                     new SqlParameter() {ParameterName = "@form_no", SqlDbType = SqlDbType.VarChar, Value= Form_No},
                     new SqlParameter() {ParameterName = "@RP_User", SqlDbType = SqlDbType.VarChar, Value= RP_User}
                 };
-                m_Execut = _ADO.ExecuteNonQuery("update tbReceive set RP_User=@RP_User,RP_Count=(RP_Count+1),CaseStatus='RP'  where  form_no=@form_no ", Params);
+                m_Execut = _ADO.ExecuteNonQuery("update tbReceive set BankCode=@BankCode, BankName=@BankName, BankID=@BankID, AccountID=@AccountID, AccountName=@AccountName, RP_User=@RP_User,RP_Count=(RP_Count+1),CaseStatus='RP'  where  form_no=@form_no ", Params);
                 if (m_Execut == 1)
                 {
                     Params = new List<SqlParameter>()
@@ -865,7 +870,7 @@ namespace KF_WebAPI.DataLogic
                         new SqlParameter() {ParameterName = "@transactionId", SqlDbType = SqlDbType.VarChar, Value= transactionId},
                          new SqlParameter() {ParameterName = "@Add_User", SqlDbType = SqlDbType.VarChar, Value= RP_User}
                     };
-                  
+
 
                     m_Execut += _ADO.ExecuteNonQuery("insert into tbRequestPayment (form_no,rp_idx,transactionId,Add_User)" +
                         " values(@form_no,@rp_idx,@transactionId,@Add_User)   ", Params);
@@ -878,6 +883,9 @@ namespace KF_WebAPI.DataLogic
             }
             return m_Execut;
         }
+
+
+
 
         public Int32 UpdByRequestforExam(string Form_No, string forceTryForExam, string RE_User, string comment, string transactionId)
         {

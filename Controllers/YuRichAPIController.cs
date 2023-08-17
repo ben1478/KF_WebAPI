@@ -296,27 +296,40 @@ namespace KF_WebAPI.Controllers
             return Ok(resultClass);
         }
 
+
+
+        public class ReqClass_RP
+        {
+            public BankInfo? BankInfo { get; set; }
+            public RequestPayment? RequestPayment { get; set; }
+        }
+
+
         [Route("RequestPayment")]
         [HttpPost]
-        public async Task<ActionResult<string>> RequestPayment([FromBody] RequestPayment ReqClass, string Form_No)
+        public async Task<ActionResult<string>> RequestPayment([FromBody] ReqClass_RP ReqClass,  string Form_No)
         {
+            RequestPayment Class_RP= ReqClass.RequestPayment;
+            BankInfo Class_BI = ReqClass.BankInfo;
             ResultClass<BaseResult> resultClass = new ();
             DataTable tbReceive = _ADO.GetReceiveByform_no(Form_No);
             string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
-            string m_RPUser = ReqClass.salesNo;
+            string m_RPUser = Class_RP.salesNo;
             if (tbReceive.Rows.Count != 0)
             {
                 foreach (DataRow dr in tbReceive.Rows)
                 {
-                    ReqClass.branchNo = _branchNo;
-                    ReqClass.dealerNo = _dealerNo;
-                    ReqClass.examineNo = dr["ExamineNo"].ToString();
-                    ReqClass.source = _source;
-                    ReqClass.salesNo = "";
+                    Class_RP.branchNo = _branchNo;
+                    Class_RP.dealerNo = _dealerNo;
+                    Class_RP.examineNo = dr["ExamineNo"].ToString();
+                    Class_RP.source = _source;
+                    Class_RP.salesNo = "";
                 }
-                if (ReqClass.attachmentFile != null)
+               
+
+                if (Class_RP.attachmentFile != null)
                 {
-                    ResultClass<int> m_InsertFile = _ADO.InsertFile(Form_No, "RequestPayment", m_RPUser, TransactionId, ReqClass.attachmentFile);
+                    ResultClass<int> m_InsertFile = _ADO.InsertFile(Form_No, "RequestPayment", m_RPUser, TransactionId, Class_RP.attachmentFile);
                     if (m_InsertFile.ResultCode != "000")
                     {
                         resultClass.ResultCode = "999";
@@ -325,13 +338,13 @@ namespace KF_WebAPI.Controllers
                     }
                 }
             }
-            if (ReqClass is null)
+            if (Class_RP is null)
             {
-                throw new ArgumentNullException(nameof(ReqClass));
+                throw new ArgumentNullException(nameof(Class_RP));
             }
             try
             {
-                string p_JSON = JsonConvert.SerializeObject(ReqClass);
+                string p_JSON = JsonConvert.SerializeObject(Class_RP);
                 ResultClass<string> APIResult = new();
                 if (_isCallTESTAPI)
                 {
@@ -339,7 +352,7 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
-                    APIResult = await _Comm.CallYuRichAPINew("RequestPayment", ReqClass.salesNo, Form_No, p_JSON, TransactionId, _httpClient);
+                    APIResult = await _Comm.CallYuRichAPINew("RequestPayment", Class_RP.salesNo, Form_No, p_JSON, TransactionId, _httpClient);
                 }
 
                 if (APIResult.ResultCode == "000")
@@ -348,7 +361,9 @@ namespace KF_WebAPI.Controllers
                     if (m_Result.code == "S001")
                     {
                         resultClass.objResult = m_Result;
-                        _ADO.UpdByRequestPayment(Form_No, m_RPUser, TransactionId);
+                        /*存入匯款資訊*/
+                        
+                        _ADO.UpdByRequestPayment(Form_No, m_RPUser, TransactionId, Class_BI);
                     }
                     else
                     {
