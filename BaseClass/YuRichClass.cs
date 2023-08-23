@@ -676,6 +676,16 @@ namespace KF_WebAPI.BaseClass
         public String? fileUrl { get; set; }
     }
 
+    public class PayInfo
+    {
+        public String? instNo { get; set; }
+        public String? instAmt { get; set; }
+        public String? remitAmount { get; set; }
+        public String? instCap { get; set; }
+
+        
+    }
+
 
     public class BankInfo
     {

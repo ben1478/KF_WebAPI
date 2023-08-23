@@ -833,13 +833,17 @@ namespace KF_WebAPI.DataLogic
             return m_Execut;
         }
 
-        public Int32 UpdByRequestPayment(string Form_No, string RP_User, string transactionId, BankInfo BankInfo)
+        public Int32 UpdByRequestPayment(string Form_No, string RP_User, string transactionId, BankInfo BankInfo, PayInfo PayInfo)
         {
             Int32 m_Execut = 0;
             try
             {
                 List<SqlParameter> Params = new List<SqlParameter>()
                 {
+                    new SqlParameter() {ParameterName = "@instNo", SqlDbType = SqlDbType.Int, Value= PayInfo.instNo},
+                    new SqlParameter() {ParameterName = "@instAmt", SqlDbType = SqlDbType.Int, Value= PayInfo.instAmt},
+                    new SqlParameter() {ParameterName = "@remitAmount", SqlDbType = SqlDbType.Int, Value= PayInfo.remitAmount},
+                    new SqlParameter() {ParameterName = "@instCap", SqlDbType = SqlDbType.Int, Value= PayInfo.instCap},
                     new SqlParameter() {ParameterName = "@BankCode", SqlDbType = SqlDbType.VarChar, Value= BankInfo.BankCode},
                     new SqlParameter() {ParameterName = "@BankName", SqlDbType = SqlDbType.VarChar, Value= BankInfo.BankName},
                     new SqlParameter() {ParameterName = "@BankID", SqlDbType = SqlDbType.VarChar, Value= BankInfo.BankID},
@@ -848,7 +852,7 @@ namespace KF_WebAPI.DataLogic
                     new SqlParameter() {ParameterName = "@form_no", SqlDbType = SqlDbType.VarChar, Value= Form_No},
                     new SqlParameter() {ParameterName = "@RP_User", SqlDbType = SqlDbType.VarChar, Value= RP_User}
                 };
-                m_Execut = _ADO.ExecuteNonQuery("update tbReceive set BankCode=@BankCode, BankName=@BankName, BankID=@BankID, AccountID=@AccountID, AccountName=@AccountName, RP_User=@RP_User,RP_Count=(RP_Count+1),CaseStatus='RP'  where  form_no=@form_no ", Params);
+                m_Execut = _ADO.ExecuteNonQuery("update tbReceive set  instNo=@instNo, instAmt=@instAmt, remitAmount=@remitAmount, BankCode=@BankCode, BankName=@BankName, BankID=@BankID, AccountID=@AccountID, AccountName=@AccountName, RP_User=@RP_User,RP_Count=(RP_Count+1),CaseStatus='RP'  where  form_no=@form_no ", Params);
                 if (m_Execut == 1)
                 {
                     Params = new List<SqlParameter>()
@@ -1069,7 +1073,7 @@ namespace KF_WebAPI.DataLogic
                             new SqlParameter() {ParameterName = "@form_no", SqlDbType = SqlDbType.VarChar, Value= form_no},
                             new SqlParameter() {ParameterName = "@qcs_idx", SqlDbType = SqlDbType.VarChar, Value= qcs_idx}
                         };
-                        DataTable m_dtQCSdtl = _ADO.ExecuteQuery(" SELECT  QC.[form_no],QC.[qcs_idx],QC.transactionId,isnull([appropriateDate],'')appropriateDate,isnull( CONVERT(varchar(16),sum([remitAmount])),'')remitAmount" +
+                        DataTable m_dtQCSdtl = _ADO.ExecuteQuery(" SELECT  pa.instNo,pa.instAmt,   QC.[form_no],QC.[qcs_idx],QC.transactionId,isnull([appropriateDate],'')appropriateDate,isnull( CONVERT(varchar(16),sum([remitAmount])),'')remitAmount" +
                             " , case when QA.status='A004' then '已撥款' when QA.status='A003' then '申請中' end  status,APCount " +
                          "     FROM　[tbQCS]　QC left join [tbQCS_capitalApply] QCA on QC.form_no=QCA.form_no and QC.qcs_idx=QCA.qcs_idx " +
                          "  left join (" +
@@ -1081,9 +1085,10 @@ namespace KF_WebAPI.DataLogic
                          "     left join " +
                          "    (select form_no,qa_idx,status  FROM tbQueryAppropriation ) QAS   " +
                          "   on qa.form_no=QAS.form_no and qa.qa_idx=QAS.qa_idx  " +
-                         ") QA on QC.form_no=QA.form_no and QC.transactionId=QA.transactionId_qcs   " +
+                         ") QA on QC.form_no=QA.form_no and QC.transactionId=QA.transactionId_qcs  " +
+                         "   Left Join tbQCS_payment PA on  QC.[form_no]= PA.[form_no] and  QC.[qcs_idx]= PA.[qcs_idx]  " +
                          "   where   [appropriateDate] is not null and QC.[form_no]=@form_no and QC.[qcs_idx]=@qcs_idx  " +
-                         " group by QC.[form_no]    ,QC.transactionId,QC.[qcs_idx],[appropriateDate],QA.status,APCount   ", Paramsdtl);
+                         " group by QC.[form_no]  ,pa.instNo,pa.instAmt  ,QC.transactionId,QC.[qcs_idx],[appropriateDate],QA.status,APCount   ", Paramsdtl);
 
                         foreach (DataRow row1 in m_dtQCSdtl.Rows)
                         {
@@ -1099,6 +1104,12 @@ namespace KF_WebAPI.DataLogic
                                 }
                                 comment += "撥款金額:" + row1["remitAmount"].ToString();
                             }
+
+                            if (row1["instNo"].ToString() != "" && row1["instAmt"].ToString() != "")
+                            {
+                                comment += "期數:" + row1["instNo"].ToString() + ";分期應繳:" +row1["instAmt"].ToString();
+                            }
+
 
                             if (row1["status"].ToString() != "")
                             {

@@ -302,6 +302,8 @@ namespace KF_WebAPI.Controllers
         {
             public BankInfo? BankInfo { get; set; }
             public RequestPayment? RequestPayment { get; set; }
+            public PayInfo? PayInfo { get; set; }
+            
         }
 
 
@@ -311,6 +313,8 @@ namespace KF_WebAPI.Controllers
         {
             RequestPayment Class_RP= ReqClass.RequestPayment;
             BankInfo Class_BI = ReqClass.BankInfo;
+            PayInfo Class_PI = ReqClass.PayInfo;
+
             ResultClass<BaseResult> resultClass = new ();
             DataTable tbReceive = _ADO.GetReceiveByform_no(Form_No);
             string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
@@ -363,7 +367,7 @@ namespace KF_WebAPI.Controllers
                         resultClass.objResult = m_Result;
                         /*存入匯款資訊*/
                         
-                        _ADO.UpdByRequestPayment(Form_No, m_RPUser, TransactionId, Class_BI);
+                        _ADO.UpdByRequestPayment(Form_No, m_RPUser, TransactionId, Class_BI, Class_PI);
                     }
                     else
                     {
