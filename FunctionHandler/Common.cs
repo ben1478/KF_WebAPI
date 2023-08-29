@@ -409,7 +409,7 @@ namespace KF_WebAPI.FunctionHandler
         {
             ResultClass<int> resultClass = new();
             int m_Execut = 0;
-            using SqlConnection conn = new SqlConnection(_ADO._ConnStr);
+            using SqlConnection conn = new SqlConnection(_ADO.ConnStr);
             // 開啟資料庫連線
             conn.Open();
             SqlTransaction transaction = conn.BeginTransaction();
@@ -480,7 +480,7 @@ namespace KF_WebAPI.FunctionHandler
         {
             ResultClass<int> resultClass = new();
             int m_Execut = 0;
-            using SqlConnection conn = new SqlConnection(_ADO._ConnStr);
+            using SqlConnection conn = new SqlConnection(_ADO.ConnStr);
             // 開啟資料庫連線
             conn.Open();
             SqlTransaction transaction = conn.BeginTransaction();

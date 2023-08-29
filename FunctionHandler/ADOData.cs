@@ -9,14 +9,19 @@ namespace KF_WebAPI.FunctionHandler
 {
     public class ADOData
     {
-        public string _ConnStr = "Data Source=ERP;Initial Catalog=AE_DB;User ID=sa;Password=juestcho;";
+        public  string ConnStr = "Data Source=ERP;Initial Catalog=AE_DB;User ID=sa;Password=juestcho;";
+
+        public string GetConnStr()
+        {
+            return ConnStr;
+        }
 
         public Int32 ExecuteNonQuery(string strSQL, List<SqlParameter> Param)
         {
             Int32 m_Execut = 0;
             try
             {
-                using SqlConnection conn = new(_ConnStr);
+                using SqlConnection conn = new(ConnStr);
                 conn.Open();
                 using (SqlCommand cmd = new SqlCommand(strSQL, conn))
                 {
@@ -43,7 +48,7 @@ namespace KF_WebAPI.FunctionHandler
             DataTable dtResult = new DataTable();
             try
             {
-                using SqlConnection conn = new(_ConnStr);
+                using SqlConnection conn = new(ConnStr);
                 using (SqlCommand cmd = new SqlCommand(strSQL, conn))
                 {
                     if (Param != null)

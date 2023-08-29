@@ -38,7 +38,8 @@ namespace KF_WebAPI.Controllers
         private readonly string _source = "22";
         private AesEncryption _AE = new();
         private Common _Comm = new();
-        private KFDataADO _ADO = new();
+        private KFData _KFData = new();
+
         public YuRichAPIController(IHttpClientFactory httpClientFactory)
         {
             _httpClient = httpClientFactory.CreateClient();
@@ -54,7 +55,7 @@ namespace KF_WebAPI.Controllers
             ResultClass<attachmentFile> resultClass = new();
             try
             {
-                resultClass = _ADO.GetFile(KeyID, Type, Index);
+                resultClass = _KFData.GetFile(KeyID, Type, Index);
             }
             catch (Exception ex)
             {
@@ -91,7 +92,7 @@ namespace KF_WebAPI.Controllers
                 {
                     if (objects._Receive1.attachmentFile != null)
                     {
-                        ResultClass<int> m_InsertFile = _ADO.InsertFile(form_no, "Receive", salesNo, "", objects._Receive1.attachmentFile);
+                        ResultClass<int> m_InsertFile = _KFData.InsertFile(form_no, "Receive", salesNo, "", objects._Receive1.attachmentFile);
                         if (m_InsertFile.ResultCode != "000")
                         {
                             resultClass.ResultCode = "999";
@@ -125,7 +126,7 @@ namespace KF_WebAPI.Controllers
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
-                ResultClass<string> resultSeq = _ADO.GetSeqNo(Case_Company);
+                ResultClass<string> resultSeq = _KFData.GetSeqNo(Case_Company);
                 if (resultSeq is not null && resultSeq.ResultCode == "000") 
                 {
                     if (objects._Receive1 != null)
@@ -144,7 +145,7 @@ namespace KF_WebAPI.Controllers
                         {
                             if (objects._Receive1.attachmentFile != null)
                             {
-                                ResultClass<int> m_InsertFile = _ADO.InsertFile(resultSeq.objResult, "Receive", salesNo,"", objects._Receive1.attachmentFile);
+                                ResultClass<int> m_InsertFile = _KFData.InsertFile(resultSeq.objResult, "Receive", salesNo,"", objects._Receive1.attachmentFile);
                                 if (m_InsertFile.ResultCode == "000")
                                 {
                                     resultClass.ResultCode = "000";
@@ -187,7 +188,7 @@ namespace KF_WebAPI.Controllers
         [HttpGet]
         public ActionResult<ResultClass<List<objReceive>>> GetYRData(string form_no)
         {
-            ResultClass<List<objReceive>> resultClass = _ADO.GetReceive(form_no);
+            ResultClass<List<objReceive>> resultClass = _KFData.GetReceive(form_no);
             return resultClass;
         }
 
@@ -207,7 +208,7 @@ namespace KF_WebAPI.Controllers
                 ResultClass<string> APIResult = new();
                 if (_isCallTESTAPI)
                 {
-                    APIResult = _ADO.GetTestJsonByAPI("TEST0001", "Receive", salesNo, Form_No, TransactionId);
+                    APIResult = _KFData.GetTestJsonByAPI("TEST0001", "Receive", salesNo, Form_No, TransactionId);
                 }
                 else
                 {
@@ -219,7 +220,7 @@ namespace KF_WebAPI.Controllers
                     if (m_Result.code == "1000")
                     {
                         resultClass.objResult = m_Result;
-                        _ADO.UpdReceive(Form_No, APIResult.transactionId, m_Result.examineNo);
+                        _KFData.UpdReceive(Form_No, APIResult.transactionId, m_Result.examineNo);
                     }
                     else
                     {
@@ -259,7 +260,7 @@ namespace KF_WebAPI.Controllers
                 ResultClass<string> APIResult = new ();
                 if (_isCallTESTAPI)
                 {
-                    APIResult  = _ADO.GetTestJsonByAPI("TEST0001", "QueryAppropriation", m_Uesr, Form_No, TransactionId, "TESTQA002");
+                    APIResult  = _KFData.GetTestJsonByAPI("TEST0001", "QueryAppropriation", m_Uesr, Form_No, TransactionId, "TESTQA002");
                 }
                 else
                 {
@@ -273,7 +274,7 @@ namespace KF_WebAPI.Controllers
                         resultClass.objResult = m_Result;
                         if (isUpdDB)
                         {
-                            _ADO.InsertQueryAppropriation(Form_No, m_Uesr, m_Result);
+                            _KFData.InsertQueryAppropriation(Form_No, m_Uesr, m_Result);
                         }
                     }
                     else
@@ -316,7 +317,7 @@ namespace KF_WebAPI.Controllers
             PayInfo Class_PI = ReqClass.PayInfo;
 
             ResultClass<BaseResult> resultClass = new ();
-            DataTable tbReceive = _ADO.GetReceiveByform_no(Form_No);
+            DataTable tbReceive = _KFData.GetReceiveByform_no(Form_No);
             string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
             string m_RPUser = Class_RP.salesNo;
             if (tbReceive.Rows.Count != 0)
@@ -333,7 +334,7 @@ namespace KF_WebAPI.Controllers
 
                 if (Class_RP.attachmentFile != null)
                 {
-                    ResultClass<int> m_InsertFile = _ADO.InsertFile(Form_No, "RequestPayment", m_RPUser, TransactionId, Class_RP.attachmentFile);
+                    ResultClass<int> m_InsertFile = _KFData.InsertFile(Form_No, "RequestPayment", m_RPUser, TransactionId, Class_RP.attachmentFile);
                     if (m_InsertFile.ResultCode != "000")
                     {
                         resultClass.ResultCode = "999";
@@ -352,7 +353,7 @@ namespace KF_WebAPI.Controllers
                 ResultClass<string> APIResult = new();
                 if (_isCallTESTAPI)
                 {
-                    APIResult = _ADO.GetTestJsonByAPI("TEST0001", "RequestPayment", m_RPUser, Form_No, TransactionId);
+                    APIResult = _KFData.GetTestJsonByAPI("TEST0001", "RequestPayment", m_RPUser, Form_No, TransactionId);
                 }
                 else
                 {
@@ -367,7 +368,7 @@ namespace KF_WebAPI.Controllers
                         resultClass.objResult = m_Result;
                         /*存入匯款資訊*/
                         
-                        _ADO.UpdByRequestPayment(Form_No, m_RPUser, TransactionId, Class_BI, Class_PI);
+                        _KFData.UpdByRequestPayment(Form_No, m_RPUser, TransactionId, Class_BI, Class_PI);
                     }
                     else
                     {
@@ -403,7 +404,7 @@ namespace KF_WebAPI.Controllers
             }
             try
             {
-                DataTable tbReceive = _ADO.GetReceiveByform_no(Form_No);
+                DataTable tbReceive = _KFData.GetReceiveByform_no(Form_No);
                 string m_REUser = ReqClass.salesNo;
                
                 if (tbReceive.Rows.Count != 0)
@@ -418,7 +419,7 @@ namespace KF_WebAPI.Controllers
                     }
                     if (ReqClass.attachmentFile != null)
                     {
-                        ResultClass<int> m_InsertFile = _ADO.InsertFile(Form_No, "RequestforExam", m_REUser, TransactionId,ReqClass.attachmentFile);
+                        ResultClass<int> m_InsertFile = _KFData.InsertFile(Form_No, "RequestforExam", m_REUser, TransactionId,ReqClass.attachmentFile);
                         if (m_InsertFile.ResultCode != "000")
                         {
                             resultClass.ResultCode = "999";
@@ -432,7 +433,7 @@ namespace KF_WebAPI.Controllers
                 ResultClass<string> APIResult = new();
                 if (_isCallTESTAPI)
                 {
-                    APIResult = _ADO.GetTestJsonByAPI("TEST0001", "RequestforExam", m_REUser,Form_No, TransactionId, "TESTRE001");
+                    APIResult = _KFData.GetTestJsonByAPI("TEST0001", "RequestforExam", m_REUser,Form_No, TransactionId, "TESTRE001");
                 }
                 else
                 {
@@ -450,7 +451,7 @@ namespace KF_WebAPI.Controllers
                         {
                             forceTryForExam = ReqClass.forceTryForExam;
                         }
-                        _ADO.UpdByRequestforExam(Form_No, forceTryForExam, m_REUser, ReqClass.comment, TransactionId);
+                        _KFData.UpdByRequestforExam(Form_No, forceTryForExam, m_REUser, ReqClass.comment, TransactionId);
                     }
                     else
                     {
@@ -485,7 +486,7 @@ namespace KF_WebAPI.Controllers
             }
             try
             {
-                DataTable tbReceive = _ADO.GetReceiveByform_no(Form_No);
+                DataTable tbReceive = _KFData.GetReceiveByform_no(Form_No);
                 string m_RSUser = ReqClass.salesNo;
                 if (tbReceive.Rows.Count != 0)
                 {
@@ -499,7 +500,7 @@ namespace KF_WebAPI.Controllers
                     }
                     if (ReqClass.attachmentFile != null)
                     {
-                        ResultClass<int> m_InsertFile = _ADO.InsertFile(Form_No, "RequestSupplement", m_RSUser, TransactionId, ReqClass.attachmentFile);
+                        ResultClass<int> m_InsertFile = _KFData.InsertFile(Form_No, "RequestSupplement", m_RSUser, TransactionId, ReqClass.attachmentFile);
                         if (m_InsertFile.ResultCode != "000")
                         {
                             resultClass.ResultCode = "999";
@@ -513,7 +514,7 @@ namespace KF_WebAPI.Controllers
                 ResultClass<string> APIResult = new();
                 if (_isCallTESTAPI)
                 {
-                    APIResult = _ADO.GetTestJsonByAPI("TEST0001", "RequestSupplement", m_RSUser, Form_No, TransactionId);
+                    APIResult = _KFData.GetTestJsonByAPI("TEST0001", "RequestSupplement", m_RSUser, Form_No, TransactionId);
                 }
                 else
                 {
@@ -534,7 +535,7 @@ namespace KF_WebAPI.Controllers
                                 m_Comments.Add(m_supplement.comment);
                             }
                         }
-                        _ADO.UpdByRequestSupplement(Form_No, m_RSUser, m_Comments, TransactionId);
+                        _KFData.UpdByRequestSupplement(Form_No, m_RSUser, m_Comments, TransactionId);
 
                     }
                     else
@@ -580,7 +581,7 @@ namespace KF_WebAPI.Controllers
                 ResultClass<string> APIResult = new();
                 if (_isCallTESTAPI)
                 {
-                    APIResult = _ADO.GetTestJsonByAPI("TEST0001", "QueryCaseStatus", m_User, Form_No, TransactionId, "TESTQC004");
+                    APIResult = _KFData.GetTestJsonByAPI("TEST0001", "QueryCaseStatus", m_User, Form_No, TransactionId, "TESTQC004");
                 }
                 else
                 {
@@ -599,16 +600,13 @@ namespace KF_WebAPI.Controllers
                         }
                         if (isUpdDB)
                         {
-                            ResultClass<int> resultQCS = _ADO.InsertQCS(Form_No, m_User, m_Result);
+                            ResultClass<int> resultQCS = _KFData.InsertQCS(Form_No, m_User, m_Result);
                             if (resultQCS.ResultCode == "999")
                             {
                                 resultClass.ResultCode = "999";
                                 resultClass.ResultMsg = resultQCS.ResultMsg;
-                                List<SqlParameter> ParamsR = new List<SqlParameter>()
-                            {
-                                new SqlParameter() {ParameterName = "@TransactionId", SqlDbType = SqlDbType.VarChar, Value= TransactionId}
-                            };
-                                _ADO.ExecuteNonQuery("  delete tbAPILog where TransactionId=@TransactionId ", ParamsR);
+                                _KFData.DeltbAPILog(TransactionId);
+
                             }
                         }
                     }
@@ -651,7 +649,7 @@ namespace KF_WebAPI.Controllers
                 ResultClass<string> APIResult = new();
                 if (_isCallTESTAPI)
                 {
-                    APIResult = _ADO.GetTestJsonByAPI("TEST0001", "reCallout", m_RCUser, Form_No, TransactionId);
+                    APIResult = _KFData.GetTestJsonByAPI("TEST0001", "reCallout", m_RCUser, Form_No, TransactionId);
                 }
                 else
                 {
@@ -698,7 +696,7 @@ namespace KF_WebAPI.Controllers
             string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
 
             ResultClass<BaseResult> resultClass = new();
-            DataTable tbReceive = _ADO.GetReceiveByform_no(Form_No);
+            DataTable tbReceive = _KFData.GetReceiveByform_no(Form_No);
             string m_PTUser = ReqClass.salesNo;
             if (tbReceive.Rows.Count != 0)
             {
@@ -712,7 +710,7 @@ namespace KF_WebAPI.Controllers
                 }
                 if (ReqClass.attachmentFile != null)
                 {
-                    ResultClass<int> m_InsertFile = _ADO.InsertFile(Form_No, "PutFileToExamiePath", m_PTUser, TransactionId,ReqClass.attachmentFile);
+                    ResultClass<int> m_InsertFile = _KFData.InsertFile(Form_No, "PutFileToExamiePath", m_PTUser, TransactionId,ReqClass.attachmentFile);
                     if (m_InsertFile.ResultCode != "000")
                     {
                         resultClass.ResultCode = "999";
@@ -732,7 +730,7 @@ namespace KF_WebAPI.Controllers
                 ResultClass<string> APIResult = new();
                 if (_isCallTESTAPI)
                 {
-                    APIResult = _ADO.GetTestJsonByAPI("TEST0001", "PutFileToExamiePath", m_PTUser, Form_No, TransactionId);
+                    APIResult = _KFData.GetTestJsonByAPI("TEST0001", "PutFileToExamiePath", m_PTUser, Form_No, TransactionId);
                 }
                 else
                 {
@@ -821,7 +819,7 @@ namespace KF_WebAPI.Controllers
                         }
                     };
                     m_Result_QA.appropriations = m_arrAppropriations;
-                    ResultClass<int> resultClassQa = _ADO.InsertQueryAppropriation(m_Form_No, "YuRich", m_Result_QA);
+                    ResultClass<int> resultClassQa = _KFData.InsertQueryAppropriation(m_Form_No, "YuRich", m_Result_QA);
                     if (resultClassQa.ResultCode == "000")
                     {
                         resultClass.code = "S001";
@@ -901,7 +899,7 @@ namespace KF_WebAPI.Controllers
                     ResultClass<string> APIResult = new();
                     if (_isCallTESTAPI)
                     {
-                        APIResult = _ADO.GetTestJsonByAPI("TEST0001", "QueryCaseStatus", "YuRich", m_Form_No, TransactionId, "TESTQC001");
+                        APIResult = _KFData.GetTestJsonByAPI("TEST0001", "QueryCaseStatus", "YuRich", m_Form_No, TransactionId, "TESTQC001");
                     }
                     else
                     {
@@ -915,8 +913,8 @@ namespace KF_WebAPI.Controllers
 
                         if (m_Result.code == "S001")
                         {
-                            _ADO.InsertQCS(m_Form_No, "YuRich", m_Result);
-                            _ADO.UpdReceiveStatus(m_Form_No, m_Result);
+                            _KFData.InsertQCS(m_Form_No, "YuRich", m_Result);
+                            _KFData.UpdReceiveStatus(m_Form_No, m_Result);
                             resultClass.code = "S001";
                             resultClass.msg = "成功";
                         }
