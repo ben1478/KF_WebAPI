@@ -648,7 +648,17 @@ namespace KF_WebAPI.BaseClass
         /// 124.撥佣對象
         /// </summary>
         public String? commission_target { get; set; }
+        /// <summary>
+        /// 125.讓與人姓名
+        /// </summary>
+        public String? assignor { get; set; }
 
+        /// <summary>
+        /// 126.讓與人ID
+        /// </summary>
+        public String? assignor_idno { get; set; }
+
+        
         /// <summary>
         /// 撥佣對象
         /// </summary>

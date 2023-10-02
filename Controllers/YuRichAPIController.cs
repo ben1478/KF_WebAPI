@@ -334,12 +334,26 @@ namespace KF_WebAPI.Controllers
 
                 if (Class_RP.attachmentFile != null)
                 {
+                    if (Class_RP.attachmentFile.Length != 6)
+                    {
+                        resultClass.ResultCode = "999";
+                        resultClass.ResultMsg = $"請款文件有遺漏,請確認";
+                        return Ok(resultClass);
+                    }
                     ResultClass<int> m_InsertFile = _KFData.InsertFile(Form_No, "RequestPayment", m_RPUser, TransactionId, Class_RP.attachmentFile);
                     if (m_InsertFile.ResultCode != "000")
                     {
                         resultClass.ResultCode = "999";
                         resultClass.ResultMsg = $"上傳檔案失敗!!";
                         return Ok(resultClass);
+                    }
+                    else
+                    {
+                        if (Class_RP.attachmentFile.Length == 6)
+                        {
+                            //移除-匯款存摺封面,這個不用傳給裕富
+                            Class_RP.attachmentFile = Class_RP.attachmentFile.Take(Class_RP.attachmentFile.Length - 1).ToArray();
+                        }
                     }
                 }
             }

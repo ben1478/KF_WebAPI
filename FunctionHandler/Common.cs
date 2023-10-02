@@ -27,6 +27,10 @@ namespace KF_WebAPI.FunctionHandler
         private readonly string _source = "52611690";
         private readonly string _version = "2.0";
 
+        /// <summary>
+        /// 裕富APIURL
+        /// </summary>
+        /// <returns></returns>
         public string GetYuRichAPI_URL()
         {
             string m_YuRichAPI_URL = "";
@@ -50,7 +54,11 @@ namespace KF_WebAPI.FunctionHandler
             return Result;
         }
 
-
+        /// <summary>
+        /// 字串處理NULL or Empty
+        /// </summary>
+        /// <param name="p_Param"></param>
+        /// <returns></returns>
         public string CheckString(string p_Param)
         {
             string Result = (p_Param == null) ? "" : p_Param;
@@ -58,6 +66,13 @@ namespace KF_WebAPI.FunctionHandler
             return Result;
         }
 
+        /// <summary>
+        /// 字串解析
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="propNa"></param>
+        /// <param name="p_JsonVal"></param>
+        /// <returns></returns>
         public string CheckJsonType<T>(string propNa, T p_JsonVal)
         {
             string m_Result = "";
@@ -96,7 +111,12 @@ namespace KF_WebAPI.FunctionHandler
             return m_Result;
         }
 
-
+        /// <summary>
+        /// 裕富參數處理
+        /// </summary>
+        /// <param name="p_encryptEnterCase">加密字串</param>
+        /// <param name="transactionId">交易代號</param>
+        /// <returns></returns>
         public YuRichAPI_Class SetYuRichAPI_Class(string p_encryptEnterCase, string transactionId)
         {
             YuRichAPI_Class m_YuRichAPI_Class = new();
@@ -108,7 +128,16 @@ namespace KF_WebAPI.FunctionHandler
             return m_YuRichAPI_Class;
         }
 
-
+        /// <summary>
+        /// 外部呼叫紀錄
+        /// </summary>
+        /// <param name="API_Name"></param>
+        /// <param name="TransactionId"></param>
+        /// <param name="IP"></param>
+        /// <param name="Form_No"></param>
+        /// <param name="m_RequeJSON"></param>
+        /// <param name="ResultJSON"></param>
+        /// <param name="StatusCode"></param>
         public void NotifyLog(string API_Name, string TransactionId, string IP, string Form_No, string m_RequeJSON,  string ResultJSON, string StatusCode)
         {
             var m_CallTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
@@ -358,7 +387,12 @@ namespace KF_WebAPI.FunctionHandler
 
         }
 
-
+        /// <summary>
+        /// 呼叫API錯誤 Log
+        /// </summary>
+        /// <param name="p_API_Name"></param>
+        /// <param name="p_TransactionId"></param>
+        /// <param name="p_ErrMSG"></param>
         public void InsertErrorLog(string p_API_Name, string p_TransactionId, string p_ErrMSG)
         {
             var m_APIErrLog = new APIErrorLog
