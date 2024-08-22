@@ -34,6 +34,27 @@ namespace KF_WebAPI.DataLogic
         }
 
 
+        public DataTable UserVerify(UserLogin p_UserLogin)
+        {
+            DataTable m_RtnDT = new("Data");
+            try
+            {
+               /* List<SqlParameter> Params = new List<SqlParameter>()
+                {
+                    new SqlParameter() {ParameterName = "@form_no", SqlDbType = SqlDbType.VarChar, Value= form_no}
+                };
+
+                m_RtnDT = _ADO.ExecuteQuery("SELECT * FROM User_M WHERE Username = @Username AND PasswordHash = @PasswordHash  ", Params);
+               */
+            }
+            catch
+            {
+                throw;
+            }
+            return m_RtnDT;
+        }
+
+
 
         public ResultClass<string> GetTestJsonByAPI(string TestID, string API_Name, string User, string form_no, string TransactionId, string subTestID = "")
         {
