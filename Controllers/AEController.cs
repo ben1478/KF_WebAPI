@@ -13,7 +13,7 @@ namespace KF_WebAPI.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class KFController : ControllerBase
+    public class AEController : ControllerBase
     {
 
         [HttpPost("SendSMS")]
