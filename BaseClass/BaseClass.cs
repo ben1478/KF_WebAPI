@@ -24,6 +24,23 @@ namespace KF_WebAPI.BaseClass
     }
 
 
+
+    public class tbInfo
+    {
+        public string? add_date { get; set; }
+        public string? add_num { get; set; }
+        public string? add_ip { get; set; }
+        public string? edit_date { get; set; }
+        public string? edit_num { get; set; }
+        public string? edit_ip{ get; set; }
+        public string? del_date { get; set; }
+        public string? del_num { get; set; }
+        public string? del_ip { get; set; }
+        public string? del_tag { get; set; }
+        
+    }
+
+
     public class UserLogin
     {
         public string Username { get; set; }
