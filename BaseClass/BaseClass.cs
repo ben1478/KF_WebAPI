@@ -5,7 +5,7 @@ namespace KF_WebAPI.BaseClass
 
     public class BaseClass
     {
-        //test
+        
     }
     /// <summary>
     /// 交易Info
