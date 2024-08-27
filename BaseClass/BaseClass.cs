@@ -5,9 +5,12 @@ namespace KF_WebAPI.BaseClass
 
     public class BaseClass
     {
-        
+        //test
     }
-
+    /// <summary>
+    /// 交易Info
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class ResultClass<T>
     {
         /// <summary>
