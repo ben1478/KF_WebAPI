@@ -8,6 +8,5 @@
 
         public tbInfo? tbInfo { get; set; }
 
-        public string? test { get; set; }
     }
 }
