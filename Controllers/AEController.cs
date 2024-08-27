@@ -1,8 +1,11 @@
 ﻿using KF_WebAPI.BaseClass;
+using KF_WebAPI.BaseClass.AE;
+using KF_WebAPI.FunctionHandler;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
+using System.Data;
 using System.Data.SqlClient;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
@@ -54,7 +57,45 @@ namespace KF_WebAPI.Controllers
             return Ok(resultClass);
         }
 
+        [HttpPost("Login")]
+        public ActionResult<ResultClass<string>> Login(string uesr,string password)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
 
+            ADODataTest _adoData=new ADODataTest();
+            var T_SQL = "SELECT * FROM User_M WHERE U_num = @UserName AND U_psw = @Password";
+            var parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@UserName", uesr),
+                new SqlParameter("@Password", password) 
+            };
+
+            try
+            {
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    var Role_num = dtResult.Rows[0]["Role_num"].ToString();
+                    // 設置 Session
+                    HttpContext.Session.SetString("UserID", uesr);
+                    HttpContext.Session.SetString("Role_num", string.Join(',', Role_num));
+                    var roleNum = HttpContext.Session.GetString("Role_num");
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "401";
+                    resultClass.ResultMsg = "用戶名或密碼不正確";
+                    return Unauthorized(resultClass);
+                }
+                
+            }
+            catch (Exception)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+            }
+        }
 
     }
 

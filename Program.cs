@@ -16,6 +16,17 @@ builder.Services.AddControllers();
 });*/
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+// Add Session services
+builder.Services.AddDistributedMemoryCache(); 
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(8); // 設置 Session 過期時間
+    options.Cookie.HttpOnly = true; 
+    options.Cookie.IsEssential = true; 
+});
+builder.Services.AddControllers();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -49,8 +60,16 @@ app.UseCors(builder =>
         "https://www.kuofongweb.com.tw/"
         )
            .AllowAnyMethod()
-           .AllowAnyHeader();
+           .AllowAnyHeader()
+           .AllowCredentials(); // 允許發送憑證（包括 Cookies）
 });
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+
+// 啟用 Session 支援
+app.UseSession();
 
 app.UseAuthorization();
 

@@ -15,6 +15,7 @@ namespace KF_WebAPI.Controllers
     [Route("[controller]")]
     public class AE_HRController : ControllerBase
     {
+        #region HR系統
         /// <summary>
         /// 請假單-Flow_rest/Flow_rest_list.asp
         /// </summary>
@@ -25,12 +26,12 @@ namespace KF_WebAPI.Controllers
         public ActionResult<ResultClass<string>> Flow_Rest_Query(string smbody, string dstaddr)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
+            var roleNum = HttpContext.Session.GetString("Role_num");
+
             try
             {
-               
-              
                 resultClass.ResultCode = "000";
-               
+
             }
             catch (Exception ex)
             {
@@ -39,6 +40,8 @@ namespace KF_WebAPI.Controllers
             }
             return Ok(resultClass);
         }
+        #endregion
+
 
 
 
