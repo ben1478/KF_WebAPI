@@ -7,5 +7,7 @@
         public string? FR_cknum_1 { get; set; }
 
         public tbInfo? tbInfo { get; set; }
+
+        public string? test { get; set; }
     }
 }
