@@ -24,7 +24,9 @@ namespace KF_WebAPI.BaseClass
     }
 
 
-
+    /// <summary>
+    /// 基本欄位
+    /// </summary>
     public class tbInfo
     {
         public string? add_date { get; set; }
