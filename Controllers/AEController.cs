@@ -62,7 +62,7 @@ namespace KF_WebAPI.Controllers
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
-            ADODataTest _adoData=new ADODataTest();
+            ADOData _adoData=new ADOData();
             var T_SQL = "SELECT * FROM User_M WHERE U_num = @UserName AND U_psw = @Password";
             var parameters = new List<SqlParameter>
             {

@@ -9,7 +9,8 @@ namespace KF_WebAPI.FunctionHandler
 {
     public class ADOData
     {
-        public  string ConnStr = "Data Source=ERP;Initial Catalog=AE_DB;User ID=sa;Password=juestcho;";
+        //public  string ConnStr = "Data Source=ERP;Initial Catalog=AE_DB;User ID=sa;Password=juestcho;";
+        public string ConnStr = "Data Source=ERP;Initial Catalog=AE_DB_TEST;User ID=sa;Password=juestcho;";
 
         public string GetConnStr()
         {
@@ -67,6 +68,23 @@ namespace KF_WebAPI.FunctionHandler
             catch (Exception ex)
             {
                 throw ex;
+            }
+            return dtResult;
+        }
+
+        public DataTable ExecuteSQuery(string strSQL)
+        {
+            DataTable dtResult = new DataTable();
+            try
+            {
+                using SqlConnection conn = new(ConnStr);
+                using SqlCommand cmd = new SqlCommand(strSQL, conn);
+                using SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                adapter.Fill(dtResult);
+            }
+            catch (Exception ex)
+            {
+                throw;
             }
             return dtResult;
         }

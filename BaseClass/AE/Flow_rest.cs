@@ -51,4 +51,15 @@ namespace KF_WebAPI.BaseClass.AE
         public string? cancel_num { get; set; }
         public string? cancel_ip { get; set; }
     }
+
+    public class Flow_rest_req
+    {
+        public int page { get; set; } 
+        public DateTime? FR_date_begin { get; set; }
+        public DateTime? FR_date_end { get; set; }
+        public string? U_BC { get; set; }    
+        public string? FR_sign_type { get;set; }
+        public string? FR_kind { get; set; }
+    }
+
 }
