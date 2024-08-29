@@ -26,7 +26,7 @@ namespace KF_WebAPI.Controllers
                 reqUrl.Append("http://smsapi.mitake.com.tw/api/mtk/SmSend?CharsetURL=UTF-8");
                 StringBuilder m_params = new StringBuilder();
                 m_params.Append("username=52611690SMS");
-                m_params.Append("&password=QST5n6AJzb");
+                m_params.Append("&password=!Cn#ZRg7#8Zp@zLp@Tg_");
                 m_params.Append("&dstaddr=" + dstaddr);
                 m_params.Append("&smbody=" + smbody);
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(new Uri(reqUrl.ToString()));
