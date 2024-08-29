@@ -11,7 +11,7 @@ namespace KF_WebAPI.BaseClass.AE
         public string? FR_kind { get; set; }
         public DateTime? FR_date_begin { get; set; }
         public DateTime? FR_date_end { get; set; }
-        public decimal? FR_total_hour { get; set; }
+        public decimal FR_total_hour { get; set; }
         public string? FR_note { get; set; }
         public string? FR_sign_type { get; set; }
         public string? FR_cancel { get; set; }

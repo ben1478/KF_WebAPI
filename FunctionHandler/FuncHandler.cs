@@ -1,9 +1,14 @@
-﻿using System.Data;
+﻿using KF_WebAPI.BaseClass;
+using System.Data;
 
 namespace KF_WebAPI.FunctionHandler
 {
     public class FuncHandler
     {
+        /// <summary>
+        /// 分頁
+        /// </summary>
+        /// <returns></returns>
         public static DataTable GetPage(DataTable dt, int page, int pageSize)
         {
             if (dt == null || dt.Rows.Count == 0 || page <= 0 || pageSize <= 0)
@@ -32,6 +37,56 @@ namespace KF_WebAPI.FunctionHandler
             }
 
             return pageTable;
+        }
+        /// <summary>
+        /// 獲得Check_Num
+        /// </summary>
+        public string GetCheckNum()
+        {
+            Random random = new Random();
+
+            // 生成兩個隨機數字
+            string checkNum1 = GetRandomNumber(random);
+            string checkNum2 = GetRandomNumber(random);
+
+            // 獲取當前的日期和時間
+            DateTime now = DateTime.Now;
+            string year = now.Year.ToString();
+            string month = (now.Month + 100).ToString("D2");
+            string day = (now.Day + 100).ToString("D2");
+            string hour = (now.Hour + 100).ToString("D2");
+            string minute = (now.Minute + 100).ToString("D2");
+            string second = (now.Second + 100).ToString("D2");
+
+            // 拼接各部分
+            string cknum = year + month + day + hour + minute + second + checkNum1 + checkNum2;
+
+            return cknum;
+        }
+
+        private static string GetRandomNumber(Random random)
+        {
+            // 生成範圍為 [100001, 199999] 的隨機數字
+            int number = random.Next(100001, 200000);
+            // 提取中間的 5 位數字
+            string numberString = number.ToString();
+            return numberString.Substring(1, 5);
+        }
+
+        public tbInfo GettbInfo(string IP,string U_num)
+        {
+            tbInfo tbInfo = new tbInfo();
+            tbInfo.add_date = DateTime.Now.ToString();
+            tbInfo.add_num = U_num;
+            tbInfo.add_ip = IP;
+            tbInfo.edit_date = null;
+            tbInfo.edit_num = null;
+            tbInfo.edit_ip = null;
+            tbInfo.del_date = null;
+            tbInfo.del_num = null;
+            tbInfo.del_ip = null;
+            tbInfo.del_tag = "0";
+            return tbInfo;  
         }
     }
 }

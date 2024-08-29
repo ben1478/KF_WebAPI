@@ -42,7 +42,7 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " it2.item_D_name AS FR_step_02_type_name,it3.item_D_name AS FR_step_03_type_name,";
                 T_SQL = T_SQL + " it4.item_D_name AS FR_step_HR_type_name,it5.item_D_name AS FR_step_01_sign_name,";
                 T_SQL = T_SQL + " it6.item_D_name AS FR_step_02_sign_name,it7.item_D_name AS FR_step_03_sign_name,";
-                T_SQL = T_SQL + " it8.item_D_name AS FR_step_HR_sign_name,it10.item_D_name AS FR_sign_type_name,fr.FR_note";
+                T_SQL = T_SQL + " it8.item_D_name AS FR_step_HR_sign_name,it10.item_D_name AS FR_sign_type_name,fr.FR_note,fr.FR_cancel";
                 T_SQL = T_SQL + " from Flow_rest fr";
                 T_SQL = T_SQL + " LEFT JOIN User_M um1 ON um1.U_num = fr.FR_U_num";
                 T_SQL = T_SQL + " LEFT JOIN Item_list it1 ON it1.item_M_code = 'Flow_step_type' AND it1.item_D_type = 'Y' AND it1.item_D_code = fr.FR_step_01_type AND it1.del_tag = '0'";
@@ -55,7 +55,7 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " LEFT JOIN Item_list it8 ON it8.item_M_code = 'Flow_sign_type' AND it8.item_D_type = 'Y' AND it8.item_D_code = fr.FR_step_HR_sign AND it8.del_tag = '0'";
                 T_SQL = T_SQL + " LEFT JOIN Item_list it9 ON it9.item_M_code = 'FR_kind' AND it9.item_D_type = 'Y' AND it9.item_D_code = fr.FR_kind AND it9.del_tag = '0'";
                 T_SQL = T_SQL + " LEFT JOIN Item_list it10 ON it10.item_M_code = 'Flow_sign_type' AND it10.item_D_type = 'Y' AND it10.item_D_code = fr.FR_sign_type AND it10.del_tag = '0'";
-                T_SQL = T_SQL + " where fr.del_tag = '0' AND fr.cancel_date IS NULL";
+                T_SQL = T_SQL + " where fr.del_tag = '0'";
                 #region 權限判定
                 //判斷是否 管理主管/人事助理/開發者 
                 var validRoles = new HashSet<string> { "1005", "1006", "1007", "1001" };
@@ -271,6 +271,94 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
+        /// 抓取特休資料 Flow_Rest_kind/Flow_rest_V201803_add.asp
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("GetHDay")]
+        public ActionResult<ResultClass<string>>GetHDay()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            var User_Num = HttpContext.Session.GetString("UserID");
+            DateTime BeginDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day, 0, 0, 0, 0);
+            try
+            {
+                var T_SQL = "select H_day_total,H_begin,H_end from User_Hday where del_tag = '0' and U_num=@U_num and H_begin <= @BeginDate order by H_begin desc";
+                var parameters = new List<SqlParameter>();
+                parameters.Add(new SqlParameter("@U_num", User_Num));
+                parameters.Add(new SqlParameter("@BeginDate", BeginDate));
+
+                ADOData _adoData = new ADOData();
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                //抓取特休資料
+                if (dtResult.Rows.Count > 0)
+                {
+                    User_Hday_res model = new User_Hday_res();
+                    if (dtResult.Rows.Count == 1)
+                    {
+                        DataRow row = dtResult.Rows[0];
+                        model.H_day_total_now = Convert.ToInt32(row["H_day_total"]);
+                        model.H_begin_now = Convert.ToDateTime(row["H_begin"]);
+                        model.H_end_now = Convert.ToDateTime(row["H_end"]);
+
+                        var T_SQL_1 = "select sum(case when fr.FR_kind='FRK005' AND FR_date_begin <= @FR_date_end_now AND FR_date_end >= @FR_date_begin_now then FR_total_hour else 0 end) as 'FR_kind_FRK005'";
+                        T_SQL_1 = T_SQL_1 + " FROM User_M u";
+                        T_SQL_1 = T_SQL_1 + " left join  Flow_rest fr on fr.FR_U_num=u.U_num AND fr.del_tag='0' AND fr.FR_sign_type in ('FSIGN001','FSIGN002') AND fr.FR_kind='FRK005' AND fr.FR_cancel='N'";
+                        T_SQL_1 = T_SQL_1 + " where u.del_tag='0' AND u.U_num=@U_num";
+                        var parameters1 = new List<SqlParameter>();
+                        parameters1.Add(new SqlParameter("@U_num", User_Num));
+                        parameters1.Add(new SqlParameter("@FR_date_begin_now", model.H_begin_now));
+                        parameters1.Add(new SqlParameter("@FR_date_end_now", model.H_end_now));
+
+                        DataTable dtResult1 = _adoData.ExecuteQuery(T_SQL_1, parameters1);
+                        DataRow row1 = dtResult1.Rows[0];
+                        model.FR_kind_FRK005_now= Convert.ToInt32(row1["FR_kind_FRK005"]);
+
+                        resultClass.ResultCode = "000";
+                        resultClass.objResult = JsonConvert.SerializeObject(model);
+                    }
+                    else
+                    {
+                        DataRow row = dtResult.Rows[0];
+                        DataRow row_last = dtResult.Rows[1];
+
+                        model.H_day_total_now = Convert.ToInt32(row["H_day_total"]);
+                        model.H_begin_now = Convert.ToDateTime(row["H_begin"]);
+                        model.H_end_now = Convert.ToDateTime(row["H_end"]);
+                        model.H_day_total_last = Convert.ToInt32(row_last["H_day_total"]);
+                        model.H_begin_last = Convert.ToDateTime(row_last["H_begin"]);
+                        model.H_end_last = Convert.ToDateTime(row_last["H_end"]);
+
+                        var T_SQL_1 = "select sum(case when fr.FR_kind='FRK005' AND FR_date_begin <= @FR_date_end_now AND FR_date_end >= @FR_date_begin_now then FR_total_hour else 0 end) as 'FR_kind_FRK005'";
+                        T_SQL_1 = T_SQL_1 + " ,sum(case when fr.FR_kind='FRK005' AND FR_date_begin <= @FR_date_end_last AND FR_date_end >= @FR_date_begin_last then FR_total_hour else 0 end) as 'FR_kind_FRK005_year'";
+                        T_SQL_1 = T_SQL_1 + " FROM User_M u";
+                        T_SQL_1 = T_SQL_1 + " left join  Flow_rest fr on fr.FR_U_num=u.U_num AND fr.del_tag='0' AND fr.FR_sign_type in ('FSIGN001','FSIGN002') AND fr.FR_kind='FRK005' AND fr.FR_cancel='N'";
+                        T_SQL_1 = T_SQL_1 + " where u.del_tag='0' AND u.U_num=@U_num";
+                        var parameters1 = new List<SqlParameter>();
+                        parameters1.Add(new SqlParameter("@U_num", User_Num));
+                        parameters1.Add(new SqlParameter("@FR_date_begin_now", model.H_begin_now));
+                        parameters1.Add(new SqlParameter("@FR_date_end_now", model.H_end_now));
+                        parameters1.Add(new SqlParameter("@FR_date_begin_last", model.H_begin_last));
+                        parameters1.Add(new SqlParameter("@FR_date_end_last", model.H_end_last));
+
+                        DataTable dtResult1 = _adoData.ExecuteQuery(T_SQL_1, parameters1);
+                        DataRow row1 = dtResult1.Rows[0];
+                        model.FR_kind_FRK005_now = Convert.ToInt32(row1["FR_kind_FRK005"]);
+                        model.FR_kind_FRK005_last = Convert.ToInt32(row1["FR_kind_FRK005_year"]);
+
+                        resultClass.ResultCode = "000";
+                        resultClass.objResult = JsonConvert.SerializeObject(model);
+                    }
+                }
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+            }
+        }
+        /// <summary>
         /// 員工名單抓取 Flow_Rest/select_user_one.asp
         /// </summary>
         /// <returns></returns>
@@ -310,7 +398,6 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass); // 返回 500 錯誤碼
             }
         }
-
         /// <summary>
         /// 請假單單筆新增-Flow_rest/Flow_rest_V201803_add.asp
         /// </summary>
@@ -321,11 +408,117 @@ namespace KF_WebAPI.Controllers
             ResultClass<string> resultClass = new ResultClass<string>();
 
             var User_Num = HttpContext.Session.GetString("UserID");
-            var roleNum = HttpContext.Session.GetString("Role_num");
-
+            
             try
             {
-                //單位主管跟直屬主管同一人時 直屬主管無須簽核
+                ADOData _adoData = new ADOData();
+                #region 特休天數檢查
+                if (model.FR_kind == "FRK005")
+                {
+                    DateTime BeginDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day, 0, 0, 0, 0);
+                    var T_SQL_Hay = "select H_day_total,H_begin,H_end from User_Hday where del_tag = '0' and U_num=@U_num and H_begin <= @BeginDate order by H_begin desc";
+                    var parameters_hay = new List<SqlParameter>();
+                    parameters_hay.Add(new SqlParameter("@U_num", User_Num));
+                    parameters_hay.Add(new SqlParameter("@BeginDate", BeginDate));
+
+                    DataTable dtResultHay = _adoData.ExecuteQuery(T_SQL_Hay, parameters_hay);
+                    DataRow rowhay = dtResultHay.Rows[0];
+
+                    var T_SQL_Hay_Imp = "select sum(case when fr.FR_kind='FRK005' AND FR_date_begin <= @FR_date_end_now AND FR_date_end >= @FR_date_begin_now then FR_total_hour else 0 end) as 'FR_kind_FRK005'";
+                    T_SQL_Hay_Imp = T_SQL_Hay_Imp + " FROM User_M u";
+                    T_SQL_Hay_Imp = T_SQL_Hay_Imp + " left join  Flow_rest fr on fr.FR_U_num=u.U_num AND fr.del_tag='0' AND fr.FR_sign_type in ('FSIGN001','FSIGN002') AND fr.FR_kind='FRK005' AND fr.FR_cancel='N'";
+                    T_SQL_Hay_Imp = T_SQL_Hay_Imp + " where u.del_tag='0' AND u.U_num=@U_num";
+                    var parameters_hay_imp = new List<SqlParameter>();
+                    parameters_hay_imp.Add(new SqlParameter("@U_num", User_Num));
+                    parameters_hay_imp.Add(new SqlParameter("@FR_date_begin_now", Convert.ToDateTime(rowhay["H_begin"])));
+                    parameters_hay_imp.Add(new SqlParameter("@FR_date_end_now", Convert.ToDateTime(rowhay["H_end"])));
+                    DataTable dtResultHayImp = _adoData.ExecuteQuery(T_SQL_Hay_Imp, parameters_hay_imp);
+                    DataRow rowhayimp = dtResultHayImp.Rows[0];
+
+                    var hay = Convert.ToInt32(rowhay["H_day_total"]) * 8;//可休時數
+                    var implement_hay = Convert.ToInt32(rowhayimp["FR_kind_FRK005"]);//已休時數
+                    decimal FR_total_hour = model.FR_total_hour;
+                    if ((hay - implement_hay) < FR_total_hour)
+                    {
+                        resultClass.ResultCode = "201";
+                        resultClass.ResultMsg = "特休時數不夠";
+                        return Ok(resultClass);
+                    }
+                }
+
+                #endregion
+
+                var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+                var Fun = new FuncHandler();
+                model.tbInfo= Fun.GettbInfo(clientIp, User_Num);
+
+                var T_SQL = "INSERT INTO Flow_Rest(FR_cknum,FR_version,FR_kind,FR_date_begin,FR_date_end,FR_total_hour,FR_note,FR_sign_type,";
+                T_SQL = T_SQL + " FR_cancel,FR_U_num,FR_step_now,FR_step_01_type,FR_step_01_num,FR_step_01_sign,FR_step_02_type,FR_step_02_num,";
+                T_SQL = T_SQL + " FR_step_02_sign,FR_step_03_type,FR_step_03_num,FR_step_03_sign,";
+                T_SQL = T_SQL + " FR_step_04_type,FR_step_04_sign,FR_step_05_type,FR_step_05_sign,";
+                T_SQL = T_SQL + " FR_step_HR_type,FR_step_HR_num,FR_step_HR_sign,add_date,add_num,add_ip,del_tag";
+                T_SQL = T_SQL + " VALUES ( @FR_cknum,@FR_version,@FR_kind,@FR_date_begin,@FR_date_end,@FR_total_hour,@FR_note,@FR_sign_type,";
+                T_SQL = T_SQL + " @FR_cancel,@FR_U_num,@FR_step_now,@FR_step_01_type,@FR_step_01_num,@FR_step_01_sign,@FR_step_02_type,";
+                T_SQL = T_SQL + " @FR_step_02_num,@FR_step_02_sign,@FR_step_03_type,@FR_step_03_num,@FR_step_03_sign,@FR_step_04_type,";
+                T_SQL = T_SQL + " @FR_step_04_sign,@FR_step_05_type,@FR_step_05_sign,@FR_step_HR_type,@FR_step_HR_num,@FR_step_HR_sign,";
+                T_SQL = T_SQL + " @add_date,@add_num,@add_ip,@del_tag";
+
+                var parameters = new List<SqlParameter>();
+                parameters.Add(new SqlParameter("@FR_cknum", Fun.GetCheckNum()));
+                parameters.Add(new SqlParameter("@FR_version", "V201803"));
+                parameters.Add(new SqlParameter("@FR_kind",model.FR_kind));
+                parameters.Add(new SqlParameter("@FR_date_begin",model.FR_date_begin));
+                parameters.Add(new SqlParameter("@FR_date_end",model.FR_date_end));
+                parameters.Add(new SqlParameter("@FR_total_hour", model.FR_total_hour));
+                parameters.Add(new SqlParameter("@FR_note",model.FR_note));
+                parameters.Add(new SqlParameter("@FR_sign_type", "FSIGN001"));
+                parameters.Add(new SqlParameter("@FR_cancel", "N"));
+                parameters.Add(new SqlParameter("@FR_U_num", User_Num));
+                //公出 FRK016 忘打卡 FRK017 無須代理人
+                if(model.FR_kind== "FRK016" || model.FR_kind== "FRK017")
+                {
+                    parameters.Add(new SqlParameter("@FR_step_now", "2"));
+                    parameters.Add(new SqlParameter("@FR_step_01_type", "FSTEP003"));
+                    parameters.Add(new SqlParameter("@FR_step_01_num",null));
+                    parameters.Add(new SqlParameter("@FR_step_HR_type", "FSTEP003"));
+                }
+                else
+                {
+                    parameters.Add(new SqlParameter("@FR_step_now", "1"));
+                    parameters.Add(new SqlParameter("@FR_step_01_type", model.FR_step_01_type));
+                    parameters.Add(new SqlParameter("@FR_step_01_num", model.FR_step_01_num));
+                    parameters.Add(new SqlParameter("@FR_step_HR_type", "FSTEP001"));
+                }
+                parameters.Add(new SqlParameter("@FR_step_01_sign", "FSIGN001"));
+                parameters.Add(new SqlParameter("@FR_step_02_type", "FSTEP001"));
+                parameters.Add(new SqlParameter("@FR_step_02_num", model.FR_step_02_num));
+                parameters.Add(new SqlParameter("@FR_step_02_sign", "FSTEP001"));
+                //超過3天要直屬主管簽核
+                if(model.FR_total_hour >= 24)
+                {
+                    parameters.Add(new SqlParameter("@FR_step_03_num", model.FR_step_03_num));
+                    parameters.Add(new SqlParameter("@FR_step_03_type", "FSTEP001"));
+                }
+                else
+                {
+                    parameters.Add(new SqlParameter("@FR_step_03_num", null));
+                    parameters.Add(new SqlParameter("@FR_step_03_type", "FSTEP003"));
+                }
+                parameters.Add(new SqlParameter("@FR_step_03_sign", "FSIGN001"));
+                parameters.Add(new SqlParameter("@FR_step_04_type", "FSTEP003"));
+                parameters.Add(new SqlParameter("@FR_step_04_sign", "FSIGN001"));
+                parameters.Add(new SqlParameter("@FR_step_05_type", "FSTEP003"));
+                parameters.Add(new SqlParameter("@FR_step_05_sign", "FSIGN001"));
+                parameters.Add(new SqlParameter("@FR_step_HR_num", ""));
+                parameters.Add(new SqlParameter("@FR_step_HR_sign", "FSIGN001"));
+                parameters.Add(new SqlParameter("@add_date", model.tbInfo.add_date));
+                parameters.Add(new SqlParameter("@add_num", model.tbInfo.add_num));
+                parameters.Add(new SqlParameter("@add_ip", model.tbInfo.add_ip));
+                parameters.Add(new SqlParameter("@del_tag", model.tbInfo.del_tag));
+
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+
+                resultClass.ResultCode = "000";
                 return Ok(resultClass);
             }
             catch (Exception ex)
@@ -379,7 +572,54 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass); // 返回 500 錯誤碼
             }
         }
-        
+        //請假單附加檔案下載ASP_UpLoad
+        //請假單附加檔案上傳ASP_UpLoad     
+        /// <summary>
+        /// 請假單刪除 Flow_Rest_Del/Flow_rest_list.asp
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("Flow_Rest_Del")]
+        public ActionResult<ResultClass<string>> Flow_Rest_Del(string fr_id)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            var User_Num = HttpContext.Session.GetString("UserID");
+
+            try
+            {
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+            }
+        }
+        /// <summary>
+        /// 請假單抽單 Flow_Rest_Cacnel/Flow_rest_list.asp
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("Flow_Rest_Cacnel")]
+        public ActionResult<ResultClass<string>> Flow_Rest_Cacnel(string fr_id)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            var User_Num = HttpContext.Session.GetString("UserID");
+
+            try
+            {
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+            }
+        }
+        //請假單簽核
+        #endregion
+        #region 使用者管理
+        //新增時需要新增User_Hday的資料 直接新增32筆
         #endregion
     }
 
