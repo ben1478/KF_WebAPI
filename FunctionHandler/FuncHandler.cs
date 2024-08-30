@@ -52,11 +52,11 @@ namespace KF_WebAPI.FunctionHandler
             // 獲取當前的日期和時間
             DateTime now = DateTime.Now;
             string year = now.Year.ToString();
-            string month = (now.Month + 100).ToString("D2");
-            string day = (now.Day + 100).ToString("D2");
-            string hour = (now.Hour + 100).ToString("D2");
-            string minute = (now.Minute + 100).ToString("D2");
-            string second = (now.Second + 100).ToString("D2");
+            string month = now.Month.ToString("D2");
+            string day = now.Day.ToString("D2");
+            string hour = now.Hour.ToString("D2");
+            string minute = now.Minute.ToString("D2");
+            string second = now.Second.ToString("D2");
 
             // 拼接各部分
             string cknum = year + month + day + hour + minute + second + checkNum1 + checkNum2;
@@ -73,20 +73,5 @@ namespace KF_WebAPI.FunctionHandler
             return numberString.Substring(1, 5);
         }
 
-        public tbInfo GettbInfo(string IP,string U_num)
-        {
-            tbInfo tbInfo = new tbInfo();
-            tbInfo.add_date = DateTime.Now.ToString();
-            tbInfo.add_num = U_num;
-            tbInfo.add_ip = IP;
-            tbInfo.edit_date = null;
-            tbInfo.edit_num = null;
-            tbInfo.edit_ip = null;
-            tbInfo.del_date = null;
-            tbInfo.del_num = null;
-            tbInfo.del_ip = null;
-            tbInfo.del_tag = "0";
-            return tbInfo;  
-        }
     }
 }

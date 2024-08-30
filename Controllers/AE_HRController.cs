@@ -275,7 +275,7 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("GetHDay")]
-        public ActionResult<ResultClass<string>>GetHDay()
+        public ActionResult<ResultClass<string>> GetHDay()
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -450,21 +450,21 @@ namespace KF_WebAPI.Controllers
 
                 var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
                 var Fun = new FuncHandler();
-                model.tbInfo= Fun.GettbInfo(clientIp, User_Num);
+                string CheckNum = Fun.GetCheckNum();
 
                 var T_SQL = "INSERT INTO Flow_Rest(FR_cknum,FR_version,FR_kind,FR_date_begin,FR_date_end,FR_total_hour,FR_note,FR_sign_type,";
                 T_SQL = T_SQL + " FR_cancel,FR_U_num,FR_step_now,FR_step_01_type,FR_step_01_num,FR_step_01_sign,FR_step_02_type,FR_step_02_num,";
                 T_SQL = T_SQL + " FR_step_02_sign,FR_step_03_type,FR_step_03_num,FR_step_03_sign,";
                 T_SQL = T_SQL + " FR_step_04_type,FR_step_04_sign,FR_step_05_type,FR_step_05_sign,";
-                T_SQL = T_SQL + " FR_step_HR_type,FR_step_HR_num,FR_step_HR_sign,add_date,add_num,add_ip,del_tag";
+                T_SQL = T_SQL + " FR_step_HR_type,FR_step_HR_num,FR_step_HR_sign,add_date,add_num,add_ip,del_tag )";
                 T_SQL = T_SQL + " VALUES ( @FR_cknum,@FR_version,@FR_kind,@FR_date_begin,@FR_date_end,@FR_total_hour,@FR_note,@FR_sign_type,";
                 T_SQL = T_SQL + " @FR_cancel,@FR_U_num,@FR_step_now,@FR_step_01_type,@FR_step_01_num,@FR_step_01_sign,@FR_step_02_type,";
                 T_SQL = T_SQL + " @FR_step_02_num,@FR_step_02_sign,@FR_step_03_type,@FR_step_03_num,@FR_step_03_sign,@FR_step_04_type,";
                 T_SQL = T_SQL + " @FR_step_04_sign,@FR_step_05_type,@FR_step_05_sign,@FR_step_HR_type,@FR_step_HR_num,@FR_step_HR_sign,";
-                T_SQL = T_SQL + " @add_date,@add_num,@add_ip,@del_tag";
+                T_SQL = T_SQL + " @add_date,@add_num,@add_ip,@del_tag )";
 
                 var parameters = new List<SqlParameter>();
-                parameters.Add(new SqlParameter("@FR_cknum", Fun.GetCheckNum()));
+                parameters.Add(new SqlParameter("@FR_cknum", CheckNum));
                 parameters.Add(new SqlParameter("@FR_version", "V201803"));
                 parameters.Add(new SqlParameter("@FR_kind",model.FR_kind));
                 parameters.Add(new SqlParameter("@FR_date_begin",model.FR_date_begin));
@@ -479,20 +479,20 @@ namespace KF_WebAPI.Controllers
                 {
                     parameters.Add(new SqlParameter("@FR_step_now", "2"));
                     parameters.Add(new SqlParameter("@FR_step_01_type", "FSTEP003"));
-                    parameters.Add(new SqlParameter("@FR_step_01_num",null));
+                    parameters.Add(new SqlParameter("@FR_step_01_num", DBNull.Value));
                     parameters.Add(new SqlParameter("@FR_step_HR_type", "FSTEP003"));
                 }
                 else
                 {
                     parameters.Add(new SqlParameter("@FR_step_now", "1"));
-                    parameters.Add(new SqlParameter("@FR_step_01_type", model.FR_step_01_type));
+                    parameters.Add(new SqlParameter("@FR_step_01_type", "FSTEP001"));
                     parameters.Add(new SqlParameter("@FR_step_01_num", model.FR_step_01_num));
                     parameters.Add(new SqlParameter("@FR_step_HR_type", "FSTEP001"));
                 }
                 parameters.Add(new SqlParameter("@FR_step_01_sign", "FSIGN001"));
                 parameters.Add(new SqlParameter("@FR_step_02_type", "FSTEP001"));
                 parameters.Add(new SqlParameter("@FR_step_02_num", model.FR_step_02_num));
-                parameters.Add(new SqlParameter("@FR_step_02_sign", "FSTEP001"));
+                parameters.Add(new SqlParameter("@FR_step_02_sign", "FSIGN001"));
                 //超過3天要直屬主管簽核
                 if(model.FR_total_hour >= 24)
                 {
@@ -501,7 +501,7 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
-                    parameters.Add(new SqlParameter("@FR_step_03_num", null));
+                    parameters.Add(new SqlParameter("@FR_step_03_num", DBNull.Value));
                     parameters.Add(new SqlParameter("@FR_step_03_type", "FSTEP003"));
                 }
                 parameters.Add(new SqlParameter("@FR_step_03_sign", "FSIGN001"));
@@ -511,15 +511,25 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@FR_step_05_sign", "FSIGN001"));
                 parameters.Add(new SqlParameter("@FR_step_HR_num", ""));
                 parameters.Add(new SqlParameter("@FR_step_HR_sign", "FSIGN001"));
-                parameters.Add(new SqlParameter("@add_date", model.tbInfo.add_date));
-                parameters.Add(new SqlParameter("@add_num", model.tbInfo.add_num));
-                parameters.Add(new SqlParameter("@add_ip", model.tbInfo.add_ip));
-                parameters.Add(new SqlParameter("@del_tag", model.tbInfo.del_tag));
+                parameters.Add(new SqlParameter("@add_date", DateTime.Now));
+                parameters.Add(new SqlParameter("@add_num", User_Num));
+                parameters.Add(new SqlParameter("@add_ip", clientIp));
+                parameters.Add(new SqlParameter("@del_tag", "0"));
 
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
 
-                resultClass.ResultCode = "000";
-                return Ok(resultClass);
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "201";
+                    resultClass.ResultMsg = "新增失敗";
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "新增成功";
+                    return Ok(resultClass);
+                }
             }
             catch (Exception ex)
             {
@@ -537,57 +547,65 @@ namespace KF_WebAPI.Controllers
             ResultClass<string> resultClass = new ResultClass<string>();
 
             var User_Num = HttpContext.Session.GetString("UserID");
-            var roleNum = HttpContext.Session.GetString("Role_num");
 
             try
             {
-                return Ok(resultClass);
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
-            }
-        }
-        /// <summary>
-        /// 請假單附加檔案查詢-Flow_rest/Flow_rest_list.asp
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
-        [HttpPost("Flow_Rest_UpLoad_Query")]
-        public ActionResult<ResultClass<string>> Flow_Rest_UpLoad_Query(Flow_rest model)
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
+                ADOData _adoData = new ADOData();
+                var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
 
-            var User_Num = HttpContext.Session.GetString("UserID");
-            var roleNum = HttpContext.Session.GetString("Role_num");
+                var T_SQL = "Update Flow_rest set FR_kind=@FR_kind,FR_date_begin=@FR_date_begin,FR_date_end=@FR_date_end,";
+                T_SQL = T_SQL + " FR_total_hour=@FR_total_hour,FR_note=@FR_note,FR_step_01_num=@FR_step_01_num,FR_step_02_num=@FR_step_02_num,";
+                T_SQL = T_SQL + " FR_step_03_num=@FR_step_03_num,edit_date=GETDATE(),edit_num=@edit_num,edit_ip=@IP";
+                T_SQL = T_SQL + " where FR_id=@FR_id";
 
-            try
-            {
-                return Ok(resultClass);
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
-            }
-        }
-        //請假單附加檔案下載ASP_UpLoad
-        //請假單附加檔案上傳ASP_UpLoad     
-        /// <summary>
-        /// 請假單刪除 Flow_Rest_Del/Flow_rest_list.asp
-        /// </summary>
-        /// <returns></returns>
-        [HttpPost("Flow_Rest_Del")]
-        public ActionResult<ResultClass<string>> Flow_Rest_Del(string fr_id)
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
+                var parameters = new List<SqlParameter>();
+                parameters.Add(new SqlParameter("@FR_kind", model.FR_kind));
+                parameters.Add(new SqlParameter("@FR_date_begin", model.FR_date_begin));
+                parameters.Add(new SqlParameter("@FR_date_end", model.FR_date_end));
+                parameters.Add(new SqlParameter("@FR_total_hour", model.FR_total_hour));
+                parameters.Add(new SqlParameter("@FR_note", model.FR_note));
+                if (model.FR_step_01_num == null)
+                {
+                    parameters.Add(new SqlParameter("@FR_step_01_num", DBNull.Value));
+                }
+                else
+                {
+                    parameters.Add(new SqlParameter("@FR_step_01_num", model.FR_step_01_num));
+                }
+                if (model.FR_step_02_num == null)
+                {
+                    parameters.Add(new SqlParameter("@FR_step_02_num", DBNull.Value));
+                }
+                else
+                {
+                    parameters.Add(new SqlParameter("@FR_step_02_num", model.FR_step_02_num));
+                }
+                if (model.FR_step_03_num == null)
+                {
+                    parameters.Add(new SqlParameter("@FR_step_03_num", DBNull.Value));
+                }
+                else
+                {
+                    parameters.Add(new SqlParameter("@FR_step_03_num", model.FR_step_03_num));
+                }
+                parameters.Add(new SqlParameter("@edit_num", User_Num));
+                parameters.Add(new SqlParameter("@IP", clientIp));
+                parameters.Add(new SqlParameter("@FR_id", model.FR_id));
 
-            var User_Num = HttpContext.Session.GetString("UserID");
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
 
-            try
-            {
-                return Ok(resultClass);
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "201";
+                    resultClass.ResultMsg = "異動失敗";
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "異動成功";
+                    return Ok(resultClass);
+                }
             }
             catch (Exception ex)
             {
@@ -608,7 +626,73 @@ namespace KF_WebAPI.Controllers
 
             try
             {
-                return Ok(resultClass);
+                ADOData _adoData = new ADOData();
+                var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+                var Fun = new FuncHandler();
+
+                var T_SQL = "Update Flow_rest set FR_cancel='Y',cancel_date=GETDATE(),cancel_num=@User_Num,cancel_ip=@IP where FR_id=@FR_id";
+                var parameters = new List<SqlParameter>();
+                parameters.Add(new SqlParameter("@User_Num", User_Num));
+                parameters.Add(new SqlParameter("@IP", clientIp));
+                parameters.Add(new SqlParameter("@FR_id", fr_id));
+
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "201";
+                    resultClass.ResultMsg = "取消失敗";
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "取消成功";
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+            }
+        }
+        /// <summary>
+        /// 請假單刪除 Flow_Rest_Del/Flow_rest_list.asp
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("Flow_Rest_Del")]
+        public ActionResult<ResultClass<string>> Flow_Rest_Del(string fr_id)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            var User_Num = HttpContext.Session.GetString("UserID");
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+                var T_SQL = "Update Flow_rest set del_tag='1',del_date=GETDATE(),del_num=@User_Num,cancel_ip=@IP where FR_id=@FR_id";
+                var parameters = new List<SqlParameter>();
+                parameters.Add(new SqlParameter("@User_Num", User_Num));
+                parameters.Add(new SqlParameter("@IP",clientIp));
+                parameters.Add(new SqlParameter("@FR_id", fr_id));
+
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "201";
+                    resultClass.ResultMsg = "刪除失敗";
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "刪除成功";
+                    return Ok(resultClass);
+                }
+                
             }
             catch (Exception ex)
             {
@@ -618,6 +702,7 @@ namespace KF_WebAPI.Controllers
         }
         //請假單簽核
         #endregion
+
         #region 使用者管理
         //新增時需要新增User_Hday的資料 直接新增32筆
         #endregion
