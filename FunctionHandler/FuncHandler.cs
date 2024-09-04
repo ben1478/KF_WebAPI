@@ -1,5 +1,7 @@
 ﻿using KF_WebAPI.BaseClass;
+using OfficeOpenXml;
 using System.Data;
+using System.Reflection;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -71,6 +73,47 @@ namespace KF_WebAPI.FunctionHandler
             // 提取中間的 5 位數字
             string numberString = number.ToString();
             return numberString.Substring(1, 5);
+        }
+
+        public static byte[] ExportToExcel<T>(List<T> items, Dictionary<string, string> headers)
+        {
+            if (items == null || items.Count == 0)
+            {
+                throw new ArgumentException("The list cannot be null or empty.", nameof(items));
+            }
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add(typeof(T).Name);
+                var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                // 添加表頭
+                worksheet.Cells[1, 1].Value = "序號"; 
+                for (int i = 0; i < properties.Length; i++)
+                {
+                    var propertyName = properties[i].Name;
+                    if (headers.TryGetValue(propertyName, out var header))
+                    {
+                        worksheet.Cells[1, i + 2].Value = header; 
+                    }
+                    else
+                    {
+                        worksheet.Cells[1, i + 2].Value = propertyName; 
+                    }
+                }
+                // 添加表身
+                for (int i = 0; i < items.Count; i++)
+                {
+                    var item = items[i];
+                    worksheet.Cells[i + 2, 1].Value = i + 1; 
+                    for (int j = 0; j < properties.Length; j++)
+                    {
+                        var value = properties[j].GetValue(item);
+                        worksheet.Cells[i + 2, j + 2].Value = value?.ToString(); 
+                    }
+                }
+
+                return package.GetAsByteArray();
+            }
         }
 
     }

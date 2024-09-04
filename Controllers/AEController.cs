@@ -108,7 +108,7 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
-                var T_SQL = "select upload_id,upload_name_show,add_date from ASP_UpLoad where cknum=@cknum";
+                var T_SQL = "select upload_id,upload_name_show,add_date,del_tag from ASP_UpLoad where cknum=@cknum";
                 var parameters = new List<SqlParameter>();
                 parameters.Add(new SqlParameter("@cknum", cknum));
 
@@ -243,7 +243,45 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-        ///上傳檔案刪除
+        [HttpPost("ASP_File_Del")]
+        public ActionResult<ResultClass<string>> ASP_File_Del(string upload_id)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                var T_SQL = "Update ASP_UpLoad set del_tag=@del_tag,del_date=@del_date,del_ip=@del_ip,del_num=@del_num where upload_id=@upload_id";
+                var parameters = new List<SqlParameter>();
+                parameters.Add(new SqlParameter("@del_tag", "1"));
+                parameters.Add(new SqlParameter("@del_date", DateTime.Now));
+                parameters.Add(new SqlParameter("@del_ip", clientIp));
+                parameters.Add(new SqlParameter("@del_num", User_Num));
+                parameters.Add(new SqlParameter("@upload_id", upload_id));
+
+                ADOData _adoData = new ADOData();
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "201";
+                    resultClass.ResultMsg = "刪除失敗";
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "刪除成功";
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+            }
+        }
     }
 
 }

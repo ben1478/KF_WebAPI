@@ -60,6 +60,7 @@ namespace KF_WebAPI.BaseClass.AE
         public string? U_BC { get; set; }    
         public string? FR_sign_type { get;set; }
         public string? FR_kind { get; set; }
+        public string? Rest_Num { get; set; }
     }
 
 }

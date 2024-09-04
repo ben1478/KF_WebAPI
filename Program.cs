@@ -1,11 +1,13 @@
 using KF_WebAPI.Controllers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
+using OfficeOpenXml;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+// 設定 EPPlus 授權上下文
+ExcelPackage.LicenseContext = LicenseContext.Commercial;
 // Add services to the container.
 
 builder.Services.AddControllers();
