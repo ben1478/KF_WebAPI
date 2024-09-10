@@ -51,4 +51,30 @@
         public string? School_Major { get; set; }
 
     }
+
+    public class Uesr_M_req
+    {
+        public int page { get; set; }
+        public string? U_Num_Name { get; set; }
+        public string? U_BC { get;set; }
+        public string? Job_Status { get;set; }
+        public string? U_Role { get;set; }
+    }
+
+    public class User_M_res
+    {
+        public string? U_BC_name { get; set; }
+        public string? U_PFT_name { get; set; }
+        public string? U_agent_name { get; set; }
+        public string? U_num { get; set; }
+        public string? del_tag { get; set; }
+        public string? U_leader_1_name { get; set; }
+        public string? U_leader_2_name { get; set; }
+        public string? U_leader_3_name { get; set; }
+        public string? R_name { get; set; }
+        public string? U_Check_BC { get; set; }
+        public string? U_Check_BC_Name { get; set; }
+        public int? U_BC_sort { get; set; }
+        public int? U_PFT_sort { get; set; }
+    }
 }

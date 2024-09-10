@@ -8,9 +8,8 @@ namespace KF_WebAPI.FunctionHandler
     public class FuncHandler
     {
         /// <summary>
-        /// 分頁
+        /// DataTable分頁
         /// </summary>
-        /// <returns></returns>
         public static DataTable GetPage(DataTable dt, int page, int pageSize)
         {
             if (dt == null || dt.Rows.Count == 0 || page <= 0 || pageSize <= 0)
@@ -39,6 +38,25 @@ namespace KF_WebAPI.FunctionHandler
             }
 
             return pageTable;
+        }
+        /// <summary>
+        /// List分頁
+        /// </summary>
+        public static List<T> GetPagedList<T>(List<T> list, int pageNumber, int pageSize)
+        {
+            int totalItems = list.Count;
+
+            int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            if (pageNumber < 1 || pageNumber > totalPages)
+            {
+                throw new ArgumentOutOfRangeException(nameof(pageNumber), "Page number is out of range.");
+            }
+
+            int skip = (pageNumber - 1) * pageSize;
+            int take = pageSize;
+
+            return list.Skip(skip).Take(take).ToList();
         }
         /// <summary>
         /// 獲得Check_Num

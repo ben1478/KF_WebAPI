@@ -8,8 +8,8 @@
         public string? U_num { get; set; }
         public string? H_year_count { get; set; }
         public string? H_year_count_note { get; set; }
-        public DateTime? H_begin { get; set; }
-        public DateTime? H_end { get; set; }
+        public DateTime H_begin { get; set; }
+        public DateTime H_end { get; set; }
         public decimal? H_day_base { get; set; }
         public decimal? H_day_adjust { get; set; }
         public string? H_day_adjust_note { get; set; }
@@ -33,5 +33,13 @@
         /// 前年度特休時數
         /// </summary>
         public decimal? FR_kind_FRK005_last { get; set; }
+    }
+
+    public class User_Hday_req
+    {
+        public int page { get; set; }
+        public string? U_Num_Name { get; set; }
+        public string? U_BC { get; set; }
+        public string? Job_Status { get; set; }
     }
 }

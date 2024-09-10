@@ -282,6 +282,153 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass); // 返回 500 錯誤碼
             }
         }
+
+        /// <summary>
+        /// 提供所有分公司清單 item_M_code='branch_company'
+        /// </summary>
+        [HttpGet("Get_BC_List")]
+        public ActionResult<ResultClass<string>> Get_BC_List()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code='branch_company' and item_D_type='Y' and show_tag ='0'";
+                #endregion
+                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultMsg = ex.Message;
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 提供所有學歷 item_M_code = 'school_level'
+        /// </summary>
+        /// [HttpGet("Get_School_level")]
+        [HttpGet("Get_School_level")]
+        public ActionResult<ResultClass<string>> Get_School_level()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code = 'school_level' AND item_D_type='Y' AND show_tag='0' AND del_tag='0' order by item_sort";
+                #endregion
+
+                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        ///提供所有職稱
+        /// </summary>
+        [HttpGet("Get_Title_List")]
+        public ActionResult<ResultClass<string>> Get_Title_List()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code='professional_title' and item_D_type='Y' and show_tag ='0'";
+                #endregion
+                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultMsg = ex.Message;
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 提供所有角色 select R_num,R_name from Role_M
+        /// </summary>
+        [HttpGet("Get_Role_Professional")]
+        public ActionResult<ResultClass<string>> Get_Role_Professional()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                #region SQL
+                ADOData _adoData = new ADOData();
+                var T_SQL = "select R_num,R_name from Role_M where del_tag = 0 order by r_id";
+                #endregion
+
+                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+            }
+
+        }
     }
 
 }
