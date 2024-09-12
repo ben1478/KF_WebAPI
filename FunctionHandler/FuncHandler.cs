@@ -1,6 +1,7 @@
 ﻿using KF_WebAPI.BaseClass;
 using OfficeOpenXml;
 using System.Data;
+using System.Data.SqlClient;
 using System.Reflection;
 
 namespace KF_WebAPI.FunctionHandler
@@ -132,6 +133,57 @@ namespace KF_WebAPI.FunctionHandler
 
                 return package.GetAsByteArray();
             }
+        }
+
+        public static SpecialClass CheckSpecial(string[] strings,string U_num)
+        {
+            SpecialClass sc=new SpecialClass();
+            sc.special_check = "N";
+            sc.BC_Strings = "zz";
+            ADOData _adoData = new ADOData();
+
+            foreach (string s in strings)
+            {
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "Select SP_type from Special_set Where U_num = @U_num AND SP_id = @SP_id AND del_tag='0'";
+                parameters.Add(new SqlParameter("@U_num", U_num));
+                parameters.Add(new SqlParameter("@SP_id", s));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    DataRow row = dtResult.Rows[0];
+                    string spType = row["SP_type"].ToString();
+                    if (spType == "1")
+                    {
+                        sc.special_check = "Y";
+                        switch (s)
+                        {
+                            case "7020":
+                                sc.BC_Strings = sc.BC_Strings + ",BC0100";
+                                break;
+                            case "7021":
+                                sc.BC_Strings = sc.BC_Strings + ",BC0200";
+                                break;
+                            case "7022":
+                                sc.BC_Strings = sc.BC_Strings + ",BC0600";
+                                break;
+                            case "7023":
+                                sc.BC_Strings = sc.BC_Strings + ",BC0300";
+                                break;
+                            case "7024":
+                                sc.BC_Strings = sc.BC_Strings + ",BC0500";
+                                break;
+                            case "7025":
+                                sc.BC_Strings = sc.BC_Strings + ",BC0400";
+                                break;
+                        }
+                    }
+                    
+                }
+            }
+            return sc;
         }
 
     }

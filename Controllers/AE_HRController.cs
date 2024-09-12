@@ -409,6 +409,7 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " LEFT JOIN Item_list bc ON bc.item_M_code = 'branch_company'  AND bc.item_D_code = um.U_BC AND bc.item_D_type = 'Y' AND bc.show_tag = '0' AND bc.del_tag = '0'";
                 T_SQL = T_SQL + " LEFT JOIN Item_list pft ON pft.item_M_code = 'professional_title' AND pft.item_D_code = um.U_PFT AND pft.item_D_type = 'Y' AND pft.show_tag = '0' AND pft.del_tag = '0'";
                 T_SQL = T_SQL + " WHERE um.del_tag = '0' AND bc.item_D_name is not null AND U_num <> 'AA999'";
+                T_SQL = T_SQL + " AND ( U_leave_date is null OR U_leave_date >= GETDATE() )";
                 T_SQL = T_SQL + " ORDER BY bc.item_sort,pft.item_sort;";
                 #endregion
 
@@ -1096,8 +1097,8 @@ namespace KF_WebAPI.Controllers
 
                 #region 3.資料處理
                 #region SQL
-                var T_SQL_DEL = "delete attendance where yyyymm=@yyyymm";
                 var parameters_DEL = new List<SqlParameter>();
+                var T_SQL_DEL = "delete attendance where yyyymm=@yyyymm";
                 parameters_DEL.Add(new SqlParameter("@yyyymm", yyyymm));
                 #endregion
                 int Result = _adoData.ExecuteNonQuery(T_SQL_DEL, parameters_DEL);
@@ -1109,9 +1110,9 @@ namespace KF_WebAPI.Controllers
                 foreach (var item in attendances)
                 {
                     #region SQL
+                    var parameters_IN = new List<SqlParameter>();
                     var T_SQL_IN = "Insert into attendance (user_name,userID,yyyymm,user_apart,attendance_date,work_time,getoffwork_time,inputdate,user_num)";
                     T_SQL_IN = T_SQL_IN + "Values (@user_name,@userID,@yyyymm,@user_apart,@attendance_date,@work_time,@getoffwork_time,@inputdate,@user_num)";
-                    var parameters_IN = new List<SqlParameter>();
                     parameters_IN.Add(new SqlParameter("@user_name", item.user_name));
                     parameters_IN.Add(new SqlParameter("@userID", item.userID));
                     parameters_IN.Add(new SqlParameter("@yyyymm", item.yyyymm));
@@ -1264,6 +1265,7 @@ namespace KF_WebAPI.Controllers
                     foreach (var item in modellist_c)
                     {
                         #region SQL
+                        var parameters_d = new List<SqlParameter>();
                         var T_SQL_d = "SELECT '假別:' + il1.item_D_name + ';' + CONVERT(VARCHAR, fr.FR_date_begin, 111) + '~' +";
                         T_SQL_d = T_SQL_d + " CONVERT(VARCHAR, fr.FR_date_end, 111) + '狀態:' + ";
                         T_SQL_d = T_SQL_d + " CASE WHEN fr.FR_step_now = 1 THEN '代理人-' + COALESCE(um1.U_name, '')";
@@ -1281,8 +1283,7 @@ namespace KF_WebAPI.Controllers
                         T_SQL_d = T_SQL_d + " LEFT JOIN Item_list il2 ON fr.FR_sign_type = il2.item_D_code ";
                         T_SQL_d = T_SQL_d + " AND il2.item_M_code = 'Flow_sign_type' AND il2.item_D_type = 'Y' AND il2.del_tag = '0'";
                         T_SQL_d = T_SQL_d + " WHERE fr.del_tag = '0' AND fr.FR_cancel <> 'Y' AND fr.FR_U_num = @FR_U_num AND CONVERT(VARCHAR, fr.FR_date_begin, 111) = @Date";
-
-                        var parameters_d = new List<SqlParameter>();
+                       
                         parameters_d.Add(new SqlParameter("@FR_U_num", User_Num));
                         parameters_d.Add(new SqlParameter("@Date", item.attendance_date));
                         #endregion
@@ -1326,6 +1327,7 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
+                var parameters = new List<SqlParameter>();
                 var T_SQL = "SELECT U.U_Na,[userID],U_name [user_name],@yyyy + ad.[attendance_date] attendance_date,[work_time],";
                 T_SQL = T_SQL + " case When isnull([work_time], '') = '' then 0 When [work_time] > '09:00' then DATEDIFF(MINUTE, '09:00', [work_time]) else 0 end Late,";
                 T_SQL = T_SQL + " case When isnull([work_time], '') = '' then '未刷卡' When [work_time] > '09:00' then case when isnull(U_num_NL, 'N') = 'N' then '遲到'  else '' end else '' end work_status,";
@@ -1369,7 +1371,7 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " AND userID = @userID AND yyyymm = @yyyymm order by";
                 T_SQL = T_SQL + " u_BC,userID,attendance_date";
 
-                var parameters = new List<SqlParameter>();
+                
                 var YYYY = (model.yyyymm).Substring(0, 4) + "/";
                 parameters.Add(new SqlParameter("@yyyy", YYYY));
                 parameters.Add(new SqlParameter("@userID", User_Num));
@@ -1399,6 +1401,7 @@ namespace KF_WebAPI.Controllers
                     foreach (var item in modellist_d)
                     {
                         #region SQL
+                        var parameters_d = new List<SqlParameter>();
                         var T_SQL_d = "SELECT '假別:' + il1.item_D_name + ';' + CONVERT(VARCHAR, fr.FR_date_begin, 111) + '~' +";
                         T_SQL_d = T_SQL_d + " CONVERT(VARCHAR, fr.FR_date_end, 111) + '狀態:' + ";
                         T_SQL_d = T_SQL_d + " CASE WHEN fr.FR_step_now = 1 THEN '代理人-' + COALESCE(um1.U_name, '')";
@@ -1417,7 +1420,7 @@ namespace KF_WebAPI.Controllers
                         T_SQL_d = T_SQL_d + " AND il2.item_M_code = 'Flow_sign_type' AND il2.item_D_type = 'Y' AND il2.del_tag = '0'";
                         T_SQL_d = T_SQL_d + " WHERE fr.del_tag = '0' AND fr.FR_cancel <> 'Y' AND fr.FR_U_num = @FR_U_num AND CONVERT(VARCHAR, fr.FR_date_begin, 111) = @Date";
 
-                        var parameters_d = new List<SqlParameter>();
+                        
                         parameters_d.Add(new SqlParameter("@FR_U_num", User_Num));
                         parameters_d.Add(new SqlParameter("@Date", item.attendance_date));
                         #endregion
@@ -1581,6 +1584,7 @@ namespace KF_WebAPI.Controllers
                     foreach (var item in modellist_c)
                     {
                         #region SQL
+                        var parameters_d = new List<SqlParameter>();
                         var T_SQL_d = "SELECT '假別:' + il1.item_D_name + ';' + CONVERT(VARCHAR, fr.FR_date_begin, 111) + '~' +";
                         T_SQL_d = T_SQL_d + " CONVERT(VARCHAR, fr.FR_date_end, 111) + '狀態:' + ";
                         T_SQL_d = T_SQL_d + " CASE WHEN fr.FR_step_now = 1 THEN '代理人-' + COALESCE(um1.U_name, '')";
@@ -1598,8 +1602,7 @@ namespace KF_WebAPI.Controllers
                         T_SQL_d = T_SQL_d + " LEFT JOIN Item_list il2 ON fr.FR_sign_type = il2.item_D_code ";
                         T_SQL_d = T_SQL_d + " AND il2.item_M_code = 'Flow_sign_type' AND il2.item_D_type = 'Y' AND il2.del_tag = '0'";
                         T_SQL_d = T_SQL_d + " WHERE fr.del_tag = '0' AND fr.FR_cancel <> 'Y' AND fr.FR_U_num = @FR_U_num AND CONVERT(VARCHAR, fr.FR_date_begin, 111) = @Date";
-
-                        var parameters_d = new List<SqlParameter>();
+                        
                         parameters_d.Add(new SqlParameter("@FR_U_num", item.userID));
                         parameters_d.Add(new SqlParameter("@Date", item.attendance_date));
                         #endregion
@@ -1729,6 +1732,7 @@ namespace KF_WebAPI.Controllers
                     foreach (var item in modellist_d)
                     {
                         #region SQL
+                        var parameters_d = new List<SqlParameter>();
                         var T_SQL_d = "SELECT '假別:' + il1.item_D_name + ';' + CONVERT(VARCHAR, fr.FR_date_begin, 111) + '~' +";
                         T_SQL_d = T_SQL_d + " CONVERT(VARCHAR, fr.FR_date_end, 111) + '狀態:' + ";
                         T_SQL_d = T_SQL_d + " CASE WHEN fr.FR_step_now = 1 THEN '代理人-' + COALESCE(um1.U_name, '')";
@@ -1747,7 +1751,6 @@ namespace KF_WebAPI.Controllers
                         T_SQL_d = T_SQL_d + " AND il2.item_M_code = 'Flow_sign_type' AND il2.item_D_type = 'Y' AND il2.del_tag = '0'";
                         T_SQL_d = T_SQL_d + " WHERE fr.del_tag = '0' AND fr.FR_cancel <> 'Y' AND fr.FR_U_num = @FR_U_num AND CONVERT(VARCHAR, fr.FR_date_begin, 111) = @Date";
 
-                        var parameters_d = new List<SqlParameter>();
                         parameters_d.Add(new SqlParameter("@FR_U_num", item.userID));
                         parameters_d.Add(new SqlParameter("@Date", item.attendance_date));
                         #endregion
@@ -2174,6 +2177,7 @@ namespace KF_WebAPI.Controllers
                 #endregion
 
                 #region SQL
+                var parameters = new List<SqlParameter>();
                 var T_SQL = "Insert into User_M ( add_num,add_date,add_ip,U_cknum,U_num,U_name,U_Ename,U_Birthday,U_sex,Marriage,Children,U_PID,Military,Military_SDate,";
                 T_SQL = T_SQL + " Military_EDate,Military_Exemption,License_Car,Self_Car,License_Motorcycle,Self_Motorcycle,";
                 T_SQL = T_SQL + " U_Tel,U_MTel,U_Email,Emergency_contact,Emergency_Tel,Emergency_MTel,School_Level,School_Name,";
@@ -2184,7 +2188,7 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " @License_Motorcycle,@Self_Motorcycle,@U_Tel,@U_MTel,@U_Email,@Emergency_contact,@Emergency_Tel,";
                 T_SQL = T_SQL + " @Emergency_MTel,@School_Level,@School_Name,@School_SDate,@School_EDate,@School_Graduated,@School_D_N,";
                 T_SQL = T_SQL + " @School_Major,@U_BC,@U_PFT,@Role_num,@U_agent_num,@U_leader_1_num,@U_leader_2_num,@U_leader_3_num,@U_Check_BC,@U_address_live,@U_arrive_date,@U_leave_date )";
-                var parameters = new List<SqlParameter>();
+               
                 parameters.Add(new SqlParameter("@add_num", User_Num));
                 parameters.Add(new SqlParameter("@add_date",DateTime.Now));
                 parameters.Add(new SqlParameter("@add_ip", clientIp));
