@@ -56,7 +56,7 @@ namespace KF_WebAPI.BaseClass
     {
         public string BC_Strings { get; set; }
         public string special_check { get; set; }
-
+        public string U_num { get; set; }
     }
 
 

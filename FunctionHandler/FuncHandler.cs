@@ -140,6 +140,7 @@ namespace KF_WebAPI.FunctionHandler
             SpecialClass sc=new SpecialClass();
             sc.special_check = "N";
             sc.BC_Strings = "zz";
+            sc.U_num = U_num;   
             ADOData _adoData = new ADOData();
 
             foreach (string s in strings)
