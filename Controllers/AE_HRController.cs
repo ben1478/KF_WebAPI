@@ -106,18 +106,8 @@ namespace KF_WebAPI.Controllers
                 //外出,忘打卡等查詢
                 if (!string.IsNullOrEmpty(model.FR_kind))
                 {
-                    // 分割 FR_kind，處理每個項目
-                    var frKinds = model.FR_kind.Split(',').Distinct().ToList();
-
-                    // 生成參數化的查詢部分
-                    var parameterNames = frKinds.Select((k, i) => $"@FR_kind_{i}").ToList();
-                    T_SQL = T_SQL + $" AND fr.FR_kind IN ({string.Join(", ", parameterNames)})";
-
-                    // 添加參數到 SqlParameter 集合中
-                    for (int i = 0; i < frKinds.Count; i++)
-                    {
-                        parameters.Add(new SqlParameter($"@FR_kind_{i}", frKinds[i]));
-                    }
+                    T_SQL = T_SQL + " AND fr.FR_kind IN (SELECT SplitValue FROM dbo.SplitStringFunction(@FR_kind))";
+                    parameters.Add(new SqlParameter("@FR_kind", model.FR_kind));
                 }
                 //請假人員
                 if (!string.IsNullOrEmpty(model.Rest_Num))
@@ -261,11 +251,11 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// 請假類別 Flow_Rest_kind/Flow_rest_V201803_add.asp
+        /// 請假類別 GetFlowRestkindList/Flow_rest_V201803_add.asp
         /// </summary>
         /// <returns></returns>
-        [HttpGet("Flow_Rest_kind")]
-        public ActionResult<ResultClass<string>> Flow_Rest_kind()
+        [HttpGet("GetFlowRestkindList")]
+        public ActionResult<ResultClass<string>> GetFlowRestkindList()
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
@@ -297,10 +287,10 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// 抓取特休資料 Flow_Rest_kind/Flow_rest_V201803_add.asp
+        /// 抓取特休資料 GetHDayList/Flow_rest_V201803_add.asp
         /// <summary>
-        [HttpGet("GetHDay")]
-        public ActionResult<ResultClass<string>> GetHDay()
+        [HttpGet("GetHDayList")]
+        public ActionResult<ResultClass<string>> GetHDayList()
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -395,8 +385,8 @@ namespace KF_WebAPI.Controllers
         /// 員工名單抓取 Flow_Rest/select_user_one.asp
         /// </summary>
         /// <returns></returns>
-        [HttpGet("GetUserMenu")]
-        public ActionResult<ResultClass<string>> GetUserMenu() 
+        [HttpGet("GetUserMenuList")]
+        public ActionResult<ResultClass<string>> GetUserMenuList() 
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -860,11 +850,11 @@ namespace KF_WebAPI.Controllers
 
         #region 請假單查詢
         /// <summary>
-        /// 請假單查詢 Flow_rest_list_search/Flow_rest_list_search.asp
+        /// 請假單查詢 Flow_rest_list_Query/Flow_rest_list_search.asp
         /// </summary>
         /// <returns></returns>
-        [HttpPost("Flow_rest_list_search")]
-        public ActionResult<ResultClass<string>> Flow_rest_list_search(Flow_rest_req model)
+        [HttpPost("Flow_rest_list_Query")]
+        public ActionResult<ResultClass<string>> Flow_rest_list_Query(Flow_rest_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -1145,10 +1135,10 @@ namespace KF_WebAPI.Controllers
 
         #region 個人出勤紀錄
         /// <summary>
-        /// 個人出勤紀錄年月範圍 Attendance_Query/Attendance_report.asp?Self=Y
+        /// 個人出勤紀錄年月範圍 AttendanceYYYYMMList/Attendance_report.asp?Self=Y
         /// </summary>
-        [HttpGet("Attendance_YYYYMM")]
-        public ActionResult<ResultClass<string>> Attendance_YYYYMM()
+        [HttpGet("AttendanceYYYYMMList")]
+        public ActionResult<ResultClass<string>> AttendanceYYYYMMList()
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2448,10 +2438,10 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
-        /// 取得或新增年假管理資料 User_Hday_List/User_Hday_edit.asp
+        /// 取得或新增年假管理資料 User_Hday_List_Change/User_Hday_edit.asp
         /// </summary>
-        [HttpPost("User_Hday_List")]
-        public ActionResult<ResultClass<string>> User_Hday_List(string U_num,DateTime Arrive_Date)
+        [HttpPost("User_Hday_List_Change")]
+        public ActionResult<ResultClass<string>> User_Hday_List_Change(string U_num,DateTime Arrive_Date)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
@@ -2809,10 +2799,10 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
-        /// 修改年假管理資料 User_Hday_Change/User_Hday_edit.asp
+        /// 修改年假管理資料 User_Hday_Upd/User_Hday_edit.asp
         /// </summary>
-        [HttpPost("User_Hday_Change")]
-        public ActionResult<ResultClass<string>> User_Hday_Change(List<User_Hday> Modellist)
+        [HttpPost("User_Hday_Upd")]
+        public ActionResult<ResultClass<string>> User_Hday_Upd(List<User_Hday> Modellist)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");

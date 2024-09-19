@@ -286,8 +286,8 @@ namespace KF_WebAPI.Controllers
         /// <summary>
         /// 提供所有分公司清單 item_M_code='branch_company'
         /// </summary>
-        [HttpGet("Get_BC_List")]
-        public ActionResult<ResultClass<string>> Get_BC_List()
+        [HttpGet("GetBCList")]
+        public ActionResult<ResultClass<string>> GetBCList()
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -323,8 +323,8 @@ namespace KF_WebAPI.Controllers
         /// 提供所有學歷 item_M_code = 'school_level'
         /// </summary>
         /// [HttpGet("Get_School_level")]
-        [HttpGet("Get_School_level")]
-        public ActionResult<ResultClass<string>> Get_School_level()
+        [HttpGet("GetSchoolLevelList")]
+        public ActionResult<ResultClass<string>> GetSchoolLevelList()
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -360,8 +360,8 @@ namespace KF_WebAPI.Controllers
         /// <summary>
         ///提供所有職稱
         /// </summary>
-        [HttpGet("Get_Title_List")]
-        public ActionResult<ResultClass<string>> Get_Title_List()
+        [HttpGet("GetTitleList")]
+        public ActionResult<ResultClass<string>> GetTitleList()
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -396,8 +396,8 @@ namespace KF_WebAPI.Controllers
         /// <summary>
         /// 提供所有角色 select R_num,R_name from Role_M
         /// </summary>
-        [HttpGet("Get_Role_Professional")]
-        public ActionResult<ResultClass<string>> Get_Role_Professional()
+        [HttpGet("GetRoleProfessionalList")]
+        public ActionResult<ResultClass<string>> GetRoleProfessionalList()
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 

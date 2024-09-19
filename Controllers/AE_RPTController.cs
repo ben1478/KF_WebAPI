@@ -4,6 +4,7 @@ using KF_WebAPI.FunctionHandler;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing.Drawing2D;
@@ -41,11 +42,11 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
-        /// 提供業務名單資料(當show_more_type='Y') GetTeamUsers/select_team_more.asp
+        /// 提供業務名單資料(當show_more_type='Y') GetTeamUsersList/select_team_more.asp
         /// </summary>
         /// <returns></returns>
-        [HttpGet("GetTeamUsers")]
-        public ActionResult<ResultClass<string>> GetTeamUsers()
+        [HttpGet("GetTeamUsersList")]
+        public ActionResult<ResultClass<string>> GetTeamUsersList()
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
@@ -79,14 +80,9 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " WHERE um.del_tag = '0' AND bc.item_D_name is not null ";
                 T_SQL = T_SQL + " AND U_num IN (Select distinct group_D_code from view_User_group)";
                 T_SQL = T_SQL + " AND isnull(U_type,'')='' AND (U_leave_date is null OR U_leave_date >= DATEADD(MONTH, -2, GETDATE()))";
-                var frBCs = U_Check_BC_txt.Split(',').Distinct().ToList();
-                var parameters_BC = frBCs.Select((k, i) => $"@BC_{i}").ToList();
-                T_SQL = T_SQL + $" AND um.U_BC IN ({string.Join(", ", parameters_BC)})";
-                for (int i = 0; i < frBCs.Count; i++)
-                {
-                    parameters.Add(new SqlParameter($"@BC_{i}", frBCs[i]));
-                }
+                T_SQL = T_SQL + " AND um.U_BC IN (SELECT SplitValue FROM dbo.SplitStringFunction(@U_Check_BC_txt))";
                 T_SQL = T_SQL + " ORDER BY bc.item_sort,pft.item_sort";
+                parameters.Add(new SqlParameter("@U_Check_BC_txt", U_Check_BC_txt));
                 #endregion
                 DataTable dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
                 if(dtResult.Rows.Count > 0)
@@ -110,10 +106,10 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
-        /// 提供可查詢業務人員之權限(當show_more_type='N'時 迴圈呼叫Feat_user_list) Get_UG_list/Feat_user_list.asp&_fn.asp
+        /// 提供可查詢業務人員之權限(當show_more_type='N'時 迴圈呼叫Feat_user_list) GetUGlist/Feat_user_list.asp&_fn.asp
         /// </summary>
-        [HttpGet("Get_UG_list")]
-        public ActionResult<ResultClass<string>> Get_UG_list()
+        [HttpGet("GetUGlist")]
+        public ActionResult<ResultClass<string>> GetUGlist()
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
@@ -153,7 +149,7 @@ namespace KF_WebAPI.Controllers
         /// 業績報表_業務列表 Feat_user_list/Feat_user_list.asp
         /// </summary>
         [HttpPost("Feat_user_list")]
-        public ActionResult<ResultClass<string>> Feat_user_list(Feat_user_list_req model)
+        public ActionResult<ResultClass<string>> Feat_user_list_Query(Feat_user_list_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
@@ -299,13 +295,13 @@ namespace KF_WebAPI.Controllers
 
         //_待定義需求?
         /// <summary>
-        /// 業績報表_業務合計計算 Feat_user_list/Feat_user_list.asp
+        /// 業績報表_業務合計計算 Feat_user_Totail_Query/Feat_user_list.asp
         /// </summary>
         /// <param name="TotalCheckAmount">總業績</param>
         /// <param name="TotalGetAmount">業績金額</param>
         /// <returns></returns>
-        [HttpPost("Feat_user_Totail")]
-        public ActionResult<ResultClass<string>> Feat_user_Totail(int TotalCheckAmount, int TotalGetAmount)
+        [HttpPost("Feat_user_Totail_Query")]
+        public ActionResult<ResultClass<string>> Feat_user_Totail_Query(int TotalCheckAmount, int TotalGetAmount)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -393,10 +389,10 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
-        /// 提供組長名單資料(當show_more_type='Y') GetTeamLeaders/select_leader_more.asp
+        /// 提供組長名單資料(當show_more_type='Y') GetTeamLeadersList/select_leader_more.asp
         /// </summary>
-        [HttpGet("GetTeamLeaders")]
-        public ActionResult<ResultClass<string>> GetTeamLeaders()
+        [HttpGet("GetTeamLeadersList")]
+        public ActionResult<ResultClass<string>> GetTeamLeadersList()
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
@@ -430,14 +426,9 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " WHERE um.del_tag = '0' AND bc.item_D_name is not null ";
                 T_SQL = T_SQL + " AND U_num IN (select group_M_code from User_group where del_tag='0' AND group_M_type='Y')";
                 T_SQL = T_SQL + " AND isnull(U_type,'')='' AND (U_leave_date is null OR U_leave_date >= DATEADD(MONTH, -2, GETDATE()))";
-                var frBCs = U_Check_BC_txt.Split(',').Distinct().ToList();
-                var parameters_BC = frBCs.Select((k, i) => $"@BC_{i}").ToList();
-                T_SQL = T_SQL + $" AND um.U_BC IN ({string.Join(", ", parameters_BC)})";
-                for (int i = 0; i < frBCs.Count; i++)
-                {
-                    parameters.Add(new SqlParameter($"@BC_{i}", frBCs[i]));
-                }
+                T_SQL = T_SQL + " AND um.U_BC IN (SELECT SplitValue FROM dbo.SplitStringFunction(@U_Check_BC_txt))";
                 T_SQL = T_SQL + " ORDER BY bc.item_sort,pft.item_sort";
+                parameters.Add(new SqlParameter("@U_Check_BC_txt", U_Check_BC_txt));
                 #endregion
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
@@ -461,8 +452,8 @@ namespace KF_WebAPI.Controllers
         }
 
         //組資料(呈現整組資料含組長 另外再呈現組長的資料)_未完成
-        [HttpPost("Feat_leader_list")]
-        public ActionResult<ResultClass<string>> Feat_leader_list(Feat_leader_list_req model)
+        [HttpPost("Feat_leader_list_Query")]
+        public ActionResult<ResultClass<string>> Feat_leader_list_Query(Feat_leader_list_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
@@ -509,10 +500,10 @@ namespace KF_WebAPI.Controllers
 
         #region 業績報表_日報表(202210版)
         /// <summary>
-        /// 業績目標設定_提供組長名單 GetMonthQuotaLeader
+        /// 業績目標設定_提供組長名單 GetMonthQuotaLeaderList
         /// </summary>
-        [HttpGet("GetMonthQuotaLeader")]
-        public ActionResult<ResultClass<string>> GetMonthQuotaLeader()
+        [HttpGet("GetMonthQuotaLeaderList")]
+        public ActionResult<ResultClass<string>> GetMonthQuotaLeaderList()
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
@@ -545,15 +536,10 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " LEFT JOIN Item_list pft ON pft.item_M_code = 'professional_title' AND pft.item_D_code = um.U_PFT AND pft.item_D_type = 'Y' AND pft.show_tag = '0' AND pft.del_tag = '0'";
                 T_SQL = T_SQL + " WHERE um.del_tag = '0' AND bc.item_D_name is not null ";
                 T_SQL = T_SQL + " AND U_num IN (select group_M_code from User_group where del_tag='0' AND group_M_type='Y')";
-                T_SQL = T_SQL + " AND isnull(U_type,'')='' AND (U_leave_date is null OR U_leave_date >= DATEADD(MONTH, -2, GETDATE()))";             
-                var frBCs = U_Check_BC_txt.Split(',').Distinct().ToList();
-                var parameters_BC = frBCs.Select((k, i) => $"@BC_{i}").ToList();
-                T_SQL = T_SQL + $" AND um.U_BC IN ({string.Join(", ", parameters_BC)})";
-                for (int i = 0; i < frBCs.Count; i++)
-                {
-                    parameters.Add(new SqlParameter($"@BC_{i}", frBCs[i]));
-                }
+                T_SQL = T_SQL + " AND isnull(U_type,'')='' AND (U_leave_date is null OR U_leave_date >= DATEADD(MONTH, -2, GETDATE()))";
+                T_SQL = T_SQL + " AND um.U_BC IN (SELECT SplitValue FROM dbo.SplitStringFunction(@U_Check_BC_txt))";
                 T_SQL = T_SQL + " ORDER BY bc.item_sort,pft.item_sort";
+                parameters.Add(new SqlParameter("@U_Check_BC_txt", U_Check_BC_txt));
                 #endregion
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
@@ -575,7 +561,6 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-
         /// <summary>
         /// 業績目標設定_讀取 GetMonthQuotaList/Month_quota_editor.asp
         /// </summary>
@@ -597,7 +582,7 @@ namespace KF_WebAPI.Controllers
 
                     #region SQL
                     var parameters = new List<SqlParameter>();
-                    var T_SQL = "select group_M_name,group_D_name,group_D_code,sa.U_PFT_sort,sa.U_PFT_name";
+                    var T_SQL = "select group_M_id,group_M_name,group_D_name,group_D_code,sa.U_PFT_sort,sa.U_PFT_name";
                     T_SQL = T_SQL + " ,isnull((select target_quota from Feat_target ft where ft.del_tag='0' and ft.group_id=ug.group_id and ft.target_ym= @YYYYMM),0) target_quota";
                     T_SQL = T_SQL + " ,@YYYYMM AS target_ym";
                     T_SQL = T_SQL + " FROM view_User_group ug";
@@ -611,6 +596,7 @@ namespace KF_WebAPI.Controllers
                     DataTable dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
                     var modelList = dtResult.AsEnumerable().Select(row => new MonthQuota_res 
                     {
+                        group_M_id = row.Field<decimal>("group_M_id"),
                         group_M_name = row.Field<string>("group_M_name"),
                         group_D_name = row.Field<string>("group_D_name"),
                         group_D_code = row.Field<string>("group_D_code"),
@@ -632,17 +618,321 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-        //業績目標設定_修改/新增 Month_quota_editor.asp
-        [HttpPost("UpdMonthQuotaList")]
-        public ActionResult<ResultClass<string>> UpdMonthQuotaList()
+        /// <summary>
+        /// 業績目標設定_修改/新增 UpdMonthQuota/Month_quota_editor.asp
+        /// </summary>
+        [HttpPost("UpdMonthQuota")]
+        public ActionResult<ResultClass<string>> UpdMonthQuota(Feat_Target_Upd model)
         {
-            //修改Feat_target資料 若是沒資料就新增
-            return Ok();
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select * from Feat_target where U_num=@U_num and target_ym=@target_ym ";
+                parameters.Add(new SqlParameter("@U_num", model.U_num));
+                parameters.Add(new SqlParameter("@target_ym", model.target_ym));
+                #endregion
+                var dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count>0) 
+                {
+                    //修改
+                    #region SQL
+                    var parameters_u = new List<SqlParameter>();
+                    var T_SQL_U = "update Feat_target set target_quota=@target_quota,edit_date=getdate(),edit_num=@edit_num,edit_ip=@edit_ip  ";
+                    T_SQL_U = T_SQL_U + " where U_num=@U_num and target_ym=@target_ym";                  
+                    parameters_u.Add(new SqlParameter("@target_quota", model.target_quota));
+                    parameters_u.Add(new SqlParameter("@edit_num", User_Num));
+                    parameters_u.Add(new SqlParameter("@edit_ip", clientIp));
+                    parameters_u.Add(new SqlParameter("@U_num", model.U_num));
+                    parameters_u.Add(new SqlParameter("@target_ym", model.target_ym));
+                    #endregion
+                    var result_u=_adoData.ExecuteNonQuery(T_SQL_U, parameters_u);
+                    if (result_u > 0)
+                    {
+                        resultClass.ResultCode = "000";
+                        resultClass.ResultMsg = "修改成功";
+                        return Ok(resultClass);
+                    }
+                    else
+                    {
+                        resultClass.ResultCode = "400";
+                        resultClass.ResultMsg = "修改失敗";
+                        return BadRequest(resultClass);
+                    }
+                }
+                else
+                {
+                    //新增
+                    #region SQL
+                    var parameters_in = new List<SqlParameter>();
+                    var T_SQL_IN = "Insert into Feat_target(target_ym,target_quota,group_id,U_num,del_tag,add_date,add_num,add_ip,edit_date)";
+                    T_SQL_IN = T_SQL_IN + " Values (@target_ym,@target_quota,@group_id,@U_num,'0',GETDATE(),@add_num,@add_ip,GETDATE())";
+                    parameters_in.Add(new SqlParameter("@target_ym", model.target_ym));
+                    parameters_in.Add(new SqlParameter("@target_quota", model.target_quota));
+                    parameters_in.Add(new SqlParameter("@group_id", model.group_M_id));
+                    parameters_in.Add(new SqlParameter("@U_num", model.U_num));
+                    parameters_in.Add(new SqlParameter("@add_num", User_Num));
+                    parameters_in.Add(new SqlParameter("@add_ip", clientIp));
+                    #endregion
+                    var result_in=_adoData.ExecuteNonQuery(T_SQL_IN, parameters_in);
+                    if (result_in > 0)
+                    {
+                        resultClass.ResultCode = "000";
+                        resultClass.ResultMsg = "新增成功";
+                        return Ok(resultClass);
+                    }
+                    else
+                    {
+                        resultClass.ResultCode = "400";
+                        resultClass.ResultMsg = "新增失敗";
+                        return BadRequest(resultClass);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
         }
-        //放款公司選項
-        //日報表_顯示個人(2020版)_讀取
-        //日報表_(202210版)_讀取
-        //日報表_(202210版)_匯出
+        /// <summary>
+        /// 放款公司列表 GetCompanyList/_fn.asp
+        /// </summary>
+        [HttpGet("GetCompanyList")]
+        public ActionResult<ResultClass<string>> GetCompanyList()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code='fund_company' and item_D_type='Y' and del_tag='0'";
+                #endregion
+                var dtResult=_adoData.ExecuteSQuery(T_SQL);
+                if(dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 提供可讀取的分公司資料
+        /// </summary>
+        [HttpGet("GetUserCheckBCList")]
+        public ActionResult<ResultClass<string>> GetUserCheckBCList()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var User_Num = HttpContext.Session.GetString("UserID");
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select U_Check_BC from User_M where U_num=@U_num";
+                parameters.Add(new SqlParameter("@U_num", User_Num));
+                #endregion
+                var dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
+                if( dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 日報表_顯示個人(2020版)_讀取 Feat_Daily_Person_List_Query/Feat_daily_report_show_user.asp
+        /// </summary>
+        [HttpPost("Feat_Daily_Person_List_Query")]
+        public ActionResult<ResultClass<string>> Feat_Daily_Person_List_Query(FeatDailyPerson_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "with A(leader_name,plan_name,group_id,group_M_id,group_M_title,group_M_start_day,group_M_end_day,day_incase_num,month_incase_num";
+                T_SQL = T_SQL + " ,day_get_amount_num,day_get_amount,month_pass_num,month_get_amount_num,month_get_amount,month_pass_amount,month_pre_amount ) as (SELECT isnull(ug.group_M_name,'未分組') leader_name";
+                T_SQL = T_SQL + " ,f.plan_name,ug.group_id,ug.group_M_id,ug.group_M_title,ug.group_M_start_day,ug.group_M_end_day";
+                //日進件數 
+                T_SQL = T_SQL + " ,(case when convert(varchar,Send_amount_date,112) = @reportDate_n  and Send_amount_date between ug.group_M_start_day and ug.group_M_end_day and Send_amount_date between ug.group_D_start_day and ug.group_D_end_day then 1 else 0 end ) as day_incase_num";
+                //月進件數
+                T_SQL = T_SQL + " ,(case when left(convert(varchar,Send_amount_date,112),6) = LEFT(@reportDate_n,6) AND convert(varchar,Send_amount_date,112) <= @reportDate_n  and Send_amount_date between ug.group_M_start_day and ug.group_M_end_day and Send_amount_date between ug.group_D_start_day and ug.group_D_end_day then 1 else 0 end ) as month_incase_num";
+                //日撥款數 
+                T_SQL = T_SQL + " ,(case when convert(varchar,get_amount_date,112) = @reportDate_n  and get_amount_date between ug.group_M_start_day and ug.group_M_end_day and get_amount_date between ug.group_D_start_day and ug.group_D_end_day then 1 else 0 end ) as day_get_amount_num";
+                //日撥款額 
+                T_SQL = T_SQL + " ,(case when convert(varchar,get_amount_date,112) = @reportDate_n  and get_amount_date between ug.group_M_start_day and ug.group_M_end_day and get_amount_date between ug.group_D_start_day and ug.group_D_end_day then get_amount else 0 end ) as day_get_amount";
+                //月核准數
+                T_SQL = T_SQL + " ,(case when left(convert(varchar,Send_result_date,112),6) = LEFT(@reportDate_n,6) AND convert(varchar,Send_result_date,112) <= @reportDate_n  and Send_result_date between ug.group_M_start_day and ug.group_M_end_day and Send_result_date between ug.group_D_start_day and ug.group_D_end_day AND Send_result_type = 'SRT002'  then 1 else 0 end ) as month_pass_num";
+                //月撥款數
+                T_SQL = T_SQL + " ,(case when left(convert(varchar,get_amount_date,112),6) = LEFT(@reportDate_n,6) AND convert(varchar,get_amount_date,112) <= @reportDate_n  and get_amount_date between ug.group_M_start_day and ug.group_M_end_day and get_amount_date between ug.group_D_start_day and ug.group_D_end_day then 1 else 0 end ) as month_get_amount_num";
+                //月撥款額
+                T_SQL = T_SQL + " ,(case when left(convert(varchar,get_amount_date,112),6) = LEFT(@reportDate_n,6) AND convert(varchar,get_amount_date,112) <= @reportDate_n  and get_amount_date between ug.group_M_start_day and ug.group_M_end_day and get_amount_date between ug.group_D_start_day and ug.group_D_end_day then get_amount else 0 end ) as month_get_amount";
+                //已核未撥
+                T_SQL = T_SQL + " ,(case when left(convert(varchar,Send_result_date,112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar,Send_result_date,112) <= @reportDate_n  and Send_result_date between ug.group_M_start_day and ug.group_M_end_day and Send_result_date between ug.group_D_start_day and ug.group_D_end_day AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN('CKAT003') AND isnull(get_amount_type,'') NOT IN('GTAT002','GTAT003')  then pass_amount else 0 end ) as month_pass_amount";
+                //預核額度
+                T_SQL = T_SQL + " ,(case when left(convert(varchar,Send_result_date,112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar,Send_result_date,112) <= @reportDate_n  and Send_result_date between ug.group_M_start_day and ug.group_M_end_day and Send_result_date between ug.group_D_start_day and ug.group_D_end_day AND Send_result_type = 'SRT005' then pass_amount else 0 end ) as month_pre_amount";
+                T_SQL = T_SQL + " FROM viewFeats f LEFT JOIN view_User_group ug ON ug.group_D_code = f.plan_num AND((Send_amount_date between ug.group_M_start_day and ug.group_M_end_day and Send_amount_date between ug.group_D_start_day and ug.group_D_end_day) ";
+                T_SQL = T_SQL + " OR(Send_result_date between ug.group_M_start_day and ug.group_M_end_day and Send_result_date between ug.group_D_start_day and ug.group_D_end_day) OR(get_amount_date between ug.group_M_start_day and ug.group_M_end_day and get_amount_date between ug.group_D_start_day and ug.group_D_end_day) )  ";
+                T_SQL = T_SQL + " where 1=1  AND(left(convert(varchar,Send_amount_date,112),6) = LEFT(@reportDate_n,6) OR left(convert(varchar,Send_result_date,112),6) in (LEFT(@reportDate_n,6),@reportDate_b) OR left(convert(varchar,get_amount_date,112),6) = LEFT(@reportDate_n,6)  )  and CONVERT(DATE,@reportDate_n,112) between ug.group_M_start_day and ug.group_M_end_day ";
+                T_SQL = T_SQL + " AND f.fund_company IN (SELECT SplitValue FROM dbo.SplitStringFunction(@company)) AND U_BC = @U_BC )";
+                T_SQL = T_SQL + " select @U_BC U_BC,leader_name,plan_name,group_M_id,group_M_title,sum(day_incase_num) as day_incase_num,sum(month_incase_num) as month_incase_num,sum(day_incase_num) as day_incase_num,sum(day_get_amount_num) as day_get_amount_num,sum(day_get_amount) as day_get_amount,sum(month_pass_num) as month_pass_num,sum(month_get_amount_num) as month_get_amount_num,sum(month_get_amount) as month_get_amount,sum(month_pass_amount) as month_pass_amount,sum(month_pre_amount) as month_pre_amount  FROM A  group by leader_name,plan_name,group_M_id,group_M_title  union";
+                //顯示沒業績的組員
+                T_SQL = T_SQL + " select @U_BC U_BC,leader_name,plan_name,group_M_id,group_M_title,0 as day_incase_num,0 as month_incase_num,0 as day_incase_num,0 as day_get_amount_num,0 as day_get_amount,0 as month_pass_num,0 as month_get_amount_num,0 as month_get_amount,0 as month_pass_amount,0 as month_pre_amount  from (select group_M_name leader_name,group_D_name plan_name,group_M_id,group_M_title  from view_User_group ug  where group_M_id in(select distinct group_M_id FROM A where @reportDate_n between A.group_M_start_day and A.group_M_end_day)  and group_id not in(select distinct group_id FROM A)   group by group_M_name,group_D_name,group_M_id,group_M_title ) B order by leader_name,plan_name";
+                parameters.Add(new SqlParameter("@reportDate_n", model.reportDate_n));
+                parameters.Add(new SqlParameter("@company", model.company));
+                parameters.Add(new SqlParameter("@U_BC", model.U_BC));
+                string reportDate_b=DateTime.ParseExact(model.reportDate_n, "yyyyMMdd", null).AddMonths(-1).ToString("yyyyMM");
+                parameters.Add(new SqlParameter("@reportDate_b", reportDate_b));
+                #endregion
+                var dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
+                if(dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 日報表_(202210版)_讀取 Feat_Daily_Report_V2022_Query/Feat_daily_report_v2021_202210.asp
+        /// </summary>
+        [HttpPost("Feat_Daily_Report_V2022_Query")]
+       public ActionResult<ResultClass<string>> Feat_Daily_Report_V2022_Query(FeatDailyReport_res model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "with A ( leader_name,plan_name,plan_num,group_id,group_M_id,group_M_title ,U_PFT_sort,U_PFT_name ,day_incase_num_FDCOM001,month_incase_num_FDCOM001 ";
+                T_SQL = T_SQL + " ,day_incase_num_FDCOM003,month_incase_num_FDCOM003 ,day_incase_num_FDCOM004,month_incase_num_FDCOM004 ,day_incase_num_FDCOM005,month_incase_num_FDCOM005 ";
+                T_SQL = T_SQL + " ,day_get_amount_num,day_get_amount,month_pass_num,month_get_amount_num ,month_get_amount_FDCOM001,month_get_amount_FDCOM003,month_get_amount_FDCOM004,month_get_amount_FDCOM005,month_pass_amount_FDCOM001,month_pre_amount_FDCOM001,month_pass_amount_FDCOM003,month_pass_amount_FDCOM004,month_pass_amount_FDCOM005,advance_payment_AE ) as ( SELECT isnull(ug.group_M_name,'未分組') leader_name";
+                T_SQL = T_SQL + " ,ug.group_D_name,ug.group_D_code, ug.group_id, ug.group_M_id,ug.group_M_title ,sa.U_PFT_sort,sa.U_PFT_name";
+                //新鑫 日進件數 
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and convert(varchar, Send_amount_date, 112) = @reportDate_n then 1 else 0 end ) as day_incase_num_FDCOM001";
+                //新鑫 月進件數
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and left(convert(varchar, Send_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, Send_amount_date, 112) <= @reportDate_n then 1 else 0 end ) as month_incase_num_FDCOM001";
+                //國&#23791; 日進件數
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and convert(varchar, Send_amount_date, 112) = @reportDate_n then 1 else 0 end ) as day_incase_num_FDCOM003";
+                //國&#23791; 月進件數
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and left(convert(varchar, Send_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, Send_amount_date, 112) <= @reportDate_n then 1 else 0 end ) as month_incase_num_FDCOM003";
+                //和潤 日進件數
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM004'=fund_company and convert(varchar, Send_amount_date, 112) = @reportDate_n then 1 else 0 end ) as day_incase_num_FDCOM004";
+                //和潤 月進件數
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM004'=fund_company and left(convert(varchar, Send_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, Send_amount_date, 112) <= @reportDate_n then 1 else 0 end ) as month_incase_num_FDCOM004";
+                //福斯 日進件數
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM005'=fund_company and convert(varchar, Send_amount_date, 112) = @reportDate_n then 1 else 0 end ) as day_incase_num_FDCOM005";
+                //福斯 月進件數
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM005'=fund_company and left(convert(varchar, Send_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, Send_amount_date, 112) <= @reportDate_n then 1 else 0 end ) as month_incase_num_FDCOM005";
+                //日撥款數
+                T_SQL = T_SQL + " ,sum(case when convert(varchar, get_amount_date, 112) = @reportDate_n  then 1 else 0 end ) as day_get_amount_num";
+                //日撥款額
+                T_SQL = T_SQL + " ,sum(case when convert(varchar, get_amount_date, 112) = @reportDate_n  then get_amount else 0 end ) as day_get_amount";
+                //月核准數 
+                T_SQL = T_SQL + " ,sum(case when left(convert(varchar, Send_result_date, 112),6)=LEFT(@reportDate_n,6) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type in ('SRT002','SRT005') then 1 else 0 end ) as month_pass_num";
+                //月撥款數
+                T_SQL = T_SQL + " ,sum(case when left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then 1 else 0 end ) as month_get_amount_num";
+                //新鑫 月撥款額
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then get_amount else 0 end ) as month_get_amount_FDCOM001";
+                //國&#23791; 月撥款額
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then get_amount else 0 end ) as month_get_amount_FDCOM003";
+                //和潤 月撥款額
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM004'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then get_amount else 0 end ) as month_get_amount_FDCOM004";
+                //福斯 月撥款額
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM005'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then get_amount else 0 end ) as month_get_amount_FDCOM005";
+                //新鑫 已核未撥
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN ('CKAT003') AND isnull(get_amount_type,'') NOT IN ('GTAT002','GTAT003') then pass_amount else 0 end ) as month_pass_amount_FDCOM001";
+                //新鑫 預核額度
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT005' then pass_amount else 0 end ) as month_pre_amount_FDCOM001";
+                //國&#23791; 已核未撥
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN ('CKAT003') AND isnull(get_amount_type,'') NOT IN ('GTAT002','GTAT003') then pass_amount else 0 end ) as month_pass_amount_FDCOM003";
+                //和潤 已核未撥
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM004'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN ('CKAT003') AND isnull(get_amount_type,'') NOT IN ('GTAT002','GTAT003') then pass_amount else 0 end ) as month_pass_amount_FDCOM004";
+                //福斯 已核未撥
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM005'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN ('CKAT003') AND isnull(get_amount_type,'') NOT IN ('GTAT002','GTAT003') then pass_amount else 0 end ) as month_pass_amount_FDCOM005";
+                //國&#23791; 代墊款(萬) 
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then advance_payment_AE else 0 end ) as advance_payment_AE";
+                T_SQL = T_SQL + " FROM view_User_group ug join view_User_sales leader on leader.U_num = ug.group_M_code AND leader.U_BC = @U_BC ";
+                T_SQL = T_SQL + " join view_User_sales sa on sa.U_num = ug.group_D_code ";
+                T_SQL = T_SQL + " left join viewFeats f on ug.group_D_code = f.plan_num AND ( left(convert(varchar, f.Send_amount_date, 112),6) = LEFT(@reportDate_n,6) OR left(convert(varchar, f.Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) OR left(convert(varchar, f.get_amount_date, 112),6) = LEFT(@reportDate_n,6) ) ";
+                T_SQL = T_SQL + " where 1=1 and @reportDate_n between ug.group_M_start_day and ug.group_M_end_day and @reportDate_n between ug.group_D_start_day and ug.group_D_end_day  group by isnull(ug.group_M_name,'未分組'),ug.group_D_name,ug.group_D_code, ug.group_id, ug.group_M_id,ug.group_M_title,sa.U_PFT_sort,sa.U_PFT_name)";
+                T_SQL = T_SQL + " select @U_BC U_BC,a.* ,isnull(ft.target_quota,0) target_quota FROM A  ";
+                T_SQL = T_SQL + " left join Feat_target ft on ft.del_tag='0'  and ft.U_num=A.plan_num  and ft.group_id=A.group_id and ft.target_ym=LEFT(@reportDate_n,6) ";
+                T_SQL = T_SQL + " order by A.leader_name,A.U_PFT_sort,A.U_PFT_name,A.plan_num";
+                parameters.Add(new SqlParameter("@reportDate_n", model.reportDate_n));
+                parameters.Add(new SqlParameter("@U_BC", model.U_BC));
+                string reportDate_b = DateTime.ParseExact(model.reportDate_n, "yyyyMMdd", null).AddMonths(-1).ToString("yyyyMM");
+                parameters.Add(new SqlParameter("@reportDate_b", reportDate_b));
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+       //日報表_(202210版)_匯出
+
         #endregion
 
         #region 業績報表_日報表(202106合計版)

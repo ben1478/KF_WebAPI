@@ -10,4 +10,13 @@
         public string? U_num { get; set; }
 
     }
+
+    public class Feat_Target_Upd
+    {
+        public string U_num { get; set; }
+        public int target_ym { get; set; }
+        public int target_quota { get; set; }
+        public decimal group_M_id { get; set; }
+
+    }
 }
