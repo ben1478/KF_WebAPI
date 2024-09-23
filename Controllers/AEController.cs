@@ -59,6 +59,28 @@ namespace KF_WebAPI.Controllers
             return Ok(resultClass);
         }
 
+
+        [HttpPost("CheckAPI")]
+        public ActionResult<ResultClass<string>> CheckAPI()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+
+                resultClass.objResult = "";
+                resultClass.ResultCode = "000";
+
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "999";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+            }
+            return Ok(resultClass);
+        }
+
+
+
         [HttpPost("Login")]
         public ActionResult<ResultClass<string>> Login(string uesr,string password)
         {
