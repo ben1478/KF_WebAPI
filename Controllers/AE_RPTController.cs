@@ -562,7 +562,7 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// 業績目標設定_讀取 GetMonthQuotaList/Month_quota_editor.asp
+        /// 業績目標設定_查詢 GetMonthQuotaList/Month_quota_editor.asp
         /// </summary>
         [HttpGet("GetMonthQuotaList")]
         public ActionResult<ResultClass<string>> GetMonthQuotaList(string U_BC)
@@ -735,7 +735,7 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// 提供可讀取的分公司資料
+        /// 提供可查詢的分公司資料
         /// </summary>
         [HttpGet("GetUserCheckBCList")]
         public ActionResult<ResultClass<string>> GetUserCheckBCList()
@@ -746,9 +746,11 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
-                #region SQL
+                #region SQL_抓取可查詢的分公司資料
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "select U_Check_BC from User_M where U_num=@U_num";
+                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code='branch_company' and item_D_type='Y' ";
+                T_SQL = T_SQL + " and item_D_code in (select SplitValue from dbo.SplitStringFunction　((";
+                T_SQL = T_SQL + " select 'zz'+REPLACE(U_Check_BC,'#',',') from User_M where U_num=@U_num))) order by item_sort";
                 parameters.Add(new SqlParameter("@U_num", User_Num));
                 #endregion
                 var dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
@@ -772,7 +774,7 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// 日報表_顯示個人(2020版)_讀取 Feat_Daily_Person_List_Query/Feat_daily_report_show_user.asp
+        /// 日報表_顯示個人(2020版)_查詢 Feat_Daily_Person_List_Query/Feat_daily_report_show_user.asp
         /// </summary>
         [HttpPost("Feat_Daily_Person_List_Query")]
         public ActionResult<ResultClass<string>> Feat_Daily_Person_List_Query(FeatDailyPerson_req model)
@@ -839,10 +841,10 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// 日報表_(202210版)_讀取 Feat_Daily_Report_V2022_Query/Feat_daily_report_v2021_202210.asp
+        /// 日報表_(202210版)_查詢 Feat_Daily_Report_V2022_Query/Feat_daily_report_v2021_202210.asp
         /// </summary>
         [HttpPost("Feat_Daily_Report_V2022_Query")]
-       public ActionResult<ResultClass<string>> Feat_Daily_Report_V2022_Query(FeatDailyReport_res model)
+        public ActionResult<ResultClass<string>> Feat_Daily_Report_V2022_Query(FeatDailyReport_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -931,12 +933,576 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-       //日報表_(202210版)_匯出
+        /// <summary>
+        /// 日報表_(202210版)_下載 Feat_Daily_Report_V2022_Excel/Feat_daily_report_v2021_202210.asp
+        /// </summary>
+        [HttpPost("Feat_Daily_Report_V2022_Excel")]
+        public IActionResult Feat_Daily_Report_V2022_Excel(string reportDate_n)
+        {
+            var User_Num = HttpContext.Session.GetString("UserID");
+
+            try
+            {
+                FeatDailyReport_excel_Total modelFooter = new FeatDailyReport_excel_Total();
+                ADOData _adoData = new ADOData();
+                #region SQL_抓取可查詢的分公司資料
+                var parameters_comp = new List<SqlParameter>();
+                var T_SQL_COMP = "select item_D_code,item_D_name from Item_list where item_M_code='branch_company' and item_D_type='Y' ";
+                T_SQL_COMP = T_SQL_COMP + " and item_D_code in (select SplitValue from dbo.SplitStringFunction　((";
+                T_SQL_COMP = T_SQL_COMP + " select 'zz'+REPLACE(U_Check_BC,'#',',') from User_M where U_num=@U_num))) order by item_sort";
+                parameters_comp.Add(new SqlParameter("@U_num", User_Num));
+                #endregion
+                var dtResultComp = _adoData.ExecuteQuery(T_SQL_COMP, parameters_comp);
+                if (dtResultComp.Rows.Count > 0)
+                {
+                    byte[] fileBytes = null;
+                   
+                    for (int i = 0; i < dtResultComp.Rows.Count; i++)
+                    {
+                        string itemDCode = dtResultComp.Rows[i]["item_D_code"].ToString();
+                        string itemDName = dtResultComp.Rows[i]["item_D_name"].ToString();
+                        #region SQL
+                        var parameters = new List<SqlParameter>();
+                        var T_SQL = "with A ( leader_name,plan_name,plan_num,group_id,group_M_id,group_M_title ,U_PFT_sort,U_PFT_name ,day_incase_num_FDCOM001,month_incase_num_FDCOM001 ";
+                        T_SQL = T_SQL + " ,day_incase_num_FDCOM003,month_incase_num_FDCOM003 ,day_incase_num_FDCOM004,month_incase_num_FDCOM004 ,day_incase_num_FDCOM005,month_incase_num_FDCOM005 ";
+                        T_SQL = T_SQL + " ,day_get_amount_num,day_get_amount,month_pass_num,month_get_amount_num ,month_get_amount_FDCOM001,month_get_amount_FDCOM003,month_get_amount_FDCOM004,month_get_amount_FDCOM005,month_pass_amount_FDCOM001,month_pre_amount_FDCOM001,month_pass_amount_FDCOM003,month_pass_amount_FDCOM004,month_pass_amount_FDCOM005,advance_payment_AE ) as ( SELECT isnull(ug.group_M_name,'未分組') leader_name";
+                        T_SQL = T_SQL + " ,ug.group_D_name,ug.group_D_code, ug.group_id, ug.group_M_id,ug.group_M_title ,sa.U_PFT_sort,sa.U_PFT_name";
+                        //新鑫 日進件數 
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and convert(varchar, Send_amount_date, 112) = @reportDate_n then 1 else 0 end ) as day_incase_num_FDCOM001";
+                        //新鑫 月進件數
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and left(convert(varchar, Send_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, Send_amount_date, 112) <= @reportDate_n then 1 else 0 end ) as month_incase_num_FDCOM001";
+                        //國&#23791; 日進件數
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and convert(varchar, Send_amount_date, 112) = @reportDate_n then 1 else 0 end ) as day_incase_num_FDCOM003";
+                        //國&#23791; 月進件數
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and left(convert(varchar, Send_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, Send_amount_date, 112) <= @reportDate_n then 1 else 0 end ) as month_incase_num_FDCOM003";
+                        //和潤 日進件數
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM004'=fund_company and convert(varchar, Send_amount_date, 112) = @reportDate_n then 1 else 0 end ) as day_incase_num_FDCOM004";
+                        //和潤 月進件數
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM004'=fund_company and left(convert(varchar, Send_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, Send_amount_date, 112) <= @reportDate_n then 1 else 0 end ) as month_incase_num_FDCOM004";
+                        //福斯 日進件數
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM005'=fund_company and convert(varchar, Send_amount_date, 112) = @reportDate_n then 1 else 0 end ) as day_incase_num_FDCOM005";
+                        //福斯 月進件數
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM005'=fund_company and left(convert(varchar, Send_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, Send_amount_date, 112) <= @reportDate_n then 1 else 0 end ) as month_incase_num_FDCOM005";
+                        //日撥款數
+                        T_SQL = T_SQL + " ,sum(case when convert(varchar, get_amount_date, 112) = @reportDate_n  then 1 else 0 end ) as day_get_amount_num";
+                        //日撥款額
+                        T_SQL = T_SQL + " ,sum(case when convert(varchar, get_amount_date, 112) = @reportDate_n  then get_amount else 0 end ) as day_get_amount";
+                        //月核准數 
+                        T_SQL = T_SQL + " ,sum(case when left(convert(varchar, Send_result_date, 112),6)=LEFT(@reportDate_n,6) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type in ('SRT002','SRT005') then 1 else 0 end ) as month_pass_num";
+                        //月撥款數
+                        T_SQL = T_SQL + " ,sum(case when left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then 1 else 0 end ) as month_get_amount_num";
+                        //新鑫 月撥款額
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then get_amount else 0 end ) as month_get_amount_FDCOM001";
+                        //國&#23791; 月撥款額
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then get_amount else 0 end ) as month_get_amount_FDCOM003";
+                        //和潤 月撥款額
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM004'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then get_amount else 0 end ) as month_get_amount_FDCOM004";
+                        //福斯 月撥款額
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM005'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then get_amount else 0 end ) as month_get_amount_FDCOM005";
+                        //新鑫 已核未撥
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN ('CKAT003') AND isnull(get_amount_type,'') NOT IN ('GTAT002','GTAT003') then pass_amount else 0 end ) as month_pass_amount_FDCOM001";
+                        //新鑫 預核額度
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT005' then pass_amount else 0 end ) as month_pre_amount_FDCOM001";
+                        //國&#23791; 已核未撥
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN ('CKAT003') AND isnull(get_amount_type,'') NOT IN ('GTAT002','GTAT003') then pass_amount else 0 end ) as month_pass_amount_FDCOM003";
+                        //和潤 已核未撥
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM004'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN ('CKAT003') AND isnull(get_amount_type,'') NOT IN ('GTAT002','GTAT003') then pass_amount else 0 end ) as month_pass_amount_FDCOM004";
+                        //福斯 已核未撥
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM005'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN ('CKAT003') AND isnull(get_amount_type,'') NOT IN ('GTAT002','GTAT003') then pass_amount else 0 end ) as month_pass_amount_FDCOM005";
+                        //國&#23791; 代墊款(萬) 
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then advance_payment_AE else 0 end ) as advance_payment_AE";
+                        T_SQL = T_SQL + " FROM view_User_group ug join view_User_sales leader on leader.U_num = ug.group_M_code AND leader.U_BC = @U_BC ";
+                        T_SQL = T_SQL + " join view_User_sales sa on sa.U_num = ug.group_D_code ";
+                        T_SQL = T_SQL + " left join viewFeats f on ug.group_D_code = f.plan_num AND ( left(convert(varchar, f.Send_amount_date, 112),6) = LEFT(@reportDate_n,6) OR left(convert(varchar, f.Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) OR left(convert(varchar, f.get_amount_date, 112),6) = LEFT(@reportDate_n,6) ) ";
+                        T_SQL = T_SQL + " where 1=1 and @reportDate_n between ug.group_M_start_day and ug.group_M_end_day and @reportDate_n between ug.group_D_start_day and ug.group_D_end_day  group by isnull(ug.group_M_name,'未分組'),ug.group_D_name,ug.group_D_code, ug.group_id, ug.group_M_id,ug.group_M_title,sa.U_PFT_sort,sa.U_PFT_name)";
+                        T_SQL = T_SQL + " select @U_BC U_BC,a.* ,isnull(ft.target_quota,0) target_quota FROM A  ";
+                        T_SQL = T_SQL + " left join Feat_target ft on ft.del_tag='0'  and ft.U_num=A.plan_num  and ft.group_id=A.group_id and ft.target_ym=LEFT(@reportDate_n,6) ";
+                        T_SQL = T_SQL + " order by A.leader_name,A.U_PFT_sort,A.U_PFT_name,A.plan_num";
+                        parameters.Add(new SqlParameter("@reportDate_n", reportDate_n));
+                        parameters.Add(new SqlParameter("@U_BC", itemDCode));
+                        string reportDate_b = DateTime.ParseExact(reportDate_n, "yyyyMMdd", null).AddMonths(-1).ToString("yyyyMM");
+                        parameters.Add(new SqlParameter("@reportDate_b", reportDate_b));
+                        #endregion
+                        var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                        if(dtResult.Rows.Count > 0)
+                        {
+                            var excelList = dtResult.AsEnumerable().Select(row => new FeatDailyReport_excel
+                            {
+                                plan_name = row.Field<string>("plan_name"),
+                                U_PFT_name = row.Field<string>("U_PFT_name"),
+                                day_incase_num_FDCOM001 = row.Field<int>("day_incase_num_FDCOM001"),
+                                month_incase_num_FDCOM001 = row.Field<int>("month_incase_num_FDCOM001"),
+                                day_incase_num_FDCOM003 = row.Field<int>("day_incase_num_FDCOM003"),
+                                month_incase_num_FDCOM003 = row.Field<int>("month_incase_num_FDCOM003"),
+                                day_get_amount_num = row.Field<int>("day_get_amount_num"),
+                                day_get_amount = row.Field<int>("day_get_amount"),
+                                month_pass_num = row.Field<int>("month_pass_num"),
+                                month_get_amount_num = row.Field<int>("month_get_amount_num"),
+                                month_get_amount_FDCOM001 = row.Field<int>("month_get_amount_FDCOM001"),
+                                month_get_amount_FDCOM003 = row.Field<int>("month_get_amount_FDCOM003"),
+                                month_pass_amount_FDCOM001 = row.Field<int>("month_pass_amount_FDCOM001"),
+                                month_pre_amount_FDCOM001 = row.Field<int>("month_pre_amount_FDCOM001"),
+                                month_pass_amount_FDCOM003 = row.Field<int>("month_pass_amount_FDCOM003"),
+                                advance_payment_AE = row.Field<decimal>("advance_payment_AE"),
+                                target_quota = Convert.ToInt32(row.Field<short>("target_quota"))
+                            }).ToList();
+                            var Excel_Headers = new Dictionary<string, string>
+                            {
+                                { "U_PFT_name", "職位" },
+                                { "plan_name", "業務" },
+                                { "day_incase_num_FDCOM001", "新鑫日進件數" },
+                                { "month_incase_num_FDCOM001", "新鑫累積進件數" },
+                                { "day_incase_num_FDCOM003", "國峯日進件數" },
+                                { "month_incase_num_FDCOM003", "國峯累積進件數" },
+                                { "day_get_amount_num", "日撥件數" },
+                                { "day_get_amount", "日撥金額" },
+                                { "month_pass_num", "核准件數" },
+                                { "month_get_amount_num", "累積撥款件數" },
+                                { "month_get_amount_FDCOM001", "新鑫-撥款金額(萬)" },
+                                { "month_get_amount_FDCOM003", "國峯-撥款金額(萬)" },
+                                { "month_pass_amount_FDCOM001", "新鑫已核未撥" },
+                                { "month_pre_amount_FDCOM001", "新鑫預核額度" },
+                                { "month_pass_amount_FDCOM003", "國峯已核未撥" },
+                                { "advance_payment_AE", "國峯-代墊款(萬)" },
+                                { "target_quota", "目標(萬)" },
+                                { "AchievementRate", "達成率" }
+                            };
+                            if (i == 0)
+                            {
+                                fileBytes = FuncHandler.FeatDailyToExcel(excelList, Excel_Headers, itemDName,reportDate_n);
+                            }
+                            else
+                            {
+                                fileBytes = FuncHandler.FeatDailyToExcelAgain(fileBytes, excelList, Excel_Headers, itemDName, reportDate_n);
+                            }
+                            #region 總計 FeatDailyToExcelFooter
+                            var total_D_FDCOM001 = excelList.Sum(item => item.day_incase_num_FDCOM001);
+                            modelFooter.day_incase_num_FDCOM001_total += total_D_FDCOM001;
+                            var total_M_FDCOM001 = excelList.Sum(item => item.month_incase_num_FDCOM001);
+                            modelFooter.month_incase_num_FDCOM001_total += total_M_FDCOM001;
+                            var total_D_FDCOM003 = excelList.Sum(item => item.day_incase_num_FDCOM003);
+                            modelFooter.day_incase_num_FDCOM003_total += total_D_FDCOM003;
+                            var total_M_FDCOM003 = excelList.Sum(item => item.month_incase_num_FDCOM003);
+                            modelFooter.month_incase_num_FDCOM003_total += total_M_FDCOM003;
+                            var total_D_AmoutNum = excelList.Sum(item => item.day_get_amount_num);
+                            modelFooter.day_get_amount_num_total += total_D_AmoutNum;
+                            var total_S_Amout = excelList.Sum(item => item.day_get_amount);
+                            modelFooter.day_get_amount_total += total_S_Amout;
+                            var totol_M_PassNum = excelList.Sum(item => item.month_pass_num);
+                            modelFooter.month_pass_num_total += totol_M_PassNum;
+                            var total_M_AmoutNum = excelList.Sum(item => item.month_get_amount_num);
+                            modelFooter.month_get_amount_num_total += total_M_AmoutNum;
+                            var total_M_Amout_FDCOM001 = excelList.Sum(item => item.month_get_amount_FDCOM001);
+                            modelFooter.month_get_amount_FDCOM001_total += total_M_Amout_FDCOM001;
+                            var total_M_Amout_FDCOM003 = excelList.Sum(item => item.month_get_amount_FDCOM003);
+                            modelFooter.month_get_amount_FDCOM003_total += total_M_Amout_FDCOM003;
+                            var total_M_PassAmout_FDCOM001 = excelList.Sum(item => item.month_pass_amount_FDCOM001);
+                            modelFooter.month_pass_amount_FDCOM001_total += total_M_PassAmout_FDCOM001;
+                            var total_M_PreAmout_FDCOM001 = excelList.Sum(item => item.month_pre_amount_FDCOM001);
+                            modelFooter.month_pre_amount_FDCOM001_total += total_M_PreAmout_FDCOM001;
+                            var total_M_PassAmout_FDCOM003 = excelList.Sum(item => item.month_pass_amount_FDCOM003);
+                            modelFooter.month_pass_amount_FDCOM003_total += total_M_PassAmout_FDCOM003;
+                            var total_Pay = excelList.Sum(item => item.advance_payment_AE);
+                            modelFooter.advance_payment_AE_total += total_Pay;
+                            var total_Quota = excelList.Sum(item => item.target_quota);
+                            modelFooter.target_quota_total += total_Quota;
+                            #endregion
+                        }
+                    }
+                    //全區總計 FeatDailyToExcelFooter
+                    var Excel_Footer = new Dictionary<string, string>
+                    {
+                        { "U_PFT_name", "職位" },
+                        { "plan_name", "業務" },
+                        { "day_incase_num_FDCOM001_total", "新鑫日進件數" },
+                        { "month_incase_num_FDCOM001_total", "新鑫累積進件數" },
+                        { "day_incase_num_FDCOM003_total", "國峯日進件數" },
+                        { "month_incase_num_FDCOM003_total", "國峯累積進件數" },
+                        { "day_get_amount_num_total", "日撥件數" },
+                        { "day_get_amount_total", "日撥金額" },
+                        { "month_pass_num_total", "核准件數" },
+                        { "month_get_amount_num_total", "累積撥款件數" },
+                        { "month_get_amount_FDCOM001_total", "新鑫-撥款金額(萬)" },
+                        { "month_get_amount_FDCOM003_total", "國峯-撥款金額(萬)" },
+                        { "month_pass_amount_FDCOM001_total", "新鑫已核未撥" },
+                        { "month_pre_amount_FDCOM001_total", "新鑫預核額度" },
+                        { "month_pass_amount_FDCOM003_total", "國峯已核未撥" },
+                        { "advance_payment_AE_total", "國峯-代墊款(萬)" },
+                        { "target_quota_total", "目標(萬)" },
+                        { "AchievementRate", "達成率" }
+                    };
+                    fileBytes = FuncHandler.FeatDailyToExcelFooter(fileBytes, modelFooter, Excel_Footer, reportDate_n);
+                    var fileName = "日報表" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                    return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+                }
+                else
+                {
+                    return NotFound(); // 檔案不存在時返回 404
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500);
+            }
+        }
 
         #endregion
 
         #region 業績報表_日報表(202106合計版)
+        /// <summary>
+        /// 提供所有的分公司資料
+        /// </summary>
+        [HttpGet("GetUserCheckBCListAll")]
+        public ActionResult<ResultClass<string>> GetUserCheckBCListAll()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
 
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL_抓取可查詢的分公司資料
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select item_D_code,item_D_name,COUNT(*) from view_User_group ug";
+                T_SQL = T_SQL + " join view_User_sales leader on leader.U_num = ug.group_M_code";
+                T_SQL = T_SQL + " left join Item_list on Item_list.item_D_code=leader.U_BC and item_M_code='branch_company' and item_D_type='Y'";
+                T_SQL = T_SQL + " group by item_D_code,item_D_name,item_sort order by item_sort";
+                #endregion
+                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 業績報表_日報表(202106合計版)_查詢 Feat_daily_report_v2021_Query/Feat_daily_report_v2021.asp
+        /// </summary>
+        [HttpPost("Feat_daily_report_v2021_Query")]
+        public ActionResult<ResultClass<string>> Feat_daily_report_v2021_Query(FeatDailyReport_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "with A ( leader_name,plan_name,plan_num,group_id,group_M_id,group_M_title ,U_PFT_sort,U_PFT_name ,day_incase_num_FDCOM001,month_incase_num_FDCOM001 ";
+                T_SQL = T_SQL + " ,day_incase_num_FDCOM003,month_incase_num_FDCOM003 ,day_incase_num_FDCOM004,month_incase_num_FDCOM004 ,day_incase_num_FDCOM005,month_incase_num_FDCOM005 ";
+                T_SQL = T_SQL + " ,day_get_amount_num,day_get_amount,month_pass_num,month_get_amount_num ,month_get_amount_FDCOM001,month_get_amount_FDCOM003,month_get_amount_FDCOM004,month_get_amount_FDCOM005,month_pass_amount_FDCOM001,month_pre_amount_FDCOM001,month_pass_amount_FDCOM003,month_pass_amount_FDCOM004,month_pass_amount_FDCOM005,advance_payment_AE ) as ( SELECT isnull(ug.group_M_name,'未分組') leader_name";
+                T_SQL = T_SQL + " ,ug.group_D_name,ug.group_D_code, ug.group_id, ug.group_M_id,ug.group_M_title ,sa.U_PFT_sort,sa.U_PFT_name";
+                //新鑫 日進件數 
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and convert(varchar, Send_amount_date, 112) = @reportDate_n then 1 else 0 end ) as day_incase_num_FDCOM001";
+                //新鑫 月進件數
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and left(convert(varchar, Send_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, Send_amount_date, 112) <= @reportDate_n then 1 else 0 end ) as month_incase_num_FDCOM001";
+                //國&#23791; 日進件數
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and convert(varchar, Send_amount_date, 112) = @reportDate_n then 1 else 0 end ) as day_incase_num_FDCOM003";
+                //國&#23791; 月進件數
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and left(convert(varchar, Send_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, Send_amount_date, 112) <= @reportDate_n then 1 else 0 end ) as month_incase_num_FDCOM003";
+                //和潤 日進件數
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM004'=fund_company and convert(varchar, Send_amount_date, 112) = @reportDate_n then 1 else 0 end ) as day_incase_num_FDCOM004";
+                //和潤 月進件數
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM004'=fund_company and left(convert(varchar, Send_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, Send_amount_date, 112) <= @reportDate_n then 1 else 0 end ) as month_incase_num_FDCOM004";
+                //福斯 日進件數
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM005'=fund_company and convert(varchar, Send_amount_date, 112) = @reportDate_n then 1 else 0 end ) as day_incase_num_FDCOM005";
+                //福斯 月進件數
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM005'=fund_company and left(convert(varchar, Send_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, Send_amount_date, 112) <= @reportDate_n then 1 else 0 end ) as month_incase_num_FDCOM005";
+                //日撥款數
+                T_SQL = T_SQL + " ,sum(case when convert(varchar, get_amount_date, 112) = @reportDate_n  then 1 else 0 end ) as day_get_amount_num";
+                //日撥款額
+                T_SQL = T_SQL + " ,sum(case when convert(varchar, get_amount_date, 112) = @reportDate_n  then get_amount else 0 end ) as day_get_amount";
+                //月核准數 
+                T_SQL = T_SQL + " ,sum(case when left(convert(varchar, Send_result_date, 112),6)=LEFT(@reportDate_n,6) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type in ('SRT002','SRT005') then 1 else 0 end ) as month_pass_num";
+                //月撥款數
+                T_SQL = T_SQL + " ,sum(case when left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then 1 else 0 end ) as month_get_amount_num";
+                //新鑫 月撥款額
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then get_amount else 0 end ) as month_get_amount_FDCOM001";
+                //國&#23791; 月撥款額
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then get_amount else 0 end ) as month_get_amount_FDCOM003";
+                //和潤 月撥款額
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM004'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then get_amount else 0 end ) as month_get_amount_FDCOM004";
+                //福斯 月撥款額
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM005'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then get_amount else 0 end ) as month_get_amount_FDCOM005";
+                //新鑫 已核未撥
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN ('CKAT003') AND isnull(get_amount_type,'') NOT IN ('GTAT002','GTAT003') then pass_amount else 0 end ) as month_pass_amount_FDCOM001";
+                //新鑫 預核額度
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT005' then pass_amount else 0 end ) as month_pre_amount_FDCOM001";
+                //國&#23791; 已核未撥
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN ('CKAT003') AND isnull(get_amount_type,'') NOT IN ('GTAT002','GTAT003') then pass_amount else 0 end ) as month_pass_amount_FDCOM003";
+                //和潤 已核未撥
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM004'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN ('CKAT003') AND isnull(get_amount_type,'') NOT IN ('GTAT002','GTAT003') then pass_amount else 0 end ) as month_pass_amount_FDCOM004";
+                //福斯 已核未撥
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM005'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN ('CKAT003') AND isnull(get_amount_type,'') NOT IN ('GTAT002','GTAT003') then pass_amount else 0 end ) as month_pass_amount_FDCOM005";
+                //國&#23791; 代墊款(萬) 
+                T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then advance_payment_AE else 0 end ) as advance_payment_AE";
+                T_SQL = T_SQL + " FROM view_User_group ug join view_User_sales leader on leader.U_num = ug.group_M_code AND leader.U_BC = @U_BC ";
+                T_SQL = T_SQL + " join view_User_sales sa on sa.U_num = ug.group_D_code ";
+                T_SQL = T_SQL + " left join viewFeats f on ug.group_D_code = f.plan_num AND ( left(convert(varchar, f.Send_amount_date, 112),6) = LEFT(@reportDate_n,6) OR left(convert(varchar, f.Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) OR left(convert(varchar, f.get_amount_date, 112),6) = LEFT(@reportDate_n,6) ) ";
+                T_SQL = T_SQL + " where 1=1 and @reportDate_n between ug.group_M_start_day and ug.group_M_end_day and @reportDate_n between ug.group_D_start_day and ug.group_D_end_day  group by isnull(ug.group_M_name,'未分組'),ug.group_D_name,ug.group_D_code, ug.group_id, ug.group_M_id,ug.group_M_title,sa.U_PFT_sort,sa.U_PFT_name)";
+                T_SQL = T_SQL + " select SUM(a.day_incase_num_FDCOM001) as day_incase_num_FDCOM001_total,SUM(a.month_incase_num_FDCOM001) as month_incase_num_FDCOM001_total";
+                T_SQL = T_SQL + " ,SUM(a.day_incase_num_FDCOM003) as day_incase_num_FDCOM003_total,SUM(a.month_incase_num_FDCOM003) as month_incase_num_FDCOM003_total";
+                T_SQL = T_SQL + " ,SUM(a.day_get_amount_num) as day_get_amount_num_total,SUM(a.day_get_amount) as day_get_amount_total";
+                T_SQL = T_SQL + " ,SUM(a.month_pass_num) as month_pass_num_total,SUM(a.month_get_amount_num) as month_get_amount_num_total";
+                T_SQL = T_SQL + " ,SUM(a.month_get_amount_FDCOM001) as month_get_amount_FDCOM001_total,SUM(a.month_get_amount_FDCOM003) as month_get_amount_FDCOM003_total";
+                T_SQL = T_SQL + " ,SUM(a.month_pass_amount_FDCOM001) as month_pass_amount_FDCOM001_total,SUM(a.month_pre_amount_FDCOM001) as month_pre_amount_FDCOM001_total";
+                T_SQL = T_SQL + " ,SUM(a.month_pass_amount_FDCOM003) as month_pass_amount_FDCOM003_total,SUM(a.advance_payment_AE) as advance_payment_AE_total";
+                T_SQL = T_SQL + " ,SUM(ft.target_quota) as target_quota_total";
+                T_SQL = T_SQL + " ,CONVERT(DECIMAL(10, 2),CAST((SUM(a.month_get_amount_FDCOM001) + SUM(a.month_get_amount_FDCOM003)) AS FLOAT) / SUM(ft.target_quota) * 100) as percentage";
+                T_SQL = T_SQL + " FROM A  left join Feat_target ft on ft.del_tag='0'  and ft.U_num=A.plan_num  and ft.group_id=A.group_id  and ft.target_ym=LEFT(@reportDate_n,6)";
+                parameters.Add(new SqlParameter("@reportDate_n", model.reportDate_n));
+                parameters.Add(new SqlParameter("@U_BC", model.U_BC));
+                string reportDate_b = DateTime.ParseExact(model.reportDate_n, "yyyyMMdd", null).AddMonths(-1).ToString("yyyyMM");
+                parameters.Add(new SqlParameter("@reportDate_b", reportDate_b));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 日報表_(202106版)_下載 Feat_daily_report_v2021_Excel/Feat_daily_report_v2021.asp
+        /// </summary>
+        [HttpPost("Feat_daily_report_v2021_Excel")]
+        public IActionResult Feat_daily_report_v2021_Excel(string reportDate_n)
+        {
+            try
+            {
+                FeatDailyReport_excel_Total modelFooter = new FeatDailyReport_excel_Total();
+                ADOData _adoData = new ADOData();
+                #region SQL_抓取所有分公司資料
+                var parameters_comp = new List<SqlParameter>();
+                var T_SQL_COMP = "select item_D_code,item_D_name,COUNT(*) as peoplecount from view_User_group ug";
+                T_SQL_COMP = T_SQL_COMP + " join view_User_sales leader on leader.U_num = ug.group_M_code";
+                T_SQL_COMP = T_SQL_COMP + " left join Item_list on Item_list.item_D_code=leader.U_BC and item_M_code='branch_company' and item_D_type='Y'";
+                T_SQL_COMP = T_SQL_COMP + " group by item_D_code,item_D_name,item_sort order by item_sort";
+                #endregion
+                var dtResultComp = _adoData.ExecuteQuery(T_SQL_COMP, parameters_comp);
+                if(dtResultComp.Rows.Count > 0)
+                {
+                    byte[] fileBytes = null;
+                    for (int i = 0; i < dtResultComp.Rows.Count; i++)
+                    {
+                        string itemDCode = dtResultComp.Rows[i]["item_D_code"].ToString();
+                        string itemDName = dtResultComp.Rows[i]["item_D_name"].ToString();
+                        int itemCount= (int)dtResultComp.Rows[i]["peoplecount"];
+
+                        #region SQL
+                        var parameters = new List<SqlParameter>();
+                        var T_SQL = "with A ( leader_name,plan_name,plan_num,group_id,group_M_id,group_M_title ,U_PFT_sort,U_PFT_name ,day_incase_num_FDCOM001,month_incase_num_FDCOM001 ";
+                        T_SQL = T_SQL + " ,day_incase_num_FDCOM003,month_incase_num_FDCOM003 ,day_incase_num_FDCOM004,month_incase_num_FDCOM004 ,day_incase_num_FDCOM005,month_incase_num_FDCOM005 ";
+                        T_SQL = T_SQL + " ,day_get_amount_num,day_get_amount,month_pass_num,month_get_amount_num ,month_get_amount_FDCOM001,month_get_amount_FDCOM003,month_get_amount_FDCOM004,month_get_amount_FDCOM005,month_pass_amount_FDCOM001,month_pre_amount_FDCOM001,month_pass_amount_FDCOM003,month_pass_amount_FDCOM004,month_pass_amount_FDCOM005,advance_payment_AE ) as ( SELECT isnull(ug.group_M_name,'未分組') leader_name";
+                        T_SQL = T_SQL + " ,ug.group_D_name,ug.group_D_code, ug.group_id, ug.group_M_id,ug.group_M_title ,sa.U_PFT_sort,sa.U_PFT_name";
+                        //新鑫 日進件數 
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and convert(varchar, Send_amount_date, 112) = @reportDate_n then 1 else 0 end ) as day_incase_num_FDCOM001";
+                        //新鑫 月進件數
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and left(convert(varchar, Send_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, Send_amount_date, 112) <= @reportDate_n then 1 else 0 end ) as month_incase_num_FDCOM001";
+                        //國&#23791; 日進件數
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and convert(varchar, Send_amount_date, 112) = @reportDate_n then 1 else 0 end ) as day_incase_num_FDCOM003";
+                        //國&#23791; 月進件數
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and left(convert(varchar, Send_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, Send_amount_date, 112) <= @reportDate_n then 1 else 0 end ) as month_incase_num_FDCOM003";
+                        //和潤 日進件數
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM004'=fund_company and convert(varchar, Send_amount_date, 112) = @reportDate_n then 1 else 0 end ) as day_incase_num_FDCOM004";
+                        //和潤 月進件數
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM004'=fund_company and left(convert(varchar, Send_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, Send_amount_date, 112) <= @reportDate_n then 1 else 0 end ) as month_incase_num_FDCOM004";
+                        //福斯 日進件數
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM005'=fund_company and convert(varchar, Send_amount_date, 112) = @reportDate_n then 1 else 0 end ) as day_incase_num_FDCOM005";
+                        //福斯 月進件數
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM005'=fund_company and left(convert(varchar, Send_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, Send_amount_date, 112) <= @reportDate_n then 1 else 0 end ) as month_incase_num_FDCOM005";
+                        //日撥款數
+                        T_SQL = T_SQL + " ,sum(case when convert(varchar, get_amount_date, 112) = @reportDate_n  then 1 else 0 end ) as day_get_amount_num";
+                        //日撥款額
+                        T_SQL = T_SQL + " ,sum(case when convert(varchar, get_amount_date, 112) = @reportDate_n  then get_amount else 0 end ) as day_get_amount";
+                        //月核准數 
+                        T_SQL = T_SQL + " ,sum(case when left(convert(varchar, Send_result_date, 112),6)=LEFT(@reportDate_n,6) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type in ('SRT002','SRT005') then 1 else 0 end ) as month_pass_num";
+                        //月撥款數
+                        T_SQL = T_SQL + " ,sum(case when left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then 1 else 0 end ) as month_get_amount_num";
+                        //新鑫 月撥款額
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then get_amount else 0 end ) as month_get_amount_FDCOM001";
+                        //國&#23791; 月撥款額
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then get_amount else 0 end ) as month_get_amount_FDCOM003";
+                        //和潤 月撥款額
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM004'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then get_amount else 0 end ) as month_get_amount_FDCOM004";
+                        //福斯 月撥款額
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM005'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then get_amount else 0 end ) as month_get_amount_FDCOM005";
+                        //新鑫 已核未撥
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN ('CKAT003') AND isnull(get_amount_type,'') NOT IN ('GTAT002','GTAT003') then pass_amount else 0 end ) as month_pass_amount_FDCOM001";
+                        //新鑫 預核額度
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM001'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT005' then pass_amount else 0 end ) as month_pre_amount_FDCOM001";
+                        //國&#23791; 已核未撥
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN ('CKAT003') AND isnull(get_amount_type,'') NOT IN ('GTAT002','GTAT003') then pass_amount else 0 end ) as month_pass_amount_FDCOM003";
+                        //和潤 已核未撥
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM004'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN ('CKAT003') AND isnull(get_amount_type,'') NOT IN ('GTAT002','GTAT003') then pass_amount else 0 end ) as month_pass_amount_FDCOM004";
+                        //福斯 已核未撥
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM005'=fund_company and left(convert(varchar, Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) AND convert(varchar, Send_result_date, 112) <= @reportDate_n  AND Send_result_type = 'SRT002' AND isnull(check_amount_type,'') NOT IN ('CKAT003') AND isnull(get_amount_type,'') NOT IN ('GTAT002','GTAT003') then pass_amount else 0 end ) as month_pass_amount_FDCOM005";
+                        //國&#23791; 代墊款(萬) 
+                        T_SQL = T_SQL + " ,sum(case when 'FDCOM003'=fund_company and left(convert(varchar, get_amount_date, 112),6) = LEFT(@reportDate_n,6) AND convert(varchar, get_amount_date, 112) <= @reportDate_n  then advance_payment_AE else 0 end ) as advance_payment_AE";
+                        T_SQL = T_SQL + " FROM view_User_group ug join view_User_sales leader on leader.U_num = ug.group_M_code AND leader.U_BC = @U_BC ";
+                        T_SQL = T_SQL + " join view_User_sales sa on sa.U_num = ug.group_D_code ";
+                        T_SQL = T_SQL + " left join viewFeats f on ug.group_D_code = f.plan_num AND ( left(convert(varchar, f.Send_amount_date, 112),6) = LEFT(@reportDate_n,6) OR left(convert(varchar, f.Send_result_date, 112),6) in (LEFT(@reportDate_n,6),@reportDate_b) OR left(convert(varchar, f.get_amount_date, 112),6) = LEFT(@reportDate_n,6) ) ";
+                        T_SQL = T_SQL + " where 1=1 and @reportDate_n between ug.group_M_start_day and ug.group_M_end_day and @reportDate_n between ug.group_D_start_day and ug.group_D_end_day  group by isnull(ug.group_M_name,'未分組'),ug.group_D_name,ug.group_D_code, ug.group_id, ug.group_M_id,ug.group_M_title,sa.U_PFT_sort,sa.U_PFT_name)";
+                        T_SQL = T_SQL + " select SUM(a.day_incase_num_FDCOM001) as day_incase_num_FDCOM001_total,SUM(a.month_incase_num_FDCOM001) as month_incase_num_FDCOM001_total";
+                        T_SQL = T_SQL + " ,SUM(a.day_incase_num_FDCOM003) as day_incase_num_FDCOM003_total,SUM(a.month_incase_num_FDCOM003) as month_incase_num_FDCOM003_total";
+                        T_SQL = T_SQL + " ,SUM(a.day_get_amount_num) as day_get_amount_num_total,SUM(a.day_get_amount) as day_get_amount_total";
+                        T_SQL = T_SQL + " ,SUM(a.month_pass_num) as month_pass_num_total,SUM(a.month_get_amount_num) as month_get_amount_num_total";
+                        T_SQL = T_SQL + " ,SUM(a.month_get_amount_FDCOM001) as month_get_amount_FDCOM001_total,SUM(a.month_get_amount_FDCOM003) as month_get_amount_FDCOM003_total";
+                        T_SQL = T_SQL + " ,SUM(a.month_pass_amount_FDCOM001) as month_pass_amount_FDCOM001_total,SUM(a.month_pre_amount_FDCOM001) as month_pre_amount_FDCOM001_total";
+                        T_SQL = T_SQL + " ,SUM(a.month_pass_amount_FDCOM003) as month_pass_amount_FDCOM003_total,SUM(a.advance_payment_AE) as advance_payment_AE_total";
+                        T_SQL = T_SQL + " ,ISNULL(SUM(ft.target_quota),0) as target_quota_total";
+                        T_SQL = T_SQL + " ,ISNULL(CONVERT(DECIMAL(10, 2),CAST((SUM(a.month_get_amount_FDCOM001) + SUM(a.month_get_amount_FDCOM003)) AS FLOAT) / SUM(ft.target_quota) * 100),0) as percentage";
+                        T_SQL = T_SQL + " FROM A  left join Feat_target ft on ft.del_tag='0'  and ft.U_num=A.plan_num  and ft.group_id=A.group_id  and ft.target_ym=LEFT(@reportDate_n,6)";
+                        parameters.Add(new SqlParameter("@reportDate_n", reportDate_n));
+                        parameters.Add(new SqlParameter("@U_BC", itemDCode));
+                        string reportDate_b = DateTime.ParseExact(reportDate_n, "yyyyMMdd", null).AddMonths(-1).ToString("yyyyMM");
+                        parameters.Add(new SqlParameter("@reportDate_b", reportDate_b));
+                        #endregion
+                        var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                        if (dtResult.Rows.Count > 0)
+                        {
+                            var excelList = dtResult.AsEnumerable().Select(row => new FeatDailyReport_excel_Total
+                            {
+                                day_incase_num_FDCOM001_total = row.Field<int>("day_incase_num_FDCOM001_total"),
+                                month_incase_num_FDCOM001_total = row.Field<int>("month_incase_num_FDCOM001_total"),
+                                day_incase_num_FDCOM003_total = row.Field<int>("day_incase_num_FDCOM003_total"),
+                                month_incase_num_FDCOM003_total = row.Field<int>("month_incase_num_FDCOM003_total"),
+                                day_get_amount_num_total = row.Field<int>("day_get_amount_num_total"),
+                                day_get_amount_total = row.Field<int>("day_get_amount_total"),
+                                month_pass_num_total = row.Field<int>("month_pass_num_total"),
+                                month_get_amount_num_total = row.Field<int>("month_get_amount_num_total"),
+                                month_get_amount_FDCOM001_total = row.Field<int>("month_get_amount_FDCOM001_total"),
+                                month_get_amount_FDCOM003_total = row.Field<int>("month_get_amount_FDCOM003_total"),
+                                month_pass_amount_FDCOM001_total = row.Field<int>("month_pass_amount_FDCOM001_total"),
+                                month_pre_amount_FDCOM001_total = row.Field<int>("month_pre_amount_FDCOM001_total"),
+                                month_pass_amount_FDCOM003_total = row.Field<int>("month_pass_amount_FDCOM003_total"),
+                                advance_payment_AE_total = row.Field<decimal>("advance_payment_AE_total"),
+                                target_quota_total = row.Field<int>("target_quota_total")
+                            }).ToList();
+                            var Excel_Headers = new Dictionary<string, string>
+                            {
+                                { "U_PFT_name", "職位" },
+                                { "plan_name", "業務" },
+                                { "day_incase_num_FDCOM001_total", "新鑫日進件數" },
+                                { "month_incase_num_FDCOM001_total", "新鑫累積進件數" },
+                                { "day_incase_num_FDCOM003_total", "國峯日進件數" },
+                                { "month_incase_num_FDCOM003_total", "國峯累積進件數" },
+                                { "day_get_amount_num_total", "日撥件數" },
+                                { "day_get_amount_total", "日撥金額" },
+                                { "month_pass_num_total", "核准件數" },
+                                { "month_get_amount_num_total", "累積撥款件數" },
+                                { "month_get_amount_FDCOM001_total", "新鑫-撥款金額(萬)" },
+                                { "month_get_amount_FDCOM003_total", "國峯-撥款金額(萬)" },
+                                { "month_pass_amount_FDCOM001_total", "新鑫已核未撥" },
+                                { "month_pre_amount_FDCOM001_total", "新鑫預核額度" },
+                                { "month_pass_amount_FDCOM003_total", "國峯已核未撥" },
+                                { "advance_payment_AE_total", "國峯-代墊款(萬)" },
+                                { "target_quota_total", "目標(萬)" },
+                                { "AchievementRate", "達成率" }
+                            };
+                            if (i == 0)
+                            {
+                                fileBytes = FuncHandler.FeatDailyToExcel(excelList, Excel_Headers, itemDName, reportDate_n, itemCount);
+                            }
+                            else
+                            {
+                                fileBytes = FuncHandler.FeatDailyToExcelAgain(fileBytes, excelList, Excel_Headers, itemDName, reportDate_n, itemCount);
+                            }
+                            #region 總計 FeatDailyToExcelFooter
+                            var total_D_FDCOM001 = excelList.Sum(item => item.day_incase_num_FDCOM001_total);
+                            modelFooter.day_incase_num_FDCOM001_total += total_D_FDCOM001;
+                            var total_M_FDCOM001 = excelList.Sum(item => item.month_incase_num_FDCOM001_total);
+                            modelFooter.month_incase_num_FDCOM001_total += total_M_FDCOM001;
+                            var total_D_FDCOM003 = excelList.Sum(item => item.day_incase_num_FDCOM003_total);
+                            modelFooter.day_incase_num_FDCOM003_total += total_D_FDCOM003;
+                            var total_M_FDCOM003 = excelList.Sum(item => item.month_incase_num_FDCOM003_total);
+                            modelFooter.month_incase_num_FDCOM003_total += total_M_FDCOM003;
+                            var total_D_AmoutNum = excelList.Sum(item => item.day_get_amount_num_total);
+                            modelFooter.day_get_amount_num_total += total_D_AmoutNum;
+                            var total_S_Amout = excelList.Sum(item => item.day_get_amount_total);
+                            modelFooter.day_get_amount_total += total_S_Amout;
+                            var totol_M_PassNum = excelList.Sum(item => item.month_pass_num_total);
+                            modelFooter.month_pass_num_total += totol_M_PassNum;
+                            var total_M_AmoutNum = excelList.Sum(item => item.month_get_amount_num_total);
+                            modelFooter.month_get_amount_num_total += total_M_AmoutNum;
+                            var total_M_Amout_FDCOM001 = excelList.Sum(item => item.month_get_amount_FDCOM001_total);
+                            modelFooter.month_get_amount_FDCOM001_total += total_M_Amout_FDCOM001;
+                            var total_M_Amout_FDCOM003 = excelList.Sum(item => item.month_get_amount_FDCOM003_total);
+                            modelFooter.month_get_amount_FDCOM003_total += total_M_Amout_FDCOM003;
+                            var total_M_PassAmout_FDCOM001 = excelList.Sum(item => item.month_pass_amount_FDCOM001_total);
+                            modelFooter.month_pass_amount_FDCOM001_total += total_M_PassAmout_FDCOM001;
+                            var total_M_PreAmout_FDCOM001 = excelList.Sum(item => item.month_pre_amount_FDCOM001_total);
+                            modelFooter.month_pre_amount_FDCOM001_total += total_M_PreAmout_FDCOM001;
+                            var total_M_PassAmout_FDCOM003 = excelList.Sum(item => item.month_pass_amount_FDCOM003_total);
+                            modelFooter.month_pass_amount_FDCOM003_total += total_M_PassAmout_FDCOM003;
+                            var total_Pay = excelList.Sum(item => item.advance_payment_AE_total);
+                            modelFooter.advance_payment_AE_total += total_Pay;
+                            var total_Quota = excelList.Sum(item => item.target_quota_total);
+                            modelFooter.target_quota_total += total_Quota;
+                            #endregion
+                        }
+                    }
+                    //全區總計 FeatDailyToExcelFooter
+                    var Excel_Footer = new Dictionary<string, string>
+                    {
+                        { "U_PFT_name", "職位" },
+                        { "plan_name", "業務" },
+                        { "day_incase_num_FDCOM001_total", "新鑫日進件數" },
+                        { "month_incase_num_FDCOM001_total", "新鑫累積進件數" },
+                        { "day_incase_num_FDCOM003_total", "國峯日進件數" },
+                        { "month_incase_num_FDCOM003_total", "國峯累積進件數" },
+                        { "day_get_amount_num_total", "日撥件數" },
+                        { "day_get_amount_total", "日撥金額" },
+                        { "month_pass_num_total", "核准件數" },
+                        { "month_get_amount_num_total", "累積撥款件數" },
+                        { "month_get_amount_FDCOM001_total", "新鑫-撥款金額(萬)" },
+                        { "month_get_amount_FDCOM003_total", "國峯-撥款金額(萬)" },
+                        { "month_pass_amount_FDCOM001_total", "新鑫已核未撥" },
+                        { "month_pre_amount_FDCOM001_total", "新鑫預核額度" },
+                        { "month_pass_amount_FDCOM003_total", "國峯已核未撥" },
+                        { "advance_payment_AE_total", "國峯-代墊款(萬)" },
+                        { "target_quota_total", "目標(萬)" },
+                        { "AchievementRate", "達成率" }
+                    };
+                    fileBytes = FuncHandler.FeatDailyToExcelFooter(fileBytes, modelFooter, Excel_Footer, reportDate_n);
+                    var fileName = "日報表_合計版" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                    return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+                }
+                else
+                {
+                    return NotFound(); // 檔案不存在時返回 404
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500);
+            }
+        }
         #endregion
     }
 }
