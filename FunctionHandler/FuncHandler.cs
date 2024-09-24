@@ -138,10 +138,11 @@ namespace KF_WebAPI.FunctionHandler
                 {
                     var item = items[i];
                     worksheet.Cells[i + 2, 1].Value = i + 1;
+
                     for (int j = 0; j < properties.Length; j++)
                     {
                         var value = properties[j].GetValue(item);
-
+                        
                         // 檢查類型並設置值
                         if (value is int || value is long || value is float || value is double || value is decimal)
                         {
@@ -151,18 +152,23 @@ namespace KF_WebAPI.FunctionHandler
                         {
                             worksheet.Cells[i + 2, j + 2].Value = value?.ToString(); // 字符串赋值
                         }
+                    }
 
-                        // 添加表身邊框
-                        using (var range = worksheet.Cells[i + 1, j + 1])
-                        {
-                            range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                            range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                            range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                            range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        }
+                    // 添加表身邊框
+                    using (var range = worksheet.Cells[i + 2, 1, i + 2, headers.Count + 1])
+                    {
+                        range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                     }
                 }
 
+                // 列寬自動調整
+                for (int j = 0; j < properties.Length + 1; j++)
+                {
+                    worksheet.Column(j + 1).AutoFit();
+                }
                 return package.GetAsByteArray();
             }
         }

@@ -84,8 +84,8 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " ORDER BY bc.item_sort,pft.item_sort";
                 parameters.Add(new SqlParameter("@U_Check_BC_txt", U_Check_BC_txt));
                 #endregion
-                DataTable dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
-                if(dtResult.Rows.Count > 0)
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
                     resultClass.objResult = JsonConvert.SerializeObject(dtResult);
@@ -485,7 +485,7 @@ namespace KF_WebAPI.Controllers
             {
                 parameters.Add(new SqlParameter("@group_M_code", User_Num));
             }
-           
+
             #endregion
 
             return Ok(resultClass);
@@ -593,8 +593,8 @@ namespace KF_WebAPI.Controllers
                     parameters.Add(new SqlParameter("@YYYYMM", formattedDate));
                     parameters.Add(new SqlParameter("@U_BC", U_BC));
                     #endregion
-                    DataTable dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
-                    var modelList = dtResult.AsEnumerable().Select(row => new MonthQuota_res 
+                    DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                    var modelList = dtResult.AsEnumerable().Select(row => new MonthQuota_res
                     {
                         group_M_id = row.Field<decimal>("group_M_id"),
                         group_M_name = row.Field<string>("group_M_name"),
@@ -637,21 +637,21 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@U_num", model.U_num));
                 parameters.Add(new SqlParameter("@target_ym", model.target_ym));
                 #endregion
-                var dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
-                if (dtResult.Rows.Count>0) 
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
                 {
                     //修改
                     #region SQL
                     var parameters_u = new List<SqlParameter>();
                     var T_SQL_U = "update Feat_target set target_quota=@target_quota,edit_date=getdate(),edit_num=@edit_num,edit_ip=@edit_ip  ";
-                    T_SQL_U = T_SQL_U + " where U_num=@U_num and target_ym=@target_ym";                  
+                    T_SQL_U = T_SQL_U + " where U_num=@U_num and target_ym=@target_ym";
                     parameters_u.Add(new SqlParameter("@target_quota", model.target_quota));
                     parameters_u.Add(new SqlParameter("@edit_num", User_Num));
                     parameters_u.Add(new SqlParameter("@edit_ip", clientIp));
                     parameters_u.Add(new SqlParameter("@U_num", model.U_num));
                     parameters_u.Add(new SqlParameter("@target_ym", model.target_ym));
                     #endregion
-                    var result_u=_adoData.ExecuteNonQuery(T_SQL_U, parameters_u);
+                    var result_u = _adoData.ExecuteNonQuery(T_SQL_U, parameters_u);
                     if (result_u > 0)
                     {
                         resultClass.ResultCode = "000";
@@ -679,7 +679,7 @@ namespace KF_WebAPI.Controllers
                     parameters_in.Add(new SqlParameter("@add_num", User_Num));
                     parameters_in.Add(new SqlParameter("@add_ip", clientIp));
                     #endregion
-                    var result_in=_adoData.ExecuteNonQuery(T_SQL_IN, parameters_in);
+                    var result_in = _adoData.ExecuteNonQuery(T_SQL_IN, parameters_in);
                     if (result_in > 0)
                     {
                         resultClass.ResultCode = "000";
@@ -714,8 +714,8 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code='fund_company' and item_D_type='Y' and del_tag='0'";
                 #endregion
-                var dtResult=_adoData.ExecuteSQuery(T_SQL);
-                if(dtResult.Rows.Count > 0)
+                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+                if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
                     resultClass.objResult = JsonConvert.SerializeObject(dtResult);
@@ -753,8 +753,8 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " select 'zz'+REPLACE(U_Check_BC,'#',',') from User_M where U_num=@U_num))) order by item_sort";
                 parameters.Add(new SqlParameter("@U_num", User_Num));
                 #endregion
-                var dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
-                if( dtResult.Rows.Count > 0)
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
                     resultClass.objResult = JsonConvert.SerializeObject(dtResult);
@@ -817,11 +817,11 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@reportDate_n", model.reportDate_n));
                 parameters.Add(new SqlParameter("@company", model.company));
                 parameters.Add(new SqlParameter("@U_BC", model.U_BC));
-                string reportDate_b=DateTime.ParseExact(model.reportDate_n, "yyyyMMdd", null).AddMonths(-1).ToString("yyyyMM");
+                string reportDate_b = DateTime.ParseExact(model.reportDate_n, "yyyyMMdd", null).AddMonths(-1).ToString("yyyyMM");
                 parameters.Add(new SqlParameter("@reportDate_b", reportDate_b));
                 #endregion
-                var dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
-                if(dtResult.Rows.Count > 0)
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
                     resultClass.objResult = JsonConvert.SerializeObject(dtResult);
@@ -956,7 +956,7 @@ namespace KF_WebAPI.Controllers
                 if (dtResultComp.Rows.Count > 0)
                 {
                     byte[] fileBytes = null;
-                   
+
                     for (int i = 0; i < dtResultComp.Rows.Count; i++)
                     {
                         string itemDCode = dtResultComp.Rows[i]["item_D_code"].ToString();
@@ -1024,7 +1024,7 @@ namespace KF_WebAPI.Controllers
                         parameters.Add(new SqlParameter("@reportDate_b", reportDate_b));
                         #endregion
                         var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
-                        if(dtResult.Rows.Count > 0)
+                        if (dtResult.Rows.Count > 0)
                         {
                             var excelList = dtResult.AsEnumerable().Select(row => new FeatDailyReport_excel
                             {
@@ -1069,7 +1069,7 @@ namespace KF_WebAPI.Controllers
                             };
                             if (i == 0)
                             {
-                                fileBytes = FuncHandler.FeatDailyToExcel(excelList, Excel_Headers, itemDName,reportDate_n);
+                                fileBytes = FuncHandler.FeatDailyToExcel(excelList, Excel_Headers, itemDName, reportDate_n);
                             }
                             else
                             {
@@ -1267,7 +1267,7 @@ namespace KF_WebAPI.Controllers
                 string reportDate_b = DateTime.ParseExact(model.reportDate_n, "yyyyMMdd", null).AddMonths(-1).ToString("yyyyMM");
                 parameters.Add(new SqlParameter("@reportDate_b", reportDate_b));
                 #endregion
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
@@ -1305,14 +1305,14 @@ namespace KF_WebAPI.Controllers
                 T_SQL_COMP = T_SQL_COMP + " group by item_D_code,item_D_name,item_sort order by item_sort";
                 #endregion
                 var dtResultComp = _adoData.ExecuteQuery(T_SQL_COMP, parameters_comp);
-                if(dtResultComp.Rows.Count > 0)
+                if (dtResultComp.Rows.Count > 0)
                 {
                     byte[] fileBytes = null;
                     for (int i = 0; i < dtResultComp.Rows.Count; i++)
                     {
                         string itemDCode = dtResultComp.Rows[i]["item_D_code"].ToString();
                         string itemDName = dtResultComp.Rows[i]["item_D_name"].ToString();
-                        int itemCount= (int)dtResultComp.Rows[i]["peoplecount"];
+                        int itemCount = (int)dtResultComp.Rows[i]["peoplecount"];
 
                         #region SQL
                         var parameters = new List<SqlParameter>();
@@ -1504,5 +1504,500 @@ namespace KF_WebAPI.Controllers
             }
         }
         #endregion
+
+        #region 案件狀態表 SendCaseStatus.asp
+        /// <summary>
+        /// 案件狀態表_查詢 SendCaseStatus_Query/SendCaseStatus.asp
+        /// </summary>
+        [HttpPost("SendCaseStatus_Query")]
+        public ActionResult<ResultClass<string>> SendCaseStatus_Query(SendCaseStatu_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select * from [dbo].[fun_SendCaseStatus]( @Send_Date_S,@Send_Date_E )";
+                if (!string.IsNullOrEmpty(model.Company))
+                {
+                    T_SQL = T_SQL + " where fund_Company=@Company";
+                    parameters.Add(new SqlParameter("@Company", model.Company));
+                }
+                parameters.Add(new SqlParameter("@Send_Date_S", model.Send_Date_S));
+                parameters.Add(new SqlParameter("@Send_Date_E", model.Send_Date_E));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    var ExcelList = dtResult.AsEnumerable().Select(row => new SendCaseStatu_res
+                    {
+                        fund_company = row.Field<string>("fund_company"),
+                        Company_Name = row.Field<string>("Company_Name"),
+                        totleCount = row.Field<int>("totleCount"),
+                        ApprCount = row.Field<int>("ApprCount"),
+                        unApprCount = row.Field<int>("unApprCount"),
+                        PayCount = row.Field<int>("PayCount"),
+                        unPayCount = row.Field<int>("unPayCount"),
+                        WPayCount = row.Field<int>("WPayCount"),
+                        GUCount = row.Field<int>("GUCount")
+                    }).ToList();
+                    foreach (var item in ExcelList)
+                    {
+                        //送審中跟婉拒的筆數
+                        #region SQL
+                        var parameters_q = new List<SqlParameter>();
+                        var T_SQL_Q = "SELECT item_D_code,COUNT(fund_company) AS unApprCount FROM House_sendcase H";
+                        T_SQL_Q = T_SQL_Q + " LEFT JOIN (SELECT item_D_code,item_D_name FROM Item_list WHERE item_M_code = 'Send_result_type' AND item_D_type = 'Y') ST";
+                        T_SQL_Q = T_SQL_Q + " ON H.Send_result_type = ST.item_D_code";
+                        T_SQL_Q = T_SQL_Q + " WHERE Send_amount_date >= @Send_Date_S AND Send_amount_date <= @Send_Date_E";
+                        T_SQL_Q = T_SQL_Q + " AND Send_result_type <> 'SRT002' AND sendcase_handle_type = 'Y' AND fund_company = @Company";
+                        T_SQL_Q = T_SQL_Q + " GROUP BY item_D_code";
+                        parameters_q.Add(new SqlParameter("@Send_Date_S", model.Send_Date_S));
+                        parameters_q.Add(new SqlParameter("@Send_Date_E", model.Send_Date_E));
+                        parameters_q.Add(new SqlParameter("@Company", item.fund_company));
+                        #endregion
+                        DataTable dt = _adoData.ExecuteQuery(T_SQL_Q, parameters_q);
+                        for (int i = 0; i < dt.Rows.Count; i++)
+                        {
+                            if (dt.Rows[i]["item_D_code"].ToString() == "SRT001")
+                            {
+                                item.Review_count = (int)dt.Rows[i]["unApprCount"];
+                            }
+                            else if (dt.Rows[i]["item_D_code"].ToString() == "SRT004")
+                            {
+                                item.Decline_count = (int)dt.Rows[i]["unApprCount"];
+                            }
+                        }
+                        //不對保跟待對保筆數
+                        #region SQL
+                        var parameters_gu = new List<SqlParameter>();
+                        var T_SQL_GU = "select item_D_code,count(fund_company) as GUDCount from House_sendcase H";
+                        T_SQL_GU = T_SQL_GU + " left join (select item_D_code,item_D_name  from Item_list";
+                        T_SQL_GU = T_SQL_GU + " where item_M_code = 'check_amount_type' AND item_D_type='Y') ST on H.check_amount_type=ST.item_D_code";
+                        T_SQL_GU = T_SQL_GU + " where (Send_amount_date >= @Send_Date_S AND Send_amount_date <= @Send_Date_E ) and sendcase_handle_type='Y'";
+                        T_SQL_GU = T_SQL_GU + " AND Send_result_type= 'SRT002' and HS_id not in ( select  H.HS_id from House_sendcase H";
+                        T_SQL_GU = T_SQL_GU + " where (Send_amount_date >= @Send_Date_S AND Send_amount_date <= @Send_Date_E ) and sendcase_handle_type='Y'";
+                        T_SQL_GU = T_SQL_GU + " AND isnull(H.Send_amount,'')<>'' AND get_amount_type in ( 'GTAT001','GTAT002','GTAT003')";
+                        T_SQL_GU = T_SQL_GU + " ) AND  fund_company= @Company group by item_D_name,item_D_code  order by item_D_name";
+                        parameters_gu.Add(new SqlParameter("@Send_Date_S", model.Send_Date_S));
+                        parameters_gu.Add(new SqlParameter("@Send_Date_E", model.Send_Date_E));
+                        parameters_gu.Add(new SqlParameter("@Company", item.fund_company));
+                        #endregion
+                        DataTable dt_gu = _adoData.ExecuteQuery(T_SQL_GU, parameters_gu);
+                        for (int i = 0; i < dt_gu.Rows.Count; i++)
+                        {
+                            if (dt_gu.Rows[i]["item_D_code"].ToString() == "CKAT003")
+                            {
+                                item.GuaranteeNone = (int)dt_gu.Rows[i]["GUDCount"];
+                            }
+                            else if (dt_gu.Rows[i]["item_D_code"].ToString() == "CKAT001")
+                            {
+                                item.Guarantee = (int)dt_gu.Rows[i]["GUDCount"];
+                            }
+                        }
+                    }
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(ExcelList);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 案件狀態表_明細 SendCaseStatus_Open_Detail/SendCaseStatus_Detl.asp
+        /// </summary>
+        [HttpPost("SendCaseStatus_Open_Detail")]
+        public ActionResult<ResultClass<string>> SendCaseStatus_Open_Detail(SendCaseStatu_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "SELECT ISNULL(CS_PID, '') AS CS_ID,ISNULL(CS_register_address, '') AS addr,ISNULL(Loan_rate, '') AS Loan_rate";
+                T_SQL = T_SQL + " ,REPLACE(REPLACE(CONVERT(varchar(10), Send_amount_date, 126), '-', '/'),YEAR(Send_amount_date)";
+                T_SQL = T_SQL + " ,YEAR(Send_amount_date) - 1911) AS Send_amount_date,H.HS_id,H.pass_amount,H.Send_amount";
+                T_SQL = T_SQL + " ,House_pre_project.project_title,House_apply.CS_name,House_apply.CS_MTEL1,House_apply.CS_MTEL2";
+                T_SQL = T_SQL + " ,House_apply.CS_introducer,User_M.U_name AS plan_name,User_M.U_BC_name";
+                T_SQL = T_SQL + " ,ISNULL((SELECT item_D_name FROM Item_list WHERE item_M_code = 'Send_result_type'";
+                T_SQL = T_SQL + " AND item_D_type = 'Y' AND item_D_code = H.Send_result_type AND show_tag = '0'";
+                T_SQL = T_SQL + " AND del_tag = '0'), '--') AS show_Send_result_type";
+                T_SQL = T_SQL + " ,ISNULL((SELECT item_D_name FROM Item_list WHERE item_M_code = 'check_amount_type'";
+                T_SQL = T_SQL + " AND item_D_type = 'Y' AND item_D_code = H.check_amount_type";
+                T_SQL = T_SQL + " AND show_tag = '0'AND del_tag = '0'), '--') AS show_check_amount_type";
+                T_SQL = T_SQL + " ,ISNULL((SELECT item_D_name FROM Item_list WHERE item_M_code = 'get_amount_type'";
+                T_SQL = T_SQL + " AND item_D_type = 'Y' AND item_D_code = H.get_amount_type";
+                T_SQL = T_SQL + " AND show_tag = '0' AND del_tag = '0'), '--') AS show_get_amount_type,";
+                T_SQL = T_SQL + " (SELECT item_D_name FROM Item_list WHERE item_M_code = 'appraise_company' AND item_D_type = 'Y'";
+                T_SQL = T_SQL + " AND item_D_code = H.appraise_company AND show_tag = '0' AND del_tag = '0') AS show_appraise_company,";
+                T_SQL = T_SQL + " (SELECT item_D_name FROM Item_list WHERE item_M_code = 'fund_company'";
+                T_SQL = T_SQL + " AND item_D_type = 'Y' AND item_D_code = H.fund_company AND show_tag = '0' AND del_tag = '0') AS show_fund_company,";
+                T_SQL = T_SQL + " (SELECT item_D_name FROM Item_list WHERE item_M_code = 'project_title' AND item_D_type = 'Y'";
+                T_SQL = T_SQL + " AND item_D_code = House_pre_project.project_title AND show_tag = '0'";
+                T_SQL = T_SQL + " AND del_tag = '0') AS show_project_title,Users.U_name AS fin_name,";
+                T_SQL = T_SQL + " CONVERT(varchar, House_pre_project.fin_date, 111) AS fin_date FROM House_sendcase H";
+                T_SQL = T_SQL + " LEFT JOIN House_apply ON House_apply.HA_id = H.HA_id AND House_apply.del_tag = '0'";
+                T_SQL = T_SQL + " LEFT JOIN House_pre_project ON House_pre_project.HP_project_id = H.HP_project_id AND House_pre_project.del_tag = '0'";
+                T_SQL = T_SQL + " LEFT JOIN view_User_sales User_M ON User_M.U_num = House_apply.plan_num";
+                T_SQL = T_SQL + " LEFT JOIN view_user_sales Users ON house_pre_project.fin_user = Users.U_num";
+                T_SQL = T_SQL + " WHERE H.del_tag = '0' AND H.sendcase_handle_type = 'Y' AND ISNULL(H.Send_amount, '') <> ''";
+                T_SQL = T_SQL + " AND (Send_amount_date >= @Send_Date_S AND Send_amount_date <= @Send_Date_E)";
+                T_SQL = T_SQL + " AND fund_Company=@Company";
+                switch (model.status)
+                {
+                    case "Appr":
+                        T_SQL = T_SQL + " AND Send_result_type= 'SRT002'";
+                        break;
+                    case "unAppr":
+                        T_SQL = T_SQL + " AND Send_result_type<> 'SRT002'";
+                        break;
+                    case "Pay":
+                        T_SQL = T_SQL + " AND get_amount_type= 'GTAT002'";
+                        break;
+                    case "unPay":
+                        T_SQL = T_SQL + " AND get_amount_type = 'GTAT003'";
+                        break;
+                    case "WPay":
+                        T_SQL = T_SQL + " AND get_amount_type = 'GTAT001'";
+                        break;
+                    case "GU":
+                        T_SQL = T_SQL + " AND Send_result_type= 'SRT002' and HS_id not in (";
+                        T_SQL = T_SQL + " select  H.HS_id from House_sendcase H";
+                        T_SQL = T_SQL + " where (Send_amount_date >= @Send_Date_S AND Send_amount_date <= @Send_Date_E";
+                        T_SQL = T_SQL + " ) and sendcase_handle_type='Y'　AND isnull(H.Send_amount,'')<>''";
+                        T_SQL = T_SQL + " AND get_amount_type in ( 'GTAT001','GTAT002','GTAT003'))";
+                        break;
+                    default:
+                        break;
+                }
+                T_SQL = T_SQL + " ORDER BY Send_amount_date, H.HS_id DESC";
+                parameters.Add(new SqlParameter("@Send_Date_S", model.Send_Date_S));
+                parameters.Add(new SqlParameter("@Send_Date_E", model.Send_Date_E));
+                parameters.Add(new SqlParameter("@Company", model.Company));
+                #endregion
+                DataTable dtResult=_adoData.ExecuteQuery(T_SQL, parameters);    
+                if(dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 案件狀態表_下載 SendCaseStatus_Query_Excel/SendCaseStatus.asp
+        /// </summary>
+        [HttpPost("SendCaseStatus_Query_Excel")]
+        public IActionResult SendCaseStatus_Query_Excel(SendCaseStatu_req model)
+        {
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select * from [dbo].[fun_SendCaseStatus]( @Send_Date_S,@Send_Date_E )";
+                if (!string.IsNullOrEmpty(model.Company))
+                {
+                    T_SQL = T_SQL + " where fund_Company=@Company";
+                    parameters.Add(new SqlParameter("@Company", model.Company));
+                }
+                parameters.Add(new SqlParameter("@Send_Date_S", model.Send_Date_S));
+                parameters.Add(new SqlParameter("@Send_Date_E", model.Send_Date_E));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if(dtResult.Rows.Count > 0)
+                {
+                    var ExcelList = dtResult.AsEnumerable().Select(row => new SendCaseStatu_Excel
+                    {
+                        Company_Name = row.Field<string>("Company_Name"),
+                        totleCount = row.Field<int>("totleCount"),
+                        ApprCount = row.Field<int>("ApprCount"),
+                        unApprCount = row.Field<int>("unApprCount"),
+                        PayCount = row.Field<int>("PayCount"),
+                        unPayCount = row.Field<int>("unPayCount"),
+                        WPayCount = row.Field<int>("WPayCount"),
+                        GUCount = row.Field<int>("GUCount")
+                    }).ToList();
+                    var Excel_Headers = new Dictionary<string, string>
+                    {
+                        { "Company_Name", "放款公司" },
+                        { "totleCount", "案件總數" },
+                        { "unApprCount", "未核准" },
+                        { "ApprCount", "已核准" },
+                        { "PayCount", "已撥款" },
+                        { "unPayCount", "不撥款" },
+                        { "WPayCount", "待撥款" },
+                        { "GUCount", "對保" }
+                    };
+                    var fileBytes = FuncHandler.ExportToExcel(ExcelList, Excel_Headers);
+                    var fileName = "案件狀態表" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                    return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+                }
+                else
+                {
+                    return NotFound(); // 檔案不存在時返回 404
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500);
+            }
+        }
+        /// <summary>
+        /// 案件狀態表_明細_下載 SendCaseStatus_Open_Detail_Excel/SendCaseStatus_Open_Detail_Excel
+        /// </summary>
+        [HttpPost("SendCaseStatus_Open_Detail_Excel")]
+        public IActionResult SendCaseStatus_Open_Detail_Excel(SendCaseStatu_req model)
+        {
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "SELECT ISNULL(CS_PID, '') AS CS_ID,ISNULL(CS_register_address, '') AS addr,ISNULL(Loan_rate, '') AS Loan_rate";
+                T_SQL = T_SQL + " ,REPLACE(REPLACE(CONVERT(varchar(10), Send_amount_date, 126), '-', '/'),YEAR(Send_amount_date)";
+                T_SQL = T_SQL + " ,YEAR(Send_amount_date) - 1911) AS Send_amount_date,H.HS_id,H.pass_amount,H.Send_amount";
+                T_SQL = T_SQL + " ,House_pre_project.project_title,House_apply.CS_name,House_apply.CS_MTEL1,House_apply.CS_MTEL2";
+                T_SQL = T_SQL + " ,House_apply.CS_introducer,User_M.U_name AS plan_name,User_M.U_BC_name";
+                T_SQL = T_SQL + " ,ISNULL((SELECT item_D_name FROM Item_list WHERE item_M_code = 'Send_result_type'";
+                T_SQL = T_SQL + " AND item_D_type = 'Y' AND item_D_code = H.Send_result_type AND show_tag = '0'";
+                T_SQL = T_SQL + " AND del_tag = '0'), '--') AS show_Send_result_type";
+                T_SQL = T_SQL + " ,ISNULL((SELECT item_D_name FROM Item_list WHERE item_M_code = 'check_amount_type'";
+                T_SQL = T_SQL + " AND item_D_type = 'Y' AND item_D_code = H.check_amount_type";
+                T_SQL = T_SQL + " AND show_tag = '0'AND del_tag = '0'), '--') AS show_check_amount_type";
+                T_SQL = T_SQL + " ,ISNULL((SELECT item_D_name FROM Item_list WHERE item_M_code = 'get_amount_type'";
+                T_SQL = T_SQL + " AND item_D_type = 'Y' AND item_D_code = H.get_amount_type";
+                T_SQL = T_SQL + " AND show_tag = '0' AND del_tag = '0'), '--') AS show_get_amount_type,";
+                T_SQL = T_SQL + " (SELECT item_D_name FROM Item_list WHERE item_M_code = 'appraise_company' AND item_D_type = 'Y'";
+                T_SQL = T_SQL + " AND item_D_code = H.appraise_company AND show_tag = '0' AND del_tag = '0') AS show_appraise_company,";
+                T_SQL = T_SQL + " (SELECT item_D_name FROM Item_list WHERE item_M_code = 'fund_company'";
+                T_SQL = T_SQL + " AND item_D_type = 'Y' AND item_D_code = H.fund_company AND show_tag = '0' AND del_tag = '0') AS show_fund_company,";
+                T_SQL = T_SQL + " (SELECT item_D_name FROM Item_list WHERE item_M_code = 'project_title' AND item_D_type = 'Y'";
+                T_SQL = T_SQL + " AND item_D_code = House_pre_project.project_title AND show_tag = '0'";
+                T_SQL = T_SQL + " AND del_tag = '0') AS show_project_title,Users.U_name AS fin_name,";
+                T_SQL = T_SQL + " CONVERT(varchar, House_pre_project.fin_date, 111) AS fin_date FROM House_sendcase H";
+                T_SQL = T_SQL + " LEFT JOIN House_apply ON House_apply.HA_id = H.HA_id AND House_apply.del_tag = '0'";
+                T_SQL = T_SQL + " LEFT JOIN House_pre_project ON House_pre_project.HP_project_id = H.HP_project_id AND House_pre_project.del_tag = '0'";
+                T_SQL = T_SQL + " LEFT JOIN view_User_sales User_M ON User_M.U_num = House_apply.plan_num";
+                T_SQL = T_SQL + " LEFT JOIN view_user_sales Users ON house_pre_project.fin_user = Users.U_num";
+                T_SQL = T_SQL + " WHERE H.del_tag = '0' AND H.sendcase_handle_type = 'Y' AND ISNULL(H.Send_amount, '') <> ''";
+                T_SQL = T_SQL + " AND (Send_amount_date >= @Send_Date_S AND Send_amount_date <= @Send_Date_E)";
+                T_SQL = T_SQL + " AND fund_Company=@Company";
+                switch (model.status)
+                {
+                    case "Appr":
+                        T_SQL = T_SQL + " AND Send_result_type= 'SRT002'";
+                        break;
+                    case "unAppr":
+                        T_SQL = T_SQL + " AND Send_result_type<> 'SRT002'";
+                        break;
+                    case "Pay":
+                        T_SQL = T_SQL + " AND get_amount_type= 'GTAT002'";
+                        break;
+                    case "unPay":
+                        T_SQL = T_SQL + " AND get_amount_type = 'GTAT003'";
+                        break;
+                    case "WPay":
+                        T_SQL = T_SQL + " AND get_amount_type = 'GTAT001'";
+                        break;
+                    case "GU":
+                        T_SQL = T_SQL + " AND Send_result_type= 'SRT002' and HS_id not in (";
+                        T_SQL = T_SQL + " select  H.HS_id from House_sendcase H";
+                        T_SQL = T_SQL + " where (Send_amount_date >= @Send_Date_S AND Send_amount_date <= @Send_Date_E";
+                        T_SQL = T_SQL + " ) and sendcase_handle_type='Y'　AND isnull(H.Send_amount,'')<>''";
+                        T_SQL = T_SQL + " AND get_amount_type in ( 'GTAT001','GTAT002','GTAT003'))";
+                        break;
+                    default:
+                        break;
+                }
+                T_SQL = T_SQL + " ORDER BY Send_amount_date, H.HS_id DESC";
+                parameters.Add(new SqlParameter("@Send_Date_S", model.Send_Date_S));
+                parameters.Add(new SqlParameter("@Send_Date_E", model.Send_Date_E));
+                parameters.Add(new SqlParameter("@Company", model.Company));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if(dtResult.Rows.Count > 0)
+                {
+                    
+                    List<SendCaseStatu_Det_Excel> ExcelList = new List<SendCaseStatu_Det_Excel>();
+                    switch (model.status)
+                    {
+                        case "Appr":
+                            ExcelList = dtResult.AsEnumerable().Select(row => new SendCaseStatu_Det_Excel
+                            {
+                                HS_id = row.Field<decimal>("HS_id"),
+                                show_fund_company = row.Field<string>("show_fund_company"),
+                                Send_amount_date = row.Field<string>("Send_amount_date"),
+                                CS_name = row.Field<string>("CS_name"),
+                                CS_ID = row.Field<string>("CS_ID"),
+                                CS_MTEL1 = row.Field<string>("CS_MTEL1"),
+                                show_appraise_company = row.Field<string>("show_appraise_company"),
+                                show_project_title = row.Field<string>("show_project_title"),
+                                ShowType = row.Field<string>("show_Send_result_type"),
+                                Send_amount = row.Field<string>("Send_amount"),
+                                pass_amount = row.Field<string>("pass_amount"),
+                                Loan_rate = row.Field<string>("Loan_rate"),
+                                addr = row.Field<string>("addr")
+                            }).ToList();
+                            break;
+                        case "unAppr":
+                            ExcelList = dtResult.AsEnumerable().Select(row => new SendCaseStatu_Det_Excel
+                            {
+                                HS_id = row.Field<decimal>("HS_id"),
+                                show_fund_company = row.Field<string>("show_fund_company"),
+                                Send_amount_date = row.Field<string>("Send_amount_date"),
+                                CS_name = row.Field<string>("CS_name"),
+                                CS_ID = row.Field<string>("CS_ID"),
+                                CS_MTEL1 = row.Field<string>("CS_MTEL1"),
+                                show_appraise_company = row.Field<string>("show_appraise_company"),
+                                show_project_title = row.Field<string>("show_project_title"),
+                                ShowType = row.Field<string>("show_Send_result_type"),
+                                Send_amount = row.Field<string>("Send_amount"),
+                                pass_amount = row.Field<string>("pass_amount"),
+                                Loan_rate = row.Field<string>("Loan_rate"),
+                                addr = row.Field<string>("addr")
+                            }).ToList();
+                            break;
+                        case "Pay":
+                            ExcelList = dtResult.AsEnumerable().Select(row => new SendCaseStatu_Det_Excel
+                            {
+                                HS_id = row.Field<decimal>("HS_id"),
+                                show_fund_company = row.Field<string>("show_fund_company"),
+                                Send_amount_date = row.Field<string>("Send_amount_date"),
+                                CS_name = row.Field<string>("CS_name"),
+                                CS_ID = row.Field<string>("CS_ID"),
+                                CS_MTEL1 = row.Field<string>("CS_MTEL1"),
+                                show_appraise_company = row.Field<string>("show_appraise_company"),
+                                show_project_title = row.Field<string>("show_project_title"),
+                                ShowType = row.Field<string>("show_get_amount_type"),
+                                Send_amount = row.Field<string>("Send_amount"),
+                                pass_amount = row.Field<string>("pass_amount"),
+                                Loan_rate = row.Field<string>("Loan_rate"),
+                                addr = row.Field<string>("addr")
+                            }).ToList();
+                            break;
+                        case "unPay":
+                            ExcelList = dtResult.AsEnumerable().Select(row => new SendCaseStatu_Det_Excel
+                            {
+                                HS_id = row.Field<decimal>("HS_id"),
+                                show_fund_company = row.Field<string>("show_fund_company"),
+                                Send_amount_date = row.Field<string>("Send_amount_date"),
+                                CS_name = row.Field<string>("CS_name"),
+                                CS_ID = row.Field<string>("CS_ID"),
+                                CS_MTEL1 = row.Field<string>("CS_MTEL1"),
+                                show_appraise_company = row.Field<string>("show_appraise_company"),
+                                show_project_title = row.Field<string>("show_project_title"),
+                                ShowType = row.Field<string>("show_get_amount_type"),
+                                Send_amount = row.Field<string>("Send_amount"),
+                                pass_amount = row.Field<string>("pass_amount"),
+                                Loan_rate = row.Field<string>("Loan_rate"),
+                                addr = row.Field<string>("addr")
+                            }).ToList();
+                            break;
+                        case "WPay":
+                            ExcelList = dtResult.AsEnumerable().Select(row => new SendCaseStatu_Det_Excel
+                            {
+                                HS_id = row.Field<decimal>("HS_id"),
+                                show_fund_company = row.Field<string>("show_fund_company"),
+                                Send_amount_date = row.Field<string>("Send_amount_date"),
+                                CS_name = row.Field<string>("CS_name"),
+                                CS_ID = row.Field<string>("CS_ID"),
+                                CS_MTEL1 = row.Field<string>("CS_MTEL1"),
+                                show_appraise_company = row.Field<string>("show_appraise_company"),
+                                show_project_title = row.Field<string>("show_project_title"),
+                                ShowType = row.Field<string>("show_get_amount_type"),
+                                Send_amount = row.Field<string>("Send_amount"),
+                                pass_amount = row.Field<string>("pass_amount"),
+                                Loan_rate = row.Field<string>("Loan_rate"),
+                                addr = row.Field<string>("addr")
+                            }).ToList();
+                            break;
+                        case "GU":
+                            ExcelList = dtResult.AsEnumerable().Select(row => new SendCaseStatu_Det_Excel
+                            {
+                                HS_id = row.Field<decimal>("HS_id"),
+                                show_fund_company = row.Field<string>("show_fund_company"),
+                                Send_amount_date = row.Field<string>("Send_amount_date"),
+                                CS_name = row.Field<string>("CS_name"),
+                                CS_ID = row.Field<string>("CS_ID"),
+                                CS_MTEL1 = row.Field<string>("CS_MTEL1"),
+                                show_appraise_company = row.Field<string>("show_appraise_company"),
+                                show_project_title = row.Field<string>("show_project_title"),
+                                ShowType = row.Field<string>("show_check_amount_type"),
+                                Send_amount = row.Field<string>("Send_amount"),
+                                pass_amount = row.Field<string>("pass_amount"),
+                                Loan_rate = row.Field<string>("Loan_rate"),
+                                addr = row.Field<string>("addr")
+                            }).ToList();
+                            break;
+                        default:
+                            break;
+                    }
+                    var Excel_Headers = new Dictionary<string, string>
+                    {
+                        { "HS_id", "申貸案號" },
+                        { "show_fund_company", "放款公司" },
+                        { "Send_amount_date", "出件日期" },
+                        { "CS_name", "申請人" },
+                        { "CS_ID", "申請人ID" },
+                        { "CS_MTEL1", "行動一" },
+                        { "show_appraise_company", "出件公司" },
+                        { "show_project_title", "出件方案" },
+                        { "ShowType", "狀態" },
+                        { "Send_amount", "申貸金額(萬)" },
+                        { "pass_amount", "核准金額(萬)" },
+                        { "Loan_rate", "貸款成數" },
+                        { "addr", "地址" }
+                    };
+                    var fileBytes = FuncHandler.ExportToExcel(ExcelList, Excel_Headers);
+                    var fileName = "案件狀態明細表" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                    return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+                }
+                else
+                {
+                    return NotFound(); // 檔案不存在時返回 404
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500);
+            }
+        }
+        #endregion
+
+        #region 年度業績還比表
+
+        #endregion
+
+        #region 部門年度業績還比表 Performance_Plot_ByBC.asp
+
+        #endregion
+
     }
 }
