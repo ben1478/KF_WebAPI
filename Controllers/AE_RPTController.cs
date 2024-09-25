@@ -702,40 +702,6 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// 放款公司列表 GetCompanyList/_fn.asp
-        /// </summary>
-        [HttpGet("GetCompanyList")]
-        public ActionResult<ResultClass<string>> GetCompanyList()
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
-
-            try
-            {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code='fund_company' and item_D_type='Y' and del_tag='0'";
-                #endregion
-                var dtResult = _adoData.ExecuteSQuery(T_SQL);
-                if (dtResult.Rows.Count > 0)
-                {
-                    resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
-                    return Ok(resultClass);
-                }
-                else
-                {
-                    resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "查無資料";
-                    return BadRequest(resultClass);
-                }
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                return StatusCode(500, resultClass);
-            }
-        }
-        /// <summary>
         /// 提供可查詢的分公司資料
         /// </summary>
         [HttpGet("GetUserCheckBCList")]
@@ -1992,7 +1958,7 @@ namespace KF_WebAPI.Controllers
         }
         #endregion
 
-        #region 年度業績還比表
+        #region 年度業績還比表 / 部門年度業績還比表(多出需SESSION U_BC) / 業績表(放款公司)
         /// <summary>
         /// 提供查詢年月 GetSendcaseYYYMM/Performance_Plot.asp
         /// </summary>
@@ -2036,8 +2002,9 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         /// <param name="this_YY">2024-09</param>
         /// <param name="last_YY">2023</param>
+        /// <param name="fund_Comp">FDCOM003</param>
         [HttpGet("GetPerfByYYYY_PerformancePlot")]
-        public ActionResult<ResultClass<string>> GetPerfByYYYY_PerformancePlot(string this_YY, string last_YY)
+        public ActionResult<ResultClass<string>> GetPerfByYYYY_PerformancePlot(string this_YY, string last_YY,string? fund_Comp)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2051,6 +2018,11 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " LEFT JOIN House_apply on House_apply.HA_id = House_sendcase.HA_id where get_amount_type='GTAT002' ";
                 T_SQL = T_SQL + " and House_sendcase.del_tag = '0'  AND House_apply.del_tag='0'";
                 T_SQL = T_SQL + " AND isnull(House_sendcase.get_amount,'') <>'' AND convert(varchar(7), (get_amount_date), 126)   between @last_YY and  @this_YY";
+                if(!string.IsNullOrEmpty(fund_Comp))
+                {
+                    T_SQL = T_SQL + " and fund_company=@fund_Comp";
+                    parameters.Add(new SqlParameter("@fund_Comp", fund_Comp));
+                }
                 T_SQL = T_SQL + " group by Year(get_amount_date), month( get_amount_date)";
                 T_SQL = T_SQL + " order by Year(get_amount_date) asc, month( get_amount_date) asc";
                 parameters.Add(new SqlParameter("@this_YY", this_YY));
@@ -2081,8 +2053,9 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         /// <param name="this_YYMM">2024-09</param>
         /// <param name="last_YY">2023</param>
+        /// <param name="fund_Comp">FDCOM003</param>
         [HttpGet("GetBCPerfByYYYYMM_PerformancePlot")]
-        public ActionResult<ResultClass<string>> GetBCPerfByYYYYMM_PerformancePlot(string this_YYMM,string last_YY)
+        public ActionResult<ResultClass<string>> GetBCPerfByYYYYMM_PerformancePlot(string this_YYMM,string last_YY,string? fund_company)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2100,6 +2073,11 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " WHERE H.del_tag = '0' AND A.del_tag='0'  AND U_BC not in ('BC0700','BC0800')";
                 T_SQL = T_SQL + " AND isnull(H.get_amount, '') <>''";
                 T_SQL = T_SQL + " AND convert(varchar(7), (get_amount_date), 126) between @last_YYMM and @this_YYMM";
+                if (!string.IsNullOrEmpty(fund_company))
+                {
+                    T_SQL = T_SQL + " and fund_company=@fund_company";
+                    parameters.Add(new SqlParameter("@fund_company", fund_company));
+                }
                 T_SQL = T_SQL + " GROUP BY Year(get_amount_date),month(get_amount_date),U_BC,BC_NA";
                 parameters.Add(new SqlParameter("@last_YYMM", last_YY + "-01"));
                 parameters.Add(new SqlParameter("@this_YYMM", this_YYMM));
@@ -2307,8 +2285,9 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         /// <param name="YYYY">2024</param>
         /// <param name="YYYYMM">2024-09</param>
+        /// <param name="fund_Comp">FDCOM003</param>
         [HttpGet("GetBCPerfByYYYY_PerformancePlot")]
-        public ActionResult<ResultClass<string>> GetBCPerfByYYYY_PerformancePlot(string YYYY, string YYYYMM)
+        public ActionResult<ResultClass<string>> GetBCPerfByYYYY_PerformancePlot(string YYYY, string YYYYMM,string? fund_company)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2324,6 +2303,11 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " ) U on A.plan_num=U.U_num";
                 T_SQL = T_SQL + " WHERE H.del_tag = '0' AND A.del_tag='0' AND U_BC not in ('BC0700','BC0800') AND isnull(H.get_amount, '') <> ''";
                 T_SQL = T_SQL + " AND convert(varchar(7), (get_amount_date), 126) between @YYYY+'-01' and @YYYYMM";
+                if (!string.IsNullOrEmpty(fund_company))
+                {
+                    T_SQL = T_SQL + " and fund_company=@fund_company";
+                    parameters.Add(new SqlParameter("@fund_company", fund_company));
+                }
                 T_SQL = T_SQL + " GROUP BY Year(get_amount_date) ,U_BC,BC_NA,item_sort";
                 T_SQL = T_SQL + " ORDER BY item_sort ASC";
                 parameters.Add(new SqlParameter("@YYYY", YYYY));
@@ -2355,8 +2339,9 @@ namespace KF_WebAPI.Controllers
         /// <param name="this_YY">2024-09</param>
         /// <param name="last_YY">2023</param>
         /// <param name="U_BC">BC0100</param>
+        /// <param name="fund_Comp">FDCOM003</param>
         [HttpGet("GetPerfByYYYY_BC_PerformancePlot")]
-        public ActionResult<ResultClass<string>> GetPerfByYYYY_BC_PerformancePlot(string this_YY,string last_YY,string U_BC)
+        public ActionResult<ResultClass<string>> GetPerfByYYYY_BC_PerformancePlot(string this_YY,string last_YY,string U_BC,string? fund_company)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2374,6 +2359,11 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " ) U on A.plan_num=U.U_num";
                 T_SQL = T_SQL + " WHERE H.del_tag = '0'  AND A.del_tag='0' AND isnull(H.get_amount, '') <> ''";
                 T_SQL = T_SQL + " AND convert(varchar(7),(get_amount_date),126) between @last_YY+'-01' and @this_YY";
+                if(!string.IsNullOrEmpty(fund_company))
+                {
+                    T_SQL = T_SQL + " and fund_company=@fund_company";
+                    parameters.Add(new SqlParameter("@fund_company", fund_company));
+                }
                 T_SQL = T_SQL + " GROUP BY convert(varchar(7),get_amount_date,126),Year(get_amount_date),month(get_amount_date),U_BC,BC_NA) M";
                 T_SQL = T_SQL + " Left Join (select U_BC,yyyymm,sum(RateCount)RateCount from fun_GetRateCount(@last_YY+'-01',@this_YY)";
                 T_SQL = T_SQL + " group by U_BC,yyyymm ) R on M.U_BC=R.U_BC and M.yyyymm=R.yyyymm";
@@ -2559,9 +2549,31 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+        /// <summary>
+        /// 提供登入者的所屬分公司
+        /// </summary>
+        [HttpGet("GetUserBC")]
+        public ActionResult<ResultClass<string>> GetUserBC()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var User_U_BC = HttpContext.Session.GetString("User_U_BC");
+
+            if (!string.IsNullOrEmpty(User_U_BC))
+            {
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(User_U_BC);
+                return Ok(resultClass);
+            }
+            else
+            {
+                resultClass.ResultCode = "400";
+                resultClass.ResultMsg = "查無資料";
+                return BadRequest(resultClass);
+            }
+        }
         #endregion
 
-        #region 部門年度業績還比表 Performance_Plot_ByBC.asp
+        #region 客戶類型資料查詢
 
         #endregion
 

@@ -100,9 +100,11 @@ namespace KF_WebAPI.Controllers
                 if (dtResult.Rows.Count > 0)
                 {
                     var Role_num = dtResult.Rows[0]["Role_num"].ToString();
+                    var User_U_BC = dtResult.Rows[0]["U_BC"].ToString();
                     // 設置 Session
                     HttpContext.Session.SetString("UserID", uesr);
                     HttpContext.Session.SetString("Role_num", string.Join(',', Role_num));
+                    HttpContext.Session.SetString("User_U_BC", User_U_BC);
                     var roleNum = HttpContext.Session.GetString("Role_num");
                     return Ok(resultClass);
                 }
@@ -450,6 +452,41 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass); // 返回 500 錯誤碼
             }
 
+        }
+
+        /// <summary>
+        /// 提供放款公司列表 GetCompanyList/_fn.asp
+        /// </summary>
+        [HttpGet("GetCompanyList")]
+        public ActionResult<ResultClass<string>> GetCompanyList()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code='fund_company' and item_D_type='Y' and del_tag='0' and show_tag='0'";
+                #endregion
+                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
         }
     }
 
