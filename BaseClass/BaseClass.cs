@@ -52,7 +52,12 @@ namespace KF_WebAPI.BaseClass
         public string Password { get; set; }
     }
 
-
+    public class SpecialClass
+    {
+        public string BC_Strings { get; set; }
+        public string special_check { get; set; }
+        public string U_num { get; set; }
+    }
 
 
     public class APIErrorLog
