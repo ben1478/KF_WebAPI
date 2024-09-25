@@ -9,7 +9,7 @@ namespace KF_WebAPI.FunctionHandler
 {
     public class ADOData
     {
-        public  string ConnStr = "";
+        public  string ConnStr = "Data Source=ERP;Initial Catalog=AE_DB_TEST;User ID=sa;Password=juestcho;";
 
 
         public ADOData(string p_DB = "AE")
@@ -17,16 +17,14 @@ namespace KF_WebAPI.FunctionHandler
             switch (p_DB)
             {
                 case "AE":
-                    ConnStr = "Data Source=ERP;Initial Catalog=AE_DB;User ID=sa;Password=juestcho;";
+                    ConnStr = "Data Source=ERP;Initial Catalog=AE_DB_TEST;User ID=sa;Password=juestcho;";
                     break;
                 case "Other":
                     ConnStr = "Data Source=ERP;Initial Catalog=Other;User ID=sa;Password=juestcho;";
                     break;
             }
         }
-        //public  string ConnStr = "Data Source=ERP;Initial Catalog=AE_DB;User ID=sa;Password=juestcho;";
-        public string ConnStr = "Data Source=ERP;Initial Catalog=AE_DB_TEST;User ID=sa;Password=juestcho;";
-
+       
         public string GetConnStr()
         {
             return ConnStr;
