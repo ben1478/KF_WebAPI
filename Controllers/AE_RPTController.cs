@@ -3,6 +3,7 @@ using KF_WebAPI.BaseClass.AE;
 using KF_WebAPI.FunctionHandler;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using System;
 using System.Data;
@@ -1992,7 +1993,572 @@ namespace KF_WebAPI.Controllers
         #endregion
 
         #region 年度業績還比表
+        /// <summary>
+        /// 提供查詢年月 GetSendcaseYYYMM/Performance_Plot.asp
+        /// </summary>
+        [HttpGet("GetSendcaseYYYMM")]
+        public ActionResult<ResultClass<string>> GetSendcaseYYYMM()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
 
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select distinct convert(varchar(4),(convert(varchar(4),get_amount_date,126)-1911))+'-'+convert(varchar(2),month(get_amount_date)) yyyMM";
+                T_SQL = T_SQL + " ,convert(varchar(7),get_amount_date, 126) yyyymm from House_sendcase";
+                T_SQL = T_SQL + " where year(get_amount_date) > year(DATEADD(year,-2,SYSDATETIME()))";
+                T_SQL = T_SQL + " order by convert(varchar(7),get_amount_date, 126) desc";
+                #endregion
+                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// GetPerfByYYYY_PerformancePlot/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="this_YY">2024-09</param>
+        /// <param name="last_YY">2023</param>
+        [HttpGet("GetPerfByYYYY_PerformancePlot")]
+        public ActionResult<ResultClass<string>> GetPerfByYYYY_PerformancePlot(string this_YY, string last_YY)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select sum( CAST(House_sendcase.get_amount AS DECIMAL))amount, month( get_amount_date)  mm";
+                T_SQL = T_SQL + " ,Year(get_amount_date) yyyy from House_sendcase";
+                T_SQL = T_SQL + " LEFT JOIN House_apply on House_apply.HA_id = House_sendcase.HA_id where get_amount_type='GTAT002' ";
+                T_SQL = T_SQL + " and House_sendcase.del_tag = '0'  AND House_apply.del_tag='0'";
+                T_SQL = T_SQL + " AND isnull(House_sendcase.get_amount,'') <>'' AND convert(varchar(7), (get_amount_date), 126)   between @last_YY and  @this_YY";
+                T_SQL = T_SQL + " group by Year(get_amount_date), month( get_amount_date)";
+                T_SQL = T_SQL + " order by Year(get_amount_date) asc, month( get_amount_date) asc";
+                parameters.Add(new SqlParameter("@this_YY", this_YY));
+                parameters.Add(new SqlParameter("@last_YY", last_YY + "-01"));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// GetBCPerfByYYYYMM_PerformancePlot/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="this_YYMM">2024-09</param>
+        /// <param name="last_YY">2023</param>
+        [HttpGet("GetBCPerfByYYYYMM_PerformancePlot")]
+        public ActionResult<ResultClass<string>> GetBCPerfByYYYYMM_PerformancePlot(string this_YYMM,string last_YY)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "SELECT sum(CAST(H.get_amount AS DECIMAL))amount,Year(get_amount_date) yyyy,month(get_amount_date) mm,U_BC,BC_NA";
+                T_SQL = T_SQL + " FROM House_sendcase H";
+                T_SQL = T_SQL + " LEFT JOIN House_apply A ON A.HA_id = H.HA_id";
+                T_SQL = T_SQL + " LEFT JOIN (select U.U_num,U.U_BC,UB.item_D_name BC_NA from User_M u";
+                T_SQL = T_SQL + " LEFT JOIN Item_list ub ON ub.item_M_code='branch_company' AND ub.item_D_type='Y' AND ub.item_D_code=u.U_BC";
+                T_SQL = T_SQL + " ) U on A.plan_num=U.U_num";
+                T_SQL = T_SQL + " WHERE H.del_tag = '0' AND A.del_tag='0'  AND U_BC not in ('BC0700','BC0800')";
+                T_SQL = T_SQL + " AND isnull(H.get_amount, '') <>''";
+                T_SQL = T_SQL + " AND convert(varchar(7), (get_amount_date), 126) between @last_YYMM and @this_YYMM";
+                T_SQL = T_SQL + " GROUP BY Year(get_amount_date),month(get_amount_date),U_BC,BC_NA";
+                parameters.Add(new SqlParameter("@last_YYMM", last_YY + "-01"));
+                parameters.Add(new SqlParameter("@this_YYMM", this_YYMM));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// GetTotRateByYYYY_PerformancePlot/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="U_BC">BC0100</param>
+        /// <param name="YYYYMM">2024-09</param>
+        [HttpGet("GetTotRateByYYYY_PerformancePlot")]
+        public ActionResult<ResultClass<string>> GetTotRateByYYYY_PerformancePlot(string? U_BC,string YYYYMM)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select ThisAmtTot,LastAmtTot,CAST(ROUND((ThisAmtTot-LastAmtTot)/LastAmtTot *100,2) AS decimal(5,2)) Rate from (";
+                T_SQL = T_SQL + " select sum(ThisAmt)ThisAmtTot ,sum(LastAmt) LastAmtTot from ( select  ThisAmt ,LastAmt from (";
+                T_SQL = T_SQL + " select sum(CAST(House_sendcase.get_amount AS DECIMAL))ThisAmt,Year(get_amount_date) yyyy,U_BC from House_sendcase";
+                T_SQL = T_SQL + " LEFT JOIN House_apply on House_apply.HA_id = House_sendcase.HA_id";
+                T_SQL = T_SQL + " LEFT JOIN (select U_num ,U_BC,U_name FROM User_M ) User_M ON User_M.U_num = House_apply.plan_num";
+                T_SQL = T_SQL + " where House_sendcase.del_tag = '0' AND U_BC not in ('BC0700','BC0800') AND House_apply.del_tag='0'";
+                T_SQL = T_SQL + " AND isnull(House_sendcase.get_amount,'') <> '' AND convert(varchar(7),(get_amount_date),126)";
+                T_SQL = T_SQL + " between convert(varchar(4), @YYYYMM+'-01', 126)+'-01' and  @YYYYMM";
+                if(!string.IsNullOrEmpty(U_BC))
+                {
+                    T_SQL = T_SQL + " And U_BC=@U_BC";
+                }
+                T_SQL = T_SQL + " group by Year(get_amount_date),U_BC ) T";
+                T_SQL = T_SQL + " left join (";
+                T_SQL = T_SQL + " select sum(CAST(House_sendcase.get_amount AS DECIMAL))LastAmt,Year(get_amount_date) yyyy,U_BC from House_sendcase";
+                T_SQL = T_SQL + " LEFT JOIN House_apply on House_apply.HA_id = House_sendcase.HA_id";
+                T_SQL = T_SQL + " LEFT JOIN (select U_num ,U_BC,U_name  FROM User_M  ) User_M ON User_M.U_num = House_apply.plan_num";
+                T_SQL = T_SQL + " where House_sendcase.del_tag = '0' AND U_BC not in ('BC0700','BC0800') AND House_apply.del_tag='0'";
+                T_SQL = T_SQL + " AND isnull(House_sendcase.get_amount,'') <> '' AND convert(varchar(7),(get_amount_date),126)";
+                T_SQL = T_SQL + " between convert(varchar(4),  DATEADD(year,-1,@YYYYMM+'-01'), 126)+'-01'";
+                T_SQL = T_SQL + " and convert(varchar(7),DATEADD(year,-1,@YYYYMM+'-01'), 126)";
+                if (!string.IsNullOrEmpty(U_BC))
+                {
+                    T_SQL = T_SQL + " And U_BC=@U_BC";
+                    parameters.Add(new SqlParameter("@U_BC", U_BC));
+                }
+                T_SQL = T_SQL + " group by Year(get_amount_date),U_BC ) L on T.U_BC=L.U_BC ) A ) T";
+                parameters.Add(new SqlParameter("@YYYYMM", YYYYMM));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// GetTargetPerfByYYYY_PerformancePlot/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="this_YY">2024</param>
+        /// <param name="ThisTot">249855</param>
+        /// <param name="U_BC">BC0100</param>
+        [HttpGet("GetTargetPerfByYYYY_PerformancePlot")]
+        public ActionResult<ResultClass<string>> GetTargetPerfByYYYY_PerformancePlot(string this_YY,int ThisTot,string? U_BC)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select *,CAST(ROUND(CAST(@ThisTot AS decimal(8,0)) / CAST(Target AS decimal(8,0)), 2)*100 AS decimal(3,0)) TargetRate,";
+                T_SQL = T_SQL + " CAST(ROUND(CAST(Target-@ThisTot AS decimal(8,0)) / CAST(Target AS decimal(8,0)), 2)*100 AS decimal(3,0)) UnTargetRate";
+                T_SQL = T_SQL + " from ( SELECT KeyVal yyyy,count(ColumnVal) BC_Count, sum(convert(decimal, ColumnVal)) Target FROM LogTable";
+                T_SQL = T_SQL + " WHERE TableNA = 'Performance_Plot' and KeyVal=@this_YY";
+                if (!string.IsNullOrEmpty(U_BC))
+                {
+                    T_SQL = T_SQL + " and ColumnNA=@U_BC";
+                    parameters.Add(new SqlParameter("@U_BC", U_BC));
+                }
+                T_SQL = T_SQL + " group by KeyVal ) A";
+                parameters.Add(new SqlParameter("@this_YY", this_YY));
+                parameters.Add(new SqlParameter("@ThisTot", ThisTot));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// GetSalesByYYYYMM_PerformancePlot/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="YYYYMM">2024-09</param>
+        /// <param name="U_BC">BC0100</param>
+        [HttpGet("GetSalesByYYYYMM_PerformancePlot")]
+        public ActionResult<ResultClass<string>> GetSalesByYYYYMM_PerformancePlot(string YYYYMM, string? U_BC)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "";
+                if (!string.IsNullOrEmpty(U_BC))
+                {
+                    T_SQL = T_SQL + " select @YYYYMM yyyymm,E.U_BC,U_BC_Name,count(*) UserCount,convert(varchar(3),(year(@YYYYMM+'-01')-1911))+'-'+convert(varchar(2),month(@YYYYMM+'-01')) yyymm";
+                    T_SQL = T_SQL + " from [dbo].[fun_GetWorkUsers] (@YYYYMM) E";
+                    T_SQL = T_SQL + " Left Join  dbo.view_Sales_BC B on E.U_BC=B.U_BC where B.U_BC is not null and E.U_BC=@U_BC";
+                    T_SQL = T_SQL + " and U_PFT in ('PFT010','PFT015','PFT020','PFT030','PFT050','PFT060','PFT300')  and E.U_BC=@U_BC group by  E.U_BC,U_BC_Name";
+                    T_SQL = T_SQL + " union all";
+                    T_SQL = T_SQL + " select convert(varchar(7),  DATEADD(year,-1,@YYYYMM+'-01'), 126) yyyymm, E.U_BC,U_BC_Name ,count(*) UserCount";
+                    T_SQL = T_SQL + " ,convert(varchar(3), (year(DATEADD(year,-1,@YYYYMM+'-01'))-1911))+'-'+convert(varchar(2), month(DATEADD(year,-1,@YYYYMM+'-01'))) yyymm";
+                    T_SQL = T_SQL + " from [dbo].[fun_GetWorkUsers] (convert(varchar(7),  DATEADD(year,-1,@YYYYMM+'-01'), 126)) E";
+                    T_SQL = T_SQL + " Left Join  dbo.view_Sales_BC B on E.U_BC=B.U_BC where B.U_BC is not null";
+                    T_SQL = T_SQL + " and U_PFT in ('PFT010','PFT015','PFT020','PFT030','PFT050','PFT060','PFT300')  and E.U_BC=@U_BC group by  E.U_BC,U_BC_Name";
+                    parameters.Add(new SqlParameter("@U_BC", U_BC));
+                }
+                else
+                {
+                    T_SQL = T_SQL + " select  @YYYYMM yyyymm,count(*) UserCount,convert(varchar(3), (year(@YYYYMM+'-01')-1911))+'-'+convert(varchar(2), month(@YYYYMM+'-01')) yyymm";
+                    T_SQL = T_SQL + " from [dbo].[fun_GetWorkUsers] (@YYYYMM) E";
+                    T_SQL = T_SQL + " Left Join  dbo.view_Sales_BC B on E.U_BC=B.U_BC where B.U_BC is not null";
+                    T_SQL = T_SQL + " and U_PFT in ('PFT010','PFT015','PFT020','PFT030','PFT050','PFT060','PFT300')";
+                    T_SQL = T_SQL + " union all";
+                    T_SQL = T_SQL + " select convert(varchar(7),DATEADD(year,-1,@YYYYMM+'-01'), 126) yyyy,count(*)UserCount";
+                    T_SQL = T_SQL + " ,convert(varchar(3), (year(DATEADD(year,-1,@YYYYMM+'-01'))-1911))+'-'+convert(varchar(2), month(DATEADD(year,-1,@YYYYMM+'-01'))) yyymm";
+                    T_SQL = T_SQL + " from [dbo].[fun_GetWorkUsers] (convert(varchar(7), DATEADD(year,-1,@YYYYMM+'-01'), 126)) E";
+                    T_SQL = T_SQL + " Left Join  dbo.view_Sales_BC B on E.U_BC=B.U_BC where B.U_BC is not null";
+                    T_SQL = T_SQL + " and U_PFT in ('PFT010','PFT015','PFT020','PFT030','PFT050','PFT060','PFT300')";
+                }
+                parameters.Add(new SqlParameter("@YYYYMM", YYYYMM));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// GetBCPerfByYYYY_PerformancePlot/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="YYYY">2024</param>
+        /// <param name="YYYYMM">2024-09</param>
+        [HttpGet("GetBCPerfByYYYY_PerformancePlot")]
+        public ActionResult<ResultClass<string>> GetBCPerfByYYYY_PerformancePlot(string YYYY, string YYYYMM)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "SELECT sum(CAST(H.get_amount AS DECIMAL))amount, Year(get_amount_date) yyyy,U_BC,BC_NA,item_sort FROM House_sendcase H";
+                T_SQL = T_SQL + " LEFT JOIN House_apply A ON A.HA_id = H.HA_id";
+                T_SQL = T_SQL + " LEFT JOIN (select U.U_num,U.U_BC,UB.item_D_name BC_NA,item_sort from User_M u";
+                T_SQL = T_SQL + " LEFT JOIN Item_list ub ON ub.item_M_code='branch_company' AND ub.item_D_type='Y' AND ub.item_D_code=u.U_BC";
+                T_SQL = T_SQL + " ) U on A.plan_num=U.U_num";
+                T_SQL = T_SQL + " WHERE H.del_tag = '0' AND A.del_tag='0' AND U_BC not in ('BC0700','BC0800') AND isnull(H.get_amount, '') <> ''";
+                T_SQL = T_SQL + " AND convert(varchar(7), (get_amount_date), 126) between @YYYY+'-01' and @YYYYMM";
+                T_SQL = T_SQL + " GROUP BY Year(get_amount_date) ,U_BC,BC_NA,item_sort";
+                T_SQL = T_SQL + " ORDER BY item_sort ASC";
+                parameters.Add(new SqlParameter("@YYYY", YYYY));
+                parameters.Add(new SqlParameter("@YYYYMM", YYYYMM));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// GetPerfByYYYY_BC_PerformancePlot/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="this_YY">2024-09</param>
+        /// <param name="last_YY">2023</param>
+        /// <param name="U_BC">BC0100</param>
+        [HttpGet("GetPerfByYYYY_BC_PerformancePlot")]
+        public ActionResult<ResultClass<string>> GetPerfByYYYY_BC_PerformancePlot(string this_YY,string last_YY,string U_BC)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select M.*,InCount,RateCount,CAST(ROUND(CAST(InCount AS decimal(8,2))/CAST(RateCount AS decimal(8,2)),2)*100 AS decimal(3,0)) TRate";
+                T_SQL = T_SQL + " from (SELECT sum(CAST(H.get_amount AS DECIMAL)) amount,convert(varchar(7),get_amount_date,126)yyyymm,month(get_amount_date) mm,Year(get_amount_date) yyyy";
+                T_SQL = T_SQL + " ,U_BC,BC_NA FROM House_sendcase H";
+                T_SQL = T_SQL + " LEFT JOIN House_apply A ON A.HA_id = H.HA_id";
+                T_SQL = T_SQL + " LEFT JOIN (select U.U_num,U.U_BC,UB.item_D_name BC_NA from User_M u";
+                T_SQL = T_SQL + " LEFT JOIN Item_list ub ON ub.item_M_code='branch_company' AND ub.item_D_type='Y' AND ub.item_D_code=u.U_BC";
+                T_SQL = T_SQL + " ) U on A.plan_num=U.U_num";
+                T_SQL = T_SQL + " WHERE H.del_tag = '0'  AND A.del_tag='0' AND isnull(H.get_amount, '') <> ''";
+                T_SQL = T_SQL + " AND convert(varchar(7),(get_amount_date),126) between @last_YY+'-01' and @this_YY";
+                T_SQL = T_SQL + " GROUP BY convert(varchar(7),get_amount_date,126),Year(get_amount_date),month(get_amount_date),U_BC,BC_NA) M";
+                T_SQL = T_SQL + " Left Join (select U_BC,yyyymm,sum(RateCount)RateCount from fun_GetRateCount(@last_YY+'-01',@this_YY)";
+                T_SQL = T_SQL + " group by U_BC,yyyymm ) R on M.U_BC=R.U_BC and M.yyyymm=R.yyyymm";
+                T_SQL = T_SQL + " Left Join (select U_BC,yyyymm,sum(InCount)InCount from fun_GetInCount(@last_YY+'-01',@this_YY)";
+                T_SQL = T_SQL + " group by U_BC,yyyymm ) I on M.U_BC=I.U_BC and M.yyyymm=I.yyyymm";
+                T_SQL = T_SQL + " where  M.U_BC=@U_BC ORDER BY M.yyyymm ASC";
+                parameters.Add(new SqlParameter("@last_YY", last_YY));
+                parameters.Add(new SqlParameter("@this_YY", this_YY));
+                parameters.Add(new SqlParameter("@U_BC", U_BC));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// SetTargetPerfByYYYY_BC_PerformancePlot/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="YYYY">2024</param>
+        /// <param name="U_BC">BC0100</param>
+        /// <param name="isSet">Y</param>
+        [HttpGet("SetTargetPerfByYYYY_BC_PerformancePlot")]
+        public ActionResult<ResultClass<string>> SetTargetPerfByYYYY_BC_PerformancePlot(int YYYY,string U_BC,string isSet)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                if (isSet == "N")
+                    YYYY = YYYY - 1;
+
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select D.*,isnull(M.Target,'0')[Target] from (SELECT item_D_code U_BC,UB.item_D_name U_BC_Name,item_sort";
+                T_SQL = T_SQL + " FROM Item_list ub";
+                T_SQL = T_SQL + " WHERE ub.item_M_code='branch_company' AND ub.item_D_type='Y' ) D";
+                T_SQL = T_SQL + " Left join (SELECT KeyVal yyyy,convert(decimal,ColumnVal) Target,ColumnNA U_BC";
+                T_SQL = T_SQL + " FROM LogTable L  WHERE TableNA = 'Performance_Plot' and KeyVal=@YYYY) M";
+                T_SQL = T_SQL + " on m.U_BC=D.U_BC where D.U_BC not in ('BC0700','BC0800')";
+                T_SQL = T_SQL + " and  D.U_BC=@U_BC order by item_sort";
+                parameters.Add(new SqlParameter("@YYYY", YYYY));
+                parameters.Add(new SqlParameter("@U_BC", U_BC));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 異動年度目標SaveBC_Target_PerformancePlot/_Ajaxhandler.asp
+        /// </summary>
+        [HttpPost("SaveBC_Target_PerformancePlot")]
+        public ActionResult<ResultClass<string>> SaveBC_Target_PerformancePlot(string YYYY, string U_BC, Target_YYYY model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var User_Num = HttpContext.Session.GetString("UserID");
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL_Delete
+                var parameters_d = new List<SqlParameter>();
+                var T_SQL_D = "Delete LogTable where TableNA='Performance_Plot' and KeyVal=@YYYY and ColumnNA=@U_BC";
+                parameters_d.Add(new SqlParameter("@U_BC", U_BC));
+                parameters_d.Add(new SqlParameter("@YYYY", YYYY));
+                #endregion
+                int result_d = _adoData.ExecuteNonQuery(T_SQL_D, parameters_d);
+                if (result_d == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "刪除失敗";
+                    return BadRequest(resultClass);
+                }
+                else
+                {
+                    #region SQL
+                    var parameters = new List<SqlParameter>();
+                    var T_SQL = "Insert into LogTable(TableNA,KeyVal,ColumnNA,ColumnVal,LogID,LogDate) Values";
+                    T_SQL = T_SQL + "('Performance_Plot',@KeyVal,@ColumnNA,@ColumnVal,@LogID,GETDATE())";
+                    parameters.Add(new SqlParameter("@KeyVal", YYYY));
+                    parameters.Add(new SqlParameter("@ColumnNA", model.U_BC));
+                    parameters.Add(new SqlParameter("@ColumnVal", model.Target));
+                    parameters.Add(new SqlParameter("@LogID", User_Num));
+                    #endregion
+                    int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                    if (result == 0)
+                    {
+                        resultClass.ResultCode = "400";
+                        resultClass.ResultMsg = "新增失敗";
+                        return BadRequest(resultClass);
+                    }
+                    else
+                    {
+                        resultClass.ResultCode = "000";
+                        resultClass.ResultMsg = "新增成功";
+                        return Ok(resultClass);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// GetSalesListByYYYYMM_PerformancePlot/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="YYYYMM">2024-09</param>
+        /// <param name="U_BC">BC0100</param>
+        [HttpGet("GetSalesListByYYYYMM_PerformancePlot")]
+        public ActionResult<ResultClass<string>> GetSalesListByYYYYMM_PerformancePlot(string U_BC, string YYYYMM)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select E.u_name,PFT_NA,U_BC_Name,convert(varchar(3),(year(U_arrive_date)-1911))+'-'+convert(varchar(2),month(U_arrive_date))+'-'+convert(varchar(2),Day(U_arrive_date)) U_arrive_date,";
+                T_SQL = T_SQL + " convert(varchar(3),(year(U_leave_date)-1911))+'-'+convert(varchar(2),month(U_leave_date))+'-'+convert(varchar(2),Day(U_leave_date)) U_leave_date,";
+                T_SQL = T_SQL + " case when U_leave_date is null then 'Y' else 'N' end isWork,";
+                T_SQL = T_SQL + " DATEDIFF(MONTH,E.U_arrive_date,case when U_leave_date is null then GETDATE() else U_leave_date end)/12 AS JobYY,";
+                T_SQL = T_SQL + " DATEDIFF(day,E.U_arrive_date,case when U_leave_date is null then GETDATE() else U_leave_date end ) % 365/30 AS JobMM";
+                T_SQL = T_SQL + " from [dbo].[fun_GetWorkUsers] (@YYYYMM) E";
+                T_SQL = T_SQL + " Left Join  dbo.view_Sales_BC B on E.U_BC=B.U_BC";
+                T_SQL = T_SQL + " Left Join (select item_D_name PFT_NA,item_D_code U_PFT,item_sort from item_list where item_D_type='Y' and item_M_code ='professional_title') I";
+                T_SQL = T_SQL + " on E.U_PFT=I.U_PFT";
+                T_SQL = T_SQL + " where B.U_BC is not null and E.U_PFT in ('PFT010','PFT015','PFT020','PFT030','PFT050','PFT060','PFT300')";
+                T_SQL = T_SQL + " and E.U_BC=@U_BC order by E.U_BC, item_sort,E.U_arrive_date asc";
+                parameters.Add(new SqlParameter("@YYYYMM", YYYYMM));
+                parameters.Add(new SqlParameter("@U_BC", U_BC));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
         #endregion
 
         #region 部門年度業績還比表 Performance_Plot_ByBC.asp

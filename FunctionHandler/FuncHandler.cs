@@ -111,6 +111,8 @@ namespace KF_WebAPI.FunctionHandler
 
                 // 添加表頭
                 worksheet.Cells[1, 1].Value = "序號";
+                worksheet.Cells[1, 1].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                worksheet.Cells[1, 1].Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
                 for (int i = 0; i < properties.Length; i++)
                 {
                     var propertyName = properties[i].Name;
@@ -122,6 +124,9 @@ namespace KF_WebAPI.FunctionHandler
                     {
                         worksheet.Cells[1, i + 2].Value = propertyName;
                     }
+
+                    worksheet.Cells[1, i + 2].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    worksheet.Cells[1, i + 2].Style.Fill.BackgroundColor.SetColor(Color.LightBlue);  
                 }
 
                 // 添加表頭邊框

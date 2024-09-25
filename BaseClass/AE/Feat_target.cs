@@ -17,6 +17,12 @@
         public int target_ym { get; set; }
         public int target_quota { get; set; }
         public decimal group_M_id { get; set; }
+        
+    }
 
+    public class Target_YYYY
+    {
+        public string U_BC { get; set; }
+        public int Target { get;set; }
     }
 }
