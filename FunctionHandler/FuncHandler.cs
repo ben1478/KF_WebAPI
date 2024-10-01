@@ -2,7 +2,7 @@
 using KF_WebAPI.BaseClass.AE;
 using OfficeOpenXml;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Drawing;
 using System.Reflection;
 using System.Reflection.PortableExecutable;
@@ -729,6 +729,71 @@ namespace KF_WebAPI.FunctionHandler
                 return package.GetAsByteArray();
             }
         }
+        
+        /// <summary>
+        /// 民國年月日換成西元
+        /// </summary>
+        /// <param name="rocDate">113/9/25</param>
+        public static string ConvertROCToGregorian(string rocDate)
+        {
+            var parts = rocDate.Split('/');
+            int rocYear = int.Parse(parts[0]);
+            int month = int.Parse(parts[1]);
+            int day = int.Parse(parts[2]);
 
+            int gregorianYear = rocYear + 1911;
+
+            string formattedMonth = month.ToString("D2");
+            string formattedDay = day.ToString("D2");
+
+            string gregorianDate = $"{gregorianYear}/{formattedMonth}/{formattedDay}";
+
+            return gregorianDate;
+        }
+
+        public static byte[] ApprovalLoanSalesExcelFooter(byte[] existingFileBytes)
+        {
+            using (var package = new ExcelPackage(new MemoryStream(existingFileBytes)))
+            {
+                var worksheet = package.Workbook.Worksheets[0];
+                int existingRowCount = worksheet.Dimension.Rows;//抓現有的行數
+                int startRowIndex = existingRowCount + 1;
+
+
+                worksheet.Cells[startRowIndex, 1].Value = "總計:" + (existingRowCount-1);
+                worksheet.Cells[startRowIndex, 1, startRowIndex, 10].Merge = true; // 合併儲存格
+
+                worksheet.Cells[startRowIndex, 11].Value = "合計:";
+
+                var formula12 = $"SUM({worksheet.Cells[2, 12].Address}:{worksheet.Cells[existingRowCount, 12].Address})";
+                worksheet.Cells[startRowIndex, 12].Formula = formula12;
+                worksheet.Cells[startRowIndex, 12].Style.Numberformat.Format = "#,##0";
+
+                var formula17 = $"SUM({worksheet.Cells[2, 17].Address}:{worksheet.Cells[existingRowCount, 17].Address})";
+                worksheet.Cells[startRowIndex, 17].Formula = formula17;
+                worksheet.Cells[startRowIndex, 17].Style.Numberformat.Format = "#,##0";
+
+                var formula18 = $"SUM({worksheet.Cells[2, 18].Address}:{worksheet.Cells[existingRowCount, 18].Address})";
+                worksheet.Cells[startRowIndex, 18].Formula = formula18;
+                worksheet.Cells[startRowIndex, 18].Style.Numberformat.Format = "#,##0";
+
+                var formula19 = $"SUM({worksheet.Cells[2, 19].Address}:{worksheet.Cells[existingRowCount, 19].Address})";
+                worksheet.Cells[startRowIndex, 19].Formula = formula19;
+                worksheet.Cells[startRowIndex, 19].Style.Numberformat.Format = "#,##0";
+                
+                var formula20 = $"SUM({worksheet.Cells[2, 20].Address}:{worksheet.Cells[existingRowCount, 20].Address})";
+                worksheet.Cells[startRowIndex, 20].Formula = formula20;
+                worksheet.Cells[startRowIndex, 20].Style.Numberformat.Format = "#,##0";
+                
+                using (var range = worksheet.Cells[startRowIndex, 1, startRowIndex, 23])
+                {
+                    range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                }
+                return package.GetAsByteArray();
+            }
+        }
     }
 }

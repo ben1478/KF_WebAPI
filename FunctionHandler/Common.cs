@@ -1,6 +1,6 @@
 ﻿
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text;

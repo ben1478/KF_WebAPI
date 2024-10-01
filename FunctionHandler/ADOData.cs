@@ -1,7 +1,7 @@
 ﻿
 
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data.Common;
 
 
@@ -9,8 +9,7 @@ namespace KF_WebAPI.FunctionHandler
 {
     public class ADOData
     {
-        //public  string ConnStr = "Data Source=ERP;Initial Catalog=AE_DB;User ID=sa;Password=juestcho;";
-        public string ConnStr = "Data Source=ERP;Initial Catalog=AE_DB_TEST;User ID=sa;Password=juestcho;";
+        public string ConnStr = "Server=ERP;Database=AE_DB_TEST;User Id=sa;Password=juestcho;TrustServerCertificate=True;";
 
         public string GetConnStr()
         {

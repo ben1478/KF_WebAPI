@@ -1,6 +1,6 @@
 ﻿using KF_WebAPI.FunctionHandler;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using KF_WebAPI.BaseClass;
 using Newtonsoft.Json;
 using System.Data.Common;

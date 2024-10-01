@@ -6,7 +6,7 @@ using KF_WebAPI.DataLogic;
 using System.Data;
 
 using static KF_WebAPI.FunctionHandler.Common;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 
 namespace KF_WebAPI.Controllers
 {

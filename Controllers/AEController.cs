@@ -7,7 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
@@ -469,6 +469,45 @@ namespace KF_WebAPI.Controllers
                 var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code='fund_company' and item_D_type='Y' and del_tag='0' and show_tag='0'";
                 #endregion
                 var dtResult = _adoData.ExecuteSQuery(T_SQL);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 提供撥款查詢年月 GetSendcaseYYYMM/Performance_Plot.asp
+        /// </summary>
+        [HttpGet("GetSendcaseYYYMM")]
+        public ActionResult<ResultClass<string>> GetSendcaseYYYMM()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select distinct convert(varchar(4),(convert(varchar(4),get_amount_date,126)-1911))+'-'+convert(varchar(2),month(get_amount_date)) yyyMM";
+                T_SQL = T_SQL + " ,convert(varchar(7),get_amount_date, 126) yyyymm from House_sendcase";
+                T_SQL = T_SQL + " where year(get_amount_date) > year(DATEADD(year,-2,SYSDATETIME()))";
+                T_SQL = T_SQL + " order by convert(varchar(7),get_amount_date, 126) desc";
+                #endregion
+                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
                 if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";

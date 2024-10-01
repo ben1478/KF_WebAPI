@@ -7,9 +7,10 @@ using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Drawing.Drawing2D;
 using System.Reflection;
+
 
 namespace KF_WebAPI.Controllers
 {
@@ -1656,8 +1657,8 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@Send_Date_E", model.Send_Date_E));
                 parameters.Add(new SqlParameter("@Company", model.Company));
                 #endregion
-                DataTable dtResult=_adoData.ExecuteQuery(T_SQL, parameters);    
-                if(dtResult.Rows.Count > 0)
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
                     resultClass.objResult = JsonConvert.SerializeObject(dtResult);
@@ -1698,7 +1699,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@Send_Date_E", model.Send_Date_E));
                 #endregion
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
-                if(dtResult.Rows.Count > 0)
+                if (dtResult.Rows.Count > 0)
                 {
                     var ExcelList = dtResult.AsEnumerable().Select(row => new SendCaseStatu_Excel
                     {
@@ -1809,9 +1810,9 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@Company", model.Company));
                 #endregion
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
-                if(dtResult.Rows.Count > 0)
+                if (dtResult.Rows.Count > 0)
                 {
-                    
+
                     List<SendCaseStatu_Det_Excel> ExcelList = new List<SendCaseStatu_Det_Excel>();
                     switch (model.status)
                     {
@@ -1960,51 +1961,13 @@ namespace KF_WebAPI.Controllers
 
         #region 年度業績還比表 / 部門年度業績還比表(多出需SESSION U_BC) / 業績表(放款公司)
         /// <summary>
-        /// 提供查詢年月 GetSendcaseYYYMM/Performance_Plot.asp
-        /// </summary>
-        [HttpGet("GetSendcaseYYYMM")]
-        public ActionResult<ResultClass<string>> GetSendcaseYYYMM()
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
-
-            try
-            {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var parameters = new List<SqlParameter>();
-                var T_SQL = "select distinct convert(varchar(4),(convert(varchar(4),get_amount_date,126)-1911))+'-'+convert(varchar(2),month(get_amount_date)) yyyMM";
-                T_SQL = T_SQL + " ,convert(varchar(7),get_amount_date, 126) yyyymm from House_sendcase";
-                T_SQL = T_SQL + " where year(get_amount_date) > year(DATEADD(year,-2,SYSDATETIME()))";
-                T_SQL = T_SQL + " order by convert(varchar(7),get_amount_date, 126) desc";
-                #endregion
-                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
-                if (dtResult.Rows.Count > 0)
-                {
-                    resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
-                    return Ok(resultClass);
-                }
-                else
-                {
-                    resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "查無資料";
-                    return BadRequest(resultClass);
-                }
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                return StatusCode(500, resultClass);
-            }
-        }
-        /// <summary>
-        /// GetPerfByYYYY_PerformancePlot/_Ajaxhandler.asp
+        /// GetPerfByYYYY/_Ajaxhandler.asp
         /// </summary>
         /// <param name="this_YY">2024-09</param>
         /// <param name="last_YY">2023</param>
         /// <param name="fund_Comp">FDCOM003</param>
-        [HttpGet("GetPerfByYYYY_PerformancePlot")]
-        public ActionResult<ResultClass<string>> GetPerfByYYYY_PerformancePlot(string this_YY, string last_YY,string? fund_Comp)
+        [HttpGet("GetPerfByYYYY")]
+        public ActionResult<ResultClass<string>> GetPerfByYYYY(string this_YY, string last_YY, string? fund_Comp)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2018,7 +1981,7 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " LEFT JOIN House_apply on House_apply.HA_id = House_sendcase.HA_id where get_amount_type='GTAT002' ";
                 T_SQL = T_SQL + " and House_sendcase.del_tag = '0'  AND House_apply.del_tag='0'";
                 T_SQL = T_SQL + " AND isnull(House_sendcase.get_amount,'') <>'' AND convert(varchar(7), (get_amount_date), 126)   between @last_YY and  @this_YY";
-                if(!string.IsNullOrEmpty(fund_Comp))
+                if (!string.IsNullOrEmpty(fund_Comp))
                 {
                     T_SQL = T_SQL + " and fund_company=@fund_Comp";
                     parameters.Add(new SqlParameter("@fund_Comp", fund_Comp));
@@ -2028,7 +1991,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@this_YY", this_YY));
                 parameters.Add(new SqlParameter("@last_YY", last_YY + "-01"));
                 #endregion
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
@@ -2049,13 +2012,13 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// GetBCPerfByYYYYMM_PerformancePlot/_Ajaxhandler.asp
+        /// GetBCPerfByYYYYMM/_Ajaxhandler.asp
         /// </summary>
         /// <param name="this_YYMM">2024-09</param>
         /// <param name="last_YY">2023</param>
         /// <param name="fund_Comp">FDCOM003</param>
-        [HttpGet("GetBCPerfByYYYYMM_PerformancePlot")]
-        public ActionResult<ResultClass<string>> GetBCPerfByYYYYMM_PerformancePlot(string this_YYMM,string last_YY,string? fund_company)
+        [HttpGet("GetBCPerfByYYYYMM")]
+        public ActionResult<ResultClass<string>> GetBCPerfByYYYYMM(string this_YYMM, string last_YY, string? fund_company)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2103,12 +2066,12 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// GetTotRateByYYYY_PerformancePlot/_Ajaxhandler.asp
+        /// GetTotRateByYYYY/_Ajaxhandler.asp
         /// </summary>
         /// <param name="U_BC">BC0100</param>
         /// <param name="YYYYMM">2024-09</param>
-        [HttpGet("GetTotRateByYYYY_PerformancePlot")]
-        public ActionResult<ResultClass<string>> GetTotRateByYYYY_PerformancePlot(string? U_BC,string YYYYMM)
+        [HttpGet("GetTotRateByYYYY")]
+        public ActionResult<ResultClass<string>> GetTotRateByYYYY(string? U_BC, string YYYYMM)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2125,7 +2088,7 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " where House_sendcase.del_tag = '0' AND U_BC not in ('BC0700','BC0800') AND House_apply.del_tag='0'";
                 T_SQL = T_SQL + " AND isnull(House_sendcase.get_amount,'') <> '' AND convert(varchar(7),(get_amount_date),126)";
                 T_SQL = T_SQL + " between convert(varchar(4), @YYYYMM+'-01', 126)+'-01' and  @YYYYMM";
-                if(!string.IsNullOrEmpty(U_BC))
+                if (!string.IsNullOrEmpty(U_BC))
                 {
                     T_SQL = T_SQL + " And U_BC=@U_BC";
                 }
@@ -2146,7 +2109,7 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " group by Year(get_amount_date),U_BC ) L on T.U_BC=L.U_BC ) A ) T";
                 parameters.Add(new SqlParameter("@YYYYMM", YYYYMM));
                 #endregion
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
@@ -2167,13 +2130,13 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// GetTargetPerfByYYYY_PerformancePlot/_Ajaxhandler.asp
+        /// GetTargetPerfByYYYY/_Ajaxhandler.asp
         /// </summary>
         /// <param name="this_YY">2024</param>
         /// <param name="ThisTot">249855</param>
         /// <param name="U_BC">BC0100</param>
-        [HttpGet("GetTargetPerfByYYYY_PerformancePlot")]
-        public ActionResult<ResultClass<string>> GetTargetPerfByYYYY_PerformancePlot(string this_YY,int ThisTot,string? U_BC)
+        [HttpGet("GetTargetPerfByYYYY")]
+        public ActionResult<ResultClass<string>> GetTargetPerfByYYYY(string this_YY, int ThisTot, string? U_BC)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2195,7 +2158,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@this_YY", this_YY));
                 parameters.Add(new SqlParameter("@ThisTot", ThisTot));
                 #endregion
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
@@ -2216,12 +2179,12 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// GetSalesByYYYYMM_PerformancePlot/_Ajaxhandler.asp
+        /// GetSalesByYYYYMM/_Ajaxhandler.asp
         /// </summary>
         /// <param name="YYYYMM">2024-09</param>
         /// <param name="U_BC">BC0100</param>
-        [HttpGet("GetSalesByYYYYMM_PerformancePlot")]
-        public ActionResult<ResultClass<string>> GetSalesByYYYYMM_PerformancePlot(string YYYYMM, string? U_BC)
+        [HttpGet("GetSalesByYYYYMM")]
+        public ActionResult<ResultClass<string>> GetSalesByYYYYMM(string YYYYMM, string? U_BC)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2260,7 +2223,7 @@ namespace KF_WebAPI.Controllers
                 }
                 parameters.Add(new SqlParameter("@YYYYMM", YYYYMM));
                 #endregion
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
@@ -2281,13 +2244,13 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// GetBCPerfByYYYY_PerformancePlot/_Ajaxhandler.asp
+        /// GetBCPerfByYYYY/_Ajaxhandler.asp
         /// </summary>
         /// <param name="YYYY">2024</param>
         /// <param name="YYYYMM">2024-09</param>
         /// <param name="fund_Comp">FDCOM003</param>
-        [HttpGet("GetBCPerfByYYYY_PerformancePlot")]
-        public ActionResult<ResultClass<string>> GetBCPerfByYYYY_PerformancePlot(string YYYY, string YYYYMM,string? fund_company)
+        [HttpGet("GetBCPerfByYYYY")]
+        public ActionResult<ResultClass<string>> GetBCPerfByYYYY(string YYYY, string YYYYMM, string? fund_company)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2313,7 +2276,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@YYYY", YYYY));
                 parameters.Add(new SqlParameter("@YYYYMM", YYYYMM));
                 #endregion
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
@@ -2334,14 +2297,14 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// GetPerfByYYYY_BC_PerformancePlot/_Ajaxhandler.asp
+        /// GetPerfByYYYY_BC/_Ajaxhandler.asp
         /// </summary>
         /// <param name="this_YY">2024-09</param>
         /// <param name="last_YY">2023</param>
         /// <param name="U_BC">BC0100</param>
         /// <param name="fund_Comp">FDCOM003</param>
-        [HttpGet("GetPerfByYYYY_BC_PerformancePlot")]
-        public ActionResult<ResultClass<string>> GetPerfByYYYY_BC_PerformancePlot(string this_YY,string last_YY,string U_BC,string? fund_company)
+        [HttpGet("GetPerfByYYYY_BC")]
+        public ActionResult<ResultClass<string>> GetPerfByYYYY_BC(string this_YY, string last_YY, string U_BC, string? fund_company)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2359,7 +2322,7 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " ) U on A.plan_num=U.U_num";
                 T_SQL = T_SQL + " WHERE H.del_tag = '0'  AND A.del_tag='0' AND isnull(H.get_amount, '') <> ''";
                 T_SQL = T_SQL + " AND convert(varchar(7),(get_amount_date),126) between @last_YY+'-01' and @this_YY";
-                if(!string.IsNullOrEmpty(fund_company))
+                if (!string.IsNullOrEmpty(fund_company))
                 {
                     T_SQL = T_SQL + " and fund_company=@fund_company";
                     parameters.Add(new SqlParameter("@fund_company", fund_company));
@@ -2374,7 +2337,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@this_YY", this_YY));
                 parameters.Add(new SqlParameter("@U_BC", U_BC));
                 #endregion
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
@@ -2395,13 +2358,13 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// SetTargetPerfByYYYY_BC_PerformancePlot/_Ajaxhandler.asp
+        /// SetTargetPerfByYYYY_BC/_Ajaxhandler.asp
         /// </summary>
         /// <param name="YYYY">2024</param>
         /// <param name="U_BC">BC0100</param>
         /// <param name="isSet">Y</param>
-        [HttpGet("SetTargetPerfByYYYY_BC_PerformancePlot")]
-        public ActionResult<ResultClass<string>> SetTargetPerfByYYYY_BC_PerformancePlot(int YYYY,string U_BC,string isSet)
+        [HttpGet("SetTargetPerfByYYYY_BC")]
+        public ActionResult<ResultClass<string>> SetTargetPerfByYYYY_BC(int YYYY, string U_BC, string isSet)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2423,7 +2386,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@YYYY", YYYY));
                 parameters.Add(new SqlParameter("@U_BC", U_BC));
                 #endregion
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
@@ -2444,10 +2407,10 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// 異動年度目標SaveBC_Target_PerformancePlot/_Ajaxhandler.asp
+        /// 異動年度目標SaveBC_Target/_Ajaxhandler.asp
         /// </summary>
-        [HttpPost("SaveBC_Target_PerformancePlot")]
-        public ActionResult<ResultClass<string>> SaveBC_Target_PerformancePlot(string YYYY, string U_BC, Target_YYYY model)
+        [HttpPost("SaveBC_Target")]
+        public ActionResult<ResultClass<string>> SaveBC_Target(string YYYY, string U_BC, Target_YYYY model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
@@ -2501,12 +2464,12 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// GetSalesListByYYYYMM_PerformancePlot/_Ajaxhandler.asp
+        /// GetSalesListByYYYYMM/_Ajaxhandler.asp
         /// </summary>
         /// <param name="YYYYMM">2024-09</param>
         /// <param name="U_BC">BC0100</param>
-        [HttpGet("GetSalesListByYYYYMM_PerformancePlot")]
-        public ActionResult<ResultClass<string>> GetSalesListByYYYYMM_PerformancePlot(string U_BC, string YYYYMM)
+        [HttpGet("GetSalesListByYYYYMM")]
+        public ActionResult<ResultClass<string>> GetSalesListByYYYYMM(string U_BC, string YYYYMM)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2529,7 +2492,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@YYYYMM", YYYYMM));
                 parameters.Add(new SqlParameter("@U_BC", U_BC));
                 #endregion
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
@@ -2573,9 +2536,1409 @@ namespace KF_WebAPI.Controllers
         }
         #endregion
 
-        #region 客戶類型資料查詢
+        #region 客戶類型資料查詢 CS_ListByJob.asp
+        /// <summary>
+        /// 提供所有工作類型 GetJobKindList/CS_ListByJob.asp
+        /// </summary>
+        [HttpGet("GetJobKindList")]
+        public ActionResult<ResultClass<string>> GetJobKindList()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
 
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code = 'job_kind' AND item_D_type='Y' AND show_tag='0' AND del_tag='0' order by item_sort";
+                #endregion
+                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 客戶類型資料_查詢 CS_ListByJob_Query/CS_ListByJob.asp
+        /// </summary>
+        [HttpPost("CS_ListByJob_Query")]
+        public ActionResult<ResultClass<string>> CS_ListByJob_Query(CS_ListByJob_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "SELECT H.CS_name,H.CS_birthday,H.CS_MTEL1,H.CS_company_name,H.CS_company_tel,I1.job_kind_na";
+                T_SQL = T_SQL + " ,H.CS_job_title,H.CS_job_years,I.income_na,H.CS_income_everymonth FROM House_apply H";
+                T_SQL = T_SQL + " left join (select item_D_code cs_income_way,item_D_name income_na from Item_list where item_M_code = 'income_way' AND item_D_type='Y') I";
+                T_SQL = T_SQL + " on H.cs_income_way=I.cs_income_way";
+                T_SQL = T_SQL + " left join (select item_D_code cs_job_kind,case when item_D_code='jobk003' then '退休人士(其他)' else item_D_name end job_kind_na";
+                T_SQL = T_SQL + " from Item_list where item_M_code = 'job_kind' AND item_D_type='Y' ) I1";
+                T_SQL = T_SQL + " on H.cs_job_kind=I1.cs_job_kind WHERE H.del_tag = '0' AND plan_type='plan_T003'";
+                T_SQL = T_SQL + " AND plan_type_date between @Pre_Agency_Date_S and @Pre_Agency_Date_E";
+                if (!string.IsNullOrEmpty(model.job_kind))
+                {
+                    T_SQL = T_SQL + " AND H.cs_job_kind=@job_kind";
+                    parameters.Add(new SqlParameter("@job_kind", model.job_kind));
+                }
+                parameters.Add(new SqlParameter("@Pre_Agency_Date_S", model.Pre_Agency_Date_S));
+                parameters.Add(new SqlParameter("@Pre_Agency_Date_E", model.Pre_Agency_Date_E));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    DataTable pageData = FuncHandler.GetPage(dtResult, model.page, 100);
+                    resultClass.objResult = JsonConvert.SerializeObject(pageData);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 客戶類型資料_下載 CS_ListByJob_Excel/CS_ListByJob.asp
+        /// </summary>
+        [HttpPost("CS_ListByJob_Excel")]
+        public IActionResult CS_ListByJob_Excel(CS_ListByJob_req model)
+        {
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "SELECT H.CS_name,H.CS_birthday,H.CS_MTEL1,H.CS_company_name,H.CS_company_tel,I1.job_kind_na";
+                T_SQL = T_SQL + " ,H.CS_job_title,H.CS_job_years,I.income_na,H.CS_income_everymonth FROM House_apply H";
+                T_SQL = T_SQL + " left join (select item_D_code cs_income_way,item_D_name income_na from Item_list where item_M_code = 'income_way' AND item_D_type='Y') I";
+                T_SQL = T_SQL + " on H.cs_income_way=I.cs_income_way";
+                T_SQL = T_SQL + " left join (select item_D_code cs_job_kind,case when item_D_code='jobk003' then '退休人士(其他)' else item_D_name end job_kind_na";
+                T_SQL = T_SQL + " from Item_list where item_M_code = 'job_kind' AND item_D_type='Y' ) I1";
+                T_SQL = T_SQL + " on H.cs_job_kind=I1.cs_job_kind WHERE H.del_tag = '0' AND plan_type='plan_T003'";
+                T_SQL = T_SQL + " AND plan_type_date between @Pre_Agency_Date_S and @Pre_Agency_Date_E";
+                if (!string.IsNullOrEmpty(model.job_kind))
+                {
+                    T_SQL = T_SQL + " AND H.cs_job_kind=@job_kind";
+                    parameters.Add(new SqlParameter("@job_kind", model.job_kind));
+                }
+                parameters.Add(new SqlParameter("@Pre_Agency_Date_S", model.Pre_Agency_Date_S));
+                parameters.Add(new SqlParameter("@Pre_Agency_Date_E", model.Pre_Agency_Date_E));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    var ExcelList = dtResult.AsEnumerable().Select(row => new CS_ListByJob_Excel
+                    {
+                        CS_name = row.Field<string>("CS_name"),
+                        CS_birthday = row.Field<string>("CS_birthday"),
+                        CS_MTEL1 = row.Field<string>("CS_MTEL1"),
+                        CS_company_name = row.Field<string>("CS_company_name"),
+                        CS_company_tel = row.Field<string>("CS_company_tel"),
+                        job_kind_na = row.Field<string>("job_kind_na"),
+                        CS_job_title = row.Field<string>("CS_job_title"),
+                        CS_job_years = row.Field<string>("CS_job_years"),
+                        income_na = row.Field<string>("income_na"),
+                        CS_income_everymonth = row.Field<string>("CS_income_everymonth")
+                    }).ToList();
+                    var Excel_Headers = new Dictionary<string, string>
+                    {
+                        { "CS_name", "申請人" },
+                        { "CS_birthday", "生日" },
+                        { "CS_MTEL1", "行動電話" },
+                        { "CS_company_name", "公司名稱" },
+                        { "CS_company_tel", "公司電話" },
+                        { "job_kind_na", "工作類型" },
+                        { "CS_job_title", "職稱" },
+                        { "CS_job_years", "年資" },
+                        { "income_na", "收入方式" },
+                        { "CS_income_everymonth", "評估每月收入" }
+                    };
+                    var fileBytes = FuncHandler.ExportToExcel(ExcelList, Excel_Headers);
+                    var fileName = "客戶類型資料" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                    return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+                }
+                else
+                {
+                    return NotFound(); // 檔案不存在時返回 404
+                }
+            }
+            catch (Exception)
+            {
+                return StatusCode(500);
+            }
+        }
         #endregion
 
+        #region 客戶來源分析表(網路) CallCenter_IntSource_Report.asp
+        /// <summary>
+        /// GetCallCneterIntData/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="InDate_S">113/9/1</param>
+        /// <param name="InDate_E">113/9/25</param>
+        [HttpGet("GetCallCneterIntData")]
+        public ActionResult<ResultClass<string>> GetCallCneterIntData(string InDate_S, string InDate_E)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                InDate_S = FuncHandler.ConvertROCToGregorian(InDate_S);
+                InDate_E = FuncHandler.ConvertROCToGregorian(InDate_E);
+
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "SELECT li.item_D_name,li.item_D_code, COUNT(*) AS TelSourCount FROM TelemarketingCSList tc";
+                T_SQL = T_SQL + " left join Telemarketing_M tm on tm.HA_id = tc.TC_ID";
+                T_SQL = T_SQL + " left join Item_list li on li.item_D_code=tc.TelSour";
+                T_SQL = T_SQL + " where ISNULL(li.item_D_name,'') <> '' and ISNULL(InDate,'') <> ''";
+                T_SQL = T_SQL + " and convert(datetime,convert(varchar(4),(convert(varchar(3),InDate,126)+1911)) + SUBSTRING(InDate,4,10)) between @InDate_S and @InDate_E";
+                T_SQL = T_SQL + " GROUP BY li.item_D_name,li.item_D_code ORDER BY li.item_D_name DESC";
+                parameters.Add(new SqlParameter("@InDate_S", InDate_S));
+                parameters.Add(new SqlParameter("@InDate_E", InDate_E));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// GetCallCneterIntDataDetail/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="TelSour">SOU04</param>
+        /// <param name="InDate_S">113/9/1</param>
+        /// <param name="InDate_E">113/9/25</param>
+        [HttpGet("GetCallCneterIntDataDetail")]
+        public ActionResult<ResultClass<string>> GetCallCneterIntDataDetail(string TelSour, string InDate_S, string InDate_E)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                InDate_S = FuncHandler.ConvertROCToGregorian(InDate_S);
+                InDate_E = FuncHandler.ConvertROCToGregorian(InDate_E);
+
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "SELECT Case When ISnull(cs_rname,'')='' Then cs_name Else cs_rname END AS cs_name,CS_ID,cs_mtel1,li.item_D_name,cs_register_address";
+                T_SQL = T_SQL + " ,(select top 1 REPLACE(REPLACE(REPLACE(REPLACE(Memo,CHAR(13), ''),CHAR(10), ''),CHAR(9), ''),CHAR(8), '') from Telemarketing_Log tl where td.TM_id=tl.TM_id and tl.TM_D_id=td.TM_D_id order by add_date desc) as CS_remark";
+                T_SQL = T_SQL + " FROM view_Telemarketing_source tc";
+                T_SQL = T_SQL + " left join Telemarketing_M tm on tm.HA_id = tc.HA_id";
+                T_SQL = T_SQL + " left join view_Telemarketing_Curr td ON tm.TM_id = td.tm_id";
+                T_SQL = T_SQL + " left join Item_list li on li.item_D_code=tc.TelSour";
+                T_SQL = T_SQL + " where ISNULL(li.item_D_name,'') <> '' and ISNULL(InDate,'') <> ''";
+                T_SQL = T_SQL + " and convert(datetime, convert(varchar(4),(convert(varchar(3), InDate, 126)+1911)) + SUBSTRING(InDate,4,10)) between @InDate_S and @InDate_E";
+                T_SQL = T_SQL + " and tc.TelSour=@TelSour and tc.TM_type='2'";
+                T_SQL = T_SQL + " order by convert(datetime, convert(varchar(4),(convert(varchar(3), InDate, 126)+1911)) + SUBSTRING(InDate,4,10))";
+                parameters.Add(new SqlParameter("@InDate_S", InDate_S));
+                parameters.Add(new SqlParameter("@InDate_E", InDate_E));
+                parameters.Add(new SqlParameter("@TelSour", TelSour));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
+
+        #region 重復件數據分析表
+        /// <summary>
+        /// 提供查詢來源資料 GetTelSourList/Repeat_IntSource_Report.asp
+        /// </summary>
+        [HttpGet("GetTelSourList")]
+        public ActionResult<ResultClass<string>> GetTelSourList()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code='TelSour' and item_D_type='Y' and del_tag='0'";
+                #endregion
+
+                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// GetRepeatIntData/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="Sour">SOU01</param>
+        /// <param name="InDate_S">113/9/1</param>
+        /// <param name="InDate_E">113/9/25</param>
+        [HttpGet("GetRepeatIntData")]
+        public ActionResult<ResultClass<string>> GetRepeatIntData(string Sour, string InDate_S, string InDate_E)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                InDate_S = FuncHandler.ConvertROCToGregorian(InDate_S);
+                InDate_E = FuncHandler.ConvertROCToGregorian(InDate_E);
+
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "SELECT li.item_D_name,li.item_D_code, COUNT(*) AS AskSourCount ";
+                T_SQL = T_SQL + " FROM TelemarketingCSList tc ";
+                T_SQL = T_SQL + " left join Item_list li on li.item_D_code=tc.TelAsk where ISNULL(li.item_D_name,'') <> ''";
+                T_SQL = T_SQL + " and ISNULL(repeat, '') <> 'Y' and ISNULL(InDate,'') <> ''";
+                T_SQL = T_SQL + " and convert(datetime, convert(varchar(4),(convert(varchar(3), InDate, 126)+1911)) + SUBSTRING(InDate,4,10)) between @InDate_S and @InDate_E";
+                T_SQL = T_SQL + " and TelSour = @Sour and ISNULL(tc.TelAsk,'') <> '' GROUP BY li.item_D_name,item_D_code";
+                T_SQL = T_SQL + " union all";
+                T_SQL = T_SQL + " SELECT 'Repeat' AS item_D_name,'Repeat' AS item_D_code, COUNT(*) AS AskSourCount ";
+                T_SQL = T_SQL + " FROM TelemarketingCSList tc";
+                T_SQL = T_SQL + " WHERE ISNULL(repeat, '') = 'Y' and ISNULL(tc.TelAsk,'') <> '' and ISNULL(InDate,'') <> ''";
+                T_SQL = T_SQL + " and convert(datetime, convert(varchar(4),(convert(varchar(3), InDate, 126)+1911)) + SUBSTRING(InDate,4,10)) between @InDate_S and @InDate_E";
+                T_SQL = T_SQL + " and TelSour = @Sour";
+                parameters.Add(new SqlParameter("@InDate_S", InDate_S));
+                parameters.Add(new SqlParameter("@InDate_E", InDate_E));
+                parameters.Add(new SqlParameter("@Sour", Sour));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// GetRepeatIntDataTable/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="Sour">SOU01</param>
+        /// <param name="YYY">113</param>
+        [HttpGet("GetRepeatIntDataTable")]
+        public ActionResult<ResultClass<string>> GetRepeatIntDataTable(string Sour, string YYY)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "SELECT convert(varchar(4),(convert(varchar(3), InDate, 126)+1911))+ '-' +RIGHT('0' + CAST(SUBSTRING(InDate, CHARINDEX('/', InDate) + 1, CHARINDEX('/', InDate, CHARINDEX('/', InDate) + 1) - CHARINDEX('/', InDate) - 1) AS NVARCHAR(2)), 2) AS InDate,";
+                T_SQL = T_SQL + " SUM(CASE WHEN li.item_D_code = 'ASK03'AND ISNULL(repeat, '') <> 'Y' THEN 1 ELSE 0 END) AS ASK03,";
+                T_SQL = T_SQL + " SUM(CASE WHEN li.item_D_code = 'ASK01'AND ISNULL(repeat, '') <> 'Y' THEN 1 ELSE 0 END) AS ASK01,";
+                T_SQL = T_SQL + " SUM(CASE WHEN li.item_D_code = 'ASK02'AND ISNULL(repeat, '') <> 'Y' THEN 1 ELSE 0 END) AS ASK02,";
+                T_SQL = T_SQL + " SUM(CASE WHEN li.item_D_code = 'ASK04'AND ISNULL(repeat, '') <> 'Y' THEN 1 ELSE 0 END) AS ASK04,";
+                T_SQL = T_SQL + " SUM(CASE WHEN li.item_D_code = 'ASK05'AND ISNULL(repeat, '') <> 'Y' THEN 1 ELSE 0 END) AS ASK05,";
+                T_SQL = T_SQL + " SUM(CASE WHEN li.item_D_code = 'ASK06'AND ISNULL(repeat, '') <> 'Y' THEN 1 ELSE 0 END) AS ASK06,";
+                T_SQL = T_SQL + " SUM(CASE WHEN li.item_D_code IN ('ASK03', 'ASK01', 'ASK02', 'ASK04', 'ASK05','ASK06') and ISNULL(repeat, '') = 'Y' THEN 1 ELSE 0 END) AS repeat";
+                T_SQL = T_SQL + " FROM TelemarketingCSList tc LEFT JOIN Item_list li ON li.item_D_code = tc.TelAsk";
+                T_SQL = T_SQL + " WHERE TelSour = @Sour and ISNULL(tc.TelAsk,'') <> '' and left(InDate,3)=@YYY";
+                T_SQL = T_SQL + " GROUP BY convert(varchar(4),(convert(varchar(3), InDate, 126)+1911))+ '-' +RIGHT('0' + CAST(SUBSTRING(InDate, CHARINDEX('/', InDate) + 1, CHARINDEX('/', InDate, CHARINDEX('/', InDate) + 1) - CHARINDEX('/', InDate) - 1) AS NVARCHAR(2)), 2)";
+                T_SQL = T_SQL + " ORDER BY convert(varchar(4),(convert(varchar(3), InDate, 126)+1911))+ '-' +RIGHT('0' + CAST(SUBSTRING(InDate, CHARINDEX('/', InDate) + 1, CHARINDEX('/', InDate, CHARINDEX('/', InDate) + 1) - CHARINDEX('/', InDate) - 1) AS NVARCHAR(2)), 2)";
+                parameters.Add(new SqlParameter("@Sour", Sour));
+                parameters.Add(new SqlParameter("@YYY", YYY));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// GetRepeatIntDataDetail/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="TelAsk">ASK06</param>
+        /// <param name="InDate_S">113/9/1</param>
+        /// <param name="InDate_E">113/9/25</param>
+        /// <param name="Sour">SOU01</param>
+        [HttpGet("GetRepeatIntDataDetail")]
+        public ActionResult<ResultClass<string>> GetRepeatIntDataDetail(string TelAsk, string InDate_S, string InDate_E, string Sour)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                InDate_S = FuncHandler.ConvertROCToGregorian(InDate_S);
+                InDate_E = FuncHandler.ConvertROCToGregorian(InDate_E);
+
+                try
+                {
+                    ADOData _adoData = new ADOData();
+                    #region SQL
+                    var parameters = new List<SqlParameter>();
+                    var T_SQL = "";
+                    if (TelAsk != "Repeat")
+                    {
+                        T_SQL = T_SQL + " SELECT Case When ISnull(tc.cs_rname,'')='' Then tc.cs_name Else tc.cs_rname END AS cs_name,tc.CS_ID,tc.cs_mtel1,li.item_D_name,tc.cs_register_address";
+                        T_SQL = T_SQL + " ,(select top 1 REPLACE(REPLACE(REPLACE(REPLACE(Memo,CHAR(13), ''),CHAR(10), ''),CHAR(9), ''),CHAR(8), '') from Telemarketing_Log tl where td.TM_id=tl.TM_id and tl.TM_D_id=td.TM_D_id order by add_date desc) as CS_remark";
+                        T_SQL = T_SQL + " FROM view_Telemarketing_source tc";
+                        T_SQL = T_SQL + " inner join TelemarketingCSList tcs on tcs.TC_ID=tc.ha_id";
+                        T_SQL = T_SQL + " left join Telemarketing_M tm on tm.HA_id = tc.HA_id";
+                        T_SQL = T_SQL + " left join view_Telemarketing_Curr td ON tm.TM_id = td.tm_id";
+                        T_SQL = T_SQL + " left join Item_list li on li.item_D_code=tc.TelAsk where ISNULL(li.item_D_name,'') <> ''";
+                        T_SQL = T_SQL + " and ISNULL(repeat, '') <> 'Y' and ISNULL(tc.InDate,'') <> ''";
+                        T_SQL = T_SQL + " and convert(datetime, convert(varchar(4),(convert(varchar(3), tc.InDate, 126)+1911)) + SUBSTRING(tc.InDate,4,10)) between @InDate_S and @InDate_E";
+                        T_SQL = T_SQL + " and tc.TelSour = @Sour and tc.TM_type='2' and ISNULL(tc.TelAsk,'') <> '' and tc.TelAsk=@TelAsk";
+                    }
+                    else
+                    {
+                        T_SQL = T_SQL + " SELECT Case When ISnull(tc.cs_rname,'')='' Then tc.cs_name Else tc.cs_rname END AS cs_name,tc.CS_ID,tc.cs_mtel1,'Repeat' AS item_D_name,tc.cs_register_address";
+                        T_SQL = T_SQL + " ,(select top 1 REPLACE(REPLACE(REPLACE(REPLACE(Memo,CHAR(13), ''),CHAR(10), ''),CHAR(9), ''),CHAR(8), '') from Telemarketing_Log tl where td.TM_id=tl.TM_id and tl.TM_D_id=td.TM_D_id order by add_date desc) as CS_remark";
+                        T_SQL = T_SQL + " FROM view_Telemarketing_source tc";
+                        T_SQL = T_SQL + " inner join TelemarketingCSList tcs on tcs.TC_ID=tc.ha_id";
+                        T_SQL = T_SQL + " left join Telemarketing_M tm on tm.HA_id = tc.HA_id";
+                        T_SQL = T_SQL + " left join view_Telemarketing_Curr td ON tm.TM_id = td.tm_id";
+                        T_SQL = T_SQL + " WHERE ISNULL(repeat, '') = 'Y' and ISNULL(tc.TelAsk,'') <> '' and ISNULL(tc.InDate,'') <> ''";
+                        T_SQL = T_SQL + " and convert(datetime, convert(varchar(4),(convert(varchar(3), tc.InDate, 126)+1911)) + SUBSTRING(tc.InDate,4,10)) between @InDate_S and @InDate_E";
+                        T_SQL = T_SQL + " and tc.TelSour = @Sour and tc.TM_type='2'";
+                    }
+                    parameters.Add(new SqlParameter("@InDate_S", InDate_S));
+                    parameters.Add(new SqlParameter("@InDate_E", InDate_E));
+                    parameters.Add(new SqlParameter("@Sour", Sour));
+                    parameters.Add(new SqlParameter("@TelAsk", TelAsk));
+                    #endregion
+                    DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                    if (dtResult.Rows.Count > 0)
+                    {
+                        resultClass.ResultCode = "000";
+                        resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                        return Ok(resultClass);
+                    }
+                    else
+                    {
+                        resultClass.ResultCode = "400";
+                        resultClass.ResultMsg = "查無資料";
+                        return BadRequest(resultClass);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    resultClass.ResultCode = "500";
+                    return StatusCode(500, resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
+
+        #region 網路電銷房貸狀態分析表
+        /// <summary>
+        /// GetCallMortgageIntData/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="InDate_S">113/9/1</param>
+        /// <param name="InDate_E">113/9/25</param>
+        [HttpGet("GetCallMortgageIntData")]
+        public ActionResult<ResultClass<string>> GetCallMortgageIntData(string InDate_S, string InDate_E)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                InDate_S = FuncHandler.ConvertROCToGregorian(InDate_S);
+                InDate_E = FuncHandler.ConvertROCToGregorian(InDate_E);
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "SELECT CASE WHEN Fin_type IN ('FIN_T13', 'FIN_T22', 'FIN_T09', 'FIN_T23', 'FIN_T25') THEN Fin_name WHEN Fin_type IN ('FIN_T02','FIN_T28') THEN 'FIN' END AS Fin_name,";
+                T_SQL = T_SQL + " CASE WHEN Fin_type IN ('FIN_T13', 'FIN_T22', 'FIN_T09', 'FIN_T23', 'FIN_T25') THEN Fin_type WHEN Fin_type IN ('FIN_T02','FIN_T28') THEN 'FIN_T00' END AS Fin_type,";
+                T_SQL = T_SQL + " COUNT(*) AS Count FROM Telemarketing_M tm";
+                T_SQL = T_SQL + " JOIN view_Telemarketing_Curr td ON tm.TM_id = td.tm_id";
+                T_SQL = T_SQL + " JOIN view_Telemarketing_source ha ON tm.HA_id = ha.HA_id AND ha.TM_type = '2'";
+                T_SQL = T_SQL + " WHERE TelAsk = 'ASK01' and ISNULL(InDate,'') <> '' and Fin_type IN ('FIN_T13', 'FIN_T22', 'FIN_T09', 'FIN_T23', 'FIN_T25','FIN_T02','FIN_T28')";
+                T_SQL = T_SQL + " and convert(datetime, convert(varchar(4),(convert(varchar(3), InDate, 126)+1911)) + SUBSTRING(InDate,4,10)) between @InDate_S and @InDate_E";
+                T_SQL = T_SQL + " GROUP BY CASE  WHEN Fin_type IN ('FIN_T13', 'FIN_T22', 'FIN_T09', 'FIN_T23', 'FIN_T25') THEN Fin_name";
+                T_SQL = T_SQL + " WHEN Fin_type IN ('FIN_T02','FIN_T28') THEN 'FIN' END";
+                T_SQL = T_SQL + " ,CASE WHEN Fin_type IN ('FIN_T13', 'FIN_T22', 'FIN_T09', 'FIN_T23', 'FIN_T25') THEN Fin_type WHEN Fin_type IN ('FIN_T02','FIN_T28') THEN 'FIN_T00' END";
+                parameters.Add(new SqlParameter("@InDate_S", InDate_S));
+                parameters.Add(new SqlParameter("@InDate_E", InDate_E));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// GetCallMortgageIntDataDetail/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="Fin_type">FIN_T09</param>
+        /// <param name="InDate_S">113/9/1</param>
+        /// <param name="InDate_E">113/9/25</param>
+        [HttpGet("GetCallMortgageIntDataDetail")]
+        public ActionResult<ResultClass<string>> GetCallMortgageIntDataDetail(string Fin_type, string InDate_S, string InDate_E)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                InDate_S = FuncHandler.ConvertROCToGregorian(InDate_S);
+                InDate_E = FuncHandler.ConvertROCToGregorian(InDate_E);
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select Case When ISnull(cs_rname,'')='' Then cs_name Else cs_rname END AS cs_name,CS_ID,cs_mtel1,Fin_name,cs_register_address";
+                T_SQL = T_SQL + " ,(select top 1 REPLACE(REPLACE(REPLACE(REPLACE(Memo,CHAR(13), ''),CHAR(10), ''),CHAR(9), ''),CHAR(8), '') from Telemarketing_Log tl where td.TM_id=tl.TM_id and tl.TM_D_id=td.TM_D_id order by add_date desc) as CS_remark";
+                T_SQL = T_SQL + " from Telemarketing_M tm";
+                T_SQL = T_SQL + " JOIN view_Telemarketing_Curr td ON tm.TM_id = td.tm_id";
+                T_SQL = T_SQL + " JOIN view_Telemarketing_source ha ON tm.HA_id = ha.HA_id AND ha.TM_type = '2'";
+                T_SQL = T_SQL + " WHERE TelAsk = 'ASK01' and ISNULL(InDate,'') <> ''";
+                if (Fin_type == "FIN_T00")
+                {
+                    T_SQL = T_SQL + " and td.Fin_type IN ('FIN_T02','FIN_T28')";
+                }
+                else
+                {
+                    T_SQL = T_SQL + " and td.Fin_type = @Fin_type";
+                    parameters.Add(new SqlParameter("@Fin_type", Fin_type));
+                }
+                T_SQL = T_SQL + " and convert(datetime, convert(varchar(4),(convert(varchar(3), InDate, 126)+1911)) + SUBSTRING(InDate,4,10)) between @InDate_S and @InDate_E";
+                parameters.Add(new SqlParameter("@InDate_S", InDate_S));
+                parameters.Add(new SqlParameter("@InDate_E", InDate_E));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
+
+        #region 網路電銷來源數據分析表
+        /// <summary>
+        /// GetIntSourceSendCase/_Ajaxhandler.asp
+        /// </summary>
+        /// <param name="Sour">SOU01</param>
+        /// <param name="YYYYMM_S">2024-08</param>
+        /// <param name="YYYYMM_E">2024-09</param>
+        [HttpGet("GetIntSourceSendCase")]
+        public ActionResult<ResultClass<string>> GetIntSourceSendCase(string Sour, string YYYYMM_S, string YYYYMM_E)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "exec GetIntSourceSendCase @YYYYMM_S,@YYYYMM_E,@Sour";
+                parameters.Add(new SqlParameter("@YYYYMM_S", YYYYMM_S));
+                parameters.Add(new SqlParameter("@YYYYMM_E", YYYYMM_E));
+                parameters.Add(new SqlParameter("@Sour", Sour));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
+
+        #region 核准放款/佣金表  區查詢移除
+        /// <summary>
+        /// 是否具有查詢業務資格 GetCheckSalesRead/Approval_Loan_Sales.asp
+        /// </summary>
+        [HttpGet("GetCheckSalesRead")]
+        public ActionResult<ResultClass<string>> GetCheckSalesRead() 
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var roleNum = HttpContext.Session.GetString("Role_num");
+                if (roleNum == "1008" || roleNum == "1014" || roleNum == "1004" || roleNum == "1007" || roleNum == "1001") 
+                {
+                    resultClass.objResult = "Y";
+                }
+                else
+                {
+                    resultClass.objResult = "N";
+                }
+
+                resultClass.ResultCode = "000";
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 提供可查詢業務資料 GetApprovalSalesList/Approval_Loan_Sales.asp
+        /// </summary>
+        [HttpGet("GetApprovalSalesList")]
+        public ActionResult<ResultClass<string>> GetApprovalSalesList()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var roleNum = HttpContext.Session.GetString("Role_num");
+            var User_U_BC = HttpContext.Session.GetString("User_U_BC");
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select bc.item_D_name AS U_BC_name,um.U_num,um.U_name,pft.item_D_name AS U_PFT_name from User_M um ";
+                T_SQL = T_SQL + " LEFT JOIN Item_list bc ON bc.item_M_code = 'branch_company' AND bc.item_D_code = um.U_BC AND bc.item_D_type = 'Y'";
+                T_SQL = T_SQL + " AND bc.show_tag = '0' AND bc.del_tag = '0'";
+                T_SQL = T_SQL + " LEFT JOIN Item_list pft ON pft.item_M_code = 'professional_title' AND pft.item_D_code = um.U_PFT";
+                T_SQL = T_SQL + " AND pft.item_D_type = 'Y' AND pft.show_tag = '0' AND pft.del_tag = '0'";
+                T_SQL = T_SQL + " where ISNULL(U_leave_date,'') = '' and Role_num <> '1001'";
+                if (roleNum == "1008" || roleNum == "1014")
+                {
+                    T_SQL = T_SQL + " and U_BC=@U_BC";
+                    parameters.Add(new SqlParameter("@U_BC", User_U_BC));
+                }
+                T_SQL = T_SQL + " ORDER BY bc.item_sort,pft.item_sort";
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 核准放款/佣金表_查詢 Approval_Loan_Sales_Query/Approval_Loan_Sales.asp
+        /// </summary>
+        /// <param name="model"></param>
+        [HttpPost("Approval_Loan_Sales_Query")]
+        public ActionResult<ResultClass<string>> Approval_Loan_Sales_Query(Approval_Loan_Sales_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var roleNum = HttpContext.Session.GetString("Role_num");
+            var User_U_BC = HttpContext.Session.GetString("User_U_BC");
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "SELECT M.U_BC,M.U_name,case when CancelDate is null then 'N' else 'Y' end isCancel,";
+                T_SQL = T_SQL + " isnull(Comparison,'')Comparison,project_title,interest_rate_pass refRateI,Loan_rate refRateL,interest_rate_pass,isnull(I.Introducer_PID,'') I_PID,";
+                T_SQL = T_SQL + " case when H.act_perf_amt is null then 'N' else 'Y' end IsConfirm,isnull(H.Introducer_PID,'')Introducer_PID,";
+                T_SQL = T_SQL + " isnull(I_Count,0)I_Count,H.HS_id, M.U_BC_name,A.CS_name,";
+                T_SQL = T_SQL + " isnull(convert(varchar(4),(convert(varchar(4),misaligned_date,126)-1911))+'-'+convert(varchar(2),dbo.PadWithZero(month(misaligned_date)))+'-'+convert(varchar(2),dbo.PadWithZero(day(misaligned_date))),'') misaligned_date,";
+                T_SQL = T_SQL + " convert(varchar(4),(convert(varchar(4),Send_amount_date,126)-1911))+'-'+convert(varchar(2),dbo.PadWithZero(month(Send_amount_date)))+'-'+convert(varchar(2),dbo.PadWithZero(day(Send_amount_date)))Send_amount_date,";
+                T_SQL = T_SQL + " convert(varchar(4),(convert(varchar(4),get_amount_date,126)-1911))+'-'+convert(varchar(2),dbo.PadWithZero(month(get_amount_date)))+'-'+convert(varchar(2),dbo.PadWithZero(day(get_amount_date)))get_amount_date,";
+                T_SQL = T_SQL + " convert(varchar(4),(convert(varchar(4),H.Send_result_date, 126)-1911))+'-'+convert(varchar(2),dbo.PadWithZero(month(H.Send_result_date)))+'-'+convert(varchar(2),dbo.PadWithZero(day(H.Send_result_date)))Send_result_date,";
+                T_SQL = T_SQL + " H.CS_introducer,M.U_name plan_name,H.pass_amount,get_amount,";
+                T_SQL = T_SQL + " (SELECT item_D_name FROM Item_list WHERE item_M_code = 'fund_company' AND item_D_type='Y' AND item_D_code = H.fund_company AND show_tag='0' AND del_tag='0') AS show_fund_company,";
+                T_SQL = T_SQL + " (SELECT item_D_name FROM Item_list WHERE item_M_code = 'project_title' AND item_D_type='Y' AND item_D_code = House_pre_project.project_title AND show_tag='0' AND del_tag='0') AS show_project_title,";
+                T_SQL = T_SQL + " Loan_rate+'%' Loan_rate,interest_rate_original+'%' interest_rate_original,interest_rate_pass+'%' interest_rate_pass,";
+                T_SQL = T_SQL + " isnull(charge_flow,0)charge_flow,isnull(charge_agent,0)charge_agent,isnull(charge_check,0)charge_check,isnull(get_amount_final,0)get_amount_final,";
+                T_SQL = T_SQL + " isnull(H.subsidized_interest,0)subsidized_interest,R.Comm_Remark,I.Bank_name,I.Bank_account Bank_account";
+                T_SQL = T_SQL + " FROM House_sendcase H";
+                T_SQL = T_SQL + " LEFT JOIN House_apply A ON A.HA_id = H.HA_id AND A.del_tag='0'";
+                T_SQL = T_SQL + " LEFT JOIN House_pre_project ON House_pre_project.HP_project_id = H.HP_project_id AND House_pre_project.del_tag='0'";
+                T_SQL = T_SQL + " LEFT JOIN (select u.*,item_D_name U_BC_name from User_M u LEFT JOIN Item_list ub on ub.item_M_code='branch_company' AND ub.item_D_type='Y' AND ub.item_D_code=u.U_BC)  M ON M.U_num = A.plan_num";
+                T_SQL = T_SQL + " LEFT JOIN User_M Users ON house_pre_project.fin_user = Users.U_num";
+                T_SQL = T_SQL + " LEFT JOIN (select * from Introducer_Comm where del_tag='0') I ON replace(H.CS_introducer,';','') = I.Introducer_name";
+                T_SQL = T_SQL + " and case when H.Introducer_PID is null then I.Introducer_PID else H.Introducer_PID end=  I.Introducer_PID";//判斷退傭人是否已經財務確認押上PID
+                T_SQL = T_SQL + " LEFT JOIN (select Introducer_name,count(U_ID)I_Count FROM Introducer_Comm group by Introducer_name) I_Cou ON H.CS_introducer = I_Cou.Introducer_name";
+                T_SQL = T_SQL + " Left join (select item_M_code,item_D_code,item_D_name Comm_Remark from Item_list where item_M_code = 'Return' AND item_D_type='Y') R on H.Comm_Remark=R.item_D_code";
+                T_SQL = T_SQL + " LEFT JOIN(select KeyVal,Max(LogDate)LogDate from [LogTable] group by KeyVal)L on convert(varchar,H.HS_id)=KeyVal";
+                T_SQL = T_SQL + " WHERE H.del_tag = '0' AND H.sendcase_handle_type='Y' AND isnull(H.Send_amount, '') <>'' AND get_amount_type= 'GTAT002' ";
+                if(roleNum== "1009")
+                {
+                    T_SQL = T_SQL + " and A.plan_num =@U_num";
+                    parameters.Add(new SqlParameter("@U_num", User_Num));
+                }
+                if (roleNum == "1008" || roleNum == "1014" || roleNum == "1010")
+                {
+                    T_SQL = T_SQL + " and M.U_BC =@U_BC";
+                    parameters.Add(new SqlParameter("@U_BC", User_U_BC));
+                }
+                if (!string.IsNullOrEmpty(model.sales_num))
+                {
+                    T_SQL = T_SQL + " and plan_num=@plan_num";
+                    parameters.Add (new SqlParameter("@plan_num",model.sales_num));
+                }
+                T_SQL = T_SQL + " AND convert(varchar(7),get_amount_date,126) =@selYear_S";
+                T_SQL = T_SQL + " union all";
+                T_SQL = T_SQL + " SELECT M.U_BC,M.U_name,isCancel,'' Comparison,H.show_project_title project_title,H.interest_rate_pass refRateI,NULL refRateL,H.interest_rate_pass,'NA' I_PID,";
+                T_SQL = T_SQL + " CASE WHEN H.act_perf_amt IS NULL THEN 'N' ELSE 'Y' END IsConfirm,'NA'Introducer_PID,1 I_Count,case_id HS_id,M.U_BC_name,H.cs_name,'' misaligned_date,'NA' Send_amount_date,";
+                T_SQL = T_SQL + " convert(varchar(4),(convert(varchar(4),get_amount_date,126)-1911))+'-'+convert(varchar(2),dbo.PadWithZero(month(get_amount_date)))+'-'+convert(varchar(2),dbo.PadWithZero(day(get_amount_date)))get_amount_date,";
+                T_SQL = T_SQL + " 'NA' Send_result_date,'NA' CS_introducer,M.U_name plan_name,H.get_amount pass_amount,H.get_amount*(CASE WHEN isCancel='Y' THEN -1 ELSE 1 END) get_amount";
+                T_SQL = T_SQL + " ,H.show_fund_company,H.show_project_title,'NA' Loan_rate,'NA' interest_rate_original,H.interest_rate_pass+'%' interest_rate_pass,0 charge_flow,0 charge_agent";
+                T_SQL = T_SQL + " ,0 charge_check,0 get_amount_final,0 subsidized_interest,NULL Comm_Remark,Bank_name,Bank_account";
+                T_SQL = T_SQL + " FROM (SELECT *,'NA' Bank_account,'NA' Bank_name,'N' isCancel,NULL misaligned_date FROM House_othercase";
+                T_SQL = T_SQL + " WHERE (convert(varchar(7), (get_amount_date), 126)=@selYear_S) UNION ALL SELECT *,'NA' Bank_account,'NA' Bank_name,'Y' isCancel,NULL misaligned_date";
+                T_SQL = T_SQL + " FROM House_othercase WHERE CancelDate IS NOT NULL) H";
+                T_SQL = T_SQL + " LEFT JOIN(SELECT u.U_BC,U_num,U_name,ub.item_D_name U_BC_name,pt.item_sort,U_arrive_date FROM User_M u";
+                T_SQL = T_SQL + " LEFT JOIN Item_list ub ON ub.item_M_code='branch_company'";
+                T_SQL = T_SQL + " AND ub.item_D_type='Y' AND ub.item_D_code=u.U_BC";
+                T_SQL = T_SQL + " LEFT JOIN Item_list pt ON pt.item_M_code='professional_title'";
+                T_SQL = T_SQL + " AND pt.item_D_type='Y'AND pt.item_D_code=u.U_PFT)M ON H.plan_num=M.U_num";
+                T_SQL = T_SQL + " WHERE H.del_tag = '0'";
+                if (roleNum == "1009")
+                {
+                    T_SQL = T_SQL + " and A.plan_num =@U_num";
+                    parameters.Add(new SqlParameter("@U_num", User_Num));
+                }
+                if (roleNum == "1008" || roleNum == "1014" || roleNum == "1010")
+                {
+                    T_SQL = T_SQL + " and M.U_BC =@U_BC";
+                    parameters.Add(new SqlParameter("@U_BC", User_U_BC));
+                }
+                if (!string.IsNullOrEmpty(model.sales_num))
+                {
+                    T_SQL = T_SQL + " and plan_num=@plan_num";
+                    parameters.Add(new SqlParameter("@plan_num", model.sales_num));
+                }
+                T_SQL = T_SQL + " and convert(varchar(7),get_amount_date,126) =@selYear_S";
+                if (model.OrderByStyle == "1")
+                {
+                    T_SQL = T_SQL + " order by get_amount_date asc";
+                }
+                else
+                {
+                    T_SQL = T_SQL + " order by M.U_BC,M.U_name";
+                }
+                parameters.Add(new SqlParameter("@selYear_S", model.YYYYMM));
+                #endregion
+
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    var ApprovalLoanSalesList = dtResult.AsEnumerable().Select(row => new Approval_Loan_Sales_res
+                    {
+                        U_BC_name = row.Field<string>("U_BC_name"),
+                        Send_amount_date = row.Field<string>("Send_amount_date"),
+                        CS_name = row.Field<string>("CS_name"),
+                        CS_introducer = row.Field<string>("CS_introducer"),
+                        Bank_name = row.Field<string>("Bank_name"),
+                        Bank_account = row.Field<string>("Bank_account"),
+                        plan_name = row.Field<string>("plan_name"),
+                        Send_result_date = row.Field<string>("Send_result_date"),
+                        pass_amount = row.Field<string>("pass_amount"),
+                        get_amount_date = row.Field<string>("get_amount_date"),
+                        get_amount = row.Field<int>("get_amount"),
+                        show_project_title = row.Field<string>("show_fund_company") + row.Field<string>("show_project_title"),
+                        Loan_rate = row.Field<string>("Loan_rate"),
+                        interest_rate_original = row.Field<string>("interest_rate_original"),
+                        interest_rate_pass = row.Field<string>("interest_rate_pass"),
+                        charge_flow = row.Field<int>("charge_flow"),
+                        charge_agent = row.Field<int>("charge_agent"),
+                        charge_check = row.Field<int>("charge_check"),
+                        get_amount_final = row.Field<int>("get_amount_final"),
+                        subsidized_interest = row.Field<decimal>("subsidized_interest"),
+                        Comm_Remark = row.Field<string>("Comm_Remark"),
+                        Comparison = row.Field<string>("Comparison"),
+                        isCancel = row.Field<string>("isCancel"),
+                        Introducer_PID = row.Field<string>("Introducer_PID"),
+                        I_Count = row.Field<int>("I_Count")
+                    }).ToList();
+
+                    
+
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(ApprovalLoanSalesList);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 核准放款/佣金表_下載 Approval_Loan_Sales_Excel/Approval_Loan_Sales.asp
+        /// </summary>
+        /// <param name="model"></param>
+        [HttpPost("Approval_Loan_Sales_Excel")]
+        public IActionResult Approval_Loan_Sales_Excel(Approval_Loan_Sales_req model)
+        {
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var roleNum = HttpContext.Session.GetString("Role_num");
+            var User_U_BC = HttpContext.Session.GetString("User_U_BC");
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "SELECT M.U_BC,M.U_name,case when CancelDate is null then 'N' else 'Y' end isCancel,";
+                T_SQL = T_SQL + " isnull(Comparison,'')Comparison,project_title,interest_rate_pass refRateI,Loan_rate refRateL,interest_rate_pass,isnull(I.Introducer_PID,'') I_PID,";
+                T_SQL = T_SQL + " case when H.act_perf_amt is null then 'N' else 'Y' end IsConfirm,isnull(H.Introducer_PID,'')Introducer_PID,";
+                T_SQL = T_SQL + " isnull(I_Count,0)I_Count,H.HS_id, M.U_BC_name,A.CS_name,";
+                T_SQL = T_SQL + " isnull(convert(varchar(4),(convert(varchar(4),misaligned_date,126)-1911))+'-'+convert(varchar(2),dbo.PadWithZero(month(misaligned_date)))+'-'+convert(varchar(2),dbo.PadWithZero(day(misaligned_date))),'') misaligned_date,";
+                T_SQL = T_SQL + " convert(varchar(4),(convert(varchar(4),Send_amount_date,126)-1911))+'-'+convert(varchar(2),dbo.PadWithZero(month(Send_amount_date)))+'-'+convert(varchar(2),dbo.PadWithZero(day(Send_amount_date)))Send_amount_date,";
+                T_SQL = T_SQL + " convert(varchar(4),(convert(varchar(4),get_amount_date,126)-1911))+'-'+convert(varchar(2),dbo.PadWithZero(month(get_amount_date)))+'-'+convert(varchar(2),dbo.PadWithZero(day(get_amount_date)))get_amount_date,";
+                T_SQL = T_SQL + " convert(varchar(4),(convert(varchar(4),H.Send_result_date, 126)-1911))+'-'+convert(varchar(2),dbo.PadWithZero(month(H.Send_result_date)))+'-'+convert(varchar(2),dbo.PadWithZero(day(H.Send_result_date)))Send_result_date,";
+                T_SQL = T_SQL + " H.CS_introducer,M.U_name plan_name,H.pass_amount,get_amount,";
+                T_SQL = T_SQL + " (SELECT item_D_name FROM Item_list WHERE item_M_code = 'fund_company' AND item_D_type='Y' AND item_D_code = H.fund_company AND show_tag='0' AND del_tag='0') AS show_fund_company,";
+                T_SQL = T_SQL + " (SELECT item_D_name FROM Item_list WHERE item_M_code = 'project_title' AND item_D_type='Y' AND item_D_code = House_pre_project.project_title AND show_tag='0' AND del_tag='0') AS show_project_title,";
+                T_SQL = T_SQL + " Loan_rate+'%' Loan_rate,interest_rate_original+'%' interest_rate_original,interest_rate_pass+'%' interest_rate_pass,";
+                T_SQL = T_SQL + " isnull(charge_flow,0)charge_flow,isnull(charge_agent,0)charge_agent,isnull(charge_check,0)charge_check,isnull(get_amount_final,0)get_amount_final,";
+                T_SQL = T_SQL + " isnull(H.subsidized_interest,0)subsidized_interest,R.Comm_Remark,I.Bank_name,I.Bank_account Bank_account";
+                T_SQL = T_SQL + " FROM House_sendcase H";
+                T_SQL = T_SQL + " LEFT JOIN House_apply A ON A.HA_id = H.HA_id AND A.del_tag='0'";
+                T_SQL = T_SQL + " LEFT JOIN House_pre_project ON House_pre_project.HP_project_id = H.HP_project_id AND House_pre_project.del_tag='0'";
+                T_SQL = T_SQL + " LEFT JOIN (select u.*,item_D_name U_BC_name from User_M u LEFT JOIN Item_list ub on ub.item_M_code='branch_company' AND ub.item_D_type='Y' AND ub.item_D_code=u.U_BC)  M ON M.U_num = A.plan_num";
+                T_SQL = T_SQL + " LEFT JOIN User_M Users ON house_pre_project.fin_user = Users.U_num";
+                T_SQL = T_SQL + " LEFT JOIN (select * from Introducer_Comm where del_tag='0') I ON replace(H.CS_introducer,';','') = I.Introducer_name";
+                T_SQL = T_SQL + " and case when H.Introducer_PID is null then I.Introducer_PID else H.Introducer_PID end=  I.Introducer_PID";//判斷退傭人是否已經財務確認押上PID
+                T_SQL = T_SQL + " LEFT JOIN (select Introducer_name,count(U_ID)I_Count FROM Introducer_Comm group by Introducer_name) I_Cou ON H.CS_introducer = I_Cou.Introducer_name";
+                T_SQL = T_SQL + " Left join (select item_M_code,item_D_code,item_D_name Comm_Remark from Item_list where item_M_code = 'Return' AND item_D_type='Y') R on H.Comm_Remark=R.item_D_code";
+                T_SQL = T_SQL + " LEFT JOIN(select KeyVal,Max(LogDate)LogDate from [LogTable] group by KeyVal)L on convert(varchar,H.HS_id)=KeyVal";
+                T_SQL = T_SQL + " WHERE H.del_tag = '0' AND H.sendcase_handle_type='Y' AND isnull(H.Send_amount, '') <>'' AND get_amount_type= 'GTAT002' ";
+                if (roleNum == "1009")
+                {
+                    T_SQL = T_SQL + " and A.plan_num =@U_num";
+                    parameters.Add(new SqlParameter("@U_num", User_Num));
+                }
+                if (roleNum == "1008" || roleNum == "1014" || roleNum == "1010")
+                {
+                    T_SQL = T_SQL + " and M.U_BC =@U_BC";
+                    parameters.Add(new SqlParameter("@U_BC", User_U_BC));
+                }
+                if (!string.IsNullOrEmpty(model.sales_num))
+                {
+                    T_SQL = T_SQL + " and plan_num=@plan_num";
+                    parameters.Add(new SqlParameter("@plan_num", model.sales_num));
+                }
+                T_SQL = T_SQL + " AND convert(varchar(7),get_amount_date,126) =@selYear_S";
+                T_SQL = T_SQL + " union all";
+                T_SQL = T_SQL + " SELECT M.U_BC,M.U_name,isCancel,'' Comparison,H.show_project_title project_title,H.interest_rate_pass refRateI,NULL refRateL,H.interest_rate_pass,'NA' I_PID,";
+                T_SQL = T_SQL + " CASE WHEN H.act_perf_amt IS NULL THEN 'N' ELSE 'Y' END IsConfirm,'NA'Introducer_PID,1 I_Count,case_id HS_id,M.U_BC_name,H.cs_name,'' misaligned_date,'NA' Send_amount_date,";
+                T_SQL = T_SQL + " convert(varchar(4),(convert(varchar(4),get_amount_date,126)-1911))+'-'+convert(varchar(2),dbo.PadWithZero(month(get_amount_date)))+'-'+convert(varchar(2),dbo.PadWithZero(day(get_amount_date)))get_amount_date,";
+                T_SQL = T_SQL + " 'NA' Send_result_date,'NA' CS_introducer,M.U_name plan_name,H.get_amount pass_amount,H.get_amount*(CASE WHEN isCancel='Y' THEN -1 ELSE 1 END) get_amount";
+                T_SQL = T_SQL + " ,H.show_fund_company,H.show_project_title,'NA' Loan_rate,'NA' interest_rate_original,H.interest_rate_pass+'%' interest_rate_pass,0 charge_flow,0 charge_agent";
+                T_SQL = T_SQL + " ,0 charge_check,0 get_amount_final,0 subsidized_interest,NULL Comm_Remark,Bank_name,Bank_account";
+                T_SQL = T_SQL + " FROM (SELECT *,'NA' Bank_account,'NA' Bank_name,'N' isCancel,NULL misaligned_date FROM House_othercase";
+                T_SQL = T_SQL + " WHERE (convert(varchar(7), (get_amount_date), 126)=@selYear_S) UNION ALL SELECT *,'NA' Bank_account,'NA' Bank_name,'Y' isCancel,NULL misaligned_date";
+                T_SQL = T_SQL + " FROM House_othercase WHERE CancelDate IS NOT NULL) H";
+                T_SQL = T_SQL + " LEFT JOIN(SELECT u.U_BC,U_num,U_name,ub.item_D_name U_BC_name,pt.item_sort,U_arrive_date FROM User_M u";
+                T_SQL = T_SQL + " LEFT JOIN Item_list ub ON ub.item_M_code='branch_company'";
+                T_SQL = T_SQL + " AND ub.item_D_type='Y' AND ub.item_D_code=u.U_BC";
+                T_SQL = T_SQL + " LEFT JOIN Item_list pt ON pt.item_M_code='professional_title'";
+                T_SQL = T_SQL + " AND pt.item_D_type='Y'AND pt.item_D_code=u.U_PFT)M ON H.plan_num=M.U_num";
+                T_SQL = T_SQL + " WHERE H.del_tag = '0'";
+                if (roleNum == "1009")
+                {
+                    T_SQL = T_SQL + " and A.plan_num =@U_num";
+                    parameters.Add(new SqlParameter("@U_num", User_Num));
+                }
+                if (roleNum == "1008" || roleNum == "1014" || roleNum == "1010")
+                {
+                    T_SQL = T_SQL + " and M.U_BC =@U_BC";
+                    parameters.Add(new SqlParameter("@U_BC", User_U_BC));
+                }
+                if (!string.IsNullOrEmpty(model.sales_num))
+                {
+                    T_SQL = T_SQL + " and plan_num=@plan_num";
+                    parameters.Add(new SqlParameter("@plan_num", model.sales_num));
+                }
+                T_SQL = T_SQL + " and convert(varchar(7),get_amount_date,126) =@selYear_S";
+                if (model.OrderByStyle == "1")
+                {
+                    T_SQL = T_SQL + " order by get_amount_date asc";
+                }
+                else
+                {
+                    T_SQL = T_SQL + " order by M.U_BC,M.U_name";
+                }
+                parameters.Add(new SqlParameter("@selYear_S", model.YYYYMM));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    var ExcelList = dtResult.AsEnumerable().Select(row => new Approval_Loan_Sales_Excel
+                    {
+                        U_BC_name = row.Field<string>("U_BC_name"),
+                        Send_amount_date = row.Field<string>("Send_amount_date"),
+                        CS_name = row.Field<string>("CS_name"),
+                        CS_introducer = row.Field<string>("CS_introducer"),
+                        Bank_name = row.Field<string>("Bank_name"),
+                        Bank_account = row.Field<string>("Bank_account"),
+                        plan_name = row.Field<string>("plan_name"),
+                        Send_result_date = row.Field<string>("Send_result_date"),
+                        pass_amount = row.Field<string>("pass_amount"),
+                        get_amount_date = row.Field<string>("get_amount_date"),
+                        get_amount = row.Field<int>("get_amount"),
+                        show_project_title = row.Field<string>("show_fund_company") + row.Field<string>("show_project_title"),
+                        Loan_rate = row.Field<string>("Loan_rate"),
+                        interest_rate_original = row.Field<string>("interest_rate_original"),
+                        interest_rate_pass = row.Field<string>("interest_rate_pass"),
+                        charge_flow = row.Field<int>("charge_flow"),
+                        charge_agent = row.Field<int>("charge_agent"),
+                        charge_check = row.Field<int>("charge_check"),
+                        get_amount_final = row.Field<int>("get_amount_final"),
+                        subsidized_interest = row.Field<decimal>("subsidized_interest"),
+                        Comm_Remark = row.Field<string>("Comm_Remark"),
+                        Comparison = row.Field<string>("Comparison")
+                    }).ToList();
+                    var Excel_Headers = new Dictionary<string, string>
+                    {
+                        { "U_BC_name", "區" },
+                        { "Send_amount_date", "進件日" },
+                        { "CS_name", "申請人" },
+                        { "CS_introducer", "介紹人" },
+                        { "Bank_name", "銀行名稱" },
+                        { "Bank_account", "銀行帳號" },
+                        { "plan_name", "業務" },
+                        { "Send_result_date", "核准日" },
+                        { "pass_amount", "核准金額(萬)" },
+                        { "get_amount_date", "撥款日" },
+                        { "get_amount", "撥款金額(萬)" },
+                        { "show_project_title", "專案" },
+                        { "Loan_rate", "貸款成數(%)" },
+                        { "interest_rate_original", "原始利率(%)" },
+                        { "interest_rate_pass", "承作利率(%)" },
+                        { "charge_flow", "收費" },
+                        { "charge_agent", "代書費用" },
+                        { "charge_check", "對保費" },
+                        { "get_amount_final", "結餘" },
+                        { "subsidized_interest", "補貼息" },
+                        { "Comm_Remark", "退傭備註" },
+                        { "Comparison", "委對/外對" }
+                    };
+                    var fileBytes = FuncHandler.ExportToExcel(ExcelList, Excel_Headers);
+                    fileBytes= FuncHandler.ApprovalLoanSalesExcelFooter(fileBytes);
+                    var fileName = "核准放款表_傭金表" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                    return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+                }
+                else
+                {
+                    return NotFound(); // 檔案不存在時返回 404
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500);
+            }
+        }
+        #endregion
+
+        #region 請假單報表
+        /// <summary>
+        /// 請假單報表_查詢 Flow_rest_report_query/Flow_rest_report.asp
+        /// </summary>
+        [HttpPost("Flow_rest_report_query")]
+        public ActionResult<ResultClass<string>> Flow_rest_report_query(Flow_rest_report_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var roleNum = HttpContext.Session.GetString("Role_num");
+
+            try
+            {
+                //特殊權限判定
+                string[] str = new string[] { "7005", "7007" };
+                SpecialClass specialClass = FuncHandler.CheckSpecial(str, User_Num);
+                if (specialClass.special_check == "N")
+                    model.U_num = User_Num;
+
+                ADOData _adoData = new ADOData();
+                #region SQL_早退資料
+                var parameters_ey = new List<SqlParameter>();
+                var T_SQL_EY = "select userID,sum(early)early from (";
+                T_SQL_EY = T_SQL_EY + " SELECT [userID],cast(year(cast(yyyymm +'01' as datetime)) as varchar(4)) +'/'+ad.attendance_date　attendance_date,";
+                T_SQL_EY = T_SQL_EY + " CASE WHEN isnull([getoffwork_time], '')='' THEN 0 WHEN [getoffwork_time]<'18:00' THEN DATEDIFF(MINUTE, [getoffwork_time], '18:00') ELSE 0 END early";
+                T_SQL_EY = T_SQL_EY + " FROM [dbo].[attendance] ad";
+                T_SQL_EY = T_SQL_EY + " LEFT JOIN (SELECT U_BC,U_num,Role_num FROM [dbo].[User_M] U WHERE 1=1  ) U ON ad.userID=U.U_num";
+                T_SQL_EY = T_SQL_EY + " LEFT JOIN (SELECT FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,convert(varchar, FR_date_end, 111) FR_date_E";
+                T_SQL_EY = T_SQL_EY + " ,count(FR_U_num) RestCount";
+                T_SQL_EY = T_SQL_EY + " FROM Flow_rest WHERE del_tag = '0' AND FR_cancel<>'Y' GROUP BY FR_U_num,convert(varchar, FR_date_begin, 111),";
+                T_SQL_EY = T_SQL_EY + " convert(varchar, FR_date_end, 111)) R ON ad.userID=R.FR_U_num";
+                T_SQL_EY = T_SQL_EY + " AND @YYYY+'/'+ad.[attendance_date] BETWEEN R.FR_date_S AND FR_date_E";
+                T_SQL_EY = T_SQL_EY + " WHERE convert(varchar,convert(datetime,  @YYYY+'/'+[attendance_date]), 111)";
+                T_SQL_EY = T_SQL_EY + " not in (SELECT convert(varchar,convert(datetime, [HDate]), 111) FROM [dbo].[Holidays])";
+                T_SQL_EY = T_SQL_EY + " AND [getoffwork_time]<'18:00' and [userID] <> '' and R.FR_date_S is null and Role_num in (SELECT R_num FROM Role_M where LE_tag='Y')) E";
+                T_SQL_EY = T_SQL_EY + " where CAST(attendance_date AS datetime) between @yyyymmdd_s and @yyyymmdd_e group by userID";
+                parameters_ey.Add(new SqlParameter("@YYYY", FuncHandler.ConvertROCToGregorian(model.Flow_Rest_Date_S).Split('/')[0]));
+                parameters_ey.Add(new SqlParameter("@yyyymmdd_s", FuncHandler.ConvertROCToGregorian(model.Flow_Rest_Date_S)));
+                parameters_ey.Add(new SqlParameter("@yyyymmdd_e", FuncHandler.ConvertROCToGregorian(model.Flow_Rest_Date_E)));
+                #endregion
+                DataTable dtResult_Ey = _adoData.ExecuteQuery(T_SQL_EY,parameters_ey);
+                var EarlyList = dtResult_Ey.AsEnumerable().Select(row=>new Flow_rest_report_res_early
+                {
+                    U_num = row.Field<string>("userID"),
+                    Sum_early = row.Field<int>("early")
+                }).ToList();
+
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select FR_U_num,U_BC_name,isnull(LE_tag,'N')LE_tag,isLeave,(select U_name FROM User_M where U_num=x.FR_U_num) as FR_U_name";
+                T_SQL = T_SQL + " ,sum(FR_kind_FRK001) as '事假',sum(FR_kind_FRK002) as '病假',sum(FR_kind_FRK003) as '公假',sum(FR_kind_FRK004) as '補休'";
+                T_SQL = T_SQL + " ,sum(FR_kind_FRK005) as '特休',sum(FR_kind_FRK006) as '婚假',sum(FR_kind_FRK007) as '喪假',sum(FR_kind_FRK008) as '產假'";
+                T_SQL = T_SQL + " ,sum(FR_kind_FRK009) as '陪產假',sum(FR_kind_FRK010) as '產檢假',sum(FR_kind_FRK011) as '家庭照顧假',sum(FR_kind_FRK012) as '生理假'";
+                T_SQL = T_SQL + " ,sum(FR_kind_FRK013) as '公傷假',sum(FR_kind_FRK014) as '疫苗假',sum(FR_kind_FRＫ015) as '防疫照顧假',sum(FR_kind_FRK018) as '居家上班'";
+                T_SQL = T_SQL + " ,sum(FR_kind_FRK016) as '外出(公出)',sum(FR_kind_FRK017) as '忘打卡',sum(FR_kind_FRK019) as '育嬰假',sum(FR_kind_FRK020) as '陪產檢假'";
+                T_SQL = T_SQL + " ,sum(FR_kind_FRK999) as '早退' from (select *,(case when Flow_rest.FR_kind='FRK001' then FR_total_hour else 0 end) as 'FR_kind_FRK001'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK002' then FR_total_hour else 0 end) as 'FR_kind_FRK002'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK003' then FR_total_hour else 0 end) as 'FR_kind_FRK003'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK004' then FR_total_hour else 0 end) as 'FR_kind_FRK004'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK005' then FR_total_hour else 0 end) as 'FR_kind_FRK005'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK006' then FR_total_hour else 0 end) as 'FR_kind_FRK006'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK007' then FR_total_hour else 0 end) as 'FR_kind_FRK007'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK008' then FR_total_hour else 0 end) as 'FR_kind_FRK008'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK009' then FR_total_hour else 0 end) as 'FR_kind_FRK009'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK010' then FR_total_hour else 0 end) as 'FR_kind_FRK010'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK011' then FR_total_hour else 0 end) as 'FR_kind_FRK011'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK012' then FR_total_hour else 0 end) as 'FR_kind_FRK012'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK013' then FR_total_hour else 0 end) as 'FR_kind_FRK013'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK014' then FR_total_hour else 0 end) as 'FR_kind_FRK014'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK015' then FR_total_hour else 0 end) as 'FR_kind_FRK015'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK018' then FR_total_hour else 0 end) as 'FR_kind_FRK018'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK016' then FR_total_hour else 0 end) as 'FR_kind_FRK016'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK017' then FR_total_hour else 0 end) as 'FR_kind_FRK017'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK019' then FR_total_hour else 0 end) as 'FR_kind_FRK019'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK020' then FR_total_hour else 0 end) as 'FR_kind_FRK020'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK999' then FR_total_hour else 0 end) as 'FR_kind_FRK999'";
+                T_SQL = T_SQL + " ,(select item_D_name from Item_list where item_M_code='branch_company' AND item_D_type='Y' AND item_D_code=User_M.U_BC AND del_tag='0') as U_BC_name";
+                T_SQL = T_SQL + " ,(select item_D_code from Item_list where item_M_code='branch_company' AND item_D_type='Y' AND item_D_code=User_M.U_BC AND del_tag='0') as U_BC_code";
+                T_SQL = T_SQL + " ,(select item_sort from Item_list where item_M_code='branch_company' AND item_D_type='Y' AND item_D_code=User_M.U_BC AND del_tag='0') as U_BC_sort";
+                T_SQL = T_SQL + " from Flow_rest";
+                T_SQL = T_SQL + " left join (select U_num,U_BC,LE_tag,case when M.U_leave_date is null then 'N' else 'Y' end isLeave FROM User_M M ";
+                T_SQL = T_SQL + " left join Role_M R on M.Role_num=R.R_num) User_M ON User_M.U_num = Flow_rest.FR_U_num";
+                T_SQL = T_SQL + " where del_tag = '0' AND FR_sign_type = 'FSIGN002'";
+                if (!string.IsNullOrEmpty(model.U_num))
+                {
+                    T_SQL = T_SQL + " and FR_U_num = @U_num";
+                    parameters.Add(new SqlParameter("@U_num",model.U_num));
+                }
+                if (!string.IsNullOrEmpty(model.LE_tag))
+                {
+                    T_SQL = T_SQL + " and isnull(LE_tag,'N')='Y'";
+                }
+                T_SQL = T_SQL + " AND ((FR_date_begin >= @yyyymmdd_s+' 00:00:00' AND FR_date_begin <= @yyyymmdd_e+' 23:59:59' )";
+                T_SQL = T_SQL + " OR (FR_date_end >= @yyyymmdd_s+' 00:00:00' AND FR_date_end <= @yyyymmdd_e+' 23:59:59' ) ";
+                T_SQL = T_SQL + " OR (FR_date_begin <= @yyyymmdd_s+' 00:00:00' AND FR_date_end >= @yyyymmdd_e+' 23:59:59'))) x ";
+                T_SQL = T_SQL + " where isleave='N'";
+                if (!string.IsNullOrEmpty(model.U_BC))
+                {
+                    T_SQL = T_SQL + " and x.U_BC_code = @U_BC";
+                    parameters.Add(new SqlParameter("@U_BC", model.U_BC));
+                }
+                T_SQL = T_SQL + " group by FR_U_num,LE_tag,isLeave,U_BC_name,U_BC_sort order by U_BC_sort,FR_U_num";
+                parameters.Add(new SqlParameter("@yyyymmdd_s", FuncHandler.ConvertROCToGregorian(model.Flow_Rest_Date_S)));
+                parameters.Add(new SqlParameter("@yyyymmdd_e", FuncHandler.ConvertROCToGregorian(model.Flow_Rest_Date_E)));
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                var Restlist = dtResult.AsEnumerable().Select(row => new Flow_rest_report_Excel
+                {
+                    U_BC_name = row.Field<string>("U_BC_name"),
+                    FR_U_num = row.Field<string>("FR_U_num"),
+                    FR_U_name = row.Field<string>("U_BC_name"),
+                    SUM_FR_kind_FRK001 = row.Field<decimal>("事假"),
+                    SUM_FR_kind_FRK002 = row.Field<decimal>("病假"),
+                    SUM_FR_kind_FRK003 = row.Field<decimal>("公假"),
+                    SUM_FR_kind_FRK004 = row.Field<decimal>("補休"),
+                    SUM_FR_kind_FRK005 = row.Field<decimal>("特休"),
+                    SUM_FR_kind_FRK006 = row.Field<decimal>("婚假"),
+                    SUM_FR_kind_FRK007 = row.Field<decimal>("喪假"),
+                    SUM_FR_kind_FRK008 = row.Field<decimal>("產假"),
+                    SUM_FR_kind_FRK009 = row.Field<decimal>("陪產假"),
+                    SUM_FR_kind_FRK010 = row.Field<decimal>("產檢假"),
+                    SUM_FR_kind_FRK011 = row.Field<decimal>("家庭照顧假"),
+                    SUM_FR_kind_FRK012 = row.Field<decimal>("生理假"),
+                    SUM_FR_kind_FRK013 = row.Field<decimal>("公傷假"),
+                    SUM_FR_kind_FRK014 = row.Field<decimal>("疫苗假"),
+                    SUM_FR_kind_FRK015 = row.Field<decimal>("防疫照顧假"),
+                    SUM_FR_kind_FRK018 = row.Field<decimal>("居家上班"),
+                    SUM_FR_kind_FRK016 = row.Field<decimal>("外出(公出)"),
+                    SUM_FR_kind_FRK017 = row.Field<decimal>("忘打卡"),
+                    SUM_FR_kind_FRK019 = row.Field<decimal>("育嬰假"),
+                    SUM_FR_kind_FRK020 = row.Field<decimal>("陪產檢假"),
+                    SUM_FR_kind_FRK999 = row.Field<decimal>("早退")
+                }).ToList();
+                
+                var mergedList = Restlist.Select(a => new {
+                    a.U_BC_name,
+                    a.FR_U_num,
+                    a.FR_U_name,
+                    a.SUM_FR_kind_FRK001,
+                    a.SUM_FR_kind_FRK002,
+                    a.SUM_FR_kind_FRK003,
+                    a.SUM_FR_kind_FRK004,
+                    a.SUM_FR_kind_FRK005,
+                    a.SUM_FR_kind_FRK006,
+                    a.SUM_FR_kind_FRK007,
+                    a.SUM_FR_kind_FRK008,
+                    a.SUM_FR_kind_FRK009,
+                    a.SUM_FR_kind_FRK010,
+                    a.SUM_FR_kind_FRK011,
+                    a.SUM_FR_kind_FRK012,
+                    a.SUM_FR_kind_FRK013,
+                    a.SUM_FR_kind_FRK014,
+                    a.SUM_FR_kind_FRK015,
+                    a.SUM_FR_kind_FRK018,
+                    a.SUM_FR_kind_FRK016,
+                    a.SUM_FR_kind_FRK017,
+                    a.SUM_FR_kind_FRK019,
+                    a.SUM_FR_kind_FRK020,
+                    SUM_FR_kind_FRK999= EarlyList.FirstOrDefault(b=>b.U_num==a.FR_U_num)?.Sum_early
+                }).ToList();
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(mergedList);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+            
+        }
+        /// <summary>
+        /// 請假單報表_下載 Flow_rest_report_query/Flow_rest_report.asp
+        /// </summary>
+        [HttpPost("Flow_rest_report_Excel")]
+        public IActionResult Flow_rest_report_Excel(Flow_rest_report_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var roleNum = HttpContext.Session.GetString("Role_num");
+
+            try
+            {
+                //特殊權限判定
+                string[] str = new string[] { "7005", "7007" };
+                SpecialClass specialClass = FuncHandler.CheckSpecial(str, User_Num);
+                if (specialClass.special_check == "N")
+                    model.U_num = User_Num;
+
+                ADOData _adoData = new ADOData();
+                #region SQL_早退資料
+                var parameters_ey = new List<SqlParameter>();
+                var T_SQL_EY = "select userID,sum(early)early from (";
+                T_SQL_EY = T_SQL_EY + " SELECT [userID],cast(year(cast(yyyymm +'01' as datetime)) as varchar(4)) +'/'+ad.attendance_date　attendance_date,";
+                T_SQL_EY = T_SQL_EY + " CASE WHEN isnull([getoffwork_time], '')='' THEN 0 WHEN [getoffwork_time]<'18:00' THEN DATEDIFF(MINUTE, [getoffwork_time], '18:00') ELSE 0 END early";
+                T_SQL_EY = T_SQL_EY + " FROM [dbo].[attendance] ad";
+                T_SQL_EY = T_SQL_EY + " LEFT JOIN (SELECT U_BC,U_num,Role_num FROM [dbo].[User_M] U WHERE 1=1  ) U ON ad.userID=U.U_num";
+                T_SQL_EY = T_SQL_EY + " LEFT JOIN (SELECT FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,convert(varchar, FR_date_end, 111) FR_date_E";
+                T_SQL_EY = T_SQL_EY + " ,count(FR_U_num) RestCount";
+                T_SQL_EY = T_SQL_EY + " FROM Flow_rest WHERE del_tag = '0' AND FR_cancel<>'Y' GROUP BY FR_U_num,convert(varchar, FR_date_begin, 111),";
+                T_SQL_EY = T_SQL_EY + " convert(varchar, FR_date_end, 111)) R ON ad.userID=R.FR_U_num";
+                T_SQL_EY = T_SQL_EY + " AND @YYYY+'/'+ad.[attendance_date] BETWEEN R.FR_date_S AND FR_date_E";
+                T_SQL_EY = T_SQL_EY + " WHERE convert(varchar,convert(datetime,  @YYYY+'/'+[attendance_date]), 111)";
+                T_SQL_EY = T_SQL_EY + " not in (SELECT convert(varchar,convert(datetime, [HDate]), 111) FROM [dbo].[Holidays])";
+                T_SQL_EY = T_SQL_EY + " AND [getoffwork_time]<'18:00' and [userID] <> '' and R.FR_date_S is null and Role_num in (SELECT R_num FROM Role_M where LE_tag='Y')) E";
+                T_SQL_EY = T_SQL_EY + " where CAST(attendance_date AS datetime) between @yyyymmdd_s and @yyyymmdd_e group by userID";
+                parameters_ey.Add(new SqlParameter("@YYYY", FuncHandler.ConvertROCToGregorian(model.Flow_Rest_Date_S).Split('/')[0]));
+                parameters_ey.Add(new SqlParameter("@yyyymmdd_s", FuncHandler.ConvertROCToGregorian(model.Flow_Rest_Date_S)));
+                parameters_ey.Add(new SqlParameter("@yyyymmdd_e", FuncHandler.ConvertROCToGregorian(model.Flow_Rest_Date_E)));
+                #endregion
+                DataTable dtResult_Ey = _adoData.ExecuteQuery(T_SQL_EY, parameters_ey);
+                var EarlyList = dtResult_Ey.AsEnumerable().Select(row => new Flow_rest_report_res_early
+                {
+                    U_num = row.Field<string>("userID"),
+                    Sum_early = row.Field<int>("early")
+                }).ToList();
+
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select FR_U_num,U_BC_name,isnull(LE_tag,'N')LE_tag,isLeave,(select U_name FROM User_M where U_num=x.FR_U_num) as FR_U_name";
+                T_SQL = T_SQL + " ,sum(FR_kind_FRK001) as '事假',sum(FR_kind_FRK002) as '病假',sum(FR_kind_FRK003) as '公假',sum(FR_kind_FRK004) as '補休'";
+                T_SQL = T_SQL + " ,sum(FR_kind_FRK005) as '特休',sum(FR_kind_FRK006) as '婚假',sum(FR_kind_FRK007) as '喪假',sum(FR_kind_FRK008) as '產假'";
+                T_SQL = T_SQL + " ,sum(FR_kind_FRK009) as '陪產假',sum(FR_kind_FRK010) as '產檢假',sum(FR_kind_FRK011) as '家庭照顧假',sum(FR_kind_FRK012) as '生理假'";
+                T_SQL = T_SQL + " ,sum(FR_kind_FRK013) as '公傷假',sum(FR_kind_FRK014) as '疫苗假',sum(FR_kind_FRＫ015) as '防疫照顧假',sum(FR_kind_FRK018) as '居家上班'";
+                T_SQL = T_SQL + " ,sum(FR_kind_FRK016) as '外出(公出)',sum(FR_kind_FRK017) as '忘打卡',sum(FR_kind_FRK019) as '育嬰假',sum(FR_kind_FRK020) as '陪產檢假'";
+                T_SQL = T_SQL + " ,sum(FR_kind_FRK999) as '早退' from (select *,(case when Flow_rest.FR_kind='FRK001' then FR_total_hour else 0 end) as 'FR_kind_FRK001'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK002' then FR_total_hour else 0 end) as 'FR_kind_FRK002'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK003' then FR_total_hour else 0 end) as 'FR_kind_FRK003'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK004' then FR_total_hour else 0 end) as 'FR_kind_FRK004'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK005' then FR_total_hour else 0 end) as 'FR_kind_FRK005'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK006' then FR_total_hour else 0 end) as 'FR_kind_FRK006'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK007' then FR_total_hour else 0 end) as 'FR_kind_FRK007'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK008' then FR_total_hour else 0 end) as 'FR_kind_FRK008'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK009' then FR_total_hour else 0 end) as 'FR_kind_FRK009'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK010' then FR_total_hour else 0 end) as 'FR_kind_FRK010'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK011' then FR_total_hour else 0 end) as 'FR_kind_FRK011'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK012' then FR_total_hour else 0 end) as 'FR_kind_FRK012'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK013' then FR_total_hour else 0 end) as 'FR_kind_FRK013'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK014' then FR_total_hour else 0 end) as 'FR_kind_FRK014'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK015' then FR_total_hour else 0 end) as 'FR_kind_FRK015'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK018' then FR_total_hour else 0 end) as 'FR_kind_FRK018'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK016' then FR_total_hour else 0 end) as 'FR_kind_FRK016'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK017' then FR_total_hour else 0 end) as 'FR_kind_FRK017'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK019' then FR_total_hour else 0 end) as 'FR_kind_FRK019'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK020' then FR_total_hour else 0 end) as 'FR_kind_FRK020'";
+                T_SQL = T_SQL + " ,(case when Flow_rest.FR_kind='FRK999' then FR_total_hour else 0 end) as 'FR_kind_FRK999'";
+                T_SQL = T_SQL + " ,(select item_D_name from Item_list where item_M_code='branch_company' AND item_D_type='Y' AND item_D_code=User_M.U_BC AND del_tag='0') as U_BC_name";
+                T_SQL = T_SQL + " ,(select item_D_code from Item_list where item_M_code='branch_company' AND item_D_type='Y' AND item_D_code=User_M.U_BC AND del_tag='0') as U_BC_code";
+                T_SQL = T_SQL + " ,(select item_sort from Item_list where item_M_code='branch_company' AND item_D_type='Y' AND item_D_code=User_M.U_BC AND del_tag='0') as U_BC_sort";
+                T_SQL = T_SQL + " from Flow_rest";
+                T_SQL = T_SQL + " left join (select U_num,U_BC,LE_tag,case when M.U_leave_date is null then 'N' else 'Y' end isLeave FROM User_M M ";
+                T_SQL = T_SQL + " left join Role_M R on M.Role_num=R.R_num) User_M ON User_M.U_num = Flow_rest.FR_U_num";
+                T_SQL = T_SQL + " where del_tag = '0' AND FR_sign_type = 'FSIGN002'";
+                if (!string.IsNullOrEmpty(model.U_num))
+                {
+                    T_SQL = T_SQL + " and FR_U_num = @U_num";
+                    parameters.Add(new SqlParameter("@U_num", model.U_num));
+                }
+                if (!string.IsNullOrEmpty(model.LE_tag))
+                {
+                    T_SQL = T_SQL + " and isnull(LE_tag,'N')='Y'";
+                }
+                T_SQL = T_SQL + " AND ((FR_date_begin >= @yyyymmdd_s+' 00:00:00' AND FR_date_begin <= @yyyymmdd_e+' 23:59:59' )";
+                T_SQL = T_SQL + " OR (FR_date_end >= @yyyymmdd_s+' 00:00:00' AND FR_date_end <= @yyyymmdd_e+' 23:59:59' ) ";
+                T_SQL = T_SQL + " OR (FR_date_begin <= @yyyymmdd_s+' 00:00:00' AND FR_date_end >= @yyyymmdd_e+' 23:59:59'))) x ";
+                T_SQL = T_SQL + " where isleave='N'";
+                if (!string.IsNullOrEmpty(model.U_BC))
+                {
+                    T_SQL = T_SQL + " and x.U_BC_code = @U_BC";
+                    parameters.Add(new SqlParameter("@U_BC", model.U_BC));
+                }
+                T_SQL = T_SQL + " group by FR_U_num,LE_tag,isLeave,U_BC_name,U_BC_sort order by U_BC_sort,FR_U_num";
+                parameters.Add(new SqlParameter("@yyyymmdd_s", FuncHandler.ConvertROCToGregorian(model.Flow_Rest_Date_S)));
+                parameters.Add(new SqlParameter("@yyyymmdd_e", FuncHandler.ConvertROCToGregorian(model.Flow_Rest_Date_E)));
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                var Restlist = dtResult.AsEnumerable().Select(row => new Flow_rest_report_Excel
+                {
+                    U_BC_name = row.Field<string>("U_BC_name"),
+                    FR_U_num = row.Field<string>("FR_U_num"),
+                    FR_U_name = row.Field<string>("U_BC_name"),
+                    SUM_FR_kind_FRK001 = row.Field<decimal>("事假"),
+                    SUM_FR_kind_FRK002 = row.Field<decimal>("病假"),
+                    SUM_FR_kind_FRK003 = row.Field<decimal>("公假"),
+                    SUM_FR_kind_FRK004 = row.Field<decimal>("補休"),
+                    SUM_FR_kind_FRK005 = row.Field<decimal>("特休"),
+                    SUM_FR_kind_FRK006 = row.Field<decimal>("婚假"),
+                    SUM_FR_kind_FRK007 = row.Field<decimal>("喪假"),
+                    SUM_FR_kind_FRK008 = row.Field<decimal>("產假"),
+                    SUM_FR_kind_FRK009 = row.Field<decimal>("陪產假"),
+                    SUM_FR_kind_FRK010 = row.Field<decimal>("產檢假"),
+                    SUM_FR_kind_FRK011 = row.Field<decimal>("家庭照顧假"),
+                    SUM_FR_kind_FRK012 = row.Field<decimal>("生理假"),
+                    SUM_FR_kind_FRK013 = row.Field<decimal>("公傷假"),
+                    SUM_FR_kind_FRK014 = row.Field<decimal>("疫苗假"),
+                    SUM_FR_kind_FRK015 = row.Field<decimal>("防疫照顧假"),
+                    SUM_FR_kind_FRK018 = row.Field<decimal>("居家上班"),
+                    SUM_FR_kind_FRK016 = row.Field<decimal>("外出(公出)"),
+                    SUM_FR_kind_FRK017 = row.Field<decimal>("忘打卡"),
+                    SUM_FR_kind_FRK019 = row.Field<decimal>("育嬰假"),
+                    SUM_FR_kind_FRK020 = row.Field<decimal>("陪產檢假"),
+                    SUM_FR_kind_FRK999 = row.Field<decimal>("早退")
+                }).ToList();
+
+                var ExcelList = Restlist.Select(a => new {
+                    a.U_BC_name,
+                    a.FR_U_num,
+                    a.FR_U_name,
+                    a.SUM_FR_kind_FRK001,
+                    a.SUM_FR_kind_FRK002,
+                    a.SUM_FR_kind_FRK003,
+                    a.SUM_FR_kind_FRK004,
+                    a.SUM_FR_kind_FRK005,
+                    a.SUM_FR_kind_FRK006,
+                    a.SUM_FR_kind_FRK007,
+                    a.SUM_FR_kind_FRK008,
+                    a.SUM_FR_kind_FRK009,
+                    a.SUM_FR_kind_FRK010,
+                    a.SUM_FR_kind_FRK011,
+                    a.SUM_FR_kind_FRK012,
+                    a.SUM_FR_kind_FRK013,
+                    a.SUM_FR_kind_FRK014,
+                    a.SUM_FR_kind_FRK015,
+                    a.SUM_FR_kind_FRK018,
+                    a.SUM_FR_kind_FRK016,
+                    a.SUM_FR_kind_FRK017,
+                    a.SUM_FR_kind_FRK019,
+                    a.SUM_FR_kind_FRK020,
+                    SUM_FR_kind_FRK999 = EarlyList.FirstOrDefault(b => b.U_num == a.FR_U_num)?.Sum_early
+                }).ToList();
+                var Excel_Headers = new Dictionary<string, string>
+                    {
+                        { "U_BC_name", "公司別" },
+                        { "FR_U_num", "員編" },
+                        { "FR_U_name", "姓名" },
+                        { "SUM_FR_kind_FRK001", "事假" },
+                        { "SUM_FR_kind_FRK002", "病假" },
+                        { "SUM_FR_kind_FRK003", "公假" },
+                        { "SUM_FR_kind_FRK004", "補休" },
+                        { "SUM_FR_kind_FRK005", "特休" },
+                        { "SUM_FR_kind_FRK006", "婚假" },
+                        { "SUM_FR_kind_FRK007", "喪假" },
+                        { "SUM_FR_kind_FRK008", "產假" },
+                        { "SUM_FR_kind_FRK009", "陪產假" },
+                        { "SUM_FR_kind_FRK010", "產檢假" },
+                        { "SUM_FR_kind_FRK011", "家庭照顧假" },
+                        { "SUM_FR_kind_FRK012", "生理假" },
+                        { "SUM_FR_kind_FRK013", "公傷假" },
+                        { "SUM_FR_kind_FRK014", "疫苗假" },
+                        { "SUM_FR_kind_FRK015", "防疫照顧假" },
+                        { "SUM_FR_kind_FRK018", "居家上班" },
+                        { "SUM_FR_kind_FRK016", "外出(公出)" },
+                        { "SUM_FR_kind_FRK017", "忘打卡" },
+                        { "SUM_FR_kind_FRK019", "育嬰假" },
+                        { "SUM_FR_kind_FRK020", "陪產檢假" },
+                        { "SUM_FR_kind_FRK999", "早退(分)" }
+                    };
+
+                var fileBytes = FuncHandler.ExportToExcel(ExcelList, Excel_Headers);
+                var fileName = "請假單報表" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500);
+            }
+
+        }
+        #endregion
     }
 }
