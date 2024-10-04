@@ -335,5 +335,17 @@ namespace KF_WebAPI.BaseClass.AE
         public decimal SUM_FR_kind_FRK020 { get; set; }
         public decimal SUM_FR_kind_FRK999 { get; set; }
     }
-    
+    public class customer_qty_count_req
+    {
+        public string Qty_Date_S { get; set; }
+        public string Qty_Date_E { get; set; }
+        public string U_BC { get; set; }
+    }
+    public class customer_qty_count_Excel
+    {
+        public string com_name { get; set; }
+        public string title_name { get; set; }
+        public string U_name { get; set; }
+        public int count { get; set;}
+    }
 }

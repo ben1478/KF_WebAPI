@@ -10,7 +10,7 @@ using System.Data;
 using Microsoft.Data.SqlClient;
 using System.Drawing.Drawing2D;
 using System.Reflection;
-
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace KF_WebAPI.Controllers
 {
@@ -1158,8 +1158,8 @@ namespace KF_WebAPI.Controllers
         /// <summary>
         /// 業績報表_日報表(202106合計版)_查詢 Feat_daily_report_v2021_Query/Feat_daily_report_v2021.asp
         /// </summary>
-        [HttpPost("Feat_daily_report_v2021_Query")]
-        public ActionResult<ResultClass<string>> Feat_daily_report_v2021_Query(FeatDailyReport_req model)
+        [HttpPost("Feat_Daily_Report_v2021_Query")]
+        public ActionResult<ResultClass<string>> Feat_Daily_Report_v2021_Query(FeatDailyReport_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -1258,8 +1258,8 @@ namespace KF_WebAPI.Controllers
         /// <summary>
         /// 日報表_(202106版)_下載 Feat_daily_report_v2021_Excel/Feat_daily_report_v2021.asp
         /// </summary>
-        [HttpPost("Feat_daily_report_v2021_Excel")]
-        public IActionResult Feat_daily_report_v2021_Excel(string reportDate_n)
+        [HttpPost("Feat_Daily_Report_v2021_Excel")]
+        public IActionResult Feat_Daily_Report_v2021_Excel(string reportDate_n)
         {
             try
             {
@@ -3574,8 +3574,8 @@ namespace KF_WebAPI.Controllers
         /// <summary>
         /// 請假單報表_查詢 Flow_rest_report_query/Flow_rest_report.asp
         /// </summary>
-        [HttpPost("Flow_rest_report_query")]
-        public ActionResult<ResultClass<string>> Flow_rest_report_query(Flow_rest_report_req model)
+        [HttpPost("Flow_Rest_Report_Query")]
+        public ActionResult<ResultClass<string>> Flow_Rest_Report_Query(Flow_rest_report_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
@@ -3745,8 +3745,8 @@ namespace KF_WebAPI.Controllers
         /// <summary>
         /// 請假單報表_下載 Flow_rest_report_query/Flow_rest_report.asp
         /// </summary>
-        [HttpPost("Flow_rest_report_Excel")]
-        public IActionResult Flow_rest_report_Excel(Flow_rest_report_req model)
+        [HttpPost("Flow_Rest_Report_Excel")]
+        public IActionResult Flow_Rest_Report_Excel(Flow_rest_report_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
@@ -3939,6 +3939,238 @@ namespace KF_WebAPI.Controllers
             }
 
         }
+        #endregion
+
+        #region 業務件數統計表
+        /// <summary>
+        /// 顯示區查詢權限 GetAreaShowType/customer_qty_count.asp
+        /// </summary>
+        [HttpGet("GetAreaShowType")]
+        public ActionResult<ResultClass<string>> GetAreaShowType()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var roleNum = HttpContext.Session.GetString("Role_num");
+            SpecialClass specialClass = new SpecialClass();
+
+            try
+            {
+                string[] strarr = new string[] { "1006","1007","1001","1005" };
+                if (strarr.Contains(roleNum))
+                {
+                    specialClass.special_check = "Y";
+                    specialClass.BC_Strings = "xxx,BC0100,BC0200,BC0600,BC0300,BC0500,BC0400,BC0900";
+                }
+                else
+                {
+                    specialClass.special_check = "N";
+                    specialClass.BC_Strings = "";
+                }
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(specialClass);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 業務件數_查詢 Customer_qty_count_Query/customer_qty_count.asp
+        /// </summary>
+        [HttpPost("Customer_qty_count_Query")]
+        public ActionResult<ResultClass<string>> Customer_qty_count_Query(customer_qty_count_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var roleNum = HttpContext.Session.GetString("Role_num");
+            var User_U_BC = HttpContext.Session.GetString("User_U_BC");
+
+            try
+            {
+                var Qty_Date_S = FuncHandler.ConvertROCToGregorian(model.Qty_Date_S);
+                var Qty_Date_E = FuncHandler.ConvertROCToGregorian(model.Qty_Date_E);
+                //特殊權限判定
+                var sql_UDBC = "";
+                var sql_UBC = "";
+                string[] strarr = new string[] { "1006", "1007", "1001", "1005" };
+                if (strarr.Contains(roleNum))
+                {
+                    sql_UBC = "xxx, BC0100, BC0200, BC0600, BC0300, BC0500, BC0400";
+                    sql_UDBC = "BC0900";
+                }
+                else
+                {
+                    sql_UBC = User_U_BC;
+                }
+                if (!string.IsNullOrEmpty(model.U_BC))
+                {
+                    sql_UBC = model.U_BC;
+                    sql_UDBC = "";
+                }
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select * from fun_customer_count(@Qty_Date_S,@Qty_Date_E, @sql_UBC,@sql_UDBC)";
+                T_SQL = T_SQL + " ORDER BY case when u_bc = 'BC0900' then 'BC0101' WHEN u_bc = 'BC0600' THEN 'BC0201' WHEN u_bc = 'BC0500' THEN 'BC0301' else u_bc end,item_sort";
+                parameters.Add(new SqlParameter("@Qty_Date_S", Qty_Date_S));
+                parameters.Add(new SqlParameter("@Qty_Date_E", Qty_Date_E));
+                parameters.Add(new SqlParameter("@sql_UBC", sql_UBC));
+                parameters.Add(new SqlParameter("@sql_UDBC", sql_UDBC));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+            
+        }
+        /// <summary>
+        /// 業務件數_下載 Customer_qty_count_Excel/customer_qty_count.asp
+        /// </summary>
+        [HttpPost("Customer_qty_count_Excel")]
+        public IActionResult Customer_qty_count_Excel(customer_qty_count_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var roleNum = HttpContext.Session.GetString("Role_num");
+            var User_U_BC = HttpContext.Session.GetString("User_U_BC");
+
+            try
+            {
+                var Qty_Date_S = FuncHandler.ConvertROCToGregorian(model.Qty_Date_S);
+                var Qty_Date_E = FuncHandler.ConvertROCToGregorian(model.Qty_Date_E);
+                //特殊權限判定
+                var sql_UDBC = "";
+                var sql_UBC = "";
+                string[] strarr = new string[] { "1006", "1007", "1001", "1005" };
+                if (strarr.Contains(roleNum))
+                {
+                    sql_UBC = "xxx, BC0100, BC0200, BC0600, BC0300, BC0500, BC0400";
+                    sql_UDBC = "BC0900";
+                }
+                else
+                {
+                    sql_UBC = User_U_BC;
+                }
+                if (!string.IsNullOrEmpty(model.U_BC))
+                {
+                    sql_UBC = model.U_BC;
+                    sql_UDBC = "";
+                }
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select * from fun_customer_count(@Qty_Date_S,@Qty_Date_E, @sql_UBC,@sql_UDBC)";
+                T_SQL = T_SQL + " ORDER BY case when u_bc = 'BC0900' then 'BC0101' WHEN u_bc = 'BC0600' THEN 'BC0201' WHEN u_bc = 'BC0500' THEN 'BC0301' else u_bc end,item_sort";
+                parameters.Add(new SqlParameter("@Qty_Date_S", Qty_Date_S));
+                parameters.Add(new SqlParameter("@Qty_Date_E", Qty_Date_E));
+                parameters.Add(new SqlParameter("@sql_UBC", sql_UBC));
+                parameters.Add(new SqlParameter("@sql_UDBC", sql_UDBC));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                var ExcelList = dtResult.AsEnumerable().Select(row => new customer_qty_count_Excel {
+                    com_name = row.Field<string>("com_name"),
+                    title_name = row.Field<string>("title_name"),
+                    U_name = row.Field<string>("U_name"),
+                    count = row.Field<int>("_count")
+                }).ToList();
+                var Excel_Headers = new Dictionary<string, string>
+                {
+                    { "com_name", "公司別" },
+                    { "title_name", "職稱" },
+                    { "U_name", "業務" },
+                    { "count", "預估件數" }
+                };
+
+                var fileBytes = FuncHandler.CustomerQtyCountExcel(ExcelList, Excel_Headers, model);
+                var fileName = "業務件數報表" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500);
+            }
+        }
+        /// <summary>
+        /// 業務件數明細 Customer_qty_count_Detail/customer_qty_count_AJAX.asp
+        /// </summary>
+        /// <param name="U_num">K0311 OR BC0900 </param>
+        /// <param name="Qty_Date_S">113/09/01</param>
+        /// <param name="Qty_Date_E">113/09/30</param>
+        [HttpGet("Customer_qty_count_Detail")]
+        public ActionResult<ResultClass<string>> Customer_qty_count_Detail(string U_num,string Qty_Date_S,string Qty_Date_E)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                Qty_Date_S = FuncHandler.ConvertROCToGregorian(Qty_Date_S);
+                Qty_Date_E = FuncHandler.ConvertROCToGregorian(Qty_Date_E);
+
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "select ha.HA_id,hp.HP_id,ha.add_date,ha.cs_name,hp.pre_address,ha.plan_date,il.item_D_name,um.U_name";
+                T_SQL = T_SQL + " from User_M um";
+                T_SQL = T_SQL + " left join House_apply ha on um.U_num = ha.plan_num";
+                T_SQL = T_SQL + " left join house_pre hp on ha.HA_id = hp.HA_id";
+                T_SQL = T_SQL + " left join Item_list il on il.item_D_code = hp.pre_process_type";
+                T_SQL = T_SQL + " and il.item_M_code = 'pre_process_type' and il.item_D_type = 'Y'";
+                T_SQL = T_SQL + " WHERE um.del_tag = '0' and hp.del_tag = '0' and ha.del_tag = '0'";
+                T_SQL = T_SQL + " AND hp.pre_process_type IN ('PRCT0002', 'PRCT0003', 'PRCT0005')";
+                if (U_num == "BC0900")
+                {
+                    T_SQL = T_SQL + " AND um.u_bc IN ('BC0900')";
+                }
+                else
+                {
+                    T_SQL = T_SQL + " AND ha.plan_num=@plan_num";
+                    parameters.Add(new SqlParameter("@plan_num", U_num));
+                }
+
+                T_SQL = T_SQL + " AND (ha.add_date >= @Qty_Date_S + ' 00:00:00' AND ha.add_date <= @Qty_Date_E + ' 23:59:59') ";
+                T_SQL = T_SQL + " group by ha.HA_id,hp.HP_id,ha.add_date,ha.cs_name,hp.pre_address,ha.plan_date,il.item_D_name,um.U_name";
+                parameters.Add(new SqlParameter("@Qty_Date_S", Qty_Date_S));
+                parameters.Add(new SqlParameter("@Qty_Date_E", Qty_Date_E));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
+
+        #region 進件預估核准撥款/業務件數統計表 Incoming_parts.asp
+        //系統操作手冊下載
         #endregion
     }
 }

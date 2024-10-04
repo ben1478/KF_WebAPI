@@ -6,6 +6,7 @@ using Microsoft.Data.SqlClient;
 using System.Drawing;
 using System.Reflection;
 using System.Reflection.PortableExecutable;
+using Microsoft.AspNetCore.Http;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -792,6 +793,128 @@ namespace KF_WebAPI.FunctionHandler
                     range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                     range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 }
+                return package.GetAsByteArray();
+            }
+        }
+
+        public static byte[] CustomerQtyCountExcel(List<customer_qty_count_Excel> items, Dictionary<string, string> headers, customer_qty_count_req model)
+        {
+            if (items == null || items.Count == 0)
+            {
+                throw new ArgumentException("列表不能為 null 或空。", nameof(items));
+            }
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Sheet0");
+
+                // 添加合併標題
+                worksheet.Cells[1, 1].Value = "報表日期區間" + model.Qty_Date_S + " ~ " + model.Qty_Date_E;
+                worksheet.Cells[1, 1, 1, headers.Count + 1].Merge = true;
+                worksheet.Cells[1, 1, 1, headers.Count + 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                worksheet.Cells[1, 1, 1, headers.Count + 1].Style.Font.Bold = true;
+
+                // 添加表頭行
+                int colIndex = 1;
+                worksheet.Cells[2, colIndex++].Value = "序號";
+                foreach (var header in headers)
+                {
+                    worksheet.Cells[2, colIndex++].Value = header.Value;
+                }
+
+                int rowIndex = 3; // 從第三行開始填充數據
+                var groupedItems = items.GroupBy(x => x.com_name);
+                int serialNumber = 1; 
+
+                int subtotal = 0;
+
+                // 先填充台北的數據
+                foreach (var group in groupedItems)
+                {
+                    if (group.Key == "台北")
+                    {
+                        foreach (var item in group)
+                        {
+                            colIndex = 1;
+                            worksheet.Cells[rowIndex, colIndex++].Value = serialNumber++; // 填充序號
+                            foreach (var header in headers)
+                            {
+                                var propertyValue = item.GetType().GetProperty(header.Key)?.GetValue(item);
+                                worksheet.Cells[rowIndex, colIndex++].Value = propertyValue;
+                            }
+                            subtotal += item.count; // 累加預估件數
+                            rowIndex++;
+                        }
+                    }
+                }
+
+                // 填充數位行銷部的數據
+                foreach (var group in groupedItems)
+                {
+                    if (group.Key == "數位行銷部")
+                    {
+                        foreach (var item in group)
+                        {
+                            colIndex = 1;
+                            worksheet.Cells[rowIndex, colIndex++].Value = serialNumber++; // 填充序號
+                            foreach (var header in headers)
+                            {
+                                var propertyValue = item.GetType().GetProperty(header.Key)?.GetValue(item);
+                                worksheet.Cells[rowIndex, colIndex++].Value = propertyValue;
+                            }
+                            subtotal += item.count; // 累加預估件數
+                            rowIndex++;
+                        }
+                    }
+                }
+
+                // 添加小計行
+                worksheet.Cells[rowIndex, 1].Value = "台北 小計";
+                worksheet.Cells[rowIndex, 1, rowIndex, colIndex - 2].Merge = true;
+                worksheet.Cells[rowIndex, colIndex - 1].Value = subtotal;
+                rowIndex++;
+
+                // 填充其他部門
+                foreach (var group in groupedItems)
+                {
+                    if (group.Key != "台北" && group.Key != "數位行銷部")
+                    {
+                        subtotal = group.Sum(x => x.count); // 計算該組的總和
+                        foreach (var item in group)
+                        {
+                            colIndex = 1;
+                            worksheet.Cells[rowIndex, colIndex++].Value = serialNumber++; // 填充序號
+                            foreach (var header in headers)
+                            {
+                                var propertyValue = item.GetType().GetProperty(header.Key)?.GetValue(item);
+                                worksheet.Cells[rowIndex, colIndex++].Value = propertyValue;
+                            }
+                            rowIndex++;
+                        }
+
+                        // 添加該分公司的小計行
+                        worksheet.Cells[rowIndex, 1].Value = group.Key + " 小計";
+                        worksheet.Cells[rowIndex, 1, rowIndex, colIndex - 2].Merge = true;
+                        worksheet.Cells[rowIndex, colIndex - 1].Value = subtotal;
+                        rowIndex++;
+                    }
+                }
+
+                // 添加總計行
+                worksheet.Cells[rowIndex, 1].Value = "總計";
+                worksheet.Cells[rowIndex, 1, rowIndex, colIndex - 2].Merge = true;
+                worksheet.Cells[rowIndex, colIndex - 1].Value = items.Sum(x => x.count);
+
+                // 添加框線
+                var range = worksheet.Cells[1, 1, rowIndex, headers.Count + 1];
+                range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+
+                // 自動調整列寬
+                worksheet.Cells.AutoFitColumns();
+
                 return package.GetAsByteArray();
             }
         }
