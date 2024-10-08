@@ -46,36 +46,37 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "select fr.FR_id,um1.U_name AS FR_U_name,it9.item_D_name AS FR_kind_show,fr.FR_date_begin,";
-                T_SQL = T_SQL + " fr.FR_date_end,fr.FR_total_hour,it1.item_D_name AS FR_step_01_type_name,";
-                T_SQL = T_SQL + " it2.item_D_name AS FR_step_02_type_name,it3.item_D_name AS FR_step_03_type_name,";
-                T_SQL = T_SQL + " it4.item_D_name AS FR_step_HR_type_name,it5.item_D_name AS FR_step_01_sign_name,";
-                T_SQL = T_SQL + " it6.item_D_name AS FR_step_02_sign_name,it7.item_D_name AS FR_step_03_sign_name,";
-                T_SQL = T_SQL + " it8.item_D_name AS FR_step_HR_sign_name,it10.item_D_name AS FR_sign_type_name,fr.FR_note,fr.FR_cancel,";
-                T_SQL = T_SQL + " ISNULL( (SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = fr.FR_cknum AND del_tag = '0'), '0') AS upload_num";
-                T_SQL = T_SQL + " from Flow_rest fr";
-                T_SQL = T_SQL + " LEFT JOIN User_M um1 ON um1.U_num = fr.FR_U_num";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it1 ON it1.item_M_code = 'Flow_step_type' AND it1.item_D_type = 'Y' AND it1.item_D_code = fr.FR_step_01_type AND it1.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it2 ON it2.item_M_code = 'Flow_step_type' AND it2.item_D_type = 'Y' AND it2.item_D_code = fr.FR_step_02_type AND it2.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it3 ON it3.item_M_code = 'Flow_step_type' AND it3.item_D_type = 'Y' AND it3.item_D_code = fr.FR_step_03_type AND it3.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it4 ON it4.item_M_code = 'Flow_step_type' AND it4.item_D_type = 'Y' AND it4.item_D_code = fr.FR_step_HR_type AND it4.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it5 ON it5.item_M_code = 'Flow_sign_type' AND it5.item_D_type = 'Y' AND it5.item_D_code = fr.FR_step_01_sign AND it5.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it6 ON it6.item_M_code = 'Flow_sign_type' AND it6.item_D_type = 'Y' AND it6.item_D_code = fr.FR_step_02_sign AND it6.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it7 ON it7.item_M_code = 'Flow_sign_type' AND it7.item_D_type = 'Y' AND it7.item_D_code = fr.FR_step_03_sign AND it7.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it8 ON it8.item_M_code = 'Flow_sign_type' AND it8.item_D_type = 'Y' AND it8.item_D_code = fr.FR_step_HR_sign AND it8.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it9 ON it9.item_M_code = 'FR_kind' AND it9.item_D_type = 'Y' AND it9.item_D_code = fr.FR_kind AND it9.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it10 ON it10.item_M_code = 'Flow_sign_type' AND it10.item_D_type = 'Y' AND it10.item_D_code = fr.FR_sign_type AND it10.del_tag = '0'";
-                T_SQL = T_SQL + " where fr.del_tag = '0'";
+                var T_SQL = @"
+                    select fr.FR_id,um1.U_name AS FR_U_name,it9.item_D_name AS FR_kind_show,fr.FR_date_begin,
+                    fr.FR_date_end,fr.FR_total_hour,it1.item_D_name AS FR_step_01_type_name,
+                    it2.item_D_name AS FR_step_02_type_name,it3.item_D_name AS FR_step_03_type_name,
+                    it4.item_D_name AS FR_step_HR_type_name,it5.item_D_name AS FR_step_01_sign_name,
+                    it6.item_D_name AS FR_step_02_sign_name,it7.item_D_name AS FR_step_03_sign_name,
+                    it8.item_D_name AS FR_step_HR_sign_name,it10.item_D_name AS FR_sign_type_name,fr.FR_note,fr.FR_cancel,
+                    ISNULL( (SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = fr.FR_cknum AND del_tag = '0'), '0') AS upload_num
+                    from Flow_rest fr
+                    LEFT JOIN User_M um1 ON um1.U_num = fr.FR_U_num
+                    LEFT JOIN Item_list it1 ON it1.item_M_code = 'Flow_step_type' AND it1.item_D_type = 'Y' AND it1.item_D_code = fr.FR_step_01_type AND it1.del_tag = '0'
+                    LEFT JOIN Item_list it2 ON it2.item_M_code = 'Flow_step_type' AND it2.item_D_type = 'Y' AND it2.item_D_code = fr.FR_step_02_type AND it2.del_tag = '0'
+                    LEFT JOIN Item_list it3 ON it3.item_M_code = 'Flow_step_type' AND it3.item_D_type = 'Y' AND it3.item_D_code = fr.FR_step_03_type AND it3.del_tag = '0'
+                    LEFT JOIN Item_list it4 ON it4.item_M_code = 'Flow_step_type' AND it4.item_D_type = 'Y' AND it4.item_D_code = fr.FR_step_HR_type AND it4.del_tag = '0'
+                    LEFT JOIN Item_list it5 ON it5.item_M_code = 'Flow_sign_type' AND it5.item_D_type = 'Y' AND it5.item_D_code = fr.FR_step_01_sign AND it5.del_tag = '0'
+                    LEFT JOIN Item_list it6 ON it6.item_M_code = 'Flow_sign_type' AND it6.item_D_type = 'Y' AND it6.item_D_code = fr.FR_step_02_sign AND it6.del_tag = '0'
+                    LEFT JOIN Item_list it7 ON it7.item_M_code = 'Flow_sign_type' AND it7.item_D_type = 'Y' AND it7.item_D_code = fr.FR_step_03_sign AND it7.del_tag = '0'
+                    LEFT JOIN Item_list it8 ON it8.item_M_code = 'Flow_sign_type' AND it8.item_D_type = 'Y' AND it8.item_D_code = fr.FR_step_HR_sign AND it8.del_tag = '0'
+                    LEFT JOIN Item_list it9 ON it9.item_M_code = 'FR_kind' AND it9.item_D_type = 'Y' AND it9.item_D_code = fr.FR_kind AND it9.del_tag = '0'
+                    LEFT JOIN Item_list it10 ON it10.item_M_code = 'Flow_sign_type' AND it10.item_D_type = 'Y' AND it10.item_D_code = fr.FR_sign_type AND it10.del_tag = '0'
+                    where fr.del_tag = '0'";
                 #region 權限判定
                 //判斷是否 管理主管/人事助理/開發者 
                 var validRoles = new HashSet<string> { "1005", "1006", "1007", "1001" };
                 if (!validRoles.Contains(roleNum))
                 {
-                    T_SQL = T_SQL + " AND ( fr.FR_U_num = @U_num";
-                    T_SQL = T_SQL + " OR (fr.FR_step_01_num = @U_num AND fr.FR_step_now = '1')";
-                    T_SQL = T_SQL + " OR (fr.FR_step_02_num = @U_num AND fr.FR_step_now = '2')";
-                    T_SQL = T_SQL + " OR (fr.FR_step_03_num = @U_num AND fr.FR_step_now = '3')";
-                    T_SQL = T_SQL + " )";
+                    T_SQL += " AND ( fr.FR_U_num = @U_num";
+                    T_SQL += " OR (fr.FR_step_01_num = @U_num AND fr.FR_step_now = '1')";
+                    T_SQL += " OR (fr.FR_step_02_num = @U_num AND fr.FR_step_now = '2')";
+                    T_SQL += " OR (fr.FR_step_03_num = @U_num AND fr.FR_step_now = '3')";
+                    T_SQL += " )";
 
                     parameters.Add(new SqlParameter("@U_num", User_Num));
                 }
@@ -84,9 +85,9 @@ namespace KF_WebAPI.Controllers
                 //請假起迄查詢
                 if (model.FR_date_begin.HasValue && model.FR_date_end.HasValue)
                 {
-                    T_SQL = T_SQL + " AND ((fr.FR_date_begin >= @FR_date_begin AND fr.FR_date_begin <= @FR_date_end) ";
-                    T_SQL = T_SQL + " OR (fr.FR_date_end >= @FR_date_begin AND fr.FR_date_end <= @FR_date_end)";
-                    T_SQL = T_SQL + " OR (fr.FR_date_begin <= @FR_date_begin AND fr.FR_date_end >= @FR_date_end))";
+                    T_SQL += " AND ((fr.FR_date_begin >= @FR_date_begin AND fr.FR_date_begin <= @FR_date_end) ";
+                    T_SQL += " OR (fr.FR_date_end >= @FR_date_begin AND fr.FR_date_end <= @FR_date_end)";
+                    T_SQL += " OR (fr.FR_date_begin <= @FR_date_begin AND fr.FR_date_end >= @FR_date_end))";
 
                     parameters.Add(new SqlParameter("@FR_date_begin", model.FR_date_begin));
                     parameters.Add(new SqlParameter("@FR_date_end", model.FR_date_end));
@@ -94,29 +95,29 @@ namespace KF_WebAPI.Controllers
                 //部門區域查詢
                 if (!string.IsNullOrEmpty(model.U_BC))
                 {
-                    T_SQL = T_SQL + "AND um1.U_BC=@U_BC";
+                    T_SQL += " AND um1.U_BC=@U_BC";
                     parameters.Add(new SqlParameter("@U_BC", model.U_BC));
                 }
                 //簽核結果查詢
                 if (!string.IsNullOrEmpty(model.FR_sign_type))
                 {
-                    T_SQL = T_SQL + "AND fr.FR_sign_type = @FR_sign_type";
+                    T_SQL += " AND fr.FR_sign_type = @FR_sign_type";
                     parameters.Add(new SqlParameter("@FR_sign_type", model.FR_sign_type));
                 }
                 //外出,忘打卡等查詢
                 if (!string.IsNullOrEmpty(model.FR_kind))
                 {
-                    T_SQL = T_SQL + " AND fr.FR_kind IN (SELECT SplitValue FROM dbo.SplitStringFunction(@FR_kind))";
+                    T_SQL += " AND fr.FR_kind IN (SELECT SplitValue FROM dbo.SplitStringFunction(@FR_kind))";
                     parameters.Add(new SqlParameter("@FR_kind", model.FR_kind));
                 }
                 //請假人員
                 if (!string.IsNullOrEmpty(model.Rest_Num))
                 {
-                    T_SQL = T_SQL + " AND fr.FR_U_num = @Rest_Num";
+                    T_SQL += " AND fr.FR_U_num = @Rest_Num";
                     parameters.Add(new SqlParameter("@Rest_Num", model.Rest_Num));
                 }
                 #endregion
-                T_SQL = T_SQL + " ORDER BY fr.FR_date_begin DESC,fr.FR_id";
+                T_SQL += " ORDER BY fr.FR_date_begin DESC,fr.FR_id";
                 #endregion
 
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
@@ -155,29 +156,30 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "SELECT FR.*,U1.U_name AS FR_U_name,U2.U_name AS FR_step_01_name,U3.U_name AS FR_step_02_name,";
-                T_SQL = T_SQL + " U4.U_name AS FR_step_03_name,I1.item_D_name AS FR_step_01_type_name,I2.item_D_name AS FR_step_02_type_name,";
-                T_SQL = T_SQL + " I3.item_D_name AS FR_step_03_type_name,I4.item_D_name AS FR_step_HR_type_name,";
-                T_SQL = T_SQL + " I5.item_D_name AS FR_step_01_sign_name,I6.item_D_name AS FR_step_02_sign_name,";
-                T_SQL = T_SQL + " I7.item_D_name AS FR_step_03_sign_name,I8.item_D_name AS FR_step_HR_sign_name,";
-                T_SQL = T_SQL + " I5.item_D_color AS FR_step_01_color,I6.item_D_color AS FR_step_02_color,";
-                T_SQL = T_SQL + " I7.item_D_color AS FR_step_03_color,I8.item_D_color AS FR_step_HR_color,I9.item_D_name AS FR_kind_show,";
-                T_SQL = T_SQL + " ISNULL( (SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = FR.FR_cknum AND del_tag = '0'), '0') AS upload_num";
-                T_SQL = T_SQL + " FROM Flow_rest FR";
-                T_SQL = T_SQL + " LEFT JOIN User_M U1 ON U1.U_num = FR.FR_U_num AND U1.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN User_M U2 ON U2.U_num = FR.FR_step_01_num AND U2.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN User_M U3 ON U3.U_num = FR.FR_step_02_num AND U3.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN User_M U4 ON U4.U_num = FR.FR_step_03_num AND U4.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list I1 ON I1.item_M_code = 'Flow_step_type' AND I1.item_D_type = 'Y' AND I1.item_D_code = FR.FR_step_01_type AND I1.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list I2 ON I2.item_M_code = 'Flow_step_type' AND I2.item_D_type = 'Y' AND I2.item_D_code = FR.FR_step_02_type AND I2.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list I3 ON I3.item_M_code = 'Flow_step_type' AND I3.item_D_type = 'Y' AND I3.item_D_code = FR.FR_step_03_type AND I3.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list I4 ON I4.item_M_code = 'Flow_step_type' AND I4.item_D_type = 'Y' AND I4.item_D_code = FR.FR_step_HR_type AND I4.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list I5 ON I5.item_M_code = 'Flow_sign_type' AND I5.item_D_type = 'Y' AND I5.item_D_code = FR.FR_step_01_sign AND I5.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list I6 ON I6.item_M_code = 'Flow_sign_type' AND I6.item_D_type = 'Y' AND I6.item_D_code = FR.FR_step_02_sign AND I6.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list I7 ON I7.item_M_code = 'Flow_sign_type' AND I7.item_D_type = 'Y' AND I7.item_D_code = FR.FR_step_03_sign AND I7.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list I8 ON I8.item_M_code = 'Flow_sign_type' AND I8.item_D_type = 'Y' AND I8.item_D_code = FR.FR_step_HR_sign AND I8.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list I9 ON I9.item_M_code = 'FR_kind' AND I9.item_D_type = 'Y' AND I9.item_D_code = FR.FR_kind AND I9.del_tag = '0'";
-                T_SQL = T_SQL + " WHERE FR.del_tag = '0' AND FR.FR_id = @FR_id";
+                var T_SQL = @"
+                    SELECT FR.*,U1.U_name AS FR_U_name,U2.U_name AS FR_step_01_name,U3.U_name AS FR_step_02_name,
+                    U4.U_name AS FR_step_03_name,I1.item_D_name AS FR_step_01_type_name,I2.item_D_name AS FR_step_02_type_name,
+                    I3.item_D_name AS FR_step_03_type_name,I4.item_D_name AS FR_step_HR_type_name,
+                    I5.item_D_name AS FR_step_01_sign_name,I6.item_D_name AS FR_step_02_sign_name,
+                    I7.item_D_name AS FR_step_03_sign_name,I8.item_D_name AS FR_step_HR_sign_name,
+                    I5.item_D_color AS FR_step_01_color,I6.item_D_color AS FR_step_02_color,
+                    I7.item_D_color AS FR_step_03_color,I8.item_D_color AS FR_step_HR_color,I9.item_D_name AS FR_kind_show,
+                    ISNULL( (SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = FR.FR_cknum AND del_tag = '0'), '0') AS upload_num
+                    FROM Flow_rest FR
+                    LEFT JOIN User_M U1 ON U1.U_num = FR.FR_U_num AND U1.del_tag = '0'
+                    LEFT JOIN User_M U2 ON U2.U_num = FR.FR_step_01_num AND U2.del_tag = '0'
+                    LEFT JOIN User_M U3 ON U3.U_num = FR.FR_step_02_num AND U3.del_tag = '0'
+                    LEFT JOIN User_M U4 ON U4.U_num = FR.FR_step_03_num AND U4.del_tag = '0'
+                    LEFT JOIN Item_list I1 ON I1.item_M_code = 'Flow_step_type' AND I1.item_D_type = 'Y' AND I1.item_D_code = FR.FR_step_01_type AND I1.del_tag = '0'
+                    LEFT JOIN Item_list I2 ON I2.item_M_code = 'Flow_step_type' AND I2.item_D_type = 'Y' AND I2.item_D_code = FR.FR_step_02_type AND I2.del_tag = '0'
+                    LEFT JOIN Item_list I3 ON I3.item_M_code = 'Flow_step_type' AND I3.item_D_type = 'Y' AND I3.item_D_code = FR.FR_step_03_type AND I3.del_tag = '0'
+                    LEFT JOIN Item_list I4 ON I4.item_M_code = 'Flow_step_type' AND I4.item_D_type = 'Y' AND I4.item_D_code = FR.FR_step_HR_type AND I4.del_tag = '0'
+                    LEFT JOIN Item_list I5 ON I5.item_M_code = 'Flow_sign_type' AND I5.item_D_type = 'Y' AND I5.item_D_code = FR.FR_step_01_sign AND I5.del_tag = '0'
+                    LEFT JOIN Item_list I6 ON I6.item_M_code = 'Flow_sign_type' AND I6.item_D_type = 'Y' AND I6.item_D_code = FR.FR_step_02_sign AND I6.del_tag = '0'
+                    LEFT JOIN Item_list I7 ON I7.item_M_code = 'Flow_sign_type' AND I7.item_D_type = 'Y' AND I7.item_D_code = FR.FR_step_03_sign AND I7.del_tag = '0'
+                    LEFT JOIN Item_list I8 ON I8.item_M_code = 'Flow_sign_type' AND I8.item_D_type = 'Y' AND I8.item_D_code = FR.FR_step_HR_sign AND I8.del_tag = '0'
+                    LEFT JOIN Item_list I9 ON I9.item_M_code = 'FR_kind' AND I9.item_D_type = 'Y' AND I9.item_D_code = FR.FR_kind AND I9.del_tag = '0'
+                    WHERE FR.del_tag = '0' AND FR.FR_id = @FR_id";
                 parameters.Add(new SqlParameter("@FR_id", Fr_Id));
                 #endregion
 
@@ -217,15 +219,16 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "SELECT m.U_num AS Member_Num,m.U_name AS Member_Name,m.U_name AS Member_Name,";
-                T_SQL = T_SQL + " a.U_num AS Agent_Num,a.U_name AS Agent_Name,l1.U_num AS Leader_1_Num, l1.U_name AS Leader_1_Name,";
-                T_SQL = T_SQL + " l2.U_num AS Leader_2_Num,l2.U_name AS Leader_2_Name,l3.U_num AS Leader_3_Num,l3.U_name AS Leader_3_Name";
-                T_SQL = T_SQL + " FROM User_M m";
-                T_SQL = T_SQL + " LEFT JOIN User_M a ON m.U_agent_num = a.U_num";
-                T_SQL = T_SQL + " LEFT JOIN User_M l1 ON m.U_leader_1_num = l1.U_num";
-                T_SQL = T_SQL + " LEFT JOIN User_M l2 ON m.U_leader_2_num = l2.U_num";
-                T_SQL = T_SQL + " LEFT JOIN User_M l3 ON m.U_leader_3_num = l3.U_num";
-                T_SQL = T_SQL + " WHERE m.del_tag = '0' AND m.U_num = @U_num";
+                var T_SQL = @"
+                    SELECT m.U_num AS Member_Num,m.U_name AS Member_Name,m.U_name AS Member_Name,
+                    a.U_num AS Agent_Num,a.U_name AS Agent_Name,l1.U_num AS Leader_1_Num, l1.U_name AS Leader_1_Name,
+                    l2.U_num AS Leader_2_Num,l2.U_name AS Leader_2_Name,l3.U_num AS Leader_3_Num,l3.U_name AS Leader_3_Name
+                    FROM User_M m
+                    LEFT JOIN User_M a ON m.U_agent_num = a.U_num
+                    LEFT JOIN User_M l1 ON m.U_leader_1_num = l1.U_num
+                    LEFT JOIN User_M l2 ON m.U_leader_2_num = l2.U_num
+                    LEFT JOIN User_M l3 ON m.U_leader_3_num = l3.U_num
+                    WHERE m.del_tag = '0' AND m.U_num = @U_num";
                 parameters.Add(new SqlParameter("@U_num", U_num));
                 #endregion
 
@@ -262,7 +265,7 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = "select  item_D_code,item_D_name from Item_list where item_M_code = 'FR_kind' AND item_D_type='Y' AND show_tag='0' AND del_tag='0' order by item_sort";
+                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code = 'FR_kind' AND item_D_type='Y' AND show_tag='0' AND del_tag='0' order by item_sort";
                 #endregion
 
                 DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
@@ -320,10 +323,11 @@ namespace KF_WebAPI.Controllers
 
                         #region SQL
                         var parameters1 = new List<SqlParameter>();
-                        var T_SQL_1 = "select sum(case when fr.FR_kind='FRK005' AND FR_date_begin <= @FR_date_end_now AND FR_date_end >= @FR_date_begin_now then FR_total_hour else 0 end) as 'FR_kind_FRK005'";
-                        T_SQL_1 = T_SQL_1 + " FROM User_M u";
-                        T_SQL_1 = T_SQL_1 + " left join  Flow_rest fr on fr.FR_U_num=u.U_num AND fr.del_tag='0' AND fr.FR_sign_type in ('FSIGN001','FSIGN002') AND fr.FR_kind='FRK005' AND fr.FR_cancel='N'";
-                        T_SQL_1 = T_SQL_1 + " where u.del_tag='0' AND u.U_num=@U_num";
+                        var T_SQL_1 = @"
+                            select sum(case when fr.FR_kind='FRK005' AND FR_date_begin <= @FR_date_end_now AND FR_date_end >= @FR_date_begin_now then FR_total_hour else 0 end) as 'FR_kind_FRK005'
+                            FROM User_M u
+                            left join  Flow_rest fr on fr.FR_U_num=u.U_num AND fr.del_tag='0' AND fr.FR_sign_type in ('FSIGN001','FSIGN002') AND fr.FR_kind='FRK005' AND fr.FR_cancel='N'
+                            where u.del_tag='0' AND u.U_num=@U_num";
                         parameters1.Add(new SqlParameter("@U_num", User_Num));
                         parameters1.Add(new SqlParameter("@FR_date_begin_now", model.H_begin_now));
                         parameters1.Add(new SqlParameter("@FR_date_end_now", model.H_end_now));
@@ -352,11 +356,12 @@ namespace KF_WebAPI.Controllers
 
                         #region SQL
                         var parameters1 = new List<SqlParameter>();
-                        var T_SQL_1 = "select sum(case when fr.FR_kind='FRK005' AND FR_date_begin <= @FR_date_end_now AND FR_date_end >= @FR_date_begin_now then FR_total_hour else 0 end) as 'FR_kind_FRK005'";
-                        T_SQL_1 = T_SQL_1 + " ,sum(case when fr.FR_kind='FRK005' AND FR_date_begin <= @FR_date_end_last AND FR_date_end >= @FR_date_begin_last then FR_total_hour else 0 end) as 'FR_kind_FRK005_year'";
-                        T_SQL_1 = T_SQL_1 + " FROM User_M u";
-                        T_SQL_1 = T_SQL_1 + " left join  Flow_rest fr on fr.FR_U_num=u.U_num AND fr.del_tag='0' AND fr.FR_sign_type in ('FSIGN001','FSIGN002') AND fr.FR_kind='FRK005' AND fr.FR_cancel='N'";
-                        T_SQL_1 = T_SQL_1 + " where u.del_tag='0' AND u.U_num=@U_num";
+                        var T_SQL_1 = @"
+                            select sum(case when fr.FR_kind='FRK005' AND FR_date_begin <= @FR_date_end_now AND FR_date_end >= @FR_date_begin_now then FR_total_hour else 0 end) as 'FR_kind_FRK005'
+                            ,sum(case when fr.FR_kind='FRK005' AND FR_date_begin <= @FR_date_end_last AND FR_date_end >= @FR_date_begin_last then FR_total_hour else 0 end) as 'FR_kind_FRK005_year'
+                            FROM User_M u
+                            left join  Flow_rest fr on fr.FR_U_num=u.U_num AND fr.del_tag='0' AND fr.FR_sign_type in ('FSIGN001','FSIGN002') AND fr.FR_kind='FRK005' AND fr.FR_cancel='N'
+                            where u.del_tag='0' AND u.U_num=@U_num";
                         parameters1.Add(new SqlParameter("@U_num", User_Num));
                         parameters1.Add(new SqlParameter("@FR_date_begin_now", model.H_begin_now));
                         parameters1.Add(new SqlParameter("@FR_date_end_now", model.H_end_now));
@@ -394,13 +399,14 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = "SELECT bc.item_D_name AS U_BC_name,um.U_num,um.U_name,pft.item_D_name AS U_PFT_name";
-                T_SQL = T_SQL + " FROM User_M um";
-                T_SQL = T_SQL + " LEFT JOIN Item_list bc ON bc.item_M_code = 'branch_company'  AND bc.item_D_code = um.U_BC AND bc.item_D_type = 'Y' AND bc.show_tag = '0' AND bc.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list pft ON pft.item_M_code = 'professional_title' AND pft.item_D_code = um.U_PFT AND pft.item_D_type = 'Y' AND pft.show_tag = '0' AND pft.del_tag = '0'";
-                T_SQL = T_SQL + " WHERE um.del_tag = '0' AND bc.item_D_name is not null AND U_num <> 'AA999'";
-                T_SQL = T_SQL + " AND ( U_leave_date is null OR U_leave_date >= GETDATE() )";
-                T_SQL = T_SQL + " ORDER BY bc.item_sort,pft.item_sort;";
+                var T_SQL = @"
+                    SELECT bc.item_D_name AS U_BC_name,um.U_num,um.U_name,pft.item_D_name AS U_PFT_name
+                    FROM User_M um
+                    LEFT JOIN Item_list bc ON bc.item_M_code = 'branch_company'  AND bc.item_D_code = um.U_BC AND bc.item_D_type = 'Y' AND bc.show_tag = '0' AND bc.del_tag = '0'
+                    LEFT JOIN Item_list pft ON pft.item_M_code = 'professional_title' AND pft.item_D_code = um.U_PFT AND pft.item_D_type = 'Y' AND pft.show_tag = '0' AND pft.del_tag = '0'
+                    WHERE um.del_tag = '0' AND bc.item_D_name is not null AND U_num <> 'AA999'
+                    AND ( U_leave_date is null OR U_leave_date >= GETDATE())
+                    ORDER BY bc.item_sort,pft.item_sort;";
                 #endregion
 
                 DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
@@ -454,10 +460,11 @@ namespace KF_WebAPI.Controllers
 
                     #region SQL
                     var parameters_hay_imp = new List<SqlParameter>();
-                    var T_SQL_Hay_Imp = "select sum(case when fr.FR_kind='FRK005' AND FR_date_begin <= @FR_date_end_now AND FR_date_end >= @FR_date_begin_now then FR_total_hour else 0 end) as 'FR_kind_FRK005'";
-                    T_SQL_Hay_Imp = T_SQL_Hay_Imp + " FROM User_M u";
-                    T_SQL_Hay_Imp = T_SQL_Hay_Imp + " left join  Flow_rest fr on fr.FR_U_num=u.U_num AND fr.del_tag='0' AND fr.FR_sign_type in ('FSIGN001','FSIGN002') AND fr.FR_kind='FRK005' AND fr.FR_cancel='N'";
-                    T_SQL_Hay_Imp = T_SQL_Hay_Imp + " where u.del_tag='0' AND u.U_num=@U_num";
+                    var T_SQL_Hay_Imp = @"
+                        select sum(case when fr.FR_kind='FRK005' AND FR_date_begin <= @FR_date_end_now AND FR_date_end >= @FR_date_begin_now then FR_total_hour else 0 end) as 'FR_kind_FRK005'
+                        FROM User_M u
+                        left join  Flow_rest fr on fr.FR_U_num=u.U_num AND fr.del_tag='0' AND fr.FR_sign_type in ('FSIGN001','FSIGN002') AND fr.FR_kind='FRK005' AND fr.FR_cancel='N'
+                        where u.del_tag='0' AND u.U_num=@U_num";
                     parameters_hay_imp.Add(new SqlParameter("@U_num", User_Num));
                     parameters_hay_imp.Add(new SqlParameter("@FR_date_begin_now", Convert.ToDateTime(rowhay["H_begin"])));
                     parameters_hay_imp.Add(new SqlParameter("@FR_date_end_now", Convert.ToDateTime(rowhay["H_end"])));
@@ -485,16 +492,17 @@ namespace KF_WebAPI.Controllers
 
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "INSERT INTO Flow_Rest(FR_cknum,FR_version,FR_kind,FR_date_begin,FR_date_end,FR_total_hour,FR_note,FR_sign_type,";
-                T_SQL = T_SQL + " FR_cancel,FR_U_num,FR_step_now,FR_step_01_type,FR_step_01_num,FR_step_01_sign,FR_step_02_type,FR_step_02_num,";
-                T_SQL = T_SQL + " FR_step_02_sign,FR_step_03_type,FR_step_03_num,FR_step_03_sign,";
-                T_SQL = T_SQL + " FR_step_04_type,FR_step_04_sign,FR_step_05_type,FR_step_05_sign,";
-                T_SQL = T_SQL + " FR_step_HR_type,FR_step_HR_num,FR_step_HR_sign,add_date,add_num,add_ip,del_tag )";
-                T_SQL = T_SQL + " VALUES ( @FR_cknum,@FR_version,@FR_kind,@FR_date_begin,@FR_date_end,@FR_total_hour,@FR_note,@FR_sign_type,";
-                T_SQL = T_SQL + " @FR_cancel,@FR_U_num,@FR_step_now,@FR_step_01_type,@FR_step_01_num,@FR_step_01_sign,@FR_step_02_type,";
-                T_SQL = T_SQL + " @FR_step_02_num,@FR_step_02_sign,@FR_step_03_type,@FR_step_03_num,@FR_step_03_sign,@FR_step_04_type,";
-                T_SQL = T_SQL + " @FR_step_04_sign,@FR_step_05_type,@FR_step_05_sign,@FR_step_HR_type,@FR_step_HR_num,@FR_step_HR_sign,";
-                T_SQL = T_SQL + " @add_date,@add_num,@add_ip,@del_tag )";
+                var T_SQL = @"
+                    INSERT INTO Flow_Rest(FR_cknum,FR_version,FR_kind,FR_date_begin,FR_date_end,FR_total_hour,FR_note,FR_sign_type,
+                    FR_cancel,FR_U_num,FR_step_now,FR_step_01_type,FR_step_01_num,FR_step_01_sign,FR_step_02_type,FR_step_02_num,
+                    FR_step_02_sign,FR_step_03_type,FR_step_03_num,FR_step_03_sign,
+                    FR_step_04_type,FR_step_04_sign,FR_step_05_type,FR_step_05_sign,
+                    FR_step_HR_type,FR_step_HR_num,FR_step_HR_sign,add_date,add_num,add_ip,del_tag )
+                    VALUES ( @FR_cknum,@FR_version,@FR_kind,@FR_date_begin,@FR_date_end,@FR_total_hour,@FR_note,@FR_sign_type,
+                    @FR_cancel,@FR_U_num,@FR_step_now,@FR_step_01_type,@FR_step_01_num,@FR_step_01_sign,@FR_step_02_type,
+                    @FR_step_02_num,@FR_step_02_sign,@FR_step_03_type,@FR_step_03_num,@FR_step_03_sign,@FR_step_04_type,
+                    @FR_step_04_sign,@FR_step_05_type,@FR_step_05_sign,@FR_step_HR_type,@FR_step_HR_num,@FR_step_HR_sign,
+                    @add_date,@add_num,@add_ip,@del_tag )";
                 parameters.Add(new SqlParameter("@FR_cknum", CheckNum));
                 parameters.Add(new SqlParameter("@FR_version", "V201803"));
                 parameters.Add(new SqlParameter("@FR_kind", model.FR_kind));
@@ -586,10 +594,11 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "Update Flow_rest set FR_kind=@FR_kind,FR_date_begin=@FR_date_begin,FR_date_end=@FR_date_end,";
-                T_SQL = T_SQL + " FR_total_hour=@FR_total_hour,FR_note=@FR_note,FR_step_01_num=@FR_step_01_num,FR_step_02_num=@FR_step_02_num,";
-                T_SQL = T_SQL + " FR_step_03_num=@FR_step_03_num,edit_date=GETDATE(),edit_num=@edit_num,edit_ip=@IP";
-                T_SQL = T_SQL + " where FR_id=@FR_id";
+                var T_SQL = @"
+                    Update Flow_rest set FR_kind=@FR_kind,FR_date_begin=@FR_date_begin,FR_date_end=@FR_date_end,
+                    FR_total_hour=@FR_total_hour,FR_note=@FR_note,FR_step_01_num=@FR_step_01_num,FR_step_02_num=@FR_step_02_num,
+                    FR_step_03_num=@FR_step_03_num,edit_date=GETDATE(),edit_num=@edit_num,edit_ip=@IP
+                    where FR_id=@FR_id";
                 parameters.Add(new SqlParameter("@FR_kind", model.FR_kind));
                 parameters.Add(new SqlParameter("@FR_date_begin", model.FR_date_begin));
                 parameters.Add(new SqlParameter("@FR_date_end", model.FR_date_end));
@@ -755,74 +764,74 @@ namespace KF_WebAPI.Controllers
                 {
                     //代理人
                     case "1":
-                        T_SQL = T_SQL + " FR_step_01_type='FSTEP002',FR_step_01_sign=@FR_step_01_sign,FR_step_01_date=Getdate()";
-                        T_SQL = T_SQL + " ,FR_step_01_note=@FR_step_01_note";
+                        T_SQL += " FR_step_01_type='FSTEP002',FR_step_01_sign=@FR_step_01_sign,FR_step_01_date=Getdate()";
+                        T_SQL += " ,FR_step_01_note=@FR_step_01_note";
                         if (model.FR_step_01_sign == "FSIGN002")
                         {
-                            T_SQL = T_SQL + " ,FR_step_now='2'";
+                            T_SQL += " ,FR_step_now='2'";
                         }
                         else
                         {
-                            T_SQL = T_SQL + " ,FR_sign_type='FSIGN003',FR_step_now='0'";
+                            T_SQL += " ,FR_sign_type='FSIGN003',FR_step_now='0'";
                         }
                         parameters.Add(new SqlParameter("@FR_step_01_sign", model.FR_step_01_sign));
                         parameters.Add(new SqlParameter("@FR_step_01_note", model.FR_step_01_note));
                         break;
                     //直屬主管
                     case "2":
-                        T_SQL = T_SQL + " FR_step_02_type='FSTEP002',FR_step_02_sign=@FR_step_02_sign,FR_step_02_date=Getdate()";
-                        T_SQL = T_SQL + " ,FR_step_02_note=@FR_step_02_note";
+                        T_SQL += " FR_step_02_type='FSTEP002',FR_step_02_sign=@FR_step_02_sign,FR_step_02_date=Getdate()";
+                        T_SQL += " ,FR_step_02_note=@FR_step_02_note";
                         //第三關屬於免簽核(3天內的假單)的直接到人資 另公出 FRK016 忘打卡 FRK017可直接結案 無須到人資
                         if (model.FR_step_02_sign == "FSIGN002")
                         {
                             if (model.FR_step_03_type == "FSTEP001")
                             {
-                                T_SQL = T_SQL + " ,FR_step_now='3'";
+                                T_SQL += " ,FR_step_now='3'";
                             }
                             else
                             {
                                 if (model.FR_kind == "FRK016" || model.FR_kind == "FRK017")
                                 {
-                                    T_SQL = T_SQL + " ,FR_sign_type='FSIGN002',FR_step_now='0'";
+                                    T_SQL += " ,FR_sign_type='FSIGN002',FR_step_now='0'";
                                 }
                                 else
                                 {
-                                    T_SQL = T_SQL + " ,FR_step_now='9'";
+                                    T_SQL += " ,FR_step_now='9'";
                                 }
                             }
                         }
                         else
                         {
-                            T_SQL = T_SQL + " ,FR_sign_type='FSIGN003',FR_step_now='0'";
+                            T_SQL += " ,FR_sign_type='FSIGN003',FR_step_now='0'";
                         }
                         parameters.Add(new SqlParameter("@FR_step_02_sign", model.FR_step_02_sign));
                         parameters.Add(new SqlParameter("@FR_step_02_note", model.FR_step_02_note));
                         break;
                     //單位主管
                     case "3":
-                        T_SQL = T_SQL + " FR_step_03_type='FSTEP002',FR_step_03_sign=@FR_step_03_sign,FR_step_03_date=Getdate()";
-                        T_SQL = T_SQL + " ,FR_step_03_note=@FR_step_03_note";
+                        T_SQL += " FR_step_03_type='FSTEP002',FR_step_03_sign=@FR_step_03_sign,FR_step_03_date=Getdate()";
+                        T_SQL += " ,FR_step_03_note=@FR_step_03_note";
                         if (model.FR_step_03_sign == "FSIGN002")
                         {
-                            T_SQL = T_SQL + " ,FR_step_now='9'";
+                            T_SQL += " ,FR_step_now='9'";
                         }
                         else
                         {
-                            T_SQL = T_SQL + " ,FR_sign_type='FSIGN003',FR_step_now='0'";
+                            T_SQL += " ,FR_sign_type='FSIGN003',FR_step_now='0'";
                         }
                         parameters.Add(new SqlParameter("@FR_step_03_sign", model.FR_step_03_sign));
                         parameters.Add(new SqlParameter("@FR_step_03_note", model.FR_step_03_note));
                         break;
                     //人資
                     case "9":
-                        T_SQL = T_SQL + " FR_step_HR_type='FSTEP002',FR_step_HR_sign=@FR_step_HR_sign,FR_step_HR_date=Getdate()";
-                        T_SQL = T_SQL + " ,FR_step_HR_note=@FR_step_HR_note,FR_step_now='0',FR_sign_type=@FR_step_HR_sign";
+                        T_SQL += " FR_step_HR_type='FSTEP002',FR_step_HR_sign=@FR_step_HR_sign,FR_step_HR_date=Getdate()";
+                        T_SQL += " ,FR_step_HR_note=@FR_step_HR_note,FR_step_now='0',FR_sign_type=@FR_step_HR_sign";
                         parameters.Add(new SqlParameter("@FR_step_HR_sign", model.FR_step_HR_sign));
                         parameters.Add(new SqlParameter("@FR_step_HR_note", model.FR_step_HR_note));
                         break;
                 }
 
-                T_SQL = T_SQL + " Where FR_id=@FR_id";
+                T_SQL += " Where FR_id=@FR_id";
                 parameters.Add(new SqlParameter("@FR_id", model.FR_id));
                 #endregion
 
@@ -866,36 +875,37 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "select fr.FR_id,um1.U_name AS FR_U_name,it9.item_D_name AS FR_kind_show,fr.FR_date_begin,";
-                T_SQL = T_SQL + " fr.FR_date_end,fr.FR_total_hour,it1.item_D_name AS FR_step_01_type_name,";
-                T_SQL = T_SQL + " it2.item_D_name AS FR_step_02_type_name,it3.item_D_name AS FR_step_03_type_name,";
-                T_SQL = T_SQL + " it4.item_D_name AS FR_step_HR_type_name,it5.item_D_name AS FR_step_01_sign_name,";
-                T_SQL = T_SQL + " it6.item_D_name AS FR_step_02_sign_name,it7.item_D_name AS FR_step_03_sign_name,";
-                T_SQL = T_SQL + " it8.item_D_name AS FR_step_HR_sign_name,it10.item_D_name AS FR_sign_type_name,fr.FR_note,fr.FR_cancel,";
-                T_SQL = T_SQL + " ISNULL( (SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = fr.FR_cknum AND del_tag = '0'), '0') AS upload_num";
-                T_SQL = T_SQL + " from Flow_rest fr";
-                T_SQL = T_SQL + " LEFT JOIN User_M um1 ON um1.U_num = fr.FR_U_num";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it1 ON it1.item_M_code = 'Flow_step_type' AND it1.item_D_type = 'Y' AND it1.item_D_code = fr.FR_step_01_type AND it1.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it2 ON it2.item_M_code = 'Flow_step_type' AND it2.item_D_type = 'Y' AND it2.item_D_code = fr.FR_step_02_type AND it2.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it3 ON it3.item_M_code = 'Flow_step_type' AND it3.item_D_type = 'Y' AND it3.item_D_code = fr.FR_step_03_type AND it3.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it4 ON it4.item_M_code = 'Flow_step_type' AND it4.item_D_type = 'Y' AND it4.item_D_code = fr.FR_step_HR_type AND it4.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it5 ON it5.item_M_code = 'Flow_sign_type' AND it5.item_D_type = 'Y' AND it5.item_D_code = fr.FR_step_01_sign AND it5.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it6 ON it6.item_M_code = 'Flow_sign_type' AND it6.item_D_type = 'Y' AND it6.item_D_code = fr.FR_step_02_sign AND it6.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it7 ON it7.item_M_code = 'Flow_sign_type' AND it7.item_D_type = 'Y' AND it7.item_D_code = fr.FR_step_03_sign AND it7.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it8 ON it8.item_M_code = 'Flow_sign_type' AND it8.item_D_type = 'Y' AND it8.item_D_code = fr.FR_step_HR_sign AND it8.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it9 ON it9.item_M_code = 'FR_kind' AND it9.item_D_type = 'Y' AND it9.item_D_code = fr.FR_kind AND it9.del_tag = '0'";
-                T_SQL = T_SQL + " LEFT JOIN Item_list it10 ON it10.item_M_code = 'Flow_sign_type' AND it10.item_D_type = 'Y' AND it10.item_D_code = fr.FR_sign_type AND it10.del_tag = '0'";
-                T_SQL = T_SQL + " where fr.del_tag = '0'";
+                var T_SQL = @"
+                    select fr.FR_id,um1.U_name AS FR_U_name,it9.item_D_name AS FR_kind_show,fr.FR_date_begin,
+                    fr.FR_date_end,fr.FR_total_hour,it1.item_D_name AS FR_step_01_type_name,
+                    it2.item_D_name AS FR_step_02_type_name,it3.item_D_name AS FR_step_03_type_name,
+                    it4.item_D_name AS FR_step_HR_type_name,it5.item_D_name AS FR_step_01_sign_name,
+                    it6.item_D_name AS FR_step_02_sign_name,it7.item_D_name AS FR_step_03_sign_name,
+                    it8.item_D_name AS FR_step_HR_sign_name,it10.item_D_name AS FR_sign_type_name,fr.FR_note,fr.FR_cancel,
+                    ISNULL( (SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = fr.FR_cknum AND del_tag = '0'), '0') AS upload_num
+                    from Flow_rest fr
+                    LEFT JOIN User_M um1 ON um1.U_num = fr.FR_U_num
+                    LEFT JOIN Item_list it1 ON it1.item_M_code = 'Flow_step_type' AND it1.item_D_type = 'Y' AND it1.item_D_code = fr.FR_step_01_type AND it1.del_tag = '0'
+                    LEFT JOIN Item_list it2 ON it2.item_M_code = 'Flow_step_type' AND it2.item_D_type = 'Y' AND it2.item_D_code = fr.FR_step_02_type AND it2.del_tag = '0'
+                    LEFT JOIN Item_list it3 ON it3.item_M_code = 'Flow_step_type' AND it3.item_D_type = 'Y' AND it3.item_D_code = fr.FR_step_03_type AND it3.del_tag = '0'
+                    LEFT JOIN Item_list it4 ON it4.item_M_code = 'Flow_step_type' AND it4.item_D_type = 'Y' AND it4.item_D_code = fr.FR_step_HR_type AND it4.del_tag = '0'
+                    LEFT JOIN Item_list it5 ON it5.item_M_code = 'Flow_sign_type' AND it5.item_D_type = 'Y' AND it5.item_D_code = fr.FR_step_01_sign AND it5.del_tag = '0'
+                    LEFT JOIN Item_list it6 ON it6.item_M_code = 'Flow_sign_type' AND it6.item_D_type = 'Y' AND it6.item_D_code = fr.FR_step_02_sign AND it6.del_tag = '0'
+                    LEFT JOIN Item_list it7 ON it7.item_M_code = 'Flow_sign_type' AND it7.item_D_type = 'Y' AND it7.item_D_code = fr.FR_step_03_sign AND it7.del_tag = '0'
+                    LEFT JOIN Item_list it8 ON it8.item_M_code = 'Flow_sign_type' AND it8.item_D_type = 'Y' AND it8.item_D_code = fr.FR_step_HR_sign AND it8.del_tag = '0'
+                    LEFT JOIN Item_list it9 ON it9.item_M_code = 'FR_kind' AND it9.item_D_type = 'Y' AND it9.item_D_code = fr.FR_kind AND it9.del_tag = '0'
+                    LEFT JOIN Item_list it10 ON it10.item_M_code = 'Flow_sign_type' AND it10.item_D_type = 'Y' AND it10.item_D_code = fr.FR_sign_type AND it10.del_tag = '0'
+                    where fr.del_tag = '0'";
                 #region 權限判定
                 //判斷是否 管理主管/人事助理/開發者 
                 var validRoles = new HashSet<string> { "1005", "1006", "1007", "1001" };
                 if (!validRoles.Contains(roleNum))
                 {
-                    T_SQL = T_SQL + " AND ( fr.FR_U_num = @U_num";
-                    T_SQL = T_SQL + " OR (fr.FR_step_01_num = @U_num AND fr.FR_step_now = '1')";
-                    T_SQL = T_SQL + " OR (fr.FR_step_02_num = @U_num AND fr.FR_step_now = '2')";
-                    T_SQL = T_SQL + " OR (fr.FR_step_03_num = @U_num AND fr.FR_step_now = '3')";
-                    T_SQL = T_SQL + " )";
+                    T_SQL += " AND ( fr.FR_U_num = @U_num";
+                    T_SQL += " OR (fr.FR_step_01_num = @U_num AND fr.FR_step_now = '1')";
+                    T_SQL += " OR (fr.FR_step_02_num = @U_num AND fr.FR_step_now = '2')";
+                    T_SQL += " OR (fr.FR_step_03_num = @U_num AND fr.FR_step_now = '3')";
+                    T_SQL += " )";
 
                     parameters.Add(new SqlParameter("@U_num", User_Num));
                 }
@@ -904,9 +914,9 @@ namespace KF_WebAPI.Controllers
                 //請假起迄查詢
                 if (model.FR_date_begin.HasValue && model.FR_date_end.HasValue)
                 {
-                    T_SQL = T_SQL + " AND ((fr.FR_date_begin >= @FR_date_begin AND fr.FR_date_begin <= @FR_date_end) ";
-                    T_SQL = T_SQL + " OR (fr.FR_date_end >= @FR_date_begin AND fr.FR_date_end <= @FR_date_end)";
-                    T_SQL = T_SQL + " OR (fr.FR_date_begin <= @FR_date_begin AND fr.FR_date_end >= @FR_date_end))";
+                    T_SQL += " AND ((fr.FR_date_begin >= @FR_date_begin AND fr.FR_date_begin <= @FR_date_end) ";
+                    T_SQL += " OR (fr.FR_date_end >= @FR_date_begin AND fr.FR_date_end <= @FR_date_end)";
+                    T_SQL += " OR (fr.FR_date_begin <= @FR_date_begin AND fr.FR_date_end >= @FR_date_end))";
 
                     parameters.Add(new SqlParameter("@FR_date_begin", model.FR_date_begin));
                     parameters.Add(new SqlParameter("@FR_date_end", model.FR_date_end));
@@ -914,23 +924,23 @@ namespace KF_WebAPI.Controllers
                 //部門區域查詢
                 if (!string.IsNullOrEmpty(model.U_BC))
                 {
-                    T_SQL = T_SQL + "AND um1.U_BC=@U_BC";
+                    T_SQL += "AND um1.U_BC=@U_BC";
                     parameters.Add(new SqlParameter("@U_BC", model.U_BC));
                 }
                 //簽核結果查詢
                 if (!string.IsNullOrEmpty(model.FR_sign_type))
                 {
-                    T_SQL = T_SQL + "AND fr.FR_sign_type = @FR_sign_type";
+                    T_SQL += "AND fr.FR_sign_type = @FR_sign_type";
                     parameters.Add(new SqlParameter("@FR_sign_type", model.FR_sign_type));
                 }
                 //請假人員
                 if (!string.IsNullOrEmpty(model.Rest_Num))
                 {
-                    T_SQL = T_SQL + " AND fr.FR_U_num = @Rest_Num";
+                    T_SQL += " AND fr.FR_U_num = @Rest_Num";
                     parameters.Add(new SqlParameter("@Rest_Num", model.Rest_Num));
                 }
                 #endregion
-                T_SQL = T_SQL + " ORDER BY fr.FR_date_begin DESC,fr.FR_id";
+                T_SQL += " ORDER BY fr.FR_date_begin DESC,fr.FR_id";
                 #endregion
 
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
@@ -955,7 +965,6 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass); // 返回 500 錯誤碼
             }
         }
-
         #endregion
 
         #region 出勤紀錄上傳
@@ -1028,9 +1037,10 @@ namespace KF_WebAPI.Controllers
                                 {
                                     #region SQL
                                     var parameters_sp = new List<SqlParameter>();
-                                    var T_SQL_SP = "SELECT u_num, u_name FROM user_M M JOIN ( SELECT item_D_code, item_D_name";
-                                    T_SQL_SP = T_SQL_SP + " FROM dbo.Item_list WHERE item_M_code = 'SpecName' AND item_D_type = 'Y' AND item_D_name = @name_sp";
-                                    T_SQL_SP = T_SQL_SP + " ) I ON M.u_name = item_D_code";
+                                    var T_SQL_SP = @"
+                                        SELECT u_num, u_name FROM user_M M JOIN ( SELECT item_D_code, item_D_name
+                                        FROM dbo.Item_list WHERE item_M_code = 'SpecName' AND item_D_type = 'Y' AND item_D_name = @name_sp
+                                        ) I ON M.u_name = item_D_code";
                                     parameters_sp.Add(new SqlParameter("@name_sp", worksheet.Cells[2, 2].Text));
                                     #endregion
                                     DataTable dtResult_sp = _adoData.ExecuteQuery(T_SQL_SP, parameters_sp);
@@ -1044,8 +1054,9 @@ namespace KF_WebAPI.Controllers
                                     {
                                         #region SQL
                                         var parameters_nop = new List<SqlParameter>();
-                                        var T_SQL_NOP = "SELECT item_D_code, item_D_name FROM dbo.Item_list";
-                                        T_SQL_NOP = T_SQL_NOP + " WHERE item_M_code = 'NonUser' AND item_D_type = 'Y' AND item_D_code = @name_nop";
+                                        var T_SQL_NOP = @"
+                                            SELECT item_D_code, item_D_name FROM dbo.Item_list
+                                            WHERE item_M_code = 'NonUser' AND item_D_type = 'Y' AND item_D_code = @name_nop";
                                         parameters_nop.Add(new SqlParameter("@name_nop", worksheet.Cells[2, 2].Text));
                                         #endregion
                                         DataTable dtResult_nop = _adoData.ExecuteQuery(T_SQL_NOP, parameters_nop);
@@ -1101,8 +1112,9 @@ namespace KF_WebAPI.Controllers
                 {
                     #region SQL
                     var parameters_IN = new List<SqlParameter>();
-                    var T_SQL_IN = "Insert into attendance (user_name,userID,yyyymm,user_apart,attendance_date,work_time,getoffwork_time,inputdate,user_num)";
-                    T_SQL_IN = T_SQL_IN + "Values (@user_name,@userID,@yyyymm,@user_apart,@attendance_date,@work_time,@getoffwork_time,@inputdate,@user_num)";
+                    var T_SQL_IN = @"
+                        Insert into attendance (user_name,userID,yyyymm,user_apart,attendance_date,work_time,getoffwork_time,inputdate,user_num)
+                        Values (@user_name,@userID,@yyyymm,@user_apart,@attendance_date,@work_time,@getoffwork_time,@inputdate,@user_num)";
                     parameters_IN.Add(new SqlParameter("@user_name", item.user_name));
                     parameters_IN.Add(new SqlParameter("@userID", item.userID));
                     parameters_IN.Add(new SqlParameter("@yyyymm", item.yyyymm));
@@ -1169,7 +1181,6 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-
         /// <summary>
         /// 個人出勤紀錄 Attendance_Query/Attendance_report.asp?Self=Y
         /// </summary>
@@ -1185,48 +1196,49 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "SELECT U.U_Na,[userID],U_name [user_name],@yyyy + ad.[attendance_date] attendance_date,[work_time],";
-                T_SQL = T_SQL + " case When isnull([work_time], '') = '' then 0 When [work_time] > '09:00' then DATEDIFF(MINUTE, '09:00', [work_time]) else 0 end Late,";
-                T_SQL = T_SQL + " case When isnull([work_time], '') = '' then '未刷卡' When [work_time] > '09:00' then case when isnull(U_num_NL, 'N') = 'N' then '遲到'  else '' end else '' end work_status,";
-                T_SQL = T_SQL + " [getoffwork_time],";
-                T_SQL = T_SQL + " case When isnull([getoffwork_time], '') = '' then 0 When [getoffwork_time] < '18:00' then DATEDIFF(MINUTE, [getoffwork_time], '18:00') else 0 end early,";
-                T_SQL = T_SQL + " case When isnull([getoffwork_time], '') = '' then '未刷卡' When [getoffwork_time] < '18:00' then case when isnull(U_num_NL, 'N') = 'N' then '早退' else '' end else '' end offwork_status,";
-                T_SQL = T_SQL + " U_BC,isnull(RestCount, 0) RestCount";
-                T_SQL = T_SQL + " FROM attendance ad";
-                T_SQL = T_SQL + " left join ( SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na from User_M U";
-                T_SQL = T_SQL + " left join ( SELECT [item_D_code],[item_D_name] FROM Item_list WHERE item_M_code = 'branch_company'";
-                T_SQL = T_SQL + " AND item_D_type = 'Y' and del_tag = '0'  ) I on U.u_bc = I.item_D_code";
-                T_SQL = T_SQL + " where del_tag = '0' ) U on ad.userID = U.U_num";
-                T_SQL = T_SQL + " Left Join ( SELECT [item_D_code] U_num_NL FROM Item_list where item_M_code = 'NonLate'";
-                T_SQL = T_SQL + " and [item_M_type] = 'N' ) NL on U.U_num = NL.U_num_NL";
-                T_SQL = T_SQL + " left join ( select FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,";
-                T_SQL = T_SQL + " convert(varchar, FR_date_end, 111) FR_date_E,count(FR_U_num) RestCount";
-                T_SQL = T_SQL + " from Flow_rest where  del_tag = '0' and FR_cancel <> 'Y' group by";
-                T_SQL = T_SQL + " FR_U_num,convert(varchar, FR_date_begin, 111),convert(varchar, FR_date_end, 111)";
-                T_SQL = T_SQL + " ) R on ad.userID = R.FR_U_num and @yyyy + ad.[attendance_date] between R.FR_date_S";
-                T_SQL = T_SQL + " and FR_date_E";
-                T_SQL = T_SQL + " where convert( varchar,convert(datetime, @yyyy + [attendance_date]),111";
-                T_SQL = T_SQL + "  ) not in ( SELECT convert(varchar, convert(datetime, [HDate]), 111) FROM Holidays )";
+                var T_SQL = @"
+                    SELECT U.U_Na,[userID],U_name [user_name],@yyyy + ad.[attendance_date] attendance_date,[work_time],
+                    case When isnull([work_time], '') = '' then 0 When [work_time] > '09:00' then DATEDIFF(MINUTE, '09:00', [work_time]) else 0 end Late,
+                    case When isnull([work_time], '') = '' then '未刷卡' When [work_time] > '09:00' then case when isnull(U_num_NL, 'N') = 'N' then '遲到'  else '' end else '' end work_status,
+                    [getoffwork_time],
+                    case When isnull([getoffwork_time], '') = '' then 0 When [getoffwork_time] < '18:00' then DATEDIFF(MINUTE, [getoffwork_time], '18:00') else 0 end early,
+                    case When isnull([getoffwork_time], '') = '' then '未刷卡' When [getoffwork_time] < '18:00' then case when isnull(U_num_NL, 'N') = 'N' then '早退' else '' end else '' end offwork_status,
+                    U_BC,isnull(RestCount, 0) RestCount
+                    FROM attendance ad
+                    left join ( SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na from User_M U
+                    left join ( SELECT [item_D_code],[item_D_name] FROM Item_list WHERE item_M_code = 'branch_company'
+                    AND item_D_type = 'Y' and del_tag = '0'  ) I on U.u_bc = I.item_D_code
+                    where del_tag = '0' ) U on ad.userID = U.U_num
+                    Left Join ( SELECT [item_D_code] U_num_NL FROM Item_list where item_M_code = 'NonLate'
+                    and [item_M_type] = 'N' ) NL on U.U_num = NL.U_num_NL
+                    left join ( select FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,
+                    convert(varchar, FR_date_end, 111) FR_date_E,count(FR_U_num) RestCount
+                    from Flow_rest where  del_tag = '0' and FR_cancel <> 'Y' group by
+                    FR_U_num,convert(varchar, FR_date_begin, 111),convert(varchar, FR_date_end, 111)
+                    ) R on ad.userID = R.FR_U_num and @yyyy + ad.[attendance_date] between R.FR_date_S
+                    and FR_date_E
+                    where convert( varchar,convert(datetime, @yyyy + [attendance_date]),111
+                    ) not in ( SELECT convert(varchar, convert(datetime, [HDate]), 111) FROM Holidays )";
                 switch (model.AttStatus)
                 {
                     case 1:
-                        T_SQL = T_SQL + " and (work_time>'09:00' or getoffwork_time<'18:00')";
+                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00')";
                         break;
                     case 2:
-                        T_SQL = T_SQL + " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) = 0";
+                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) = 0";
                         break;
                     case 3:
-                        T_SQL = T_SQL + " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) <> 0";
+                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) <> 0";
                         break;
                     case 4:
-                        T_SQL = T_SQL + " and work_time>'09:00'";
+                        T_SQL += " and work_time>'09:00'";
                         break;
                     case 5:
-                        T_SQL = T_SQL + "and getoffwork_time<'18:00'";
+                        T_SQL += "and getoffwork_time<'18:00'";
                         break;
                 }
-                T_SQL = T_SQL + " AND userID = @userID AND yyyymm = @yyyymm order by";
-                T_SQL = T_SQL + " u_BC,userID,attendance_date";
+                T_SQL += " AND userID = @userID AND yyyymm = @yyyymm order by";
+                T_SQL += " u_BC,userID,attendance_date";
                 var YYYY = (model.yyyymm).Substring(0, 4) + "/";
                 parameters.Add(new SqlParameter("@yyyy", YYYY));
                 parameters.Add(new SqlParameter("@userID", User_Num));
@@ -1256,24 +1268,24 @@ namespace KF_WebAPI.Controllers
                     {
                         #region SQL
                         var parameters_d = new List<SqlParameter>();
-                        var T_SQL_d = "SELECT '假別:' + il1.item_D_name + ';' + CONVERT(VARCHAR, fr.FR_date_begin, 111) + '~' +";
-                        T_SQL_d = T_SQL_d + " CONVERT(VARCHAR, fr.FR_date_end, 111) + '狀態:' + ";
-                        T_SQL_d = T_SQL_d + " CASE WHEN fr.FR_step_now = 1 THEN '代理人-' + COALESCE(um1.U_name, '')";
-                        T_SQL_d = T_SQL_d + " WHEN fr.FR_step_now = 2 THEN '直屬主管-' + COALESCE(um2.U_name, '')";
-                        T_SQL_d = T_SQL_d + " WHEN fr.FR_step_now = 3 THEN '單位主管-' + COALESCE(um3.U_name, '')";
-                        T_SQL_d = T_SQL_d + " WHEN fr.FR_step_now = 9 THEN '人資-'";
-                        T_SQL_d = T_SQL_d + " WHEN fr.FR_step_now = 0 THEN '' END + COALESCE(il2.item_D_name, '') AS FR_sign_type_name_desc,";
-                        T_SQL_d = T_SQL_d + " fr.FR_total_hour";
-                        T_SQL_d = T_SQL_d + " FROM Flow_rest fr";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN User_M um1 ON fr.FR_step_01_num = um1.u_num";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN User_M um2 ON fr.FR_step_02_num = um2.u_num";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN User_M um3 ON fr.FR_step_03_num = um3.u_num";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN Item_list il1 ON fr.FR_kind = il1.item_D_code";
-                        T_SQL_d = T_SQL_d + " AND il1.item_M_code = 'FR_kind' AND il1.item_D_type = 'Y' AND il1.del_tag = '0'";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN Item_list il2 ON fr.FR_sign_type = il2.item_D_code ";
-                        T_SQL_d = T_SQL_d + " AND il2.item_M_code = 'Flow_sign_type' AND il2.item_D_type = 'Y' AND il2.del_tag = '0'";
-                        T_SQL_d = T_SQL_d + " WHERE fr.del_tag = '0' AND fr.FR_cancel <> 'Y' AND fr.FR_U_num = @FR_U_num AND CONVERT(VARCHAR, fr.FR_date_begin, 111) = @Date";
-                       
+                        var T_SQL_d = @"
+                            SELECT '假別:' + il1.item_D_name + ';' + CONVERT(VARCHAR, fr.FR_date_begin, 111) + '~' +
+                            CONVERT(VARCHAR, fr.FR_date_end, 111) + '狀態:' + 
+                            CASE WHEN fr.FR_step_now = 1 THEN '代理人-' + COALESCE(um1.U_name, '')
+                            WHEN fr.FR_step_now = 2 THEN '直屬主管-' + COALESCE(um2.U_name, '')
+                            WHEN fr.FR_step_now = 3 THEN '單位主管-' + COALESCE(um3.U_name, '')
+                            WHEN fr.FR_step_now = 9 THEN '人資-'
+                            WHEN fr.FR_step_now = 0 THEN '' END + COALESCE(il2.item_D_name, '') AS FR_sign_type_name_desc,
+                            fr.FR_total_hour
+                            FROM Flow_rest fr
+                            LEFT JOIN User_M um1 ON fr.FR_step_01_num = um1.u_num
+                            LEFT JOIN User_M um2 ON fr.FR_step_02_num = um2.u_num
+                            LEFT JOIN User_M um3 ON fr.FR_step_03_num = um3.u_num
+                            LEFT JOIN Item_list il1 ON fr.FR_kind = il1.item_D_code
+                            AND il1.item_M_code = 'FR_kind' AND il1.item_D_type = 'Y' AND il1.del_tag = '0'
+                            LEFT JOIN Item_list il2 ON fr.FR_sign_type = il2.item_D_code 
+                            AND il2.item_M_code = 'Flow_sign_type' AND il2.item_D_type = 'Y' AND il2.del_tag = '0'
+                            WHERE fr.del_tag = '0' AND fr.FR_cancel <> 'Y' AND fr.FR_U_num = @FR_U_num AND CONVERT(VARCHAR, fr.FR_date_begin, 111) = @Date";
                         parameters_d.Add(new SqlParameter("@FR_U_num", User_Num));
                         parameters_d.Add(new SqlParameter("@Date", item.attendance_date));
                         #endregion
@@ -1318,48 +1330,49 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "SELECT U.U_Na,[userID],U_name [user_name],@yyyy + ad.[attendance_date] attendance_date,[work_time],";
-                T_SQL = T_SQL + " case When isnull([work_time], '') = '' then 0 When [work_time] > '09:00' then DATEDIFF(MINUTE, '09:00', [work_time]) else 0 end Late,";
-                T_SQL = T_SQL + " case When isnull([work_time], '') = '' then '未刷卡' When [work_time] > '09:00' then case when isnull(U_num_NL, 'N') = 'N' then '遲到'  else '' end else '' end work_status,";
-                T_SQL = T_SQL + " [getoffwork_time],";
-                T_SQL = T_SQL + " case When isnull([getoffwork_time], '') = '' then 0 When [getoffwork_time] < '18:00' then DATEDIFF(MINUTE, [getoffwork_time], '18:00') else 0 end early,";
-                T_SQL = T_SQL + " case When isnull([getoffwork_time], '') = '' then '未刷卡' When [getoffwork_time] < '18:00' then case when isnull(U_num_NL, 'N') = 'N' then '早退' else '' end else '' end offwork_status,";
-                T_SQL = T_SQL + " U_BC,isnull(RestCount, 0) RestCount";
-                T_SQL = T_SQL + " FROM attendance ad";
-                T_SQL = T_SQL + " left join ( SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na from User_M U";
-                T_SQL = T_SQL + " left join ( SELECT [item_D_code],[item_D_name] FROM Item_list WHERE item_M_code = 'branch_company'";
-                T_SQL = T_SQL + " AND item_D_type = 'Y' and del_tag = '0'  ) I on U.u_bc = I.item_D_code";
-                T_SQL = T_SQL + " where del_tag = '0' ) U on ad.userID = U.U_num";
-                T_SQL = T_SQL + " Left Join ( SELECT [item_D_code] U_num_NL FROM Item_list where item_M_code = 'NonLate'";
-                T_SQL = T_SQL + " and [item_M_type] = 'N' ) NL on U.U_num = NL.U_num_NL";
-                T_SQL = T_SQL + " left join ( select FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,";
-                T_SQL = T_SQL + " convert(varchar, FR_date_end, 111) FR_date_E,count(FR_U_num) RestCount";
-                T_SQL = T_SQL + " from Flow_rest where  del_tag = '0' and FR_cancel <> 'Y' group by";
-                T_SQL = T_SQL + " FR_U_num,convert(varchar, FR_date_begin, 111),convert(varchar, FR_date_end, 111)";
-                T_SQL = T_SQL + " ) R on ad.userID = R.FR_U_num and @yyyy + ad.[attendance_date] between R.FR_date_S";
-                T_SQL = T_SQL + " and FR_date_E";
-                T_SQL = T_SQL + " where convert( varchar,convert(datetime, @yyyy + [attendance_date]),111";
-                T_SQL = T_SQL + "  ) not in ( SELECT convert(varchar, convert(datetime, [HDate]), 111) FROM Holidays )";
+                var T_SQL = @"
+                    SELECT U.U_Na,[userID],U_name [user_name],@yyyy + ad.[attendance_date] attendance_date,[work_time],
+                    case When isnull([work_time], '') = '' then 0 When [work_time] > '09:00' then DATEDIFF(MINUTE, '09:00', [work_time]) else 0 end Late,
+                    case When isnull([work_time], '') = '' then '未刷卡' When [work_time] > '09:00' then case when isnull(U_num_NL, 'N') = 'N' then '遲到'  else '' end else '' end work_status,
+                    [getoffwork_time],
+                    case When isnull([getoffwork_time], '') = '' then 0 When [getoffwork_time] < '18:00' then DATEDIFF(MINUTE, [getoffwork_time], '18:00') else 0 end early,
+                    case When isnull([getoffwork_time], '') = '' then '未刷卡' When [getoffwork_time] < '18:00' then case when isnull(U_num_NL, 'N') = 'N' then '早退' else '' end else '' end offwork_status,
+                    U_BC,isnull(RestCount, 0) RestCount
+                    FROM attendance ad
+                    left join ( SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na from User_M U
+                    left join ( SELECT [item_D_code],[item_D_name] FROM Item_list WHERE item_M_code = 'branch_company'
+                    AND item_D_type = 'Y' and del_tag = '0'  ) I on U.u_bc = I.item_D_code
+                    where del_tag = '0' ) U on ad.userID = U.U_num
+                    Left Join ( SELECT [item_D_code] U_num_NL FROM Item_list where item_M_code = 'NonLate'
+                    and [item_M_type] = 'N' ) NL on U.U_num = NL.U_num_NL
+                    left join ( select FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,
+                    convert(varchar, FR_date_end, 111) FR_date_E,count(FR_U_num) RestCount
+                    from Flow_rest where  del_tag = '0' and FR_cancel <> 'Y' group by
+                    FR_U_num,convert(varchar, FR_date_begin, 111),convert(varchar, FR_date_end, 111)
+                    ) R on ad.userID = R.FR_U_num and @yyyy + ad.[attendance_date] between R.FR_date_S
+                    and FR_date_E
+                    where convert( varchar,convert(datetime, @yyyy + [attendance_date]),111
+                    ) not in ( SELECT convert(varchar, convert(datetime, [HDate]), 111) FROM Holidays )";
                 switch (model.AttStatus)
                 {
                     case 1:
-                        T_SQL = T_SQL + " and (work_time>'09:00' or getoffwork_time<'18:00')";
+                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00')";
                         break;
                     case 2:
-                        T_SQL = T_SQL + " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) = 0";
+                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) = 0";
                         break;
                     case 3:
-                        T_SQL = T_SQL + " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) <> 0";
+                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) <> 0";
                         break;
                     case 4:
-                        T_SQL = T_SQL + " and work_time>'09:00'";
+                        T_SQL += " and work_time>'09:00'";
                         break;
                     case 5:
-                        T_SQL = T_SQL + "and getoffwork_time<'18:00'";
+                        T_SQL += "and getoffwork_time<'18:00'";
                         break;
                 }
-                T_SQL = T_SQL + " AND userID = @userID AND yyyymm = @yyyymm order by";
-                T_SQL = T_SQL + " u_BC,userID,attendance_date";
+                T_SQL += " AND userID = @userID AND yyyymm = @yyyymm order by";
+                T_SQL += " u_BC,userID,attendance_date";
 
                 
                 var YYYY = (model.yyyymm).Substring(0, 4) + "/";
@@ -1392,25 +1405,24 @@ namespace KF_WebAPI.Controllers
                     {
                         #region SQL
                         var parameters_d = new List<SqlParameter>();
-                        var T_SQL_d = "SELECT '假別:' + il1.item_D_name + ';' + CONVERT(VARCHAR, fr.FR_date_begin, 111) + '~' +";
-                        T_SQL_d = T_SQL_d + " CONVERT(VARCHAR, fr.FR_date_end, 111) + '狀態:' + ";
-                        T_SQL_d = T_SQL_d + " CASE WHEN fr.FR_step_now = 1 THEN '代理人-' + COALESCE(um1.U_name, '')";
-                        T_SQL_d = T_SQL_d + " WHEN fr.FR_step_now = 2 THEN '直屬主管-' + COALESCE(um2.U_name, '')";
-                        T_SQL_d = T_SQL_d + " WHEN fr.FR_step_now = 3 THEN '單位主管-' + COALESCE(um3.U_name, '')";
-                        T_SQL_d = T_SQL_d + " WHEN fr.FR_step_now = 9 THEN '人資-'";
-                        T_SQL_d = T_SQL_d + " WHEN fr.FR_step_now = 0 THEN '' END + COALESCE(il2.item_D_name, '') AS FR_sign_type_name_desc,";
-                        T_SQL_d = T_SQL_d + " fr.FR_total_hour";
-                        T_SQL_d = T_SQL_d + " FROM Flow_rest fr";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN User_M um1 ON fr.FR_step_01_num = um1.u_num";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN User_M um2 ON fr.FR_step_02_num = um2.u_num";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN User_M um3 ON fr.FR_step_03_num = um3.u_num";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN Item_list il1 ON fr.FR_kind = il1.item_D_code";
-                        T_SQL_d = T_SQL_d + " AND il1.item_M_code = 'FR_kind' AND il1.item_D_type = 'Y' AND il1.del_tag = '0'";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN Item_list il2 ON fr.FR_sign_type = il2.item_D_code ";
-                        T_SQL_d = T_SQL_d + " AND il2.item_M_code = 'Flow_sign_type' AND il2.item_D_type = 'Y' AND il2.del_tag = '0'";
-                        T_SQL_d = T_SQL_d + " WHERE fr.del_tag = '0' AND fr.FR_cancel <> 'Y' AND fr.FR_U_num = @FR_U_num AND CONVERT(VARCHAR, fr.FR_date_begin, 111) = @Date";
-
-                        
+                        var T_SQL_d = @"
+                            SELECT '假別:' + il1.item_D_name + ';' + CONVERT(VARCHAR, fr.FR_date_begin, 111) + '~' +
+                            CONVERT(VARCHAR, fr.FR_date_end, 111) + '狀態:' + 
+                            CASE WHEN fr.FR_step_now = 1 THEN '代理人-' + COALESCE(um1.U_name, '')
+                            WHEN fr.FR_step_now = 2 THEN '直屬主管-' + COALESCE(um2.U_name, '')
+                            WHEN fr.FR_step_now = 3 THEN '單位主管-' + COALESCE(um3.U_name, '')
+                            WHEN fr.FR_step_now = 9 THEN '人資-'
+                            WHEN fr.FR_step_now = 0 THEN '' END + COALESCE(il2.item_D_name, '') AS FR_sign_type_name_desc,
+                            fr.FR_total_hour
+                            FROM Flow_rest fr
+                            LEFT JOIN User_M um1 ON fr.FR_step_01_num = um1.u_num
+                            LEFT JOIN User_M um2 ON fr.FR_step_02_num = um2.u_num
+                            LEFT JOIN User_M um3 ON fr.FR_step_03_num = um3.u_num
+                            LEFT JOIN Item_list il1 ON fr.FR_kind = il1.item_D_code
+                            AND il1.item_M_code = 'FR_kind' AND il1.item_D_type = 'Y' AND il1.del_tag = '0'
+                            LEFT JOIN Item_list il2 ON fr.FR_sign_type = il2.item_D_code
+                            AND il2.item_M_code = 'Flow_sign_type' AND il2.item_D_type = 'Y' AND il2.del_tag = '0'
+                            WHERE fr.del_tag = '0' AND fr.FR_cancel <> 'Y' AND fr.FR_U_num = @FR_U_num AND CONVERT(VARCHAR, fr.FR_date_begin, 111) = @Date";                        
                         parameters_d.Add(new SqlParameter("@FR_U_num", User_Num));
                         parameters_d.Add(new SqlParameter("@Date", item.attendance_date));
                         #endregion
@@ -1490,63 +1502,64 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "SELECT U.U_Na,[userID],U_name [user_name],@yyyy + ad.[attendance_date] attendance_date,[work_time],";
-                T_SQL = T_SQL + " case When isnull([work_time], '') = '' then 0 When [work_time] > '09:00' then DATEDIFF(MINUTE, '09:00', [work_time]) else 0 end Late,";
-                T_SQL = T_SQL + " case When isnull([work_time], '') = '' then '未刷卡' When [work_time] > '09:00' then case when isnull(U_num_NL, 'N') = 'N' then '遲到'  else '' end else '' end work_status,";
-                T_SQL = T_SQL + " [getoffwork_time],";
-                T_SQL = T_SQL + " case When isnull([getoffwork_time], '') = '' then 0 When [getoffwork_time] < '18:00' then DATEDIFF(MINUTE, [getoffwork_time], '18:00') else 0 end early,";
-                T_SQL = T_SQL + " case When isnull([getoffwork_time], '') = '' then '未刷卡' When [getoffwork_time] < '18:00' then case when isnull(U_num_NL, 'N') = 'N' then '早退' else '' end else '' end offwork_status,";
-                T_SQL = T_SQL + " U_BC,isnull(RestCount, 0) RestCount";
-                T_SQL = T_SQL + " FROM attendance ad";
-                T_SQL = T_SQL + " left join ( SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na from User_M U";
-                T_SQL = T_SQL + " left join ( SELECT [item_D_code],[item_D_name] FROM Item_list WHERE item_M_code = 'branch_company'";
-                T_SQL = T_SQL + " AND item_D_type = 'Y' and del_tag = '0'  ) I on U.u_bc = I.item_D_code";
-                T_SQL = T_SQL + " where del_tag = '0' ) U on ad.userID = U.U_num";
-                T_SQL = T_SQL + " Left Join ( SELECT [item_D_code] U_num_NL FROM Item_list where item_M_code = 'NonLate'";
-                T_SQL = T_SQL + " and [item_M_type] = 'N' ) NL on U.U_num = NL.U_num_NL";
-                T_SQL = T_SQL + " left join ( select FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,";
-                T_SQL = T_SQL + " convert(varchar, FR_date_end, 111) FR_date_E,count(FR_U_num) RestCount";
-                T_SQL = T_SQL + " from Flow_rest where  del_tag = '0' and FR_cancel <> 'Y' group by";
-                T_SQL = T_SQL + " FR_U_num,convert(varchar, FR_date_begin, 111),convert(varchar, FR_date_end, 111)";
-                T_SQL = T_SQL + " ) R on ad.userID = R.FR_U_num and @yyyy + ad.[attendance_date] between R.FR_date_S";
-                T_SQL = T_SQL + " and FR_date_E";
-                T_SQL = T_SQL + " where convert( varchar,convert(datetime, @yyyy + [attendance_date]),111";
-                T_SQL = T_SQL + "  ) not in ( SELECT convert(varchar, convert(datetime, [HDate]), 111) FROM Holidays )";
+                var T_SQL = @"
+                    SELECT U.U_Na,[userID],U_name [user_name],@yyyy + ad.[attendance_date] attendance_date,[work_time],
+                    case When isnull([work_time], '') = '' then 0 When [work_time] > '09:00' then DATEDIFF(MINUTE, '09:00', [work_time]) else 0 end Late,
+                    case When isnull([work_time], '') = '' then '未刷卡' When [work_time] > '09:00' then case when isnull(U_num_NL, 'N') = 'N' then '遲到'  else '' end else '' end work_status,
+                    [getoffwork_time],
+                    case When isnull([getoffwork_time], '') = '' then 0 When [getoffwork_time] < '18:00' then DATEDIFF(MINUTE, [getoffwork_time], '18:00') else 0 end early,
+                    case When isnull([getoffwork_time], '') = '' then '未刷卡' When [getoffwork_time] < '18:00' then case when isnull(U_num_NL, 'N') = 'N' then '早退' else '' end else '' end offwork_status,
+                    U_BC,isnull(RestCount, 0) RestCount
+                    FROM attendance ad
+                    left join ( SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na from User_M U
+                    left join ( SELECT [item_D_code],[item_D_name] FROM Item_list WHERE item_M_code = 'branch_company'
+                    AND item_D_type = 'Y' and del_tag = '0'  ) I on U.u_bc = I.item_D_code
+                    where del_tag = '0' ) U on ad.userID = U.U_num
+                    Left Join ( SELECT [item_D_code] U_num_NL FROM Item_list where item_M_code = 'NonLate'
+                    and [item_M_type] = 'N' ) NL on U.U_num = NL.U_num_NL
+                    left join ( select FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,
+                    convert(varchar, FR_date_end, 111) FR_date_E,count(FR_U_num) RestCount
+                    from Flow_rest where  del_tag = '0' and FR_cancel <> 'Y' group by
+                    FR_U_num,convert(varchar, FR_date_begin, 111),convert(varchar, FR_date_end, 111)
+                    ) R on ad.userID = R.FR_U_num and @yyyy + ad.[attendance_date] between R.FR_date_S
+                    and FR_date_E
+                    where convert( varchar,convert(datetime, @yyyy + [attendance_date]),111
+                    ) not in ( SELECT convert(varchar, convert(datetime, [HDate]), 111) FROM Holidays )";
                 switch (model.AttStatus)
                 {
                     case 1:
-                        T_SQL = T_SQL + " and (work_time>'09:00' or getoffwork_time<'18:00')";
+                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00')";
                         break;
                     case 2:
-                        T_SQL = T_SQL + " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) = 0";
+                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) = 0";
                         break;
                     case 3:
-                        T_SQL = T_SQL + " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) <> 0";
+                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) <> 0";
                         break;
                     case 4:
-                        T_SQL = T_SQL + " and work_time>'09:00'";
+                        T_SQL += " and work_time>'09:00'";
                         break;
                     case 5:
-                        T_SQL = T_SQL + "and getoffwork_time<'18:00'";
+                        T_SQL += "and getoffwork_time<'18:00'";
                         break;
                 }
                 if (!string.IsNullOrEmpty(model.U_num))
                 {
-                    T_SQL = T_SQL + " AND userID = @userID";
+                    T_SQL += " AND userID = @userID";
                     parameters.Add(new SqlParameter("@userID", model.U_num));
                 }
                 if (!string.IsNullOrEmpty(model.U_BU))
                 {
-                    T_SQL = T_SQL + " AND u_bc=@U_BU";
+                    T_SQL += " AND u_bc=@U_BU";
                     parameters.Add(new SqlParameter("@U_BU", model.U_BU));
                 }
                 if (!string.IsNullOrEmpty(model.U_name))
                 {
-                    T_SQL = T_SQL + " AND user_name=@U_name";
+                    T_SQL += " AND user_name=@U_name";
                     parameters.Add(new SqlParameter("@U_name", model.U_name));
                 }
-                T_SQL = T_SQL + " AND yyyymm = @yyyymm order by";
-                T_SQL = T_SQL + " u_BC,userID,attendance_date";
+                T_SQL += " AND yyyymm = @yyyymm order by";
+                T_SQL += " u_BC,userID,attendance_date";
                 var YYYY = (model.yyyymm).Substring(0, 4) + "/";
                 parameters.Add(new SqlParameter("@yyyy", YYYY));
                 parameters.Add(new SqlParameter("@yyyymm", model.yyyymm));
@@ -1575,24 +1588,24 @@ namespace KF_WebAPI.Controllers
                     {
                         #region SQL
                         var parameters_d = new List<SqlParameter>();
-                        var T_SQL_d = "SELECT '假別:' + il1.item_D_name + ';' + CONVERT(VARCHAR, fr.FR_date_begin, 111) + '~' +";
-                        T_SQL_d = T_SQL_d + " CONVERT(VARCHAR, fr.FR_date_end, 111) + '狀態:' + ";
-                        T_SQL_d = T_SQL_d + " CASE WHEN fr.FR_step_now = 1 THEN '代理人-' + COALESCE(um1.U_name, '')";
-                        T_SQL_d = T_SQL_d + " WHEN fr.FR_step_now = 2 THEN '直屬主管-' + COALESCE(um2.U_name, '')";
-                        T_SQL_d = T_SQL_d + " WHEN fr.FR_step_now = 3 THEN '單位主管-' + COALESCE(um3.U_name, '')";
-                        T_SQL_d = T_SQL_d + " WHEN fr.FR_step_now = 9 THEN '人資-'";
-                        T_SQL_d = T_SQL_d + " WHEN fr.FR_step_now = 0 THEN '' END + COALESCE(il2.item_D_name, '') AS FR_sign_type_name_desc,";
-                        T_SQL_d = T_SQL_d + " fr.FR_total_hour";
-                        T_SQL_d = T_SQL_d + " FROM Flow_rest fr";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN User_M um1 ON fr.FR_step_01_num = um1.u_num";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN User_M um2 ON fr.FR_step_02_num = um2.u_num";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN User_M um3 ON fr.FR_step_03_num = um3.u_num";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN Item_list il1 ON fr.FR_kind = il1.item_D_code";
-                        T_SQL_d = T_SQL_d + " AND il1.item_M_code = 'FR_kind' AND il1.item_D_type = 'Y' AND il1.del_tag = '0'";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN Item_list il2 ON fr.FR_sign_type = il2.item_D_code ";
-                        T_SQL_d = T_SQL_d + " AND il2.item_M_code = 'Flow_sign_type' AND il2.item_D_type = 'Y' AND il2.del_tag = '0'";
-                        T_SQL_d = T_SQL_d + " WHERE fr.del_tag = '0' AND fr.FR_cancel <> 'Y' AND fr.FR_U_num = @FR_U_num AND CONVERT(VARCHAR, fr.FR_date_begin, 111) = @Date";
-                        
+                        var T_SQL_d = @"
+                            SELECT '假別:' + il1.item_D_name + ';' + CONVERT(VARCHAR, fr.FR_date_begin, 111) + '~' +
+                            CONVERT(VARCHAR, fr.FR_date_end, 111) + '狀態:' + 
+                            CASE WHEN fr.FR_step_now = 1 THEN '代理人-' + COALESCE(um1.U_name, '')
+                            WHEN fr.FR_step_now = 2 THEN '直屬主管-' + COALESCE(um2.U_name, '')
+                            WHEN fr.FR_step_now = 3 THEN '單位主管-' + COALESCE(um3.U_name, '')
+                            WHEN fr.FR_step_now = 9 THEN '人資-'
+                            WHEN fr.FR_step_now = 0 THEN '' END + COALESCE(il2.item_D_name, '') AS FR_sign_type_name_desc,
+                            fr.FR_total_hour
+                            FROM Flow_rest fr
+                            LEFT JOIN User_M um1 ON fr.FR_step_01_num = um1.u_num
+                            LEFT JOIN User_M um2 ON fr.FR_step_02_num = um2.u_num
+                            LEFT JOIN User_M um3 ON fr.FR_step_03_num = um3.u_num
+                            LEFT JOIN Item_list il1 ON fr.FR_kind = il1.item_D_code
+                            AND il1.item_M_code = 'FR_kind' AND il1.item_D_type = 'Y' AND il1.del_tag = '0'
+                            LEFT JOIN Item_list il2 ON fr.FR_sign_type = il2.item_D_code
+                            AND il2.item_M_code = 'Flow_sign_type' AND il2.item_D_type = 'Y' AND il2.del_tag = '0'
+                            WHERE fr.del_tag = '0' AND fr.FR_cancel <> 'Y' AND fr.FR_U_num = @FR_U_num AND CONVERT(VARCHAR, fr.FR_date_begin, 111) = @Date";                     
                         parameters_d.Add(new SqlParameter("@FR_U_num", item.userID));
                         parameters_d.Add(new SqlParameter("@Date", item.attendance_date));
                         #endregion
@@ -1621,7 +1634,6 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass); // 返回 500 錯誤碼
             }
         }
-
         /// <summary>
         /// 出勤紀錄查詢Excel下載 Attendance_Excel/Attendance_report.asp
         /// </ summary >
@@ -1637,63 +1649,64 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "SELECT U.U_Na,[userID],U_name [user_name],@yyyy + ad.[attendance_date] attendance_date,[work_time],";
-                T_SQL = T_SQL + " case When isnull([work_time], '') = '' then 0 When [work_time] > '09:00' then DATEDIFF(MINUTE, '09:00', [work_time]) else 0 end Late,";
-                T_SQL = T_SQL + " case When isnull([work_time], '') = '' then '未刷卡' When [work_time] > '09:00' then case when isnull(U_num_NL, 'N') = 'N' then '遲到'  else '' end else '' end work_status,";
-                T_SQL = T_SQL + " [getoffwork_time],";
-                T_SQL = T_SQL + " case When isnull([getoffwork_time], '') = '' then 0 When [getoffwork_time] < '18:00' then DATEDIFF(MINUTE, [getoffwork_time], '18:00') else 0 end early,";
-                T_SQL = T_SQL + " case When isnull([getoffwork_time], '') = '' then '未刷卡' When [getoffwork_time] < '18:00' then case when isnull(U_num_NL, 'N') = 'N' then '早退' else '' end else '' end offwork_status,";
-                T_SQL = T_SQL + " U_BC,isnull(RestCount, 0) RestCount";
-                T_SQL = T_SQL + " FROM attendance ad";
-                T_SQL = T_SQL + " left join ( SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na from User_M U";
-                T_SQL = T_SQL + " left join ( SELECT [item_D_code],[item_D_name] FROM Item_list WHERE item_M_code = 'branch_company'";
-                T_SQL = T_SQL + " AND item_D_type = 'Y' and del_tag = '0'  ) I on U.u_bc = I.item_D_code";
-                T_SQL = T_SQL + " where del_tag = '0' ) U on ad.userID = U.U_num";
-                T_SQL = T_SQL + " Left Join ( SELECT [item_D_code] U_num_NL FROM Item_list where item_M_code = 'NonLate'";
-                T_SQL = T_SQL + " and [item_M_type] = 'N' ) NL on U.U_num = NL.U_num_NL";
-                T_SQL = T_SQL + " left join ( select FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,";
-                T_SQL = T_SQL + " convert(varchar, FR_date_end, 111) FR_date_E,count(FR_U_num) RestCount";
-                T_SQL = T_SQL + " from Flow_rest where  del_tag = '0' and FR_cancel <> 'Y' group by";
-                T_SQL = T_SQL + " FR_U_num,convert(varchar, FR_date_begin, 111),convert(varchar, FR_date_end, 111)";
-                T_SQL = T_SQL + " ) R on ad.userID = R.FR_U_num and @yyyy + ad.[attendance_date] between R.FR_date_S";
-                T_SQL = T_SQL + " and FR_date_E";
-                T_SQL = T_SQL + " where convert( varchar,convert(datetime, @yyyy + [attendance_date]),111";
-                T_SQL = T_SQL + "  ) not in ( SELECT convert(varchar, convert(datetime, [HDate]), 111) FROM Holidays )";
+                var T_SQL = @"
+                    SELECT U.U_Na,[userID],U_name [user_name],@yyyy + ad.[attendance_date] attendance_date,[work_time],
+                    case When isnull([work_time], '') = '' then 0 When [work_time] > '09:00' then DATEDIFF(MINUTE, '09:00', [work_time]) else 0 end Late,
+                    case When isnull([work_time], '') = '' then '未刷卡' When [work_time] > '09:00' then case when isnull(U_num_NL, 'N') = 'N' then '遲到'  else '' end else '' end work_status,
+                    [getoffwork_time],
+                    case When isnull([getoffwork_time], '') = '' then 0 When [getoffwork_time] < '18:00' then DATEDIFF(MINUTE, [getoffwork_time], '18:00') else 0 end early,
+                    case When isnull([getoffwork_time], '') = '' then '未刷卡' When [getoffwork_time] < '18:00' then case when isnull(U_num_NL, 'N') = 'N' then '早退' else '' end else '' end offwork_status,
+                    U_BC,isnull(RestCount, 0) RestCount
+                    FROM attendance ad
+                    left join ( SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na from User_M U
+                    left join ( SELECT [item_D_code],[item_D_name] FROM Item_list WHERE item_M_code = 'branch_company'
+                    AND item_D_type = 'Y' and del_tag = '0'  ) I on U.u_bc = I.item_D_code
+                    where del_tag = '0' ) U on ad.userID = U.U_num
+                    Left Join ( SELECT [item_D_code] U_num_NL FROM Item_list where item_M_code = 'NonLate'
+                    and [item_M_type] = 'N' ) NL on U.U_num = NL.U_num_NL
+                    left join ( select FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,
+                    convert(varchar, FR_date_end, 111) FR_date_E,count(FR_U_num) RestCount
+                    from Flow_rest where  del_tag = '0' and FR_cancel <> 'Y' group by
+                    FR_U_num,convert(varchar, FR_date_begin, 111),convert(varchar, FR_date_end, 111)
+                    ) R on ad.userID = R.FR_U_num and @yyyy + ad.[attendance_date] between R.FR_date_S
+                    and FR_date_E
+                    where convert( varchar,convert(datetime, @yyyy + [attendance_date]),111
+                    ) not in ( SELECT convert(varchar, convert(datetime, [HDate]), 111) FROM Holidays )";
                 switch (model.AttStatus)
                 {
                     case 1:
-                        T_SQL = T_SQL + " and (work_time>'09:00' or getoffwork_time<'18:00')";
+                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00')";
                         break;
                     case 2:
-                        T_SQL = T_SQL + " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) = 0";
+                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) = 0";
                         break;
                     case 3:
-                        T_SQL = T_SQL + " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) <> 0";
+                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) <> 0";
                         break;
                     case 4:
-                        T_SQL = T_SQL + " and work_time>'09:00'";
+                        T_SQL += " and work_time>'09:00'";
                         break;
                     case 5:
-                        T_SQL = T_SQL + "and getoffwork_time<'18:00'";
+                        T_SQL += "and getoffwork_time<'18:00'";
                         break;
                 }
                 if (!string.IsNullOrEmpty(model.U_num))
                 {
-                    T_SQL = T_SQL + " AND userID = @userID";
+                    T_SQL += " AND userID = @userID";
                     parameters.Add(new SqlParameter("@userID", model.U_num));
                 }
                 if (!string.IsNullOrEmpty(model.U_BU))
                 {
-                    T_SQL = T_SQL + " AND u_bc=@U_BU";
+                    T_SQL += " AND u_bc=@U_BU";
                     parameters.Add(new SqlParameter("@U_BU", model.U_BU));
                 }
                 if (!string.IsNullOrEmpty(model.U_name))
                 {
-                    T_SQL = T_SQL + " AND user_name=@U_name";
+                    T_SQL += " AND user_name=@U_name";
                     parameters.Add(new SqlParameter("@U_name", model.U_name));
                 }
-                T_SQL = T_SQL + " AND yyyymm = @yyyymm order by";
-                T_SQL = T_SQL + " u_BC,userID,attendance_date";
+                T_SQL += " AND yyyymm = @yyyymm order by";
+                T_SQL += " u_BC,userID,attendance_date";
                 var YYYY = (model.yyyymm).Substring(0, 4) + "/";
                 parameters.Add(new SqlParameter("@yyyy", YYYY));
                 parameters.Add(new SqlParameter("@yyyymm", model.yyyymm));
@@ -1723,24 +1736,24 @@ namespace KF_WebAPI.Controllers
                     {
                         #region SQL
                         var parameters_d = new List<SqlParameter>();
-                        var T_SQL_d = "SELECT '假別:' + il1.item_D_name + ';' + CONVERT(VARCHAR, fr.FR_date_begin, 111) + '~' +";
-                        T_SQL_d = T_SQL_d + " CONVERT(VARCHAR, fr.FR_date_end, 111) + '狀態:' + ";
-                        T_SQL_d = T_SQL_d + " CASE WHEN fr.FR_step_now = 1 THEN '代理人-' + COALESCE(um1.U_name, '')";
-                        T_SQL_d = T_SQL_d + " WHEN fr.FR_step_now = 2 THEN '直屬主管-' + COALESCE(um2.U_name, '')";
-                        T_SQL_d = T_SQL_d + " WHEN fr.FR_step_now = 3 THEN '單位主管-' + COALESCE(um3.U_name, '')";
-                        T_SQL_d = T_SQL_d + " WHEN fr.FR_step_now = 9 THEN '人資-'";
-                        T_SQL_d = T_SQL_d + " WHEN fr.FR_step_now = 0 THEN '' END + COALESCE(il2.item_D_name, '') AS FR_sign_type_name_desc,";
-                        T_SQL_d = T_SQL_d + " fr.FR_total_hour";
-                        T_SQL_d = T_SQL_d + " FROM Flow_rest fr";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN User_M um1 ON fr.FR_step_01_num = um1.u_num";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN User_M um2 ON fr.FR_step_02_num = um2.u_num";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN User_M um3 ON fr.FR_step_03_num = um3.u_num";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN Item_list il1 ON fr.FR_kind = il1.item_D_code";
-                        T_SQL_d = T_SQL_d + " AND il1.item_M_code = 'FR_kind' AND il1.item_D_type = 'Y' AND il1.del_tag = '0'";
-                        T_SQL_d = T_SQL_d + " LEFT JOIN Item_list il2 ON fr.FR_sign_type = il2.item_D_code ";
-                        T_SQL_d = T_SQL_d + " AND il2.item_M_code = 'Flow_sign_type' AND il2.item_D_type = 'Y' AND il2.del_tag = '0'";
-                        T_SQL_d = T_SQL_d + " WHERE fr.del_tag = '0' AND fr.FR_cancel <> 'Y' AND fr.FR_U_num = @FR_U_num AND CONVERT(VARCHAR, fr.FR_date_begin, 111) = @Date";
-
+                        var T_SQL_d = @"
+                            SELECT '假別:' + il1.item_D_name + ';' + CONVERT(VARCHAR, fr.FR_date_begin, 111) + '~' +
+                            CONVERT(VARCHAR, fr.FR_date_end, 111) + '狀態:' + 
+                            CASE WHEN fr.FR_step_now = 1 THEN '代理人-' + COALESCE(um1.U_name, '')
+                            WHEN fr.FR_step_now = 2 THEN '直屬主管-' + COALESCE(um2.U_name, '')
+                            WHEN fr.FR_step_now = 3 THEN '單位主管-' + COALESCE(um3.U_name, '')
+                            WHEN fr.FR_step_now = 9 THEN '人資-'
+                            WHEN fr.FR_step_now = 0 THEN '' END + COALESCE(il2.item_D_name, '') AS FR_sign_type_name_desc,
+                            fr.FR_total_hour
+                            FROM Flow_rest fr
+                            LEFT JOIN User_M um1 ON fr.FR_step_01_num = um1.u_num
+                            LEFT JOIN User_M um2 ON fr.FR_step_02_num = um2.u_num
+                            LEFT JOIN User_M um3 ON fr.FR_step_03_num = um3.u_num
+                            LEFT JOIN Item_list il1 ON fr.FR_kind = il1.item_D_code
+                            AND il1.item_M_code = 'FR_kind' AND il1.item_D_type = 'Y' AND il1.del_tag = '0'
+                            LEFT JOIN Item_list il2 ON fr.FR_sign_type = il2.item_D_code
+                            AND il2.item_M_code = 'Flow_sign_type' AND il2.item_D_type = 'Y' AND il2.del_tag = '0'
+                            WHERE fr.del_tag = '0' AND fr.FR_cancel <> 'Y' AND fr.FR_U_num = @FR_U_num AND CONVERT(VARCHAR, fr.FR_date_begin, 111) = @Date";
                         parameters_d.Add(new SqlParameter("@FR_U_num", item.userID));
                         parameters_d.Add(new SqlParameter("@Date", item.attendance_date));
                         #endregion
@@ -1817,41 +1830,42 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "select (select item_D_name from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND item_D_code = UM.U_BC AND del_tag='0') as U_BC_name";
-                T_SQL = T_SQL + " ,(select item_D_name from Item_list where item_M_code = 'professional_title' AND item_D_type='Y' AND item_D_code = UM.U_PFT AND del_tag='0') as U_PFT_name";
-                T_SQL = T_SQL + " ,(select U_name FROM User_M where U_num = UM.U_agent_num AND del_tag='0') as U_agent_name ";
-                T_SQL = T_SQL + " ,U_num,UM.del_tag,(select U_name FROM User_M where U_num = UM.U_leader_1_num AND del_tag='0') as U_leader_1_name ";
-                T_SQL = T_SQL + " ,(select U_name FROM User_M where U_num = UM.U_leader_2_num AND del_tag='0') as U_leader_2_name  ";
-                T_SQL = T_SQL + " ,(select U_name FROM User_M where U_num = UM.U_leader_3_num AND del_tag='0') as U_leader_3_name,Rm.R_name,UM.U_Check_BC";
-                T_SQL = T_SQL + " ,(select item_sort from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND item_D_code = UM.U_BC AND del_tag='0') as U_BC_sort ";
-                T_SQL = T_SQL + " ,(select item_sort from Item_list where item_M_code = 'professional_title' AND item_D_type='Y' AND item_D_code = UM.U_PFT AND del_tag='0') as U_PFT_sort ";
-                T_SQL = T_SQL + " from User_M UM left join Role_M Rm on UM.Role_num = Rm.R_num where 1=1";
+                var T_SQL = @"
+                    select (select item_D_name from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND item_D_code = UM.U_BC AND del_tag='0') as U_BC_name
+                    ,(select item_D_name from Item_list where item_M_code = 'professional_title' AND item_D_type='Y' AND item_D_code = UM.U_PFT AND del_tag='0') as U_PFT_name
+                    ,(select U_name FROM User_M where U_num = UM.U_agent_num AND del_tag='0') as U_agent_name
+                    ,U_num,UM.del_tag,(select U_name FROM User_M where U_num = UM.U_leader_1_num AND del_tag='0') as U_leader_1_name
+                    ,(select U_name FROM User_M where U_num = UM.U_leader_2_num AND del_tag='0') as U_leader_2_name
+                    ,(select U_name FROM User_M where U_num = UM.U_leader_3_num AND del_tag='0') as U_leader_3_name,Rm.R_name,UM.U_Check_BC
+                    ,(select item_sort from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND item_D_code = UM.U_BC AND del_tag='0') as U_BC_sort
+                    ,(select item_sort from Item_list where item_M_code = 'professional_title' AND item_D_type='Y' AND item_D_code = UM.U_PFT AND del_tag='0') as U_PFT_sort
+                    from User_M UM left join Role_M Rm on UM.Role_num = Rm.R_num where 1=1";
                 if (!string.IsNullOrEmpty(model.U_Num_Name))
                 {
-                    T_SQL = T_SQL + " AND (U_num LIKE '%' + @U_Num_Name + '%' OR U_name LIKE '%' + @U_Num_Name + '%') ";
+                    T_SQL += " AND (U_num LIKE '%' + @U_Num_Name + '%' OR U_name LIKE '%' + @U_Num_Name + '%') ";
                     parameters.Add(new SqlParameter("@U_Num_Name", model.U_Num_Name));
                 }
                 if (!string.IsNullOrEmpty(model.U_BC))
                 {
-                    T_SQL = T_SQL + " AND U_BC='@U_BC";
+                    T_SQL += " AND U_BC='@U_BC";
                     parameters.Add(new SqlParameter("@U_BC", model.U_BC));
                 }
                 if (!string.IsNullOrEmpty(model.Job_Status)) 
                 {
                     if(model.Job_Status == "Y")
                     {
-                        T_SQL = T_SQL + " AND ISNULL(UM.U_leave_date, '') = ''";
+                        T_SQL += " AND ISNULL(UM.U_leave_date, '') = ''";
                     }
                     else
                     {
-                        T_SQL = T_SQL + " AND ISNULL(UM.U_leave_date, '') <> ''";
+                        T_SQL += " AND ISNULL(UM.U_leave_date, '') <> ''";
                     }
                 }
                 if (!string.IsNullOrEmpty(model.U_Role)) 
                 {
-                    T_SQL = T_SQL + " AND Rm.R_num=@R_num";
+                    T_SQL += " AND Rm.R_num=@R_num";
                 }
-                T_SQL = T_SQL + " order by U_type desc,U_leave_date,U_BC_sort,U_PFT_sort,U_id";
+                T_SQL += " order by U_type desc,U_leave_date,U_BC_sort,U_PFT_sort,U_id";
                 #endregion
 
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
@@ -1927,13 +1941,13 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "select UM.* ";
-                T_SQL = T_SQL + " ,(select U_name FROM User_M where U_num = UM.U_agent_num AND del_tag='0') as U_agent_name";
-                T_SQL = T_SQL + " ,(select U_name FROM User_M where U_num = UM.U_leader_1_num AND del_tag='0') as U_leader_1_name";
-                T_SQL = T_SQL + " ,(select U_name FROM User_M where U_num = UM.U_leader_2_num AND del_tag='0') as U_leader_2_name";
-                T_SQL = T_SQL + " ,(select U_name FROM User_M where U_num = UM.U_leader_3_num AND del_tag='0') as U_leader_3_name";
-                T_SQL = T_SQL + " ,Rm.R_num ,Rm.R_name";
-                T_SQL = T_SQL + " from User_M UM left join Role_M Rm on Rm.R_num = UM.Role_num where 1=1 AND U_num=@U_num";
+                var T_SQL = @"
+                    select UM.*,(select U_name FROM User_M where U_num = UM.U_agent_num AND del_tag='0') as U_agent_name                
+                    ,(select U_name FROM User_M where U_num = UM.U_leader_1_num AND del_tag='0') as U_leader_1_name
+                    ,(select U_name FROM User_M where U_num = UM.U_leader_2_num AND del_tag='0') as U_leader_2_name
+                    ,(select U_name FROM User_M where U_num = UM.U_leader_3_num AND del_tag='0') as U_leader_3_name
+                    ,Rm.R_num ,Rm.R_name
+                    from User_M UM left join Role_M Rm on Rm.R_num = UM.Role_num where 1=1 AND U_num=@U_num";
                 parameters.Add(new SqlParameter("@U_num", U_num));
                 #endregion
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
@@ -1972,131 +1986,132 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "Update User_M set edit_num=@edit_num,edit_date=@edit_date,edit_ip=@edit_ip,U_sex=@U_sex,Marriage=@Marriage,Military=@Military";
-                T_SQL = T_SQL + " ,Military_SDate=@Military_SDate,Military_EDate=@Military_EDate,Military_Exemption=@Military_Exemption,License_Car=@License_Car";
-                T_SQL = T_SQL + " ,Self_Car=@Self_Car,License_Motorcycle=@License_Motorcycle,Self_Motorcycle=@Self_Motorcycle,School_SDate=@School_SDate,School_EDate=@School_EDate";
-                T_SQL = T_SQL + " ,U_BC=@U_BC,U_PFT=@U_PFT,Role_num=@Role_num,U_agent_num=@U_agent_num";
+                var T_SQL = @"
+                    Update User_M set edit_num=@edit_num,edit_date=@edit_date,edit_ip=@edit_ip,U_sex=@U_sex,Marriage=@Marriage,Military=@Military
+                    ,Military_SDate=@Military_SDate,Military_EDate=@Military_EDate,Military_Exemption=@Military_Exemption,License_Car=@License_Car
+                    ,Self_Car=@Self_Car,License_Motorcycle=@License_Motorcycle,Self_Motorcycle=@Self_Motorcycle,School_SDate=@School_SDate,School_EDate=@School_EDate
+                    ,U_BC=@U_BC,U_PFT=@U_PFT,Role_num=@Role_num,U_agent_num=@U_agent_num";
                 if (!string.IsNullOrEmpty(model.U_name))
                 {
-                    T_SQL = T_SQL + ",U_name=@U_name";
+                    T_SQL += ",U_name=@U_name";
                     parameters.Add(new SqlParameter("@U_name", model.U_name));
                 }
                 if (!string.IsNullOrEmpty(model.U_Ename))
                 {
-                    T_SQL = T_SQL + ",U_Ename=@U_Ename";
+                    T_SQL += ",U_Ename=@U_Ename";
                     parameters.Add(new SqlParameter("@U_Ename", model.U_Ename));
                 }
                 if (model.U_Birthday != null)
                 {
-                    T_SQL = T_SQL + ",U_Birthday=@U_Birthday";
+                    T_SQL += ",U_Birthday=@U_Birthday";
                     parameters.Add(new SqlParameter("@U_Birthday", model.U_Birthday));
                 }
                 if (model.Children != null) 
                 {
-                    T_SQL = T_SQL + " ,Children=@Children";
+                    T_SQL += " ,Children=@Children";
                     parameters.Add(new SqlParameter("@Children", model.Children));
                 }
                 else
                 {
-                    T_SQL = T_SQL + " ,Children=@Children";
+                    T_SQL += " ,Children=@Children";
                     parameters.Add(new SqlParameter("@Children", DBNull.Value));
                 }
                 if (!string.IsNullOrEmpty(model.U_PID)) 
                 {
-                    T_SQL = T_SQL + ",U_PID=@U_PID";
+                    T_SQL += ",U_PID=@U_PID";
                     parameters.Add(new SqlParameter("@U_PID",model.U_PID));
                 }
                 if (!string.IsNullOrEmpty(model.U_Tel)) 
                 {
-                    T_SQL = T_SQL + " ,U_Tel=@U_Tel";
+                    T_SQL += " ,U_Tel=@U_Tel";
                     parameters.Add(new SqlParameter("@U_Tel", model.U_Tel));
                 }
                 if (!string.IsNullOrEmpty(model.U_MTel)) 
                 {
-                    T_SQL = T_SQL + " ,U_MTel=@U_MTel";
+                    T_SQL += " ,U_MTel=@U_MTel";
                     parameters.Add(new SqlParameter("@U_MTel", model.U_MTel));
                 }
                 if (!string.IsNullOrEmpty(model.U_Email)) 
                 {
-                    T_SQL = T_SQL + " ,U_Email=@U_Email";
+                    T_SQL += " ,U_Email=@U_Email";
                     parameters.Add(new SqlParameter("@U_Email", model.U_Email));
                 }
                 if (!string.IsNullOrEmpty(model.Emergency_contact)) 
                 {
-                    T_SQL = T_SQL + " ,Emergency_contact=@Emergency_contact";
+                    T_SQL += " ,Emergency_contact=@Emergency_contact";
                     parameters.Add(new SqlParameter("@Emergency_contact", model.Emergency_contact));
                 }
                 if (!string.IsNullOrEmpty(model.Emergency_Tel)) 
                 {
-                    T_SQL = T_SQL + " ,Emergency_Tel=@Emergency_Tel";
+                    T_SQL += " ,Emergency_Tel=@Emergency_Tel";
                     parameters.Add(new SqlParameter("@Emergency_Tel", model.Emergency_Tel));
                 }
                 if (!string.IsNullOrEmpty(model.Emergency_MTel)) 
                 {
-                    T_SQL = T_SQL + " ,Emergency_MTel=@Emergency_MTel";
+                    T_SQL += " ,Emergency_MTel=@Emergency_MTel";
                     parameters.Add(new SqlParameter("@Emergency_MTel", model.Emergency_MTel));
                 }
                 if (!string.IsNullOrEmpty(model.School_Level)) 
                 {
-                    T_SQL = T_SQL + " ,School_Level=@School_Level";
+                    T_SQL += " ,School_Level=@School_Level";
                     parameters.Add(new SqlParameter("@School_Level", model.School_Level));
                 }
                 if (!string.IsNullOrEmpty(model.School_Name)) 
                 {
-                    T_SQL = T_SQL + " ,School_Name=@School_Name";
+                    T_SQL += " ,School_Name=@School_Name";
                     parameters.Add(new SqlParameter("@School_Name", model.School_Name));
                 }
                 if (!string.IsNullOrEmpty(model.School_Graduated)) 
                 {
-                    T_SQL = T_SQL + " ,School_Graduated=@School_Graduated";
+                    T_SQL += " ,School_Graduated=@School_Graduated";
                     parameters.Add(new SqlParameter("@School_Graduated", model.School_Graduated));
                 }
                 if (!string.IsNullOrEmpty(model.School_D_N)) 
                 {
-                    T_SQL = T_SQL + " ,School_D_N=@School_D_N";
+                    T_SQL += " ,School_D_N=@School_D_N";
                     parameters.Add(new SqlParameter("@School_D_N", model.School_D_N));
                 }
                 if (!string.IsNullOrEmpty(model.School_Major)) 
                 {
-                    T_SQL = T_SQL + " ,School_Major=@School_Major";
+                    T_SQL += " ,School_Major=@School_Major";
                     parameters.Add(new SqlParameter("@School_Major", model.School_Major));
                 }
                 if (!string.IsNullOrEmpty(model.U_leader_1_num)) 
                 {
-                    T_SQL = T_SQL + " ,U_leader_1_num=@U_leader_1_num";
+                    T_SQL += " ,U_leader_1_num=@U_leader_1_num";
                     parameters.Add(new SqlParameter("@U_leader_1_num", model.U_leader_1_num));
                 }
                 if (!string.IsNullOrEmpty(model.U_leader_2_num)) 
                 {
-                    T_SQL = T_SQL + " ,U_leader_2_num=@U_leader_2_num";
+                    T_SQL += " ,U_leader_2_num=@U_leader_2_num";
                     parameters.Add(new SqlParameter("@U_leader_2_num", model.U_leader_2_num));
                 }
                 if (!string.IsNullOrEmpty(model.U_Check_BC)) 
                 {
-                    T_SQL = T_SQL + " ,U_Check_BC=@U_Check_BC";
+                    T_SQL += " ,U_Check_BC=@U_Check_BC";
                     parameters.Add(new SqlParameter("@U_Check_BC", model.U_Check_BC));
                 }
                 if (!string.IsNullOrEmpty(model.U_address_live)) 
                 {
-                    T_SQL = T_SQL + " ,U_address_live=@U_address_live";
+                    T_SQL += " ,U_address_live=@U_address_live";
                     parameters.Add(new SqlParameter("@U_address_live", model.U_address_live));
                 }
                 if (model.U_arrive_date != null) 
                 {
-                    T_SQL = T_SQL + " ,U_arrive_date=@U_arrive_date";
+                    T_SQL += " ,U_arrive_date=@U_arrive_date";
                     parameters.Add(new SqlParameter("@U_arrive_date", model.U_arrive_date));
                 }
                 if (model.U_leave_date != null)
                 {
-                    T_SQL = T_SQL + " ,U_leave_date=@U_leave_date";
+                    T_SQL += " ,U_leave_date=@U_leave_date";
                     parameters.Add(new SqlParameter("@U_leave_date", model.U_leave_date));
                 }
                 else
                 {
-                    T_SQL = T_SQL + " ,U_leave_date=@U_leave_date";
+                    T_SQL += " ,U_leave_date=@U_leave_date";
                     parameters.Add(new SqlParameter("@U_leave_date", DBNull.Value));
                 }
-                T_SQL = T_SQL + " Where U_id=@U_id";
+                T_SQL += " Where U_id=@U_id";
                 parameters.Add(new SqlParameter("@edit_num", User_Num));
                 parameters.Add(new SqlParameter("@edit_date", DateTime.Now));
                 parameters.Add(new SqlParameter("@edit_ip", clientIp));
@@ -2168,17 +2183,17 @@ namespace KF_WebAPI.Controllers
 
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "Insert into User_M ( add_num,add_date,add_ip,U_cknum,U_num,U_name,U_Ename,U_Birthday,U_sex,Marriage,Children,U_PID,Military,Military_SDate,";
-                T_SQL = T_SQL + " Military_EDate,Military_Exemption,License_Car,Self_Car,License_Motorcycle,Self_Motorcycle,";
-                T_SQL = T_SQL + " U_Tel,U_MTel,U_Email,Emergency_contact,Emergency_Tel,Emergency_MTel,School_Level,School_Name,";
-                T_SQL = T_SQL + " School_SDate,School_EDate,School_Graduated,School_D_N,School_Major,U_BC,U_PFT,Role_num,";
-                T_SQL = T_SQL + " U_agent_num,U_leader_1_num,U_leader_2_num,U_leader_3_num,U_Check_BC,U_address_live,U_arrive_date,U_leave_date )";
-                T_SQL = T_SQL + " Values ( @add_num,@add_date,@add_ip,@U_cknum,@U_num,@U_name,@U_Ename,@U_Birthday,@U_sex,@Marriage,@Children,";
-                T_SQL = T_SQL + " @U_PID,@Military,@Military_SDate,@Military_EDate,@Military_Exemption,@License_Car,@Self_Car,";
-                T_SQL = T_SQL + " @License_Motorcycle,@Self_Motorcycle,@U_Tel,@U_MTel,@U_Email,@Emergency_contact,@Emergency_Tel,";
-                T_SQL = T_SQL + " @Emergency_MTel,@School_Level,@School_Name,@School_SDate,@School_EDate,@School_Graduated,@School_D_N,";
-                T_SQL = T_SQL + " @School_Major,@U_BC,@U_PFT,@Role_num,@U_agent_num,@U_leader_1_num,@U_leader_2_num,@U_leader_3_num,@U_Check_BC,@U_address_live,@U_arrive_date,@U_leave_date )";
-               
+                var T_SQL = @"
+                    Insert into User_M ( add_num,add_date,add_ip,U_cknum,U_num,U_name,U_Ename,U_Birthday,U_sex,Marriage,Children,U_PID,Military,Military_SDate,
+                    Military_EDate,Military_Exemption,License_Car,Self_Car,License_Motorcycle,Self_Motorcycle,
+                    U_Tel,U_MTel,U_Email,Emergency_contact,Emergency_Tel,Emergency_MTel,School_Level,School_Name,
+                    School_SDate,School_EDate,School_Graduated,School_D_N,School_Major,U_BC,U_PFT,Role_num,
+                    U_agent_num,U_leader_1_num,U_leader_2_num,U_leader_3_num,U_Check_BC,U_address_live,U_arrive_date,U_leave_date )
+                    Values ( @add_num,@add_date,@add_ip,@U_cknum,@U_num,@U_name,@U_Ename,@U_Birthday,@U_sex,@Marriage,@Children,
+                    @U_PID,@Military,@Military_SDate,@Military_EDate,@Military_Exemption,@License_Car,@Self_Car,
+                    @License_Motorcycle,@Self_Motorcycle,@U_Tel,@U_MTel,@U_Email,@Emergency_contact,@Emergency_Tel,
+                    @Emergency_MTel,@School_Level,@School_Name,@School_SDate,@School_EDate,@School_Graduated,@School_D_N,
+                    @School_Major,@U_BC,@U_PFT,@Role_num,@U_agent_num,@U_leader_1_num,@U_leader_2_num,@U_leader_3_num,@U_Check_BC,@U_address_live,@U_arrive_date,@U_leave_date )";               
                 parameters.Add(new SqlParameter("@add_num", User_Num));
                 parameters.Add(new SqlParameter("@add_date",DateTime.Now));
                 parameters.Add(new SqlParameter("@add_ip", clientIp));
@@ -2378,7 +2393,6 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-
         /// <summary>
         /// 密碼變更 Password_Upd/User_edit_psw.asp
         /// </summary>
@@ -2436,7 +2450,6 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-
         /// <summary>
         /// 取得或新增年假管理資料 User_Hday_List_Change/User_Hday_edit.asp
         /// </summary>
@@ -2797,7 +2810,6 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-
         /// <summary>
         /// 修改年假管理資料 User_Hday_Upd/User_Hday_edit.asp
         /// </summary>
@@ -2816,9 +2828,10 @@ namespace KF_WebAPI.Controllers
                 {
                     #region SQL
                     var parameters_up = new List<SqlParameter>();
-                    var T_SQL_UP = "Update User_Hday set H_begin=@H_begin,H_end=@H_end,H_day_base=@H_day_base";
-                    T_SQL_UP = T_SQL_UP + " ,H_day_adjust=@H_day_adjust,H_day_adjust_note=@H_day_adjust_note,H_day_total=@H_day_total ";
-                    T_SQL_UP = T_SQL_UP + " ,edit_date=@edit_date,edit_num=@edit_num,edit_ip=@edit_ip Where UH_id=@UH_id";                   
+                    var T_SQL_UP = @"
+                        Update User_Hday set H_begin=@H_begin,H_end=@H_end,H_day_base=@H_day_base
+                        ,H_day_adjust=@H_day_adjust,H_day_adjust_note=@H_day_adjust_note,H_day_total=@H_day_total
+                        ,edit_date=@edit_date,edit_num=@edit_num,edit_ip=@edit_ip Where UH_id=@UH_id";                   
                     parameters_up.Add(new SqlParameter("@H_begin", item.H_begin));
                     parameters_up.Add(new SqlParameter("@H_end", item.H_end));
                     parameters_up.Add(new SqlParameter("@H_day_base", item.H_day_base));
@@ -2856,7 +2869,6 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-
         /// <summary>
         /// 人事異動 User_M_Shanges/User_Form.asp
         /// </summary>
@@ -2868,26 +2880,26 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
-
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "select u_name, School_Name +'-'+School_Major +'-'+SG_NA+'('+SL_NA+')' student";
-                T_SQL = T_SQL + " ,convert(varchar(3), (year(U_arrive_date)-1911))+'-'+convert(varchar(2),month(U_arrive_date))+'-'+convert(varchar(2),Day(U_arrive_date)) U_arrive_date";
-                T_SQL = T_SQL + " ,convert(varchar(3), (year(U_Birthday)-1911))+'-'+convert(varchar(2),month(U_Birthday))+'-'+convert(varchar(2),Day(U_Birthday)) U_Birthday ";
-                T_SQL = T_SQL + " ,M.U_num, PFT_NA,B.BC_NA,N'國峯' as KFDesc FROM User_M M";
-                T_SQL = T_SQL + " Left Join";
-                T_SQL = T_SQL + " (select item_D_code,item_D_name SL_NA from Item_list where item_M_code = 'school_level' AND item_D_type='Y' AND show_tag='0' AND del_tag='0') S1";
-                T_SQL = T_SQL + " on M.School_Level=S1.item_D_code ";
-                T_SQL = T_SQL + " Left Join";
-                T_SQL = T_SQL + " (select item_D_code ,item_D_name SG_NA from Item_list where item_M_code = 'School_Graduated' AND item_D_type='Y' AND show_tag='0' AND del_tag='0' )S2";
-                T_SQL = T_SQL + " on M.School_Graduated=S2.item_D_code ";
-                T_SQL = T_SQL + " Left Join  ";
-                T_SQL = T_SQL + " (select item_D_code U_PFT ,item_D_name PFT_NA from Item_list where item_M_code = 'professional_title' AND item_D_type='Y' AND show_tag='0' AND del_tag='0' )I";
-                T_SQL = T_SQL + " on M.U_PFT=I.U_PFT";
-                T_SQL = T_SQL + " Left Join";
-                T_SQL = T_SQL + " (select item_D_code U_BC,item_D_name BC_NA from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND show_tag='0' AND del_tag='0' )B ";
-                T_SQL = T_SQL + " on M.U_BC=B.U_BC ";
-                T_SQL = T_SQL + " where M.U_id = @U_id";
+                var T_SQL = @"
+                    select u_name, School_Name +'-'+School_Major +'-'+SG_NA+'('+SL_NA+')' student
+                    ,convert(varchar(3), (year(U_arrive_date)-1911))+'-'+convert(varchar(2),month(U_arrive_date))+'-'+convert(varchar(2),Day(U_arrive_date)) U_arrive_date
+                    ,convert(varchar(3), (year(U_Birthday)-1911))+'-'+convert(varchar(2),month(U_Birthday))+'-'+convert(varchar(2),Day(U_Birthday)) U_Birthday
+                    ,M.U_num, PFT_NA,B.BC_NA,N'國峯' as KFDesc FROM User_M M
+                    Left Join
+                    (select item_D_code,item_D_name SL_NA from Item_list where item_M_code = 'school_level' AND item_D_type='Y' AND show_tag='0' AND del_tag='0') S1
+                    on M.School_Level=S1.item_D_code
+                    Left Join
+                    (select item_D_code ,item_D_name SG_NA from Item_list where item_M_code = 'School_Graduated' AND item_D_type='Y' AND show_tag='0' AND del_tag='0' )S2
+                    on M.School_Graduated=S2.item_D_code
+                    Left Join
+                    (select item_D_code U_PFT ,item_D_name PFT_NA from Item_list where item_M_code = 'professional_title' AND item_D_type='Y' AND show_tag='0' AND del_tag='0' )I
+                    on M.U_PFT=I.U_PFT
+                    Left Join
+                    (select item_D_code U_BC,item_D_name BC_NA from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND show_tag='0' AND del_tag='0' )B
+                    on M.U_BC=B.U_BC
+                    where M.U_id = @U_id";
                 parameters.Add(new SqlParameter("@U_id", U_id));
                 #endregion
                 DataTable dtresult = _adoData.ExecuteQuery(T_SQL, parameters);
@@ -2927,41 +2939,42 @@ namespace KF_WebAPI.Controllers
 
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "SELECT UM.U_id, UM.U_Num, UM.U_Name,UM.U_arrive_date,UM.U_leave_date,UM.U_cknum,";
-                T_SQL = T_SQL + " ( SELECT item_D_name FROM Item_list WHERE item_M_code = 'branch_company' AND item_D_type = 'Y' AND item_D_code = UM.U_BC AND del_tag = '0') AS U_BC_name,";
-                T_SQL = T_SQL + " h.H_begin AS H_begin0,h.H_end AS H_end0,h.H_day_base AS H_day_base0,h.H_day_adjust AS H_day_adjust0,";
-                T_SQL = T_SQL + " ISNULL(( SELECT SUM(FR_total_hour) FROM Flow_rest FR WHERE FR.del_tag = '0' AND FR.FR_kind = 'FRK005' AND FR.FR_U_num = UM.U_Num  AND FR.FR_date_begin <= h.H_end AND FR.FR_date_end >= h.H_begin), 0) AS rest0,";
-                T_SQL = T_SQL + " p.H_begin AS H_begin1,p.H_end AS H_end1,p.H_day_base AS H_day_base1,p.H_day_adjust AS H_day_adjust1,";
-                T_SQL = T_SQL + " ISNULL(( SELECT SUM(FR_total_hour) FROM Flow_rest FR WHERE FR.del_tag = '0' AND FR.FR_kind = 'FRK005' AND FR.FR_U_num = UM.U_Num  AND FR.FR_date_begin <= p.H_end AND FR.FR_date_end >= p.H_begin), 0) AS rest1,";
-                T_SQL = T_SQL + " p2.H_begin AS H_begin2,p2.H_end AS H_end2,p2.H_day_base AS H_day_base2,p2.H_day_adjust AS H_day_adjust2,";
-                T_SQL = T_SQL + " ISNULL(( SELECT SUM(FR_total_hour) FROM Flow_rest FR WHERE FR.del_tag = '0' AND FR.FR_kind = 'FRK005' AND FR.FR_U_num = UM.U_Num  AND FR.FR_date_begin <= p2.H_end AND FR.FR_date_end >= p2.H_begin), 0) AS rest2";
-                T_SQL = T_SQL + " FROM User_M UM";
-                T_SQL = T_SQL + " LEFT JOIN User_Hday h ON h.del_tag = '0' AND h.U_num = UM.U_num AND GETDATE() BETWEEN h.H_begin AND h.H_end";
-                T_SQL = T_SQL + " LEFT JOIN User_Hday p ON h.del_tag = '0' AND p.U_num = UM.U_num AND p.UH_id = h.UH_id - 1";
-                T_SQL = T_SQL + " LEFT JOIN User_Hday p2 ON h.del_tag = '0' AND p2.U_num = UM.U_num AND p2.UH_id = h.UH_id - 2";
-                T_SQL = T_SQL + " WHERE UM.del_tag = '0' ";
+                var T_SQL = @"
+                    SELECT UM.U_id, UM.U_Num, UM.U_Name,UM.U_arrive_date,UM.U_leave_date,UM.U_cknum,
+                    ( SELECT item_D_name FROM Item_list WHERE item_M_code = 'branch_company' AND item_D_type = 'Y' AND item_D_code = UM.U_BC AND del_tag = '0') AS U_BC_name,
+                    h.H_begin AS H_begin0,h.H_end AS H_end0,h.H_day_base AS H_day_base0,h.H_day_adjust AS H_day_adjust0,
+                    ISNULL(( SELECT SUM(FR_total_hour) FROM Flow_rest FR WHERE FR.del_tag = '0' AND FR.FR_kind = 'FRK005' AND FR.FR_U_num = UM.U_Num  AND FR.FR_date_begin <= h.H_end AND FR.FR_date_end >= h.H_begin), 0) AS rest0,
+                    p.H_begin AS H_begin1,p.H_end AS H_end1,p.H_day_base AS H_day_base1,p.H_day_adjust AS H_day_adjust1,
+                    ISNULL(( SELECT SUM(FR_total_hour) FROM Flow_rest FR WHERE FR.del_tag = '0' AND FR.FR_kind = 'FRK005' AND FR.FR_U_num = UM.U_Num  AND FR.FR_date_begin <= p.H_end AND FR.FR_date_end >= p.H_begin), 0) AS rest1,
+                    p2.H_begin AS H_begin2,p2.H_end AS H_end2,p2.H_day_base AS H_day_base2,p2.H_day_adjust AS H_day_adjust2,
+                    ISNULL(( SELECT SUM(FR_total_hour) FROM Flow_rest FR WHERE FR.del_tag = '0' AND FR.FR_kind = 'FRK005' AND FR.FR_U_num = UM.U_Num  AND FR.FR_date_begin <= p2.H_end AND FR.FR_date_end >= p2.H_begin), 0) AS rest2
+                    FROM User_M UM
+                    LEFT JOIN User_Hday h ON h.del_tag = '0' AND h.U_num = UM.U_num AND GETDATE() BETWEEN h.H_begin AND h.H_end
+                    LEFT JOIN User_Hday p ON h.del_tag = '0' AND p.U_num = UM.U_num AND p.UH_id = h.UH_id - 1
+                    LEFT JOIN User_Hday p2 ON h.del_tag = '0' AND p2.U_num = UM.U_num AND p2.UH_id = h.UH_id - 2
+                    WHERE UM.del_tag = '0' ";
                 if(!string.IsNullOrEmpty(model.U_Num_Name)) 
                 {
-                    T_SQL = T_SQL + " AND (UM.U_num LIKE '%' + @U_Num_Name + '%' OR UM.U_name LIKE '%' + @U_Num_Name + '%') ";
+                    T_SQL += " AND (UM.U_num LIKE '%' + @U_Num_Name + '%' OR UM.U_name LIKE '%' + @U_Num_Name + '%') ";
                     parameters.Add(new SqlParameter("@U_Num_Name", model.U_Num_Name));
                 }
                 if (!string.IsNullOrEmpty(model.U_BC))
                 {
-                    T_SQL = T_SQL + " AND UM.U_BC = @U_BC";
+                    T_SQL += " AND UM.U_BC = @U_BC";
                     parameters.Add(new SqlParameter("@U_BC", model.U_BC));
                 }
                 if (!string.IsNullOrEmpty(model.Job_Status))
                 {
                     if (model.Job_Status == "Y")
                     {
-                        T_SQL = T_SQL + " AND ISNULL(UM.U_leave_date, '') = ''";
+                        T_SQL += " AND ISNULL(UM.U_leave_date, '') = ''";
                     }
                     else
                     {
-                        T_SQL = T_SQL + " AND ISNULL(UM.U_leave_date, '') <> ''";
+                        T_SQL += " AND ISNULL(UM.U_leave_date, '') <> ''";
                     }
                 }
-                T_SQL = T_SQL + " ORDER BY UM.U_type DESC,UM.U_leave_date,UM.U_id";
+                T_SQL += " ORDER BY UM.U_type DESC,UM.U_leave_date,UM.U_id";
                 #endregion
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if(dtResult.Rows.Count > 0)

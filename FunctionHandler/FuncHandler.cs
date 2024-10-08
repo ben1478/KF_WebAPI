@@ -7,6 +7,7 @@ using System.Drawing;
 using System.Reflection;
 using System.Reflection.PortableExecutable;
 using Microsoft.AspNetCore.Http;
+using System.Globalization;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -915,6 +916,140 @@ namespace KF_WebAPI.FunctionHandler
                 // 自動調整列寬
                 worksheet.Cells.AutoFitColumns();
 
+                return package.GetAsByteArray();
+            }
+        }
+
+        public static byte[] IncomingPartsExcel(List<Incoming_Part_res> itemsA, List<Incoming_Part_res> itemsB, string[] daysArray, Incoming_parts_req req)
+        {
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Sheet0");
+                var leagh = daysArray.Count();
+                string[] headers = new string[] { "序號", "區域", "職稱", "業務", "統計", "工作天數" };
+                DateTime date;
+
+                // 添加合併標題
+                worksheet.Cells[1, 1].Value = "進件預估核准撥款表 報表日期區間" + req.Inc_Date_S + " ~ " + req.Inc_Date_E;
+                worksheet.Cells[1, 1, 1, leagh + 6].Merge = true;
+                worksheet.Cells[1, 1, 1, leagh + 6].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                worksheet.Cells[1, 1, 1, leagh + 6].Style.Font.Bold = true;
+
+                // 添加表頭行
+                int colIndex = 1;
+                foreach (var header in headers)
+                {
+                    worksheet.Cells[2, colIndex++].Value = header;
+                }
+                foreach (var strday in daysArray)
+                {
+                    if (DateTime.TryParse(strday, out date))
+                    {
+                        string formattedDate = date.ToString("M月d日", CultureInfo.InvariantCulture);
+                        worksheet.Cells[2, colIndex++].Value = formattedDate;
+                    }
+                }
+
+                //添加表身
+                int serialNumber = 1;
+                int rowIndex = 3;
+                int subtotal = 0;
+                var groupedItemsA = itemsA.GroupBy(x => x.com_name);
+                foreach (var group in groupedItemsA)
+                {
+                    subtotal = group.Sum(x => x.totalcount);
+                    foreach (var item in group)
+                    {
+                        colIndex = 1;
+                        worksheet.Cells[rowIndex, colIndex++].Value = serialNumber++; // 填充序號
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.com_name;
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.ti_name;
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.U_name;
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.totalcount;
+                        worksheet.Cells[rowIndex, colIndex++].Value = leagh;
+                        foreach (var day in item.DateValues)
+                        {
+                            worksheet.Cells[rowIndex, colIndex++].Value = day.Value;
+                        }
+                        rowIndex++;
+                    }
+                    // 添加該分公司的小計行
+                    worksheet.Cells[rowIndex, 1].Value = group.Key + " 小計";
+                    worksheet.Cells[rowIndex, 1, rowIndex, 4].Merge = true;
+                    worksheet.Cells[rowIndex, 5].Value = subtotal;
+                    worksheet.Cells[rowIndex, 6, rowIndex, leagh + 6].Merge = true;
+                    rowIndex++;
+                }
+
+                //添加總計行
+                worksheet.Cells[rowIndex, 1].Value = "總計";
+                worksheet.Cells[rowIndex, 1, rowIndex, 4].Merge = true;
+                worksheet.Cells[rowIndex, 5].Value = itemsA.Sum(x => x.totalcount);
+                worksheet.Cells[rowIndex, 6, rowIndex, leagh + 6].Merge = true;
+
+                rowIndex++;
+                rowIndex++;
+
+                // 添加合併標題
+                worksheet.Cells[rowIndex, 1].Value = "業務件數統計表 報表日期區間" + req.Inc_Date_S + " ~ " + req.Inc_Date_E;
+                worksheet.Cells[rowIndex, 1, rowIndex, leagh + 6].Merge = true;
+                worksheet.Cells[rowIndex, 1, rowIndex, leagh + 6].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                worksheet.Cells[rowIndex, 1, rowIndex, leagh + 6].Style.Font.Bold = true;
+                rowIndex++;
+
+                // 添加表頭行
+                colIndex = 1;
+                int serialNumberB = 1;
+                foreach (var header in headers)
+                {
+                    worksheet.Cells[rowIndex, colIndex++].Value = header;
+                }
+                foreach (var strday in daysArray)
+                {
+                    if (DateTime.TryParse(strday, out date))
+                    {
+                        string formattedDate = date.ToString("M月d日", CultureInfo.InvariantCulture);
+                        worksheet.Cells[rowIndex, colIndex++].Value = formattedDate;
+                    }
+                }
+                rowIndex++;
+
+                //添加表身
+                var groupedItemsB = itemsB.GroupBy(x => x.com_name);
+                foreach (var group in groupedItemsB)
+                {
+                    subtotal = group.Sum(x => x.totalcount);
+                    foreach (var item in group)
+                    {
+                        colIndex = 1;
+                        worksheet.Cells[rowIndex, colIndex++].Value = serialNumberB++; // 填充序號
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.com_name;
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.ti_name;
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.U_name;
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.totalcount;
+                        worksheet.Cells[rowIndex, colIndex++].Value = leagh;
+                        foreach (var day in item.DateValues)
+                        {
+                            worksheet.Cells[rowIndex, colIndex++].Value = day.Value;
+                        }
+                        rowIndex++;
+                    }
+                    // 添加該分公司的小計行
+                    worksheet.Cells[rowIndex, 1].Value = group.Key + " 小計";
+                    worksheet.Cells[rowIndex, 1, rowIndex, 4].Merge = true;
+                    worksheet.Cells[rowIndex, 5].Value = subtotal;
+                    worksheet.Cells[rowIndex, 6, rowIndex, leagh + 6].Merge = true;
+                    rowIndex++;
+                }
+
+                //添加總計行
+                worksheet.Cells[rowIndex, 1].Value = "總計";
+                worksheet.Cells[rowIndex, 1, rowIndex, 4].Merge = true;
+                worksheet.Cells[rowIndex, 5].Value = itemsB.Sum(x => x.totalcount);
+                worksheet.Cells[rowIndex, 6, rowIndex, leagh + 6].Merge = true;
+
+                // 自動調整列寬
+                worksheet.Cells.AutoFitColumns();
                 return package.GetAsByteArray();
             }
         }

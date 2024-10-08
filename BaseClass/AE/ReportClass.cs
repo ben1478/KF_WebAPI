@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System.Drawing.Printing;
 
 namespace KF_WebAPI.BaseClass.AE
 {
@@ -348,4 +349,28 @@ namespace KF_WebAPI.BaseClass.AE
         public string U_name { get; set; }
         public int count { get; set;}
     }
+    public class Incoming_parts_req
+    {
+        public string Inc_Date_S { get; set; }
+        public string Inc_Date_E { get; set; }
+        public string U_BC { get; set; }
+    }
+    public class Incoming_Part_res: Incoming_Part_Excel
+    {
+        public string plan_num { get; set; }
+        public Dictionary<string, int> DateValues { get; set; } = new Dictionary<string, int>();
+    }
+    public class Incoming_Parts_KeyVal
+    {
+        public string Key { get; set; }
+        public int Value { get; set; }
+    }
+    public class Incoming_Part_Excel
+    {
+        public string com_name { get; set; }
+        public string ti_name { get; set; }
+        public int totalcount { get; set;}
+        public string U_name { get;set; }
+    }
+
 }
