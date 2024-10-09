@@ -4800,9 +4800,100 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500);
             }
         }
-        //分SHEET 進件預估核准撥款表 & 業務件數統計表
-        //進件預估核准撥款_明細url: "get_detail.asp?u_num=" + u_num + "&date_1=" + date_1 + "&date_2=" + date_2 + "&edit_mode=" + edit_mode,
-        //業務件數統計表_明細url: "customer_qty_count_AJAX.asp?u_num=" + u_num + "&date_1=" + date_1 + "&date_2=" + date_2 + "&edit_mode=" + edit_mode + "&is_name=" + is_name,
+        /// <summary>
+        /// 進件預估核准撥款_明細 Incoming_partA_Detail/get_detail.asp
+        /// </summary>
+        /// <param name="U_num">K0067</param>
+        /// <param name="Inc_Date_S">113/10/1</param>
+        /// <param name="Inc_Date_E">113/10/8</param>
+        [HttpGet("Incoming_partA_Detail")]
+        public ActionResult<ResultClass<string>> Incoming_partA_Detail(string U_num, string Inc_Date_S, string Inc_Date_E)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                Inc_Date_S = FuncHandler.ConvertROCToGregorian(Inc_Date_S);
+                Inc_Date_E = FuncHandler.ConvertROCToGregorian(Inc_Date_E);
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                    SELECT he.HS_id,house_apply.cs_name,house_apply.cs_mtel1
+                    ,(SELECT item_d_name FROM item_list WHERE item_m_code = 'appraise_company' AND item_d_type = 'Y'
+                    AND item_d_code = he.appraise_company AND show_tag = '0' AND del_tag = '0') AS show_appraise_company
+                    ,(SELECT item_d_name FROM item_list WHERE item_m_code = 'project_title' AND item_d_type = 'Y'
+                    AND item_d_code = house_pre_project.project_title AND show_tag = '0' AND del_tag = '0') AS show_project_title
+                    ,house_pre_project.project_apply_amount,(SELECT u_name FROM user_m WHERE u_num = he.sendcase_handle_num
+                    AND del_tag = '0') AS sendcase_handle_name
+                    ,he.sendcase_handle_date,he.Send_amount,convert(varchar,he.Send_amount_date,111) Send_amount_date,user_m.u_name 
+                    FROM house_sendcase he
+                    LEFT JOIN house_apply ON house_apply.ha_id = he.ha_id AND house_apply.del_tag = '0'
+                    LEFT JOIN house_pre_project ON house_pre_project.hp_project_id = he.hp_project_id AND house_pre_project.del_tag = '0'
+                    LEFT JOIN user_m ON User_M.u_num = house_apply.plan_num
+                    WHERE  he.del_tag = '0' AND house_apply.plan_num = @U_num
+                    AND (he.Send_amount_date >= @Inc_Date_S+' 00:00:00' AND he.Send_amount_date <= @Inc_Date_E+' 23:59:59')
+                    ORDER BY he.Send_amount_date, he.hs_id";
+                parameters.Add(new SqlParameter("@U_num", U_num));
+                parameters.Add(new SqlParameter("@Inc_Date_S", Inc_Date_S));
+                parameters.Add(new SqlParameter("@Inc_Date_E", Inc_Date_E));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 業務件數統計表_明細 Incoming_partB_Detail/customer_qty_count_AJAX.asp
+        /// </summary>
+        /// <param name="U_num">K0067</param>
+        /// <param name="Inc_Date_S">113/10/1</param>
+        /// <param name="Inc_Date_E">113/10/8</param>
+        [HttpGet("Incoming_partB_Detail")]
+        public ActionResult<ResultClass<string>> Incoming_partB_Detail(string U_num, string Inc_Date_S, string Inc_Date_E)
+        {
+            ResultClass<string> resultClass=new ResultClass<string>();
+
+            try
+            {
+                Inc_Date_S = FuncHandler.ConvertROCToGregorian(Inc_Date_S);
+                Inc_Date_E = FuncHandler.ConvertROCToGregorian(Inc_Date_E);
+
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters=new List<SqlParameter>();
+                var T_SQL = @"
+                    select ha.HA_id,hp.HP_id,ha.add_date,ha.cs_name,hp.pre_address,ha.plan_date,il.item_D_name,um.U_name from User_M um
+                    left join House_apply ha on um.U_num = ha.plan_num
+                    left join house_pre hp on ha.HA_id = hp.HA_id
+                    left join Item_list il on il.item_D_code = hp.pre_process_type and il.item_M_code = 'pre_process_type' and il.item_D_type = 'Y'
+                    WHERE um.del_tag = '0' and hp.del_tag = '0' and ha.del_tag = '0'
+                    AND hp.pre_process_type IN ('PRCT0002','PRCT0003','PRCT0005')
+                    AND(ha.add_date >= @Inc_Date_S + ' 00:00:00' AND ha.add_date <= @Inc_Date_E + ' 23:59:59')
+                    and ha.plan_num = @U_num
+                    group by ha.HA_id,hp.HP_id,ha.add_date,ha.cs_name,hp.pre_address,ha.plan_date,il.item_D_name,um.U_name";
+                parameters.Add(new SqlParameter("@U_num", U_num));
+                parameters.Add(new SqlParameter("@Inc_Date_S", Inc_Date_S));
+                parameters.Add(new SqlParameter("@Inc_Date_E", Inc_Date_E));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500,resultClass);
+            }
+        }
+        
         #endregion
     }
 }
