@@ -21,6 +21,7 @@ using System.Reflection.PortableExecutable;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Globalization;
 
 namespace KF_WebAPI.Controllers
 {
@@ -1540,7 +1541,7 @@ namespace KF_WebAPI.Controllers
                         T_SQL += " and work_time>'09:00'";
                         break;
                     case 5:
-                        T_SQL += "and getoffwork_time<'18:00'";
+                        T_SQL += " and getoffwork_time<'18:00'";
                         break;
                 }
                 if (!string.IsNullOrEmpty(model.U_num))
@@ -1548,10 +1549,10 @@ namespace KF_WebAPI.Controllers
                     T_SQL += " AND userID = @userID";
                     parameters.Add(new SqlParameter("@userID", model.U_num));
                 }
-                if (!string.IsNullOrEmpty(model.U_BU))
+                if (!string.IsNullOrEmpty(model.U_BC))
                 {
-                    T_SQL += " AND u_bc=@U_BU";
-                    parameters.Add(new SqlParameter("@U_BU", model.U_BU));
+                    T_SQL += " AND u_bc=@U_BC";
+                    parameters.Add(new SqlParameter("@U_BC", model.U_BC));
                 }
                 if (!string.IsNullOrEmpty(model.U_name))
                 {
@@ -1695,10 +1696,10 @@ namespace KF_WebAPI.Controllers
                     T_SQL += " AND userID = @userID";
                     parameters.Add(new SqlParameter("@userID", model.U_num));
                 }
-                if (!string.IsNullOrEmpty(model.U_BU))
+                if (!string.IsNullOrEmpty(model.U_BC))
                 {
-                    T_SQL += " AND u_bc=@U_BU";
-                    parameters.Add(new SqlParameter("@U_BU", model.U_BU));
+                    T_SQL += " AND u_bc=@U_BC";
+                    parameters.Add(new SqlParameter("@U_BC", model.U_BC));
                 }
                 if (!string.IsNullOrEmpty(model.U_name))
                 {
@@ -1813,6 +1814,193 @@ namespace KF_WebAPI.Controllers
             {
                 return StatusCode(500);
             }
+        }
+        /// <summary>
+        /// 提供給會計的出缺勤報表 Attendance_Excel_AllMonth
+        /// </summary>
+        [HttpPost("Attendance_Excel_AllMonth")]
+        public IActionResult Attendance_Excel_AllMonth(Attendance_req model)
+        {
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                SELECT U.U_Na,[userID],U_name [user_name],@yyyy + ad.[attendance_date] attendance_date,[work_time],
+                CASE WHEN NL.U_num_NL IS NOT NULL THEN 0 WHEN ISNULL(ad.[work_time], '') = '' THEN 0 
+                WHEN ad.[work_time] > '09:00' THEN DATEDIFF(MINUTE, '09:00', ad.[work_time]) ELSE 0 END AS Late,
+                [getoffwork_time],U_BC
+                FROM attendance ad
+                inner join ( SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na from User_M U
+                left join ( SELECT [item_D_code],[item_D_name] FROM Item_list WHERE item_M_code = 'branch_company'
+                AND item_D_type = 'Y' and del_tag = '0'  ) I on U.u_bc = I.item_D_code
+                where del_tag = '0' and U.Role_num <> '1002' ) U on ad.userID = U.U_num
+                Left Join ( SELECT [item_D_code] U_num_NL FROM Item_list where item_M_code = 'NonLate'
+                and [item_M_type] = 'N' ) NL on U.U_num = NL.U_num_NL
+                left join ( select FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,
+                convert(varchar, FR_date_end, 111) FR_date_E,count(FR_U_num) RestCount
+                from Flow_rest where  del_tag = '0' and FR_cancel <> 'Y' group by
+                FR_U_num,convert(varchar, FR_date_begin, 111),convert(varchar, FR_date_end, 111)
+                ) R on ad.userID = R.FR_U_num and @yyyy + ad.[attendance_date] between R.FR_date_S
+                and FR_date_E
+                where  yyyymm = @yyyymm and ISNULL(userID,'') <> '' order by u_BC desc ,userID,attendance_date";
+                var YYYY = model.yyyymm.Substring(0, 4) + "/";
+                parameters.Add(new SqlParameter("@yyyy", YYYY));
+                parameters.Add(new SqlParameter("@yyyymm", model.yyyymm));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    var modellist = dtResult.AsEnumerable().Select(row => new Attendance_res
+                    {
+                        U_Na = row.Field<string>("U_Na"),
+                        userID = row.Field<string>("userID"),
+                        user_name = row.Field<string>("user_name"),
+                        attendance_date = row.Field<string>("attendance_date"),
+                        work_time = row.Field<string>("work_time"),
+                        Late = row.Field<int>("Late"),
+                        getoffwork_time = row.Field<string>("getoffwork_time"),
+                        U_BC = row.Field<string>("U_BC")
+                    }).ToList();
+
+                    #region SQL_Holidays
+                    var parameters_h = new List<SqlParameter>();
+                    var T_SQL_H = @"
+                        select CONVERT(VARCHAR, CONVERT(DATETIME, HDate), 111) as HDate,Item_list.item_D_name 
+                        from Holidays 
+                        left join Item_list on Item_list.item_M_code='Holiday_kind' and item_D_code=Holidays.Holiday_kind
+                        where MONTH(HDate) = @mm 
+                        AND YEAR(HDate) = @yyyy";
+                    parameters_h.Add(new SqlParameter("@mm", model.yyyymm.Substring(4, 2)));
+                    parameters_h.Add(new SqlParameter("@yyyy", model.yyyymm.Substring(0, 4)));
+                    #endregion
+                    DataTable dtResult_h = _adoData.ExecuteQuery(T_SQL_H, parameters_h);
+                    var holidayDates = new List<Tuple<string, string>>();
+                    foreach (DataRow row in dtResult_h.Rows)
+                    {
+                        var holidayItem = new Tuple<string, string>(
+                            row["HDate"].ToString(),
+                            row["item_D_name"].ToString()
+                        );
+                        holidayDates.Add(holidayItem);
+                    }
+
+                    #region 休假日判定
+                    int year = int.Parse(model.yyyymm.Substring(0, 4));
+                    int month = int.Parse(model.yyyymm.Substring(4, 2));
+                    int daysInMonth = DateTime.DaysInMonth(year, month);
+                    string[] weekDays = { "日", "一", "二", "三", "四", "五", "六" };
+                    List<DayWeek> dayweekList = new List<DayWeek>();
+                    for (int day = 1; day <= daysInMonth; day++)
+                    {
+                        DateTime date = new DateTime(year, month, day);
+
+                        int dayOfWeekNumber = (int)date.DayOfWeek;
+                        string shortDayOfWeek = weekDays[dayOfWeekNumber];
+
+                        string formattedDate = $"{month:D2}/{day:D2} ({shortDayOfWeek})";
+
+                        DayWeek dayWeek = new DayWeek();
+                        dayWeek.strweek = formattedDate;
+                        dayWeek.ymd = date.ToString("yyyy/MM/dd");
+                        // 檢查是否為休假日
+                        bool isHoliday = holidayDates.Any(h => h.Item1 == dayWeek.ymd);
+                        if (isHoliday)
+                        {
+                            dayWeek.strweek = $"{month:D2}/{day:D2} ({shortDayOfWeek} *)";
+                            dayWeek.type = holidayDates.Where(x=>x.Item1== dayWeek.ymd).Select(x=>x.Item2).First();
+                        }
+
+                        dayweekList.Add(dayWeek);
+                    }
+                    #endregion
+
+                    var groupedAttendance = modellist.GroupBy(attendance => attendance.userID).ToList();
+                    foreach (var group in groupedAttendance)
+                    {
+                        foreach (var holidayDate in holidayDates)
+                        {
+                            // 檢查該 userID 是否有對應的 attendance_date
+                            bool hasAttendanceForHoliday = group.Any(att => att.attendance_date == holidayDate.Item1);
+
+                            // 如果缺少，則新增一筆
+                            if (!hasAttendanceForHoliday)
+                            {
+                                // 創建新的 Attendance_res 對象
+                                Attendance_res newAttendance = new Attendance_res 
+                                {
+                                    userID = group.Key,
+                                    attendance_date = holidayDate.Item1,
+                                    U_BC = group.First().U_BC,
+                                    Late = 0
+                                };
+                                modellist.Add(newAttendance);
+                            }
+                        }
+                    }
+                    List<Attendance_report_excel> attendanceReportList = new List<Attendance_report_excel>();
+                    foreach (var attendance in modellist)
+                    {
+                        var attendanceWeekEntry = dayweekList.FirstOrDefault(d => d.ymd == attendance.attendance_date);
+                        var attendanceWeek = attendanceWeekEntry?.strweek;
+
+                        var reportEntry = new Attendance_report_excel
+                        {
+                            userID = attendance.userID,
+                            user_name = attendance.user_name ?? "",
+                            attendance_date = attendance.attendance_date,
+                            U_BC = attendance.U_BC,
+                            Late = attendanceWeek != null && attendanceWeek.Contains("*") ? 0 : attendance.Late,
+                            work_time = attendance.work_time ?? "",
+                            getoffwork_time = attendance.getoffwork_time ?? "",
+                            attendance_week = attendanceWeek,
+                            type = attendanceWeekEntry?.type
+                        };
+
+                        attendanceReportList.Add(reportEntry);
+                    }
+
+                    #region 請假資料
+                    #region SQL  Flow_rest
+                    var parameters_fl = new List<SqlParameter>();
+                    var T_SQL_FL = @"
+                        select FR_id,u.U_name,li.item_D_name as FR_Kind_name,fr.FR_date_begin,fr.FR_date_end,fr.FR_total_hour,li_1.item_D_name as Sign_name from Flow_rest fr
+                        inner join User_M u on u.U_num = fr.FR_U_num
+                        left join Item_list li on li.item_M_code = 'FR_kind' and li.item_D_code = fr.FR_kind and li.del_tag ='0'
+                        left join Item_list li_1 on li_1.item_M_code = 'Flow_sign_type' and li_1.item_D_code = fr.FR_sign_type and li_1.del_tag ='0'
+                        where YEAR(FR_date_begin) = @yyyy and MONTH(FR_date_begin) = @mm and fr.FR_kind <> 'FRK021' and fr.FR_cancel <> 'Y' and fr.del_tag = '0'
+                        order by FR_U_num,fr.FR_date_begin";
+                    parameters_fl.Add(new SqlParameter("@mm", model.yyyymm.Substring(4, 2)));
+                    parameters_fl.Add(new SqlParameter("@yyyy", model.yyyymm.Substring(0, 4)));
+                    #endregion
+                    DataTable dtResult_fl = _adoData.ExecuteQuery(T_SQL_FL, parameters_fl);
+                    List<Flow_rest_HR_excel> flowRestList = dtResult_fl.AsEnumerable().Select(row=>new Flow_rest_HR_excel
+                    {
+                        FR_id = row.Field<decimal>("FR_id").ToString(),
+                        U_name = row.Field<string>("U_name"),
+                        FR_Kind_name = row.Field<string>("FR_Kind_name"),
+                        FR_Date_SE = row.Field<DateTime>("FR_date_begin").ToString("yyyy-MM-dd HH:mm:ss") + " ~ " + row.Field<DateTime>("FR_date_end").ToString("yyyy-MM-dd HH:mm:ss"),
+                        FR_total_hour = row.Field<decimal>("FR_total_hour"),
+                        Sign_name = row.Field<string>("Sign_name")
+                    }).ToList();
+                    #endregion
+
+                    var fileBytes = FuncHandler.AttendanceExcelAllMonth(attendanceReportList, model.yyyymm.Substring(0, 4), model.yyyymm.Substring(4, 2), flowRestList);
+                    var fileName = "出缺勤報表_國峯" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                    return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+                }
+                else
+                {
+                    return NotFound(); // 檔案不存在時返回 404
+                }
+                    
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500);
+            }
+            
         }
         #endregion
 

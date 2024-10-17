@@ -63,4 +63,14 @@ namespace KF_WebAPI.BaseClass.AE
         public string? Rest_Num { get; set; }
     }
 
+    public class Flow_rest_HR_excel
+    {
+        public string FR_id { get; set; }
+        public string U_name { get; set; }
+        public string FR_Kind_name { get; set; }
+        public string FR_Date_SE { get; set; }
+        public decimal FR_total_hour { get; set; }
+        public string Sign_name { get; set; }
+    }
+
 }

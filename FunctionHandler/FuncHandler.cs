@@ -1053,5 +1053,236 @@ namespace KF_WebAPI.FunctionHandler
                 return package.GetAsByteArray();
             }
         }
+
+        public static byte[] AttendanceExcelAllMonth(List<Attendance_report_excel> modelList,string yyyy,string mm, List<Flow_rest_HR_excel> flowRestList)
+        {
+            using (var package = new ExcelPackage())
+            {
+                #region 各公司打卡資料
+                var bcOrder = new List<string> { "BC0800", "BC0900", "BC0100", "BC0200", "BC0600", "BC0300", "BC0500", "BC0400" };
+                var bcGroups = modelList.GroupBy(x => x.U_BC).OrderBy(g => bcOrder.IndexOf(g.Key)).ToList();
+                string[] headers = { "名稱", "日期", "上班", "下班", "遲到", "外出時間" };
+                foreach (var bcGroup in bcGroups)
+                {
+                    ExcelWorksheet worksheet;
+                    switch (bcGroup.Key)
+                    {
+                        case "BC0800":
+                            worksheet = package.Workbook.Worksheets.Add("總公司");
+                            break;
+                        case "BC0900":
+                            worksheet = package.Workbook.Worksheets.Add("行銷部");
+                            break;
+                        case "BC0100":
+                            worksheet = package.Workbook.Worksheets.Add("台北");
+                            break;
+                        case "BC0200":
+                            worksheet = package.Workbook.Worksheets.Add("板橋");
+                            break;
+                        case "BC0600":
+                            worksheet = package.Workbook.Worksheets.Add("桃園");
+                            break;
+                        case "BC0300":
+                            worksheet = package.Workbook.Worksheets.Add("台中");
+                            break;
+                        case "BC0500":
+                            worksheet = package.Workbook.Worksheets.Add("台南");
+                            break;
+                        case "BC0400":
+                            worksheet = package.Workbook.Worksheets.Add("高雄");
+                            break;
+                        default:
+                            throw new InvalidOperationException("未知的 U_BC: " + bcGroup.Key);
+                    }
+
+                    int intcount = 0;
+                    int rowIndex = 1;
+                    int colIndex = 1;
+
+                    foreach (var userIDGroup in bcGroup.GroupBy(x => x.userID))
+                    {
+                        if (intcount > 0 && intcount % 4 == 0)
+                        {
+                            rowIndex += 33;
+                            intcount = 0;
+                        }
+
+                        // 寫入標題
+                        for (int i = 0; i < headers.Length; i++)
+                        {
+                            worksheet.Cells[rowIndex, colIndex + (intcount * 6) + i].Value = headers[i];
+                        }
+                        worksheet.Cells[rowIndex + 1, colIndex + (intcount * 6)].Value = $"{userIDGroup.First().userID}: {userIDGroup.First().user_name}";
+
+                        var items = userIDGroup.OrderBy(x => x.attendance_date).ToList();
+
+                        int j;
+                        for (j = 0; j < 32; j++)
+                        {
+                            if (j < items.Count)
+                            {
+                                worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 1].Value = items[j].attendance_week;
+                                worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 2].Value = items[j].work_time;
+                                worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 3].Value = items[j].getoffwork_time;
+                                worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 4].Value = items[j].Late;
+                                worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 5].Value = items[j].type;
+                                worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 5].Style.Font.Color.SetColor(Color.Red);
+                            }
+                            else
+                            {
+                                for (int col = 1; col <= 5; col++)
+                                {
+                                    worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + col].Value = string.Empty;
+                                }
+                            }
+                        }
+                        var lateTotal = Convert.ToInt32(userIDGroup.Sum(x => x.Late) - 15);
+                        worksheet.Cells[rowIndex + j, colIndex + (intcount * 6)].Value = "合計";
+                        worksheet.Cells[rowIndex + j, colIndex + (intcount * 6) + 1].Value = "扣";
+                        decimal Hour = 0;
+                        if (lateTotal > 0)
+                            Hour = lateTotal / 60m;
+                        worksheet.Cells[rowIndex + j, colIndex + (intcount * 6) + 2].Value = Math.Ceiling(Hour / 0.5m) * 0.5m;
+                        worksheet.Cells[rowIndex + j, colIndex + (intcount * 6) + 3].Value = "小時";
+                        worksheet.Cells[rowIndex + j, colIndex + (intcount * 6) + 4].Value = lateTotal;
+
+                        worksheet.Cells[rowIndex + j, colIndex + (intcount * 6) + 1].Style.Font.Color.SetColor(Color.Red);
+                        worksheet.Cells[rowIndex + j, colIndex + (intcount * 6) + 2].Style.Font.Color.SetColor(Color.Red);
+                        worksheet.Cells[rowIndex + j, colIndex + (intcount * 6) + 3].Style.Font.Color.SetColor(Color.Red);
+                        worksheet.Cells[rowIndex + j, colIndex + (intcount * 6) + 4].Style.Font.Color.SetColor(Color.Red);
+
+                        // 設置框線
+                        var range = worksheet.Cells[rowIndex, colIndex + (intcount * 6), rowIndex + j, colIndex + (intcount * 6) + 5];
+                        range.Style.Border.Top.Style = range.Style.Border.Bottom.Style =
+                        range.Style.Border.Left.Style = range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+
+                        intcount++;
+                    }
+
+                    // 自動調整列寬
+                    worksheet.Cells.AutoFitColumns();
+                }
+                #endregion
+
+                #region 遲到、曠職
+                var worksheet_ly = package.Workbook.Worksheets.Add("遲到、曠職");
+
+                // 添加合併標題 遲到
+                worksheet_ly.Cells[1, 1].Value = Convert.ToInt32(yyyy) - 1911 + "年" + mm + "月  國峯遲到";
+                worksheet_ly.Cells[1, 1, 1, 4].Merge = true;
+                worksheet_ly.Cells[1, 1, 1, 4].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                worksheet_ly.Cells[1, 1, 1, 4].Style.Font.Bold = true;
+
+                worksheet_ly.Cells[2, 1].Value = "名稱";
+                worksheet_ly.Cells[2, 4].Value = "遲到";
+
+                // 添加框線
+                var range_ly1 = worksheet_ly.Cells[1, 1, 12, 4];
+                range_ly1.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_ly1.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_ly1.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_ly1.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+
+                // 添加合併標題 曠職
+                worksheet_ly.Cells[1, 6].Value = Convert.ToInt32(yyyy) - 1911 + "年" + mm + "月  國峯曠職";
+                worksheet_ly.Cells[1, 6, 1, 10].Merge = true;
+                worksheet_ly.Cells[1, 6, 1, 10].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                worksheet_ly.Cells[1, 6, 1, 10].Style.Font.Bold = true;
+
+                worksheet_ly.Cells[2, 6].Value = "名稱";
+                worksheet_ly.Cells[2, 7].Value = "日期";
+                worksheet_ly.Cells[2, 10].Value = "曠職";
+
+                // 添加框線
+                var range_ly2 = worksheet_ly.Cells[1, 6, 12, 10];
+                range_ly2.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_ly2.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_ly2.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_ly2.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+
+                // 添加合併標題 請假表
+                worksheet_ly.Cells[1, 12].Value = Convert.ToInt32(yyyy) - 1911 + "年" + mm + "月  國峯請假表";
+                worksheet_ly.Cells[1, 12, 1, 13].Merge = true;
+                worksheet_ly.Cells[1, 12, 1, 13].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                worksheet_ly.Cells[1, 12, 1, 13].Style.Font.Bold = true;
+
+                worksheet_ly.Cells[2, 12].Value = "名稱";
+                worksheet_ly.Cells[2, 13].Value = "日期";
+
+                // 添加框線
+                var range_ly3 = worksheet_ly.Cells[1, 12, 12, 13];
+                range_ly3.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_ly3.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_ly3.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_ly3.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+
+                // 自動調整列寬
+                worksheet_ly.Cells.AutoFitColumns();
+                #endregion
+
+                #region 請假
+                var worksheet_af = package.Workbook.Worksheets.Add("請假");
+                string[] headers_af = new string[] { "序號", "假單編號", "姓名", "假別", "請假起迄日", "請假時數", "簽核結果" };
+
+                int colIndex_af = 1;
+                int rowIndex_af = 1;
+                foreach (var header in headers_af)
+                {
+                    worksheet_af.Cells[rowIndex_af, colIndex_af++].Value = header;
+                }
+                rowIndex_af++;
+                int iaf = 1;
+                foreach (var item in flowRestList) 
+                {
+                    colIndex_af = 1;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af++].Value = iaf++;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af++].Value = item.FR_id;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af++].Value = item.U_name;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af++].Value = item.FR_Kind_name;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af++].Value = item.FR_Date_SE;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af++].Value = item.FR_total_hour;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af++].Value = item.Sign_name;
+                    rowIndex_af++;
+                }
+
+                // 添加框線
+                var range_af = worksheet_af.Cells[1, 1, rowIndex_af - 1, colIndex_af - 1];
+                range_af.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_af.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_af.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_af.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+
+                // 自動調整列寬
+                worksheet_af.Cells.AutoFitColumns();
+                #endregion
+
+                #region 加班
+                var worksheet_wo = package.Workbook.Worksheets.Add("加班");
+
+                // 添加合併標題
+                worksheet_wo.Cells[1, 1].Value = Convert.ToInt32(yyyy)-1911 + "年" + mm + "月  國峯加班" ;
+                worksheet_wo.Cells[1, 1, 1, 4].Merge = true;
+                worksheet_wo.Cells[1, 1, 1, 4].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                worksheet_wo.Cells[1, 1, 1, 4].Style.Font.Bold = true;
+
+                worksheet_wo.Cells[2, 1].Value = "名稱";
+                worksheet_wo.Cells[2, 3].Value = "日期";
+                worksheet_wo.Cells[2, 4].Value = "小時";
+
+                // 添加框線
+                var range_wo = worksheet_wo.Cells[1, 1, 20, 4];
+                range_wo.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_wo.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_wo.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_wo.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+
+                // 自動調整列寬
+                worksheet_wo.Cells.AutoFitColumns();
+                #endregion
+
+                return package.GetAsByteArray();
+            }
+        }
+
     }
 }
