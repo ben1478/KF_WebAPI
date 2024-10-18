@@ -46,6 +46,7 @@ namespace KF_WebAPI.BaseClass.AE
         public decimal? FR_total_hour { get; set; }
 
         public DateTime? arrive_date { get; set; }
+        public DateTime? leave_date { get; set; }
     }
 
     public class Attendance_res_excel
@@ -89,5 +90,6 @@ namespace KF_WebAPI.BaseClass.AE
         /// <summary> 曠職判定 </summary>
         public string? absenteeism { get; set; }
         public DateTime? arrive_date { get; set; }
+        public DateTime? leave_date { get; set; }
     }
 }

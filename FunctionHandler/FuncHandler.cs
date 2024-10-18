@@ -1134,7 +1134,16 @@ namespace KF_WebAPI.FunctionHandler
                                 DateTime.TryParse(items[j].attendance_date, out DateTime attendanceDate);
                                 if (string.IsNullOrEmpty(items[j].work_time) && !items[j].attendance_week.Contains("*") 
                                     && !string.IsNullOrEmpty(items[j].user_name) && items[j].arrive_date.Value.Date <= attendanceDate.Date)
-                                    items[j].absenteeism = "Y";
+                                {
+                                    if(items[j].leave_date.HasValue && items[j].leave_date.Value.Date <= attendanceDate.Date)
+                                    {
+
+                                    }
+                                    else
+                                    {
+                                        items[j].absenteeism = "Y";
+                                    }
+                                }
                             }
                             else
                             {

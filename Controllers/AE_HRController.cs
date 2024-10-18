@@ -1830,9 +1830,9 @@ namespace KF_WebAPI.Controllers
                 SELECT U.U_Na,[userID],U_name [user_name],@yyyy + ad.[attendance_date] attendance_date,[work_time],
                 CASE WHEN NL.U_num_NL IS NOT NULL THEN 0 WHEN ISNULL(ad.[work_time], '') = '' THEN 0 
                 WHEN ad.[work_time] > '09:00' THEN DATEDIFF(MINUTE, '09:00', ad.[work_time]) ELSE 0 END AS Late,
-                U_arrive_date,[getoffwork_time],U_BC
+                U_arrive_date,U_leave_date,[getoffwork_time],U_BC
                 FROM attendance ad
-                inner join ( SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na,U_arrive_date from User_M U
+                inner join ( SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na,U_arrive_date,U_leave_date from User_M U
                 left join ( SELECT [item_D_code],[item_D_name] FROM Item_list WHERE item_M_code = 'branch_company'
                 AND item_D_type = 'Y' and del_tag = '0'  ) I on U.u_bc = I.item_D_code
                 where del_tag = '0' and U.Role_num <> '1002' ) U on ad.userID = U.U_num
@@ -1862,7 +1862,8 @@ namespace KF_WebAPI.Controllers
                         Late = row.Field<int>("Late"),
                         getoffwork_time = row.Field<string>("getoffwork_time"),
                         U_BC = row.Field<string>("U_BC"),
-                        arrive_date = row.Field<DateTime>("U_arrive_date")
+                        arrive_date = row.Field<DateTime?>("U_arrive_date"),
+                        leave_date = row.Field<DateTime?>("U_leave_date")
                     }).ToList();
 
                     #region SQL_Holidays
@@ -1957,7 +1958,8 @@ namespace KF_WebAPI.Controllers
                             getoffwork_time = attendance.getoffwork_time ?? "",
                             attendance_week = attendanceWeek,
                             type = attendanceWeekEntry?.type,
-                            arrive_date = attendance.arrive_date
+                            arrive_date = attendance.arrive_date,
+                            leave_date = attendance.leave_date
                         };
 
                         attendanceReportList.Add(reportEntry);
