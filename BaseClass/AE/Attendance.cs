@@ -45,6 +45,7 @@ namespace KF_WebAPI.BaseClass.AE
         public string? FR_sign_type_name_desc { get; set; }
         public decimal? FR_total_hour { get; set; }
 
+        public DateTime? arrive_date { get; set; }
     }
 
     public class Attendance_res_excel
@@ -85,5 +86,8 @@ namespace KF_WebAPI.BaseClass.AE
         public string? U_BC { get; set; }
         /// <summary> 休假日類別 </summary>
         public string type { get; set; }
+        /// <summary> 曠職判定 </summary>
+        public string? absenteeism { get; set; }
+        public DateTime? arrive_date { get; set; }
     }
 }

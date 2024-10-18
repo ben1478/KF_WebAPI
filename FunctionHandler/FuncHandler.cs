@@ -1059,7 +1059,7 @@ namespace KF_WebAPI.FunctionHandler
             using (var package = new ExcelPackage())
             {
                 #region 各公司打卡資料
-                var bcOrder = new List<string> { "BC0800", "BC0900", "BC0100", "BC0200", "BC0600", "BC0300", "BC0500", "BC0400" };
+                var bcOrder = new List<string> { "BC0800", "BC0900", "BC0100", "BC0200", "BC0600", "BC0300", "BC0500", "BC0400", "BC0700" };
                 var bcGroups = modelList.GroupBy(x => x.U_BC).OrderBy(g => bcOrder.IndexOf(g.Key)).ToList();
                 string[] headers = { "名稱", "日期", "上班", "下班", "遲到", "外出時間" };
                 foreach (var bcGroup in bcGroups)
@@ -1090,6 +1090,9 @@ namespace KF_WebAPI.FunctionHandler
                             break;
                         case "BC0400":
                             worksheet = package.Workbook.Worksheets.Add("高雄");
+                            break;
+                        case "BC0700":
+                            worksheet = package.Workbook.Worksheets.Add("湧立");
                             break;
                         default:
                             throw new InvalidOperationException("未知的 U_BC: " + bcGroup.Key);
@@ -1127,6 +1130,11 @@ namespace KF_WebAPI.FunctionHandler
                                 worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 4].Value = items[j].Late;
                                 worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 5].Value = items[j].type;
                                 worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 5].Style.Font.Color.SetColor(Color.Red);
+                                //判斷曠職
+                                DateTime.TryParse(items[j].attendance_date, out DateTime attendanceDate);
+                                if (string.IsNullOrEmpty(items[j].work_time) && !items[j].attendance_week.Contains("*") 
+                                    && !string.IsNullOrEmpty(items[j].user_name) && items[j].arrive_date.Value.Date <= attendanceDate.Date)
+                                    items[j].absenteeism = "Y";
                             }
                             else
                             {
@@ -1193,8 +1201,46 @@ namespace KF_WebAPI.FunctionHandler
                 worksheet_ly.Cells[2, 7].Value = "日期";
                 worksheet_ly.Cells[2, 10].Value = "曠職";
 
+                int rowIndex_ly = 3;
+                int colIndex_ly = 6;
+
+                foreach (var item in modelList.OrderBy(x=>x.userID))
+                {
+                    if(item.absenteeism == "Y")
+                    {
+                        bool isInDateRange = false;
+                        if (flowRestList.Any(fr => fr.FR_U_num == item.userID))
+                        {
+                            DateTime.TryParse(item.attendance_date, out DateTime attendanceDate);
+                            var attendanceDateOnly = attendanceDate.Date;
+
+                            var flowRange = flowRestList.Where(x => x.FR_U_num.Equals(item.userID));
+                            isInDateRange = flowRange.Any(fr =>
+                            {
+                                var dateRange = fr.FR_Date_SE.Split(" ~ ");
+                                if (dateRange.Length == 2)
+                                {
+                                    if (DateTime.TryParse(dateRange[0], out DateTime startDate) &&
+                                        DateTime.TryParse(dateRange[1], out DateTime endDate))
+                                    {
+                                        return attendanceDateOnly.Date >= startDate.Date && attendanceDateOnly.Date <= endDate.Date;
+                                    }
+                                }
+                                return false;
+                            });
+                        }
+                        if (!isInDateRange)
+                        {
+                            worksheet_ly.Cells[rowIndex_ly, colIndex_ly++].Value = item.user_name;
+                            worksheet_ly.Cells[rowIndex_ly, colIndex_ly++].Value = item.attendance_date;
+                            rowIndex_ly++;
+                            colIndex_ly = 6;
+                        }
+                    }
+                }
+
                 // 添加框線
-                var range_ly2 = worksheet_ly.Cells[1, 6, 12, 10];
+                var range_ly2 = worksheet_ly.Cells[1, 6, rowIndex_ly, 10];
                 range_ly2.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 range_ly2.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 range_ly2.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
