@@ -1835,7 +1835,7 @@ namespace KF_WebAPI.Controllers
                 inner join ( SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na,U_arrive_date,U_leave_date from User_M U
                 left join ( SELECT [item_D_code],[item_D_name] FROM Item_list WHERE item_M_code = 'branch_company'
                 AND item_D_type = 'Y' and del_tag = '0'  ) I on U.u_bc = I.item_D_code
-                where del_tag = '0' and U.Role_num <> '1002' ) U on ad.userID = U.U_num
+                where del_tag = '0' and U.U_PFT not in ('PFE831','PFE931') ) U on ad.userID = U.U_num
                 Left Join ( SELECT [item_D_code] U_num_NL FROM Item_list where item_M_code = 'NonLate'
                 and [item_M_type] = 'N' ) NL on U.U_num = NL.U_num_NL
                 left join ( select FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,
@@ -2003,7 +2003,10 @@ namespace KF_WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500);
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500,resultClass);
+
             }
             
         }
