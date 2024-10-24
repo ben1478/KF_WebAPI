@@ -1146,51 +1146,103 @@ namespace KF_WebAPI.FunctionHandler
                                 && attendanceDate.Date <= x.FR_Date_E.Date))
                                 {
                                     isRest = true;
-                                    var restModel = flowRestList.Where(x => x.FR_U_num.Equals(items[j].userID) && attendanceDate.Date >= x.FR_Date_S.Date
-                                    && attendanceDate.Date <= x.FR_Date_E.Date).FirstOrDefault();
-                                    if (restModel != null)
+
+                                    var RestList = flowRestList.Where(x => x.FR_U_num.Equals(items[j].userID) && attendanceDate.Date >= x.FR_Date_S.Date
+                                    && attendanceDate.Date <= x.FR_Date_E.Date).ToList();
+
+                                    if( RestList.Count > 0)
                                     {
-                                        string displayValue = (restModel.FR_total_hour % 1 == 0) ? ((int)restModel.FR_total_hour).ToString() : restModel.FR_total_hour.ToString();
-                                        
-                                        if (restModel.FR_kind == "FRK017") //忘打卡FRK017
+                                        foreach( var rest in RestList ) 
                                         {
-                                            if (restModel.FR_Date_E.Hour == 18)
+                                            string displayValue = (rest.FR_total_hour % 1 == 0) ? ((int)rest.FR_total_hour).ToString() : rest.FR_total_hour.ToString();
+                                            if (rest.FR_kind == "FRK017") //忘打卡FRK017
                                             {
-                                                items[j].typename += restModel.FR_Kind_name + " 18:00下班";
+                                                if(rest.FR_Date_S.Hour == 9)
+                                                {
+                                                    items[j].typename += rest.FR_Kind_name + " 09:00上班";
+                                                    items[j].Late = 0;
+                                                }
+                                                else
+                                                {
+                                                    items[j].typename += rest.FR_Kind_name + " 18:00下班";
+                                                    items[j].early = 0;
+                                                }
+                                            }
+                                            else if(rest.FR_kind == "FRK016") //外出 FRK016
+                                            {
+                                                items[j].typename += rest.FR_note;
+                                                items[j].Late = 0;
+                                                items[j].early = 0;
+                                            }
+                                            else if(rest.FR_total_hour >= 8)
+                                            {
+                                                items[j].typename += rest.FR_Kind_name + "8H ";
+                                                items[j].Late = 0;
                                                 items[j].early = 0;
                                             }
                                             else
                                             {
-                                                items[j].typename += restModel.FR_Kind_name + " 09:00上班";
-                                                items[j].Late = 0;
+                                                items[j].typename += rest.FR_Kind_name + displayValue + "H " + rest.FR_Date_S.ToString("HH:mm") + " ~ " + rest.FR_Date_E.ToString("HH:mm");
+                                                var totalHour = Convert.ToInt32(rest.FR_total_hour * 60);
+                                                if (!string.IsNullOrEmpty(items[j].work_time) && DateTime.Parse(items[j].work_time).TimeOfDay > TimeSpan.Parse("09:00")
+                                                    && items[j].Late > 0 && rest.FR_Date_E.TimeOfDay != TimeSpan.Parse("18:00"))
+                                                {
+                                                    items[j].Late = Math.Max(0, Convert.ToInt32(items[j].Late) - totalHour);
+                                                    continue;
+                                                }
+                                                if (!string.IsNullOrEmpty(items[j].getoffwork_time) && DateTime.Parse(items[j].getoffwork_time).TimeOfDay <= TimeSpan.Parse("18:00"))
+                                                {
+                                                    items[j].early = Math.Max(0, Convert.ToInt32(items[j].early) - totalHour);
+                                                }
                                             }
-                                        }
-                                        else if (restModel.FR_kind == "FRK016") //外出 FRK016
-                                        {
-                                            items[j].typename += restModel.FR_note;
-                                            items[j].Late = 0;
-                                            items[j].early = 0;
-                                        }
-                                        else if (restModel.FR_total_hour < 8)
-                                        {
-                                            items[j].typename += restModel.FR_Kind_name + displayValue + "H " + restModel.FR_Date_S.ToString("HH:mm") + " ~ " + restModel.FR_Date_E.ToString("HH:mm");
-                                            var totalHour = Convert.ToInt32(restModel.FR_total_hour * 60);
-                                            if (!string.IsNullOrEmpty(items[j].work_time) && DateTime.Parse(items[j].work_time).TimeOfDay > TimeSpan.Parse("09:00"))
-                                            {
-                                                items[j].Late = Math.Max(0,Convert.ToInt32(items[j].Late) - totalHour);
-                                            }
-                                            if(!string.IsNullOrEmpty(items[j].getoffwork_time) && DateTime.Parse(items[j].getoffwork_time).TimeOfDay <= TimeSpan.Parse("18:00"))
-                                            {
-                                                items[j].early = Math.Max(0, Convert.ToInt32(items[j].early) - totalHour);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            items[j].typename += restModel.FR_Kind_name + displayValue + "H ";
-                                            items[j].Late = 0;
-                                            items[j].early = 0;
                                         }
                                     }
+
+                                    //    var restModel = flowRestList.Where(x => x.FR_U_num.Equals(items[j].userID) && attendanceDate.Date >= x.FR_Date_S.Date
+                                    //    && attendanceDate.Date <= x.FR_Date_E.Date).FirstOrDefault();
+                                    //    if (restModel != null)
+                                    //    {
+                                    //        string displayValue = (restModel.FR_total_hour % 1 == 0) ? ((int)restModel.FR_total_hour).ToString() : restModel.FR_total_hour.ToString();
+
+                                    //        if (restModel.FR_kind == "FRK017") //忘打卡FRK017
+                                    //        {
+                                    //            if (restModel.FR_Date_E.Hour == 18)
+                                    //            {
+                                    //                items[j].typename += restModel.FR_Kind_name + " 18:00下班";
+                                    //                items[j].early = 0;
+                                    //            }
+                                    //            else
+                                    //            {
+                                    //                items[j].typename += restModel.FR_Kind_name + " 09:00上班";
+                                    //                items[j].Late = 0;
+                                    //            }
+                                    //        }
+                                    //        else if (restModel.FR_kind == "FRK016") //外出 FRK016
+                                    //        {
+                                    //            items[j].typename += restModel.FR_note;
+                                    //            items[j].Late = 0;
+                                    //            items[j].early = 0;
+                                    //        }
+                                    //        else if (restModel.FR_total_hour < 8)
+                                    //        {
+                                    //            items[j].typename += restModel.FR_Kind_name + displayValue + "H " + restModel.FR_Date_S.ToString("HH:mm") + " ~ " + restModel.FR_Date_E.ToString("HH:mm");
+                                    //            var totalHour = Convert.ToInt32(restModel.FR_total_hour * 60);
+                                    //            if (!string.IsNullOrEmpty(items[j].work_time) && DateTime.Parse(items[j].work_time).TimeOfDay > TimeSpan.Parse("09:00"))
+                                    //            {
+                                    //                items[j].Late = Math.Max(0,Convert.ToInt32(items[j].Late) - totalHour);
+                                    //            }
+                                    //            if(!string.IsNullOrEmpty(items[j].getoffwork_time) && DateTime.Parse(items[j].getoffwork_time).TimeOfDay <= TimeSpan.Parse("18:00"))
+                                    //            {
+                                    //                items[j].early = Math.Max(0, Convert.ToInt32(items[j].early) - totalHour);
+                                    //            }
+                                    //        }
+                                    //        else
+                                    //        {
+                                    //            items[j].typename += restModel.FR_Kind_name + displayValue + "H ";
+                                    //            items[j].Late = 0;
+                                    //            items[j].early = 0;
+                                    //        }
+                                    //    }
                                 }
                                 //整天曠職
                                 if (!isRest)

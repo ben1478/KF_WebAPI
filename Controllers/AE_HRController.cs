@@ -1862,7 +1862,7 @@ namespace KF_WebAPI.Controllers
                 ) R on ad.userID = R.FR_U_num and @yyyy + ad.[attendance_date] between R.FR_date_S
                 and FR_date_E
                 left join Item_list li_2 on li_2.item_M_code='professional_title' and li_2.item_D_code=U.U_PFT
-                where  yyyymm = @yyyymm and ISNULL(userID,'') <> '' 
+                where  yyyymm = @yyyymm and ISNULL(userID,'') <> '' AND userID <> 'K0999'
                 AND (ISNULL(U_leave_date,'') ='' OR CAST(U_leave_date AS DATE) > CAST(LEFT(@yyyymm, 4) + '-' + RIGHT(@yyyymm, 2) + '-01' AS DATE))
                 order by u_BC desc,attendance_date,li_2.item_sort,userID";
                 var YYYY = model.yyyymm.Substring(0, 4) + "/";
