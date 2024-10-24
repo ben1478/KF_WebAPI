@@ -48,6 +48,7 @@ namespace KF_WebAPI.BaseClass.AE
         public DateTime? arrive_date { get; set; }
         public DateTime? leave_date { get; set; }
         public int item_sort { get; set; }
+        public string Role_num { get; set; }
     }
 
     public class Attendance_res_excel

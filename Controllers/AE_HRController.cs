@@ -1836,7 +1836,7 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"
-                SELECT li_2.item_sort,U.U_Na,[userID],U_name [user_name],@yyyy + ad.[attendance_date] attendance_date,[work_time],
+                SELECT U.Role_num,li_2.item_sort,U.U_Na,[userID],U_name [user_name],@yyyy + ad.[attendance_date] attendance_date,[work_time],
                 CASE WHEN NL.U_num_NL IS NOT NULL THEN 0 WHEN ISNULL(ad.[work_time], '') = '' THEN 0 
                 WHEN ad.[work_time] >= '12:00' AND ad.[work_time] <= '13:00' THEN 180
                 WHEN ad.[work_time] > '09:00' AND ad.[work_time] < '12:00' THEN DATEDIFF(MINUTE, '09:00', ad.[work_time]) 
@@ -1847,7 +1847,7 @@ namespace KF_WebAPI.Controllers
                 WHEN ad.[getoffwork_time] > '13:00' AND ad.[getoffwork_time] <= '18:00' THEN DATEDIFF(MINUTE, ad.[getoffwork_time], '18:00') else 0 end early,
                 U_arrive_date,U_leave_date,[getoffwork_time],U_BC
                 FROM attendance ad
-                inner join ( SELECT U_PFT,U_BC,U_num,Case WHEN ISNULL(li_p.item_D_code,'') <> '' THEN li_p.item_D_name else U.U_name END as U_name
+                inner join ( SELECT Role_num,U_PFT,U_BC,U_num,Case WHEN ISNULL(li_p.item_D_code,'') <> '' THEN li_p.item_D_name else U.U_name END as U_name
                 ,I.item_D_name U_Na,U_arrive_date,U_leave_date from User_M U
                 left join ( SELECT [item_D_code],[item_D_name] FROM Item_list WHERE item_M_code = 'branch_company'
                 AND item_D_type = 'Y' and del_tag = '0'  ) I on U.u_bc = I.item_D_code
@@ -1874,6 +1874,7 @@ namespace KF_WebAPI.Controllers
                 {
                     var modellist = dtResult.AsEnumerable().Select(row => new Attendance_res
                     {
+                        Role_num = row.Field<string>("Role_num"),
                         item_sort = row.Field<int>("item_sort"),
                         U_Na = row.Field<string>("U_Na"),
                         userID = row.Field<string>("userID"),
@@ -1888,6 +1889,19 @@ namespace KF_WebAPI.Controllers
                         leave_date = row.Field<DateTime?>("U_leave_date")
                     }).ToList();
 
+                    //1008	業務主管 1015	行銷總監 不計算上下班 1009	業務不計算下班
+                    foreach (var item in modellist)
+                    {
+                        if (item.Role_num == "1008" || item.Role_num == "1015")
+                        {
+                            item.Late = 0;
+                            item.early = 0;
+                        }
+                        if (item.Role_num == "1009")
+                        {
+                            item.early = 0;
+                        }
+                    }
                     #region SQL_Holidays
                     var parameters_h = new List<SqlParameter>();
                     var T_SQL_H = @"
