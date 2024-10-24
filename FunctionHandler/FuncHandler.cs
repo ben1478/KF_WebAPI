@@ -1196,13 +1196,14 @@ namespace KF_WebAPI.FunctionHandler
                                 if (!isRest)
                                 {
                                     if (string.IsNullOrEmpty(items[j].work_time) && !items[j].attendance_week.Contains("*")
-                                        && !string.IsNullOrEmpty(items[j].user_name) && items[j].arrive_date.Value.Date <= attendanceDate.Date)
+                                        && items[j].arrive_date.Value.Date <= attendanceDate.Date
+                                        && attendanceDate <= DateTime.Now.Date)
                                     {
                                         if (!(items[j].leave_date.HasValue && items[j].leave_date.Value.Date <= attendanceDate.Date))
                                         {
                                             items[j].absenteeism = "Y";
                                             items[j].typename += "曠職8H";
-                                            items[j].early = 8;
+                                            items[j].early = 480;
                                             isRest = true;
                                         }
                                     }
@@ -1216,7 +1217,7 @@ namespace KF_WebAPI.FunctionHandler
                                         decimal calculatedEarlyHour = Math.Ceiling(earlyHour / 0.5m) * 0.5m;
                                         if (calculatedEarlyHour > 8)
                                             calculatedEarlyHour = 8;
-                                        items[j].typename += " 曠職" + calculatedEarlyHour + " H";
+                                        items[j].typename += "曠職" + calculatedEarlyHour + " H";
                                     }
                                 }
                                 //到職日

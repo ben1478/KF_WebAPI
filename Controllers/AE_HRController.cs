@@ -1956,6 +1956,9 @@ namespace KF_WebAPI.Controllers
                                     userID = group.Key,
                                     attendance_date = day.ymd,
                                     U_BC = group.First().U_BC,
+                                    arrive_date =group.First().arrive_date,
+                                    leave_date =group.First().leave_date,
+                                    user_name = group.First().user_name,
                                     Late = 0
                                 };
                                 modellist.Add(newAttendance);
