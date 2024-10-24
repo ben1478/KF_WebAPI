@@ -67,8 +67,11 @@ namespace KF_WebAPI.BaseClass.AE
     {
         public string FR_id { get; set; }
         public string U_name { get; set; }
+        public string FR_kind { get; set; }
+        public string FR_note { get; set; }
         public string FR_Kind_name { get; set; }
-        public string FR_Date_SE { get; set; }
+        public DateTime FR_Date_S { get; set; }
+        public DateTime FR_Date_E { get; set; }
         public decimal FR_total_hour { get; set; }
         public string Sign_name { get; set; }
         public string? FR_U_num { get; set; }

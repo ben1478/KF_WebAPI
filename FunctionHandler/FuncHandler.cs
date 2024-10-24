@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Reflection.PortableExecutable;
 using Microsoft.AspNetCore.Http;
 using System.Globalization;
+using System;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -1062,6 +1063,7 @@ namespace KF_WebAPI.FunctionHandler
                 var bcOrder = new List<string> { "BC0800", "BC0900", "BC0100", "BC0200", "BC0600", "BC0300", "BC0500", "BC0400", "BC0700" };
                 var bcGroups = modelList.GroupBy(x => x.U_BC).OrderBy(g => bcOrder.IndexOf(g.Key)).ToList();
                 string[] headers = { "名稱", "日期", "上班", "下班", "遲到", "外出時間" };
+             
                 foreach (var bcGroup in bcGroups)
                 {
                     ExcelWorksheet worksheet;
@@ -1127,23 +1129,112 @@ namespace KF_WebAPI.FunctionHandler
                                 worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 1].Value = items[j].attendance_week;
                                 worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 2].Value = items[j].work_time;
                                 worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 3].Value = items[j].getoffwork_time;
-                                worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 4].Value = items[j].Late;
-                                worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 5].Value = items[j].type;
-                                worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 5].Style.Font.Color.SetColor(Color.Red);
-                                //判斷曠職
-                                DateTime.TryParse(items[j].attendance_date, out DateTime attendanceDate);
-                                if (string.IsNullOrEmpty(items[j].work_time) && !items[j].attendance_week.Contains("*") 
-                                    && !string.IsNullOrEmpty(items[j].user_name) && items[j].arrive_date.Value.Date <= attendanceDate.Date)
+                                //worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 4].Value = items[j].Late;
+                                //worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 5].Value = items[j].typename;
+                                #region 請假事由判定(颱風假、請假、到職日、離職日、早退
+                                DateTime attendanceDate;
+                                DateTime.TryParse(items[j].attendance_date, out attendanceDate);
+                                bool isRest = false;
+                                //颱風假
+                                if (!string.IsNullOrEmpty(items[j].typename))
                                 {
-                                    if(items[j].leave_date.HasValue && items[j].leave_date.Value.Date <= attendanceDate.Date)
+                                    isRest = true;
+                                    items[j].typename += " ";
+                                }
+                                //請假
+                                if (flowRestList.Any(x => x.FR_U_num == items[j].userID && attendanceDate.Date >= x.FR_Date_S.Date
+                                && attendanceDate.Date <= x.FR_Date_E.Date))
+                                {
+                                    isRest = true;
+                                    var restModel = flowRestList.Where(x => x.FR_U_num.Equals(items[j].userID) && attendanceDate.Date >= x.FR_Date_S.Date
+                                    && attendanceDate.Date <= x.FR_Date_E.Date).FirstOrDefault();
+                                    if (restModel != null)
                                     {
-
-                                    }
-                                    else
-                                    {
-                                        items[j].absenteeism = "Y";
+                                        string displayValue = (restModel.FR_total_hour % 1 == 0) ? ((int)restModel.FR_total_hour).ToString() : restModel.FR_total_hour.ToString();
+                                        
+                                        if (restModel.FR_kind == "FRK017") //忘打卡FRK017
+                                        {
+                                            if (restModel.FR_Date_E.Hour == 18)
+                                            {
+                                                items[j].typename += restModel.FR_Kind_name + " 18:00下班";
+                                                items[j].early = 0;
+                                            }
+                                            else
+                                            {
+                                                items[j].typename += restModel.FR_Kind_name + " 09:00上班";
+                                                items[j].Late = 0;
+                                            }
+                                        }
+                                        else if (restModel.FR_kind == "FRK016") //外出 FRK016
+                                        {
+                                            items[j].typename += restModel.FR_note;
+                                            items[j].Late = 0;
+                                            items[j].early = 0;
+                                        }
+                                        else if (restModel.FR_total_hour < 8)
+                                        {
+                                            items[j].typename += restModel.FR_Kind_name + displayValue + "H " + restModel.FR_Date_S.ToString("HH:mm") + " ~ " + restModel.FR_Date_E.ToString("HH:mm");
+                                            var totalHour = Convert.ToInt32(restModel.FR_total_hour * 60);
+                                            if (!string.IsNullOrEmpty(items[j].work_time) && DateTime.Parse(items[j].work_time).TimeOfDay > TimeSpan.Parse("09:00"))
+                                            {
+                                                items[j].Late = Math.Max(0,Convert.ToInt32(items[j].Late) - totalHour);
+                                            }
+                                            if(!string.IsNullOrEmpty(items[j].getoffwork_time) && DateTime.Parse(items[j].getoffwork_time).TimeOfDay <= TimeSpan.Parse("18:00"))
+                                            {
+                                                items[j].early = Math.Max(0, Convert.ToInt32(items[j].early) - totalHour);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            items[j].typename += restModel.FR_Kind_name + displayValue + "H ";
+                                            items[j].Late = 0;
+                                            items[j].early = 0;
+                                        }
                                     }
                                 }
+                                //整天曠職
+                                if (!isRest)
+                                {
+                                    if (string.IsNullOrEmpty(items[j].work_time) && !items[j].attendance_week.Contains("*")
+                                        && !string.IsNullOrEmpty(items[j].user_name) && items[j].arrive_date.Value.Date <= attendanceDate.Date)
+                                    {
+                                        if (!(items[j].leave_date.HasValue && items[j].leave_date.Value.Date <= attendanceDate.Date))
+                                        {
+                                            items[j].absenteeism = "Y";
+                                            items[j].typename += "曠職8H";
+                                            items[j].early = 8;
+                                            isRest = true;
+                                        }
+                                    }
+                                }
+                                //早退
+                                if (!isRest)
+                                {
+                                    if(items[j].early > 0)
+                                    {
+                                        decimal earlyHour = Convert.ToInt32(items[j].early) / 60m;
+                                        decimal calculatedEarlyHour = Math.Ceiling(earlyHour / 0.5m) * 0.5m;
+                                        if (calculatedEarlyHour > 8)
+                                            calculatedEarlyHour = 8;
+                                        items[j].typename += " 曠職" + calculatedEarlyHour + " H";
+                                    }
+                                }
+                                //到職日
+                                if (items[j].arrive_date.HasValue && items[j].attendance_date == items[j].arrive_date.Value.ToString("yyyy/MM/dd"))
+                                {
+                                    items[j].typename += "到職日";
+                                    items[j].Late = 0;
+                                    items[j].early = 0;
+                                    worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 4].Value = 0;
+                                }
+                                //離職日
+                                if (items[j].leave_date.HasValue && items[j].attendance_date == items[j].leave_date.Value.ToString("yyyy/MM/dd"))
+                                    items[j].typename += "離職日";
+
+                                worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 4].Value = items[j].Late;
+                                worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 5].Value = items[j].typename;
+                                worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 5].Style.Font.Color.SetColor(Color.Red);
+                                #endregion
                             }
                             else
                             {
@@ -1193,8 +1284,25 @@ namespace KF_WebAPI.FunctionHandler
                 worksheet_ly.Cells[2, 1].Value = "名稱";
                 worksheet_ly.Cells[2, 4].Value = "遲到";
 
+                int rowindex_ly = 2;
+                int colindex_ly = 1;
+                var userResult = modelList.GroupBy(x => x.userID).Select(g => new { UserID = g.Key, Totalval = g.Sum(x => x.Late)-15 }).OrderBy(x=>x.UserID);
+                foreach ( var user in userResult)
+                {
+                    if(user.Totalval > 0)
+                    {
+                        var name = modelList.Where(x => x.userID.Equals(user.UserID)).FirstOrDefault().user_name;
+                        rowindex_ly++;
+                        worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = user.UserID + ":" + name;
+                        worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = "合計";
+                        worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = "扣";
+                        decimal lateHour = Convert.ToInt32(user.Totalval) / 60m;
+                        worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = Math.Ceiling(lateHour / 0.5m) * 0.5m + "小時";
+                        colindex_ly = 1;
+                    }
+                }
                 // 添加框線
-                var range_ly1 = worksheet_ly.Cells[1, 1, 12, 4];
+                var range_ly1 = worksheet_ly.Cells[1, 1, rowindex_ly, 4];
                 range_ly1.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 range_ly1.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 range_ly1.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
@@ -1210,46 +1318,23 @@ namespace KF_WebAPI.FunctionHandler
                 worksheet_ly.Cells[2, 7].Value = "日期";
                 worksheet_ly.Cells[2, 10].Value = "曠職";
 
-                int rowIndex_ly = 3;
-                int colIndex_ly = 6;
+                rowindex_ly = 2;
+                colindex_ly = 6;
 
-                foreach (var item in modelList.OrderBy(x=>x.userID))
+                foreach (var item in modelList.Where(x=>x.early>0).OrderBy(x=>x.userID))
                 {
-                    if(item.absenteeism == "Y")
-                    {
-                        bool isInDateRange = false;
-                        if (flowRestList.Any(fr => fr.FR_U_num == item.userID))
-                        {
-                            DateTime.TryParse(item.attendance_date, out DateTime attendanceDate);
-                            var attendanceDateOnly = attendanceDate.Date;
-
-                            var flowRange = flowRestList.Where(x => x.FR_U_num.Equals(item.userID));
-                            isInDateRange = flowRange.Any(fr =>
-                            {
-                                var dateRange = fr.FR_Date_SE.Split(" ~ ");
-                                if (dateRange.Length == 2)
-                                {
-                                    if (DateTime.TryParse(dateRange[0], out DateTime startDate) &&
-                                        DateTime.TryParse(dateRange[1], out DateTime endDate))
-                                    {
-                                        return attendanceDateOnly.Date >= startDate.Date && attendanceDateOnly.Date <= endDate.Date;
-                                    }
-                                }
-                                return false;
-                            });
-                        }
-                        if (!isInDateRange)
-                        {
-                            worksheet_ly.Cells[rowIndex_ly, colIndex_ly++].Value = item.user_name;
-                            worksheet_ly.Cells[rowIndex_ly, colIndex_ly++].Value = item.attendance_date;
-                            rowIndex_ly++;
-                            colIndex_ly = 6;
-                        }
-                    }
+                    rowindex_ly++;
+                    worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = $"{item.userID}: {item.user_name}";
+                    worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = item.attendance_week;
+                    colindex_ly++;
+                    colindex_ly++;
+                    decimal earlyHour = Convert.ToInt32(item.early) / 60m;
+                    worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = Math.Ceiling(earlyHour / 0.5m) * 0.5m + "H";
+                    colindex_ly = 6;
                 }
 
                 // 添加框線
-                var range_ly2 = worksheet_ly.Cells[1, 6, rowIndex_ly, 10];
+                var range_ly2 = worksheet_ly.Cells[1, 6, rowindex_ly, 10];
                 range_ly2.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 range_ly2.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 range_ly2.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
@@ -1257,15 +1342,18 @@ namespace KF_WebAPI.FunctionHandler
 
                 // 添加合併標題 請假表
                 worksheet_ly.Cells[1, 12].Value = Convert.ToInt32(yyyy) - 1911 + "年" + mm + "月  國峯請假表";
-                worksheet_ly.Cells[1, 12, 1, 13].Merge = true;
-                worksheet_ly.Cells[1, 12, 1, 13].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                worksheet_ly.Cells[1, 12, 1, 13].Style.Font.Bold = true;
+                worksheet_ly.Cells[1, 12, 1, 16].Merge = true;
+                worksheet_ly.Cells[1, 12, 1, 16].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                worksheet_ly.Cells[1, 12, 1, 16].Style.Font.Bold = true;
 
                 worksheet_ly.Cells[2, 12].Value = "名稱";
                 worksheet_ly.Cells[2, 13].Value = "日期";
+                worksheet_ly.Cells[2, 13, 2, 16].Merge = true;
+                worksheet_ly.Cells[2, 13, 2, 16].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                worksheet_ly.Cells[2, 13, 2, 16].Style.Font.Bold = true;
 
                 // 添加框線
-                var range_ly3 = worksheet_ly.Cells[1, 12, 12, 13];
+                var range_ly3 = worksheet_ly.Cells[1, 12, 2, 16];
                 range_ly3.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 range_ly3.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 range_ly3.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
@@ -1290,13 +1378,41 @@ namespace KF_WebAPI.FunctionHandler
                 foreach (var item in flowRestList) 
                 {
                     colIndex_af = 1;
-                    worksheet_af.Cells[rowIndex_af, colIndex_af++].Value = iaf++;
-                    worksheet_af.Cells[rowIndex_af, colIndex_af++].Value = item.FR_id;
-                    worksheet_af.Cells[rowIndex_af, colIndex_af++].Value = item.U_name;
-                    worksheet_af.Cells[rowIndex_af, colIndex_af++].Value = item.FR_Kind_name;
-                    worksheet_af.Cells[rowIndex_af, colIndex_af++].Value = item.FR_Date_SE;
-                    worksheet_af.Cells[rowIndex_af, colIndex_af++].Value = item.FR_total_hour;
-                    worksheet_af.Cells[rowIndex_af, colIndex_af++].Value = item.Sign_name;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af].Value = iaf++;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Merge = true;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    colIndex_af++;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af].Value = item.FR_id;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Merge = true;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    colIndex_af++;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af].Value = item.U_name;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Merge = true;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    colIndex_af++;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af].Value = item.FR_Kind_name;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Merge = true;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    colIndex_af++;
+                    
+                    worksheet_af.Cells[rowIndex_af, colIndex_af].Value = item.FR_Date_S.ToString("yyyy-MM-dd HH:mm");
+                    worksheet_af.Cells[rowIndex_af + 1, colIndex_af++].Value = item.FR_Date_E.ToString("yyyy-MM-dd HH:mm");
+
+                    worksheet_af.Cells[rowIndex_af, colIndex_af].Value = item.FR_total_hour;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Merge = true;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    colIndex_af++;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af].Value = item.Sign_name;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Merge = true;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    colIndex_af++;
+                    rowIndex_af++;
                     rowIndex_af++;
                 }
 

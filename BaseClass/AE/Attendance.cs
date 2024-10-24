@@ -47,6 +47,7 @@ namespace KF_WebAPI.BaseClass.AE
 
         public DateTime? arrive_date { get; set; }
         public DateTime? leave_date { get; set; }
+        public int item_sort { get; set; }
     }
 
     public class Attendance_res_excel
@@ -71,7 +72,7 @@ namespace KF_WebAPI.BaseClass.AE
         public string ymd { get; set; }
         public string strweek { get; set; }
         /// <summary> 休假日類別 </summary>
-        public string type { get; set; }
+        public string typename { get; set; }
     }
 
     public class Attendance_report_excel
@@ -84,12 +85,16 @@ namespace KF_WebAPI.BaseClass.AE
         public string? work_time { get; set; }
         public string? getoffwork_time { get; set; }
         public int? Late { get; set; }
+        public int? early { get; set; }
         public string? U_BC { get; set; }
         /// <summary> 休假日類別 </summary>
         public string type { get; set; }
+        public string typename { get; set; }
         /// <summary> 曠職判定 </summary>
         public string? absenteeism { get; set; }
         public DateTime? arrive_date { get; set; }
         public DateTime? leave_date { get; set; }
+
+        public int item_sort { get; set; }
     }
 }
