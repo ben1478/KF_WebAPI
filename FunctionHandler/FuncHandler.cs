@@ -1136,7 +1136,7 @@ namespace KF_WebAPI.FunctionHandler
                                 DateTime.TryParse(items[j].attendance_date, out attendanceDate);
                                 bool isRest = false;
                                 //颱風假
-                                if (!string.IsNullOrEmpty(items[j].typename))
+                                if (items[j].type== "Hk_04")
                                 {
                                     isRest = true;
                                     items[j].typename += " ";
@@ -1197,52 +1197,6 @@ namespace KF_WebAPI.FunctionHandler
                                             }
                                         }
                                     }
-
-                                    //    var restModel = flowRestList.Where(x => x.FR_U_num.Equals(items[j].userID) && attendanceDate.Date >= x.FR_Date_S.Date
-                                    //    && attendanceDate.Date <= x.FR_Date_E.Date).FirstOrDefault();
-                                    //    if (restModel != null)
-                                    //    {
-                                    //        string displayValue = (restModel.FR_total_hour % 1 == 0) ? ((int)restModel.FR_total_hour).ToString() : restModel.FR_total_hour.ToString();
-
-                                    //        if (restModel.FR_kind == "FRK017") //忘打卡FRK017
-                                    //        {
-                                    //            if (restModel.FR_Date_E.Hour == 18)
-                                    //            {
-                                    //                items[j].typename += restModel.FR_Kind_name + " 18:00下班";
-                                    //                items[j].early = 0;
-                                    //            }
-                                    //            else
-                                    //            {
-                                    //                items[j].typename += restModel.FR_Kind_name + " 09:00上班";
-                                    //                items[j].Late = 0;
-                                    //            }
-                                    //        }
-                                    //        else if (restModel.FR_kind == "FRK016") //外出 FRK016
-                                    //        {
-                                    //            items[j].typename += restModel.FR_note;
-                                    //            items[j].Late = 0;
-                                    //            items[j].early = 0;
-                                    //        }
-                                    //        else if (restModel.FR_total_hour < 8)
-                                    //        {
-                                    //            items[j].typename += restModel.FR_Kind_name + displayValue + "H " + restModel.FR_Date_S.ToString("HH:mm") + " ~ " + restModel.FR_Date_E.ToString("HH:mm");
-                                    //            var totalHour = Convert.ToInt32(restModel.FR_total_hour * 60);
-                                    //            if (!string.IsNullOrEmpty(items[j].work_time) && DateTime.Parse(items[j].work_time).TimeOfDay > TimeSpan.Parse("09:00"))
-                                    //            {
-                                    //                items[j].Late = Math.Max(0,Convert.ToInt32(items[j].Late) - totalHour);
-                                    //            }
-                                    //            if(!string.IsNullOrEmpty(items[j].getoffwork_time) && DateTime.Parse(items[j].getoffwork_time).TimeOfDay <= TimeSpan.Parse("18:00"))
-                                    //            {
-                                    //                items[j].early = Math.Max(0, Convert.ToInt32(items[j].early) - totalHour);
-                                    //            }
-                                    //        }
-                                    //        else
-                                    //        {
-                                    //            items[j].typename += restModel.FR_Kind_name + displayValue + "H ";
-                                    //            items[j].Late = 0;
-                                    //            items[j].early = 0;
-                                    //        }
-                                    //    }
                                 }
                                 //整天曠職
                                 if (!isRest)
@@ -1361,56 +1315,76 @@ namespace KF_WebAPI.FunctionHandler
                 range_ly1.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 range_ly1.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
 
-                // 添加合併標題 曠職
-                worksheet_ly.Cells[1, 6].Value = Convert.ToInt32(yyyy) - 1911 + "年" + mm + "月  國峯曠職";
-                worksheet_ly.Cells[1, 6, 1, 10].Merge = true;
-                worksheet_ly.Cells[1, 6, 1, 10].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                worksheet_ly.Cells[1, 6, 1, 10].Style.Font.Bold = true;
+                #region 曠職註解
+                //// 添加合併標題 曠職
+                //worksheet_ly.Cells[1, 6].Value = Convert.ToInt32(yyyy) - 1911 + "年" + mm + "月  國峯曠職";
+                //worksheet_ly.Cells[1, 6, 1, 10].Merge = true;
+                //worksheet_ly.Cells[1, 6, 1, 10].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                //worksheet_ly.Cells[1, 6, 1, 10].Style.Font.Bold = true;
 
-                worksheet_ly.Cells[2, 6].Value = "名稱";
-                worksheet_ly.Cells[2, 7].Value = "日期";
-                worksheet_ly.Cells[2, 10].Value = "曠職";
+                //worksheet_ly.Cells[2, 6].Value = "名稱";
+                //worksheet_ly.Cells[2, 7].Value = "日期";
+                //worksheet_ly.Cells[2, 10].Value = "曠職";
 
-                rowindex_ly = 2;
-                colindex_ly = 6;
+                //rowindex_ly = 2;
+                //colindex_ly = 6;
 
-                foreach (var item in modelList.Where(x=>x.early>0).OrderBy(x=>x.userID))
+                //foreach (var item in modelList.Where(x => x.early > 0).OrderBy(x => x.userID))
+                //{
+                //    rowindex_ly++;
+                //    worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = $"{item.userID}: {item.user_name}";
+                //    worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = item.attendance_week;
+                //    colindex_ly++;
+                //    colindex_ly++;
+                //    decimal earlyHour = Convert.ToInt32(item.early) / 60m;
+                //    worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = Math.Ceiling(earlyHour / 0.5m) * 0.5m + "H";
+                //    colindex_ly = 6;
+                //}
+
+                //// 添加框線
+                //var range_ly2 = worksheet_ly.Cells[1, 6, rowindex_ly, 10];
+                //range_ly2.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                //range_ly2.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                //range_ly2.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                //range_ly2.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                #endregion
+
+                //颱風假且無請假紀錄
+                if (modelList?.Any(x => x.type != null && x.type.Equals("Hk_04")) == true)
                 {
-                    rowindex_ly++;
-                    worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = $"{item.userID}: {item.user_name}";
-                    worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = item.attendance_week;
-                    colindex_ly++;
-                    colindex_ly++;
-                    decimal earlyHour = Convert.ToInt32(item.early) / 60m;
-                    worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = Math.Ceiling(earlyHour / 0.5m) * 0.5m + "H";
+                    // 添加合併標題 曠職
+                    worksheet_ly.Cells[1, 6].Value = Convert.ToInt32(yyyy) - 1911 + "年" + mm + "月  國峯颱風假";
+                    worksheet_ly.Cells[1, 6, 1, 7].Merge = true;
+                    worksheet_ly.Cells[1, 6, 1, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet_ly.Cells[1, 6, 1, 7].Style.Font.Bold = true;
+
+                    worksheet_ly.Cells[2, 6].Value = "名稱";
+                    worksheet_ly.Cells[2, 7].Value = "日期";
+
+                    rowindex_ly = 2;
                     colindex_ly = 6;
+
+                    foreach (var item in modelList.Where(x => x.type != null && x.type.Equals("Hk_04")).OrderBy(x=>x.attendance_date))
+                    {
+                        DateTime attendanceDate;
+                        DateTime.TryParse(item.attendance_date, out attendanceDate);
+                        if (!flowRestList.Any(x => x.FR_U_num == item.userID && attendanceDate.Date >= x.FR_Date_S.Date
+                              && attendanceDate.Date <= x.FR_Date_E.Date))
+                        {
+                            rowindex_ly++;
+                            worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = $"{item.userID}: {item.user_name}";
+                            worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = item.attendance_week;
+                            colindex_ly = 6;
+                        }
+                    }
+
+                    // 添加框線
+                    var range_ly2 = worksheet_ly.Cells[1, 6, rowindex_ly, 7];
+                    range_ly2.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range_ly2.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range_ly2.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range_ly2.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 }
-
-                // 添加框線
-                var range_ly2 = worksheet_ly.Cells[1, 6, rowindex_ly, 10];
-                range_ly2.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                range_ly2.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                range_ly2.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                range_ly2.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-
-                // 添加合併標題 請假表
-                worksheet_ly.Cells[1, 12].Value = Convert.ToInt32(yyyy) - 1911 + "年" + mm + "月  國峯請假表";
-                worksheet_ly.Cells[1, 12, 1, 16].Merge = true;
-                worksheet_ly.Cells[1, 12, 1, 16].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                worksheet_ly.Cells[1, 12, 1, 16].Style.Font.Bold = true;
-
-                worksheet_ly.Cells[2, 12].Value = "名稱";
-                worksheet_ly.Cells[2, 13].Value = "日期";
-                worksheet_ly.Cells[2, 13, 2, 16].Merge = true;
-                worksheet_ly.Cells[2, 13, 2, 16].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                worksheet_ly.Cells[2, 13, 2, 16].Style.Font.Bold = true;
-
-                // 添加框線
-                var range_ly3 = worksheet_ly.Cells[1, 12, 2, 16];
-                range_ly3.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                range_ly3.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                range_ly3.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                range_ly3.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
 
                 // 自動調整列寬
                 worksheet_ly.Cells.AutoFitColumns();
@@ -1428,7 +1402,7 @@ namespace KF_WebAPI.FunctionHandler
                 }
                 rowIndex_af++;
                 int iaf = 1;
-                foreach (var item in flowRestList) 
+                foreach (var item in flowRestList.Where(x=>x.FR_kind != "FRK016" && x.FR_kind != "FRK017").OrderBy(x=>x.FR_Date_S).ToList()) 
                 {
                     colIndex_af = 1;
                     worksheet_af.Cells[rowIndex_af, colIndex_af].Value = iaf++;
@@ -1507,6 +1481,5 @@ namespace KF_WebAPI.FunctionHandler
                 return package.GetAsByteArray();
             }
         }
-
     }
 }

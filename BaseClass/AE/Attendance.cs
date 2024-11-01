@@ -89,7 +89,7 @@ namespace KF_WebAPI.BaseClass.AE
         public int? early { get; set; }
         public string? U_BC { get; set; }
         /// <summary> 休假日類別 </summary>
-        public string type { get; set; }
+        public string? type { get; set; }
         public string typename { get; set; }
         /// <summary> 曠職判定 </summary>
         public string? absenteeism { get; set; }
