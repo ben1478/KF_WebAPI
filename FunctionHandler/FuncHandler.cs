@@ -9,6 +9,7 @@ using System.Reflection.PortableExecutable;
 using Microsoft.AspNetCore.Http;
 using System.Globalization;
 using System;
+using Microsoft.Identity.Client;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -1590,6 +1591,103 @@ namespace KF_WebAPI.FunctionHandler
                 #endregion
 
                 return package.GetAsByteArray();
+            }
+        }
+
+        public static byte[] ReceivableExcel(List<Receivable_Excel> items, Dictionary<string, string> headers)
+        {
+            if (items == null || items.Count == 0)
+            {
+                throw new ArgumentException("列表不能為 null 或空。", nameof(items));
+            }
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Sheet0");
+
+                // 添加表頭行
+                int colIndex = 1;
+                worksheet.Cells[1, colIndex++].Value = "序號";
+                foreach (var header in headers)
+                {
+                    worksheet.Cells[1, colIndex++].Value = header.Value;
+                }
+
+                int rowIndex = 1;
+                int index = 1;
+                foreach (var item in items)
+                {
+                    colIndex = 1;
+                    rowIndex++; // 從第二行開始填充數據
+                    worksheet.Cells[rowIndex, colIndex++].Value = index++;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.CS_name;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.str_amount_total;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.month_total;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RC_count;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RC_date;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.str_RC_amount;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.str_interest;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.str_Rmoney;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.str_RemainingAmount;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.str_PartiallySettled;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.DelayDay;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.Delaymoney;
+                    if (item.check_pay_type == "N")
+                    {
+                        worksheet.Cells[rowIndex, colIndex++].Value = "未沖銷";
+                        worksheet.Cells[rowIndex, colIndex-1].Style.Font.Color.SetColor(Color.Red);
+                    }
+                    if(item.check_pay_type == "Y")
+                    {
+                        worksheet.Cells[rowIndex, colIndex++].Value = "已沖銷";
+                        worksheet.Cells[rowIndex, colIndex-1].Style.Font.Color.SetColor(Color.Blue);
+                    }
+                    if (item.check_pay_type == "S")
+                    {
+                        worksheet.Cells[rowIndex, colIndex++].Value = "已結清";
+                        worksheet.Cells[rowIndex, colIndex-1].Style.Font.Color.SetColor(Color.Black);
+                    }
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.check_pay_date;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.check_pay_name;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RC_note;
+                    if (item.bad_debt_type == "Y" && item.check_pay_type != "S")
+                    {
+                        worksheet.Cells[rowIndex, colIndex++].Value = "已轉呆";
+                        worksheet.Cells[rowIndex, colIndex-1].Style.Font.Color.SetColor(Color.Black);
+                    }
+                    if (item.bad_debt_type == "N" && item.check_pay_type != "S")
+                    {
+                        worksheet.Cells[rowIndex, colIndex++].Value = "未轉呆";
+                        worksheet.Cells[rowIndex, colIndex-1].Style.Font.Color.SetColor(Color.Blue);
+                    }
+                    if (item.check_pay_type == "S")
+                    {
+                        worksheet.Cells[rowIndex, colIndex++].Value = "-";
+                    }
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.bad_debt_date;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.bad_debt_name;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.invoice_no;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.invoice_date;
+                }
+
+                worksheet.Cells[rowIndex + 1, 8].Value = items.Sum(x => long.TryParse(x.str_interest?.Replace(",", ""), out long interest) ? interest : 0).ToString("N0"); 
+                worksheet.Cells[rowIndex + 1, 9].Value = items.Sum(x => long.TryParse(x.str_Rmoney?.Replace(",", ""), out long Rmoney) ? Rmoney : 0).ToString("N0"); 
+                worksheet.Cells[rowIndex + 1, 10].Value = items.Sum(x => long.TryParse(x.str_RemainingAmount?.Replace(",", ""), out long RemainingAmount) ? RemainingAmount : 0).ToString("N0"); 
+                worksheet.Cells[rowIndex + 1, 11].Value = items.Sum(x => long.TryParse(x.str_PartiallySettled?.Replace(",", ""), out long PartiallySettled) ? PartiallySettled : 0).ToString("N0"); 
+                worksheet.Cells[rowIndex + 1, 12].Value = items.Sum(x => x.DelayDay ?? 0).ToString("N0");
+
+                // 添加框線
+                var range = worksheet.Cells[1, 1, rowIndex, headers.Count + 1];
+                range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+
+                // 自動調整列寬
+                worksheet.Cells.AutoFitColumns();
+
+                return package.GetAsByteArray();
+
             }
         }
     }

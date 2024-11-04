@@ -124,6 +124,26 @@
     }
     public class Receivable_Excel
     {
-
+        public string CS_name { get; set; }
+        public string str_amount_total { get; set; }
+        public int month_total { get; set; }
+        public int RC_count { get; set; }
+        public string RC_date { get; set; }
+        public string str_RC_amount { get; set; }
+        public string? str_interest { get; set; }
+        public string? str_Rmoney { get; set; }
+        public string str_RemainingAmount { get; set; }
+        public string str_PartiallySettled { get; set; }
+        public int? DelayDay { get; set; }
+        public decimal? Delaymoney { get; set; }
+        public string check_pay_type { get; set; }
+        public string? check_pay_date { get; set; }
+        public string check_pay_name { get; set; }
+        public string RC_note { get; set; }
+        public string bad_debt_type { get; set; }
+        public string? bad_debt_date { get; set; }
+        public string bad_debt_name { get; set; }
+        public string? invoice_no { get; set; }
+        public string? invoice_date { get; set; }
     }
 }
