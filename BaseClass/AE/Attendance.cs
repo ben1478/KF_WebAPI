@@ -97,5 +97,6 @@ namespace KF_WebAPI.BaseClass.AE
         public DateTime? leave_date { get; set; }
 
         public int item_sort { get; set; }
+        public string Role_num { get; set; }
     }
 }

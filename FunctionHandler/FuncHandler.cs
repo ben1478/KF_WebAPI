@@ -1143,7 +1143,7 @@ namespace KF_WebAPI.FunctionHandler
                                 }
                                 //請假
                                 if (flowRestList.Any(x => x.FR_U_num == items[j].userID && attendanceDate.Date >= x.FR_Date_S.Date
-                                && attendanceDate.Date <= x.FR_Date_E.Date))
+                                && attendanceDate.Date <= x.FR_Date_E.Date && x.FR_kind != "FRK021"))
                                 {
                                     isRest = true;
 
@@ -1152,7 +1152,7 @@ namespace KF_WebAPI.FunctionHandler
 
                                     if( RestList.Count > 0)
                                     {
-                                        foreach( var rest in RestList ) 
+                                        foreach( var rest in RestList) 
                                         {
                                             string displayValue = (rest.FR_total_hour % 1 == 0) ? ((int)rest.FR_total_hour).ToString() : rest.FR_total_hour.ToString();
                                             if (rest.FR_kind == "FRK017") //忘打卡FRK017
@@ -1238,6 +1238,8 @@ namespace KF_WebAPI.FunctionHandler
                                 if (items[j].leave_date.HasValue && items[j].attendance_date == items[j].leave_date.Value.ToString("yyyy/MM/dd"))
                                     items[j].typename += "離職日";
 
+                                //先將早退的值加入到遲到(暫定)
+                                items[j].Late = items[j].Late + items[j].early;
                                 worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 4].Value = items[j].Late;
                                 worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 5].Value = items[j].typename;
                                 worksheet.Cells[rowIndex + j + 1, colIndex + (intcount * 6) + 5].Style.Font.Color.SetColor(Color.Red);
@@ -1349,7 +1351,7 @@ namespace KF_WebAPI.FunctionHandler
                 //range_ly2.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 #endregion
 
-                //颱風假且無請假紀錄
+                //颱風假&&無請假紀錄&&在職
                 if (modelList?.Any(x => x.type != null && x.type.Equals("Hk_04")) == true)
                 {
                     // 添加合併標題 曠職
@@ -1364,17 +1366,90 @@ namespace KF_WebAPI.FunctionHandler
                     rowindex_ly = 2;
                     colindex_ly = 6;
 
-                    foreach (var item in modelList.Where(x => x.type != null && x.type.Equals("Hk_04")).OrderBy(x=>x.attendance_date))
+                    foreach (var bcGroup in modelList.Where(x => x.type != null && x.type.Equals("Hk_04")).GroupBy(x => x.U_BC).OrderBy(g => bcOrder.IndexOf(g.Key)).ToList())
                     {
-                        DateTime attendanceDate;
-                        DateTime.TryParse(item.attendance_date, out attendanceDate);
-                        if (!flowRestList.Any(x => x.FR_U_num == item.userID && attendanceDate.Date >= x.FR_Date_S.Date
-                              && attendanceDate.Date <= x.FR_Date_E.Date))
+                        rowindex_ly++;
+                        switch (bcGroup.Key)
                         {
-                            rowindex_ly++;
-                            worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = $"{item.userID}: {item.user_name}";
-                            worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = item.attendance_week;
-                            colindex_ly = 6;
+                            case "BC0800":
+                                worksheet_ly.Cells[rowindex_ly, 6].Value = "總公司";
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                break;
+                            case "BC0900":
+                                worksheet_ly.Cells[rowindex_ly, 6].Value = "行銷部";
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                break;
+                            case "BC0100":
+                                worksheet_ly.Cells[rowindex_ly, 6].Value = "台北";
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                break;
+                            case "BC0200":
+                                worksheet_ly.Cells[rowindex_ly, 6].Value = "板橋";
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                break;
+                            case "BC0600":
+                                worksheet_ly.Cells[rowindex_ly, 6].Value = "桃園";
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                break;
+                            case "BC0300":
+                                worksheet_ly.Cells[rowindex_ly, 6].Value = "台中";
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                break;
+                            case "BC0500":
+                                worksheet_ly.Cells[rowindex_ly, 6].Value = "台南";
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                break;
+                            case "BC0400":
+                                worksheet_ly.Cells[rowindex_ly, 6].Value = "高雄";
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                break;
+                            case "BC0700":
+                                worksheet_ly.Cells[rowindex_ly, 6].Value = "湧立";
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                break;
+                        }
+
+                        foreach (var item in bcGroup.Where(x => x.type != null && x.type.Equals("Hk_04")).OrderBy(x => x.attendance_date))
+                        {
+                            DateTime attendanceDate;
+                            DateTime.TryParse(item.attendance_date, out attendanceDate);
+
+                            if (item.arrive_date.HasValue && item.arrive_date <= attendanceDate)
+                            {
+                                if (!(item.leave_date.HasValue && item.leave_date < attendanceDate))
+                                {
+                                    if (!flowRestList.Any(x => x.FR_U_num == item.userID && attendanceDate.Date >= x.FR_Date_S.Date
+                                    && attendanceDate.Date <= x.FR_Date_E.Date))
+                                    {
+                                        //除(國峯助理&&業務&&業務主管)外只要有來就不會扣颱風假
+                                        if (!(item.Role_num != "1008" && item.Role_num != "1009" && item.Role_num != "1011" && !string.IsNullOrEmpty(item.work_time)))
+                                        {
+                                            rowindex_ly++;
+                                            worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = $"{item.userID}: {item.user_name}";
+                                            worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = item.attendance_week;
+                                            colindex_ly = 6;
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -1402,7 +1477,7 @@ namespace KF_WebAPI.FunctionHandler
                 }
                 rowIndex_af++;
                 int iaf = 1;
-                foreach (var item in flowRestList.Where(x=>x.FR_kind != "FRK016" && x.FR_kind != "FRK017").OrderBy(x=>x.FR_Date_S).ToList()) 
+                foreach (var item in flowRestList.Where(x=>x.FR_kind != "FRK016" && x.FR_kind != "FRK017" && x.FR_kind != "FRK021").OrderBy(x=>x.FR_Date_S).ToList()) 
                 {
                     colIndex_af = 1;
                     worksheet_af.Cells[rowIndex_af, colIndex_af].Value = iaf++;
@@ -1456,19 +1531,55 @@ namespace KF_WebAPI.FunctionHandler
 
                 #region 加班
                 var worksheet_wo = package.Workbook.Worksheets.Add("加班");
+                string[] headers_wo = new string[] { "序號", "名稱", "加班起迄日", "加班時數", "簽核結果" };         
 
-                // 添加合併標題
-                worksheet_wo.Cells[1, 1].Value = Convert.ToInt32(yyyy)-1911 + "年" + mm + "月  國峯加班" ;
-                worksheet_wo.Cells[1, 1, 1, 4].Merge = true;
-                worksheet_wo.Cells[1, 1, 1, 4].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                worksheet_wo.Cells[1, 1, 1, 4].Style.Font.Bold = true;
+                int rowIndex_wo = 1;
+                int colIndex_wo = 1;
+                
+                foreach (var header in headers_wo)
+                {
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo++].Value = header;
+                }
 
-                worksheet_wo.Cells[2, 1].Value = "名稱";
-                worksheet_wo.Cells[2, 3].Value = "日期";
-                worksheet_wo.Cells[2, 4].Value = "小時";
+                rowIndex_wo++;
+                int wo_index = 1;
+
+
+                foreach (var item in flowRestList.Where(x=>x.FR_kind.Equals("FRK021")).ToList())
+                {
+                    colIndex_wo = 1;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo].Value = wo_index++;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Merge = true;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    colIndex_wo++;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo].Value = $"{item.FR_U_num}: {item.U_name}";
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Merge = true;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    colIndex_wo++;
+
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo].Value = item.FR_Date_S.ToString("yyyy-MM-dd HH:mm");
+                    worksheet_wo.Cells[rowIndex_wo + 1, colIndex_wo++].Value = item.FR_Date_E.ToString("yyyy-MM-dd HH:mm");
+
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo].Value = item.FR_total_hour;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Merge = true;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+
+                    colIndex_wo++;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo].Value = item.Sign_name;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Merge = true;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+
+                    colIndex_wo++;
+                    rowIndex_wo++;
+                    rowIndex_wo++;
+                }
 
                 // 添加框線
-                var range_wo = worksheet_wo.Cells[1, 1, 20, 4];
+                var range_wo = worksheet_wo.Cells[1, 1, rowIndex_wo - 1, colIndex_wo - 1];
                 range_wo.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 range_wo.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 range_wo.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;

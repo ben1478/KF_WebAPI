@@ -862,7 +862,7 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"SELECT Rd.RCM_id,Rd.RCD_id,Ha.CS_name,FORMAT(Rm.amount_total, 'N0') AS str_amount_total,Rd.RC_count,
+                var T_SQL = @"SELECT Rd.RCM_id,Rd.RCD_id,Ha.CS_name,FORMAT(Rm.amount_total, 'N0') AS str_amount_total,Rm.month_total,Rd.RC_count,
                     FORMAT(Rd.RC_date,'yyyy/MM/dd') AS RC_date,FORMAT(Rd.RC_amount, 'N0') AS str_RC_amount,FORMAT(Rd.interest, 'N0') AS str_interest,
                     FORMAT(Rd.Rmoney, 'N0') AS str_Rmoney,
                     FORMAT((Rm.amount_total - COALESCE((SELECT SUM(Rmoney) FROM Receivable_D WHERE RCM_ID = Rm.RCM_ID AND RC_count <= Rd.RC_count AND del_tag = '0'), 0)),'N0') AS str_RemainingAmount,
@@ -921,6 +921,7 @@ namespace KF_WebAPI.Controllers
                     CS_name = row.Field<string>("CS_name"),
                     str_amount_total = row.Field<string>("str_amount_total"),
                     RC_count = row.Field<int>("RC_count"),
+                    month_total = row.Field<int>("month_total"),
                     RC_date = row.Field<string>("RC_date"),
                     str_RC_amount = row.Field<string>("str_RC_amount"),
                     str_interest = row.Field<string>("str_interest"),
@@ -961,14 +962,14 @@ namespace KF_WebAPI.Controllers
                         if (item.isNewFun == "Y")
                         {
                             decimal rcAmount = Convert.ToDecimal(item.str_RC_amount.Replace(",", ""));
-                            item.Delaymoney = Convert.ToDecimal(Fee + Math.Ceiling(Convert.ToDouble(rcAmount)) * 0.16 / 365 * 35);
+                            item.Delaymoney = Math.Ceiling(Convert.ToDecimal(Fee + Math.Ceiling(Convert.ToDouble(rcAmount)) * 0.16 / 365 * item.DelayDay));
                         }
                         else
                         {
                             decimal remainingPrincipal = Convert.ToDecimal(item.RemainingPrincipal);
                             decimal rmoney = Convert.ToDecimal(item.str_Rmoney);
                             decimal exrate = Convert.ToDecimal(item.EXrate);
-                            item.Delaymoney = Fee+item.Fee + Math.Ceiling((Math.Ceiling(remainingPrincipal) + Math.Ceiling(rmoney)) * exrate);
+                            item.Delaymoney = Math.Ceiling(Convert.ToDecimal((Fee + item.Fee + Math.Ceiling((Math.Ceiling(remainingPrincipal) + Math.Ceiling(rmoney)) * exrate))));
                         }
                     }
                     else
@@ -976,6 +977,9 @@ namespace KF_WebAPI.Controllers
                         item.DelayDay = null;
                         item.Delaymoney = null;
                     }
+
+                    if (item.DelayDay == 0)
+                        item.Delaymoney = 0;
                         
                 }
 
@@ -989,6 +993,8 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+        //EXCEL
         #endregion
 
         #region 應收帳款-催收

@@ -96,6 +96,7 @@
         public decimal RCD_id { get; set; }
         public string CS_name { get; set; }
         public string str_amount_total { get; set; }
+        public int month_total { get; set; }
         public int RC_count { get; set; }
         public string RC_date { get; set; }
         public string str_RC_amount { get; set; }
