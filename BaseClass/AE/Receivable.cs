@@ -125,15 +125,15 @@
     public class Receivable_Excel
     {
         public string CS_name { get; set; }
-        public string str_amount_total { get; set; }
+        public decimal amount_total { get; set; }
         public int month_total { get; set; }
         public int RC_count { get; set; }
         public string RC_date { get; set; }
-        public string str_RC_amount { get; set; }
-        public string? str_interest { get; set; }
-        public string? str_Rmoney { get; set; }
-        public string str_RemainingAmount { get; set; }
-        public string str_PartiallySettled { get; set; }
+        public decimal RC_amount { get; set; }
+        public decimal? interest { get; set; }
+        public decimal? Rmoney { get; set; }
+        public decimal RemainingAmount { get; set; }
+        public int PartiallySettled { get; set; }
         public int? DelayDay { get; set; }
         public decimal? Delaymoney { get; set; }
         public string check_pay_type { get; set; }
@@ -145,5 +145,54 @@
         public string bad_debt_name { get; set; }
         public string? invoice_no { get; set; }
         public string? invoice_date { get; set; }
+    }
+    public class Receivable_req_new
+    {
+        public string name { get; set; }
+        public string str_Date_S { get; set; }
+        public string str_Date_E { get; set; }
+        public string DiffDay_Type { get; set; }  
+    }
+    public class Receivable_res_new
+    {
+        public string CS_name { get; set; }
+        public decimal amount_total { get; set; }
+        public int month_total { get; set; }
+        public int RC_count { get; set; }
+        public string RC_date { get; set; }
+        public int DiffDay { get; set; }
+        public decimal RC_amount { get; set; }
+        public string interest_rate_pass { get; set; }
+        public int loan_grace_num { get; set; }
+        public decimal interest { get;set; }
+        public decimal Rmoney { get;set; }
+        /// <summary>
+        /// 本金餘額
+        /// </summary>
+        public decimal RemainingPrincipal { get; set; }
+        /// <summary>
+        /// 實際本金餘額
+        /// </summary>
+        public decimal RemainingPrincipal_1 { get; set; }
+    }
+    public class Receivable_New_Excel
+    {
+        public string CS_name { get; set; }
+        public decimal amount_total { get; set; }
+        public int month_total { get; set; }
+        public int RC_count { get; set; }
+        public string RC_date { get; set; }
+        public int DiffDay { get; set; }
+        public decimal RC_amount { get; set; }
+        public decimal interest { get; set; }
+        public decimal Rmoney { get; set; }
+        /// <summary>
+        /// 本金餘額
+        /// </summary>
+        public decimal RemainingPrincipal { get; set; }
+        /// <summary>
+        /// 實際本金餘額
+        /// </summary>
+        public decimal RemainingPrincipal_1 { get; set; }
     }
 }

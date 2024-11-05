@@ -754,6 +754,26 @@ namespace KF_WebAPI.FunctionHandler
 
             return gregorianDate;
         }
+        /// <summary>
+        /// 西元年月日換成民國
+        /// </summary>
+        /// <param name="rocDate">2024/09/25</param>
+        public static string ConvertGregorianToROC(string rocDate)
+        {
+            var parts = rocDate.Split('/');
+            int rocYear = int.Parse(parts[0]);
+            int month = int.Parse(parts[1]);
+            int day = int.Parse(parts[2]);
+
+            int gregorianYear = rocYear - 1911;
+
+            string formattedMonth = month.ToString("D2");
+            string formattedDay = day.ToString("D2");
+
+            string gregorianDate = $"{gregorianYear}/{formattedMonth}/{formattedDay}";
+
+            return gregorianDate;
+        }
 
         public static byte[] ApprovalLoanSalesExcelFooter(byte[] existingFileBytes)
         {
@@ -1606,13 +1626,17 @@ namespace KF_WebAPI.FunctionHandler
                 var worksheet = package.Workbook.Worksheets.Add("Sheet0");
 
                 // 添加表頭行
-                int colIndex = 1;
-                worksheet.Cells[1, colIndex++].Value = "序號";
+                int headerIndex = 1;
                 foreach (var header in headers)
                 {
-                    worksheet.Cells[1, colIndex++].Value = header.Value;
+                    var cell = worksheet.Cells[1, headerIndex++];
+                    cell.Value = header.Value;
+                    // 設置儲存格底色為淺藍色
+                    cell.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    cell.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
                 }
 
+                int colIndex = 1;
                 int rowIndex = 1;
                 int index = 1;
                 foreach (var item in items)
@@ -1621,15 +1645,21 @@ namespace KF_WebAPI.FunctionHandler
                     rowIndex++; // 從第二行開始填充數據
                     worksheet.Cells[rowIndex, colIndex++].Value = index++;
                     worksheet.Cells[rowIndex, colIndex++].Value = item.CS_name;
-                    worksheet.Cells[rowIndex, colIndex++].Value = item.str_amount_total;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.amount_total;
                     worksheet.Cells[rowIndex, colIndex++].Value = item.month_total;
                     worksheet.Cells[rowIndex, colIndex++].Value = item.RC_count;
                     worksheet.Cells[rowIndex, colIndex++].Value = item.RC_date;
-                    worksheet.Cells[rowIndex, colIndex++].Value = item.str_RC_amount;
-                    worksheet.Cells[rowIndex, colIndex++].Value = item.str_interest;
-                    worksheet.Cells[rowIndex, colIndex++].Value = item.str_Rmoney;
-                    worksheet.Cells[rowIndex, colIndex++].Value = item.str_RemainingAmount;
-                    worksheet.Cells[rowIndex, colIndex++].Value = item.str_PartiallySettled;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RC_amount;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.interest;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.Rmoney;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RemainingAmount;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.PartiallySettled;
                     worksheet.Cells[rowIndex, colIndex++].Value = item.DelayDay;
                     worksheet.Cells[rowIndex, colIndex++].Value = item.Delaymoney;
                     if (item.check_pay_type == "N")
@@ -1670,14 +1700,19 @@ namespace KF_WebAPI.FunctionHandler
                     worksheet.Cells[rowIndex, colIndex++].Value = item.invoice_date;
                 }
 
-                worksheet.Cells[rowIndex + 1, 8].Value = items.Sum(x => long.TryParse(x.str_interest?.Replace(",", ""), out long interest) ? interest : 0).ToString("N0"); 
-                worksheet.Cells[rowIndex + 1, 9].Value = items.Sum(x => long.TryParse(x.str_Rmoney?.Replace(",", ""), out long Rmoney) ? Rmoney : 0).ToString("N0"); 
-                worksheet.Cells[rowIndex + 1, 10].Value = items.Sum(x => long.TryParse(x.str_RemainingAmount?.Replace(",", ""), out long RemainingAmount) ? RemainingAmount : 0).ToString("N0"); 
-                worksheet.Cells[rowIndex + 1, 11].Value = items.Sum(x => long.TryParse(x.str_PartiallySettled?.Replace(",", ""), out long PartiallySettled) ? PartiallySettled : 0).ToString("N0"); 
-                worksheet.Cells[rowIndex + 1, 12].Value = items.Sum(x => x.DelayDay ?? 0).ToString("N0");
+                worksheet.Cells[rowIndex + 1, 8].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex + 1, 8].Value = items.Sum(x => x.interest);
+                worksheet.Cells[rowIndex + 1, 9].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex + 1, 9].Value = items.Sum(x => x.Rmoney);
+                worksheet.Cells[rowIndex + 1, 10].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex + 1, 10].Value = items.Sum(x => x.RemainingAmount);
+                worksheet.Cells[rowIndex + 1, 11].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex + 1, 11].Value = items.Sum(x => x.PartiallySettled);
+                worksheet.Cells[rowIndex + 1, 12].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex + 1, 12].Value = items.Sum(x => x.DelayDay);
 
                 // 添加框線
-                var range = worksheet.Cells[1, 1, rowIndex, headers.Count + 1];
+                var range = worksheet.Cells[1, 1, rowIndex, headers.Count];
                 range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
@@ -1688,6 +1723,78 @@ namespace KF_WebAPI.FunctionHandler
 
                 return package.GetAsByteArray();
 
+            }
+        }
+
+        public static byte[] ReceivableNewExcel(List<Receivable_New_Excel> items, Dictionary<string, string> headers)
+        {
+            if (items == null || items.Count == 0)
+            {
+                throw new ArgumentException("列表不能為 null 或空。", nameof(items));
+            }
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Sheet0");
+
+                // 添加表頭行
+                int headerIndex = 1;
+                foreach (var header in headers)
+                {
+                    var cell = worksheet.Cells[1, headerIndex++];
+                    cell.Value = header.Value;
+                    // 設置儲存格底色為淺藍色
+                    cell.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    cell.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                }
+
+                int rowIndex = 1;
+                int colIndex = 1;
+                int index = 1;
+                foreach (var item in items)
+                {
+                    colIndex = 1;
+                    rowIndex++; // 從第二行開始填充數據
+                    worksheet.Cells[rowIndex, colIndex++].Value = index++;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.CS_name;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.amount_total;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.month_total;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RC_count;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RC_date;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.DiffDay;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RC_amount;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.interest;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.Rmoney;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RemainingPrincipal;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RemainingPrincipal_1;
+                }
+
+                worksheet.Cells[rowIndex + 1, 8].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex + 1, 8].Value = items.Sum(x => x.RC_amount);
+                worksheet.Cells[rowIndex + 1, 9].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex + 1, 9].Value = items.Sum(x => x.interest);
+                worksheet.Cells[rowIndex + 1, 10].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex + 1, 10].Value = items.Sum(x => x.Rmoney);
+                worksheet.Cells[rowIndex + 1, 11].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex + 1, 11].Value = items.Sum(x => x.RemainingPrincipal);
+
+                // 添加框線
+                var range = worksheet.Cells[1, 1, rowIndex, headers.Count];
+                range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+
+                // 自動調整列寬
+                worksheet.Cells.AutoFitColumns();
+
+                return package.GetAsByteArray();
             }
         }
     }
