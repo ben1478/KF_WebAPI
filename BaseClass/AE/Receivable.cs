@@ -47,7 +47,6 @@
         public decimal? RemainingPrincipal { get; set; }
         public decimal PartiallySettled { get; set; }
     }
-
     public class Receivable_D_check_req
     {
         public decimal RCD_id { get; set; }
@@ -63,7 +62,6 @@
         public string bad_debt_type { get; set; }
         public string str_bad_debt_date { get; set; }
     }
-
     public class Receivable_MD_req
     {
         public decimal RCM_id { get; set; }
@@ -71,7 +69,6 @@
         public string str_date_begin { get; set; }
         public string? RCM_note { get; set; }
     }
-
     public class Receivable_Settle_req
     {
         public decimal RCM_id { get; set; }
@@ -89,7 +86,6 @@
         public string bad_type { get; set; }
         public string RC_count { get; set; }
     }
-
     public class Receivable_res
     {
         public decimal RCM_id { get; set; }
@@ -146,14 +142,14 @@
         public string? invoice_no { get; set; }
         public string? invoice_date { get; set; }
     }
-    public class Receivable_req_new
+    public class Receivable_Coll_req
     {
         public string name { get; set; }
         public string str_Date_S { get; set; }
         public string str_Date_E { get; set; }
         public string DiffDay_Type { get; set; }  
     }
-    public class Receivable_res_new
+    public class Receivable_Coll_res
     {
         public string CS_name { get; set; }
         public decimal amount_total { get; set; }
@@ -175,7 +171,7 @@
         /// </summary>
         public decimal RemainingPrincipal_1 { get; set; }
     }
-    public class Receivable_New_Excel
+    public class Receivable_Coll_Excel
     {
         public string CS_name { get; set; }
         public decimal amount_total { get; set; }
@@ -194,5 +190,56 @@
         /// 實際本金餘額
         /// </summary>
         public decimal RemainingPrincipal_1 { get; set; }
+    }
+    public class Receivable_Late_Pay_req
+    {
+        public string name { get; set; }
+        public string str_Date_E { get; set; }
+        public string delay_type { get; set; }
+        public string pay_type { get; set; }
+    }
+    public class Receivable_Late_Pay_res
+    {
+        public decimal RCM_id { get; set; }
+        public decimal RCD_id { get; set; }
+        public string CS_name { get; set; }
+        public decimal amount_total { get; set; }
+        public int month_total { get; set; }
+        public int RC_count { get; set; }
+        public string RC_date { get; set; }
+        public decimal RC_amount { get; set; }
+        public decimal interest { get; set; }
+        public decimal Rmoney { get; set; }
+        public decimal? RemainingPrincipal { get; set; }
+        public int DelayDay { get; set; }
+        public string interest_rate_pass { get; set; }
+        public int loan_grace_num { get; set; }
+    }
+    public class Receivable_Late_Pay_Excel
+    {
+        public string CS_name { get; set; }
+        public decimal amount_total { get; set; }
+        public int month_total { get; set; }
+        public int RC_count { get; set; }
+        public string RC_date { get; set; }
+        public decimal RC_amount { get; set; }
+        public decimal interest { get; set; }
+        public decimal Rmoney { get; set; }
+        /// <summary>
+        /// 本金餘額
+        /// </summary>
+        public decimal RemainingPrincipal { get; set; }
+        public int DelayDay { get; set; }
+    }
+
+    public class Receivable_Over_Rel_Excel
+    {
+        public string BC_name { get; set; }
+        public string u_name { get; set; }
+        public int ToT_Count { get; set; }
+        public decimal amount_total { get; set; }
+        public int OV_Count { get; set; }
+        public decimal OV_total { get; set; }
+        public string OV_Rate { get; set; }
     }
 }

@@ -10,6 +10,7 @@ using System;
 using System.Data;
 using System.Data.SqlTypes;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace KF_WebAPI.Controllers
 {
@@ -1196,8 +1197,8 @@ namespace KF_WebAPI.Controllers
         /// <summary>
         /// 應收帳款催收查詢 RC_D_New_LQuery/RC_D_list_New.asp
         /// </summary>
-        [HttpPost("RC_D_New_LQuery")]
-        public ActionResult<ResultClass<string>> RC_D_New_LQuery(Receivable_req_new model)
+        [HttpPost("RC_D_Coll_LQuery")]
+        public ActionResult<ResultClass<string>> RC_D_Coll_LQuery(Receivable_Coll_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -1248,7 +1249,7 @@ namespace KF_WebAPI.Controllers
                 }
                 T_SQL = T_SQL +" order by  Rd.RC_date";
                 #endregion
-                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_res_new
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Coll_res
                 {
                     CS_name = row.Field<string>("CS_name"),
                     amount_total = row.Field<decimal>("amount_total"),
@@ -1327,8 +1328,8 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-        [HttpPost("RC_daily_New_Excel")]
-        public IActionResult RC_daily_New_Excel(Receivable_req_new model)
+        [HttpPost("RC_daily_Coll_Excel")]
+        public IActionResult RC_daily_Coll_Excel(Receivable_Coll_req model)
         {
             try
             {
@@ -1377,7 +1378,7 @@ namespace KF_WebAPI.Controllers
                 }
                 T_SQL = T_SQL + " order by  Rd.RC_date";
                 #endregion
-                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_res_new
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Coll_res
                 {
                     CS_name = row.Field<string>("CS_name"),
                     amount_total = row.Field<decimal>("amount_total"),
@@ -1436,7 +1437,7 @@ namespace KF_WebAPI.Controllers
                     item.RemainingPrincipal_1 = Math.Round(item.RemainingPrincipal_1, 0, MidpointRounding.AwayFromZero);
                 }
                 
-                var excelList = result.Select(x => new Receivable_New_Excel
+                var excelList = result.Select(x => new Receivable_Coll_Excel
                 {
                     CS_name = x.CS_name,
                     amount_total = x.amount_total,
@@ -1467,7 +1468,7 @@ namespace KF_WebAPI.Controllers
                     { "RemainingPrincipal_1", "實際本金餘額" }
                 };
 
-                var fileBytes = FuncHandler.ReceivableNewExcel(excelList, Excel_Headers);
+                var fileBytes = FuncHandler.ReceivableCollExcel(excelList, Excel_Headers);
                 var fileName = "催收款項" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
                 return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
             }
@@ -1481,11 +1482,829 @@ namespace KF_WebAPI.Controllers
         #endregion
 
         #region 應收帳款-逾期繳款
+        /// <summary>
+        /// 逾期繳款清單查詢 RC_D_Late_Pay_LQuery/RC_D_list_New1.asp
+        /// </summary>
+        [HttpPost("RC_D_Late_Pay_LQuery")]
+        public ActionResult<ResultClass<string>> RC_D_Late_Pay_LQuery(Receivable_Late_Pay_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
 
+            try
+            {
+                model.str_Date_E = FuncHandler.ConvertROCToGregorian(model.str_Date_E);
+
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"select Rd.RCM_id,Rd.RCD_id,Ha.CS_name,Rm.amount_total,Rm.month_total,Rd.RC_count,FORMAT(Rd.RC_date,'yyyy/MM/dd') AS RC_date,
+                    Rd.RC_amount,Rd.interest,Rd.Rmoney,Rd.RemainingPrincipal,
+                    isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E +' 00:00:00' else check_pay_date end),0) DelayDay,
+                    Hs.interest_rate_pass,Rm.loan_grace_num
+                    from Receivable_D Rd
+                    LEFT JOIN Receivable_M Rm on Rm.RCM_id = Rd.RCM_id AND Rm.del_tag = '0'
+                    LEFT JOIN House_apply Ha on Ha.HA_id = Rm.HA_id AND Ha.del_tag = '0'
+                    LEFT JOIN (select U_num, U_BC FROM User_M) Um ON Um.U_num = Ha.plan_num
+                    LEFT JOIN House_sendcase Hs on Hs.HS_id = Rm.HS_id AND Hs.del_tag = '0'  
+                    where Rd.del_tag = '0' AND Rd.RC_date <= @Date_E +' 00:00:00' AND (Rd.bad_debt_type = 'N')
+                    AND(Rd.cancel_type = 'N') AND Rm.RCM_id is not null AND Rm.RCM_note not like '%提前結清%'";
+                if (!string.IsNullOrEmpty(model.pay_type))
+                {
+                    if (model.pay_type == "Y")
+                    {
+                        T_SQL = T_SQL + " AND Rd.check_pay_type ='Y' AND (Rd.check_pay_date is null or Rd.check_pay_date <= @Date_E + ' 00:00:00')";
+                    }
+                    if (model.pay_type == "N")
+                    {
+                        T_SQL = T_SQL + " AND Rd.check_pay_date is null AND (Rd.check_pay_date is null or Rd.check_pay_date >= @Date_E + ' 00:00:00')";
+                    }
+                }
+                if (!string.IsNullOrEmpty(model.name))
+                {
+                    T_SQL = T_SQL + " AND Ha.CS_name=@CS_name";
+                    parameters.Add(new SqlParameter("@CS_name", model.name));
+                }
+                if (!string.IsNullOrEmpty(model.delay_type))
+                {
+                    switch (model.delay_type)
+                    {
+                        case "0":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) between 1 and 29";
+                            break;
+                        case "1":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) >=30";
+                            break;
+                        case "A":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) between 30 and 59";
+                            break;
+                        case "B":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) between 60 and 89";
+                            break;
+                        case "C":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) >=90";
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                else
+                {
+                    T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) > 0 ";
+                }
+                T_SQL = T_SQL + @" AND Um.U_BC in ('zz','BC0100','BC0200','BC0600','BC0900','BC0700','BC0800','BC0300','BC0500','BC0400','BC0800')
+                    AND convert(varchar(15),Rd.RCM_ID)+'-'+ convert(varchar(3),(RC_count)) 
+                    in (
+                         SELECT convert(varchar(15),Receivable_D.RCM_ID)+'-'+ convert(varchar(3),Min(RC_count)) RC_count
+                         FROM Receivable_D
+                         LEFT JOIN Receivable_M ON Receivable_M.RCM_id = Receivable_D.RCM_id AND Receivable_M.del_tag= '0'
+                         LEFT JOIN House_apply ON House_apply.HA_id = Receivable_M.HA_id AND House_apply.del_tag= '0'
+                         LEFT JOIN (SELECT U_num, U_BC FROM User_M) User_M ON User_M.U_num = House_apply.plan_num
+                         LEFT JOIN House_sendcase ON House_sendcase.HS_id = Receivable_M.HS_id AND House_sendcase.del_tag= '0'
+                         WHERE Receivable_D.del_tag = '0' AND Receivable_D.RC_date <= @Date_E +' 00:00:00' AND (Receivable_D.bad_debt_type= 'N')
+                         AND(Receivable_D.cancel_type= 'N') AND Receivable_M.RCM_id is not null AND Receivable_M.RCM_note not like '%提前結清%'";
+                if (!string.IsNullOrEmpty(model.pay_type))
+                {
+                    if (model.pay_type == "Y")
+                    {
+                        T_SQL = T_SQL + " AND Receivable_D.check_pay_type ='Y' AND (Receivable_D.check_pay_date is null or Receivable_D.check_pay_date <= @Date_E + ' 00:00:00')";
+                    }
+                    if (model.pay_type == "N")
+                    {
+                        T_SQL = T_SQL + " AND Receivable_D.check_pay_date is null AND (Receivable_D.check_pay_date is null or Receivable_D.check_pay_date >= @Date_E + ' 00:00:00')";
+                    }
+                }
+                if (!string.IsNullOrEmpty(model.name))
+                {
+                    T_SQL = T_SQL + " AND House_apply.CS_name=@CS_name";
+                    parameters.Add(new SqlParameter("@CS_name", model.name));
+                }
+                if (!string.IsNullOrEmpty(model.delay_type))
+                {
+                    switch (model.delay_type)
+                    {
+                        case "0":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) between 1 and 29";
+                            break;
+                        case "1":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) >=30";
+                            break;
+                        case "A":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) between 30 and 59";
+                            break;
+                        case "B":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) between 60 and 89";
+                            break;
+                        case "C":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) >=90";
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                else
+                {
+                    T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) > 0 ";
+                }
+
+                T_SQL = T_SQL + @"AND User_M.U_BC in ('zz','BC0100','BC0200','BC0600','BC0900','BC0700','BC0800','BC0300','BC0500','BC0400','BC0800')
+                         group by Receivable_D.RCM_ID) order by Rd.RC_date,CS_name";
+                parameters.Add(new SqlParameter("@Date_E", model.str_Date_E));
+                #endregion
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Late_Pay_res
+                {
+                    RCM_id = row.Field<decimal>("RCM_id"),
+                    RCD_id = row.Field<decimal>("RCD_id"),
+                    CS_name = row.Field<string>("CS_name"),
+                    amount_total = row.Field<decimal>("amount_total"),
+                    month_total = row.Field<int>("month_total"),
+                    RC_count = row.Field<int>("RC_count"),
+                    RC_date = row.Field<string>("RC_date"),
+                    RC_amount = row.Field<decimal>("RC_amount"),
+                    interest = row.Field<decimal>("interest"),
+                    Rmoney = row.Field<decimal>("Rmoney"),
+                    RemainingPrincipal = row.Field<decimal?>("RemainingPrincipal"),
+                    DelayDay = row.Field<int>("DelayDay"),
+                    interest_rate_pass = row.Field<string>("interest_rate_pass"),
+                    loan_grace_num = row.Field<int>("loan_grace_num")
+                }).ToList();
+
+                foreach (var item in result)
+                {
+                    decimal interest_rate_pass = Convert.ToInt32(item.interest_rate_pass);
+                    decimal amountTotal = Math.Round(Convert.ToDecimal(item.amount_total), 2);
+                    decimal interestRatePass = Convert.ToDecimal(item.interest_rate_pass) / 100 / 12;
+                    int monthTotal = Convert.ToInt32(item.month_total);
+                    decimal denominator = 1 - (1 / (decimal)Math.Pow(1 + (double)interestRatePass, monthTotal));
+                    decimal realRCAmount = Math.Round(amountTotal * (interestRatePass / denominator), 2);
+
+                    if ((item.RC_count - item.loan_grace_num) <= 1)
+                    {
+                        item.interest = Math.Round(item.amount_total, 2) * interest_rate_pass / 100 / 12;
+                        if (item.RC_count > item.loan_grace_num)
+                        {
+                            item.Rmoney = Math.Round(realRCAmount - item.interest, 2);
+                        }
+                        else
+                        {
+                            item.Rmoney = 0;
+                        }
+                        item.RemainingPrincipal = Math.Round(item.amount_total - item.Rmoney, 2);
+                    }
+                    else
+                    {
+                        decimal RemainingPrincipal_1 = 0;
+                        //第一期 數字
+                        for (int i = item.loan_grace_num + 1; i <= item.RC_count; i++)
+                        {
+                            if (i == item.loan_grace_num + 1)
+                            {
+                                RemainingPrincipal_1 = Math.Round(item.amount_total, 2);
+                            }
+                            decimal monthlyInterestRate = interest_rate_pass / 100 / 12;
+                            item.interest = Math.Round(Math.Round(RemainingPrincipal_1, 2) * monthlyInterestRate, 2);
+                            item.Rmoney = Math.Round(Math.Round(realRCAmount, 2) - item.interest, 2);
+                            item.RemainingPrincipal = Math.Round(RemainingPrincipal_1 - item.Rmoney, 2);
+                            RemainingPrincipal_1 = Convert.ToDecimal(item.RemainingPrincipal);
+                        }
+                    }
+                    item.interest = Math.Round(item.interest, 0, MidpointRounding.AwayFromZero);
+                    item.Rmoney = Math.Round(item.Rmoney, 0, MidpointRounding.AwayFromZero);
+                    item.RemainingPrincipal = Math.Round(Convert.ToDecimal(item.RemainingPrincipal), 0, MidpointRounding.AwayFromZero);
+                }
+
+                if (result.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(result);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 逾期繳款清單查詢Excel下載 RC_D_Late_Pay_LQuery/RC_D_list_New1.asp
+        /// </summary>
+        [HttpPost("RC_D_Late_Pay_Excel")]
+        public IActionResult RC_D_Late_Pay_Excel(Receivable_Late_Pay_req model)
+        {
+            try
+            {
+                model.str_Date_E = FuncHandler.ConvertROCToGregorian(model.str_Date_E);
+
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"select Rd.RCM_id,Rd.RCD_id,Ha.CS_name,Rm.amount_total,Rm.month_total,Rd.RC_count,FORMAT(Rd.RC_date,'yyyy/MM/dd') AS RC_date,
+                    Rd.RC_amount,Rd.interest,Rd.Rmoney,Rd.RemainingPrincipal,
+                    isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E +' 00:00:00' else check_pay_date end),0) DelayDay,
+                    Hs.interest_rate_pass,Rm.loan_grace_num
+                    from Receivable_D Rd
+                    LEFT JOIN Receivable_M Rm on Rm.RCM_id = Rd.RCM_id AND Rm.del_tag = '0'
+                    LEFT JOIN House_apply Ha on Ha.HA_id = Rm.HA_id AND Ha.del_tag = '0'
+                    LEFT JOIN (select U_num, U_BC FROM User_M) Um ON Um.U_num = Ha.plan_num
+                    LEFT JOIN House_sendcase Hs on Hs.HS_id = Rm.HS_id AND Hs.del_tag = '0'  
+                    where Rd.del_tag = '0' AND Rd.RC_date <= @Date_E +' 00:00:00' AND (Rd.bad_debt_type = 'N')
+                    AND(Rd.cancel_type = 'N') AND Rm.RCM_id is not null AND Rm.RCM_note not like '%提前結清%'";
+                if (!string.IsNullOrEmpty(model.pay_type))
+                {
+                    if (model.pay_type == "Y")
+                    {
+                        T_SQL = T_SQL + " AND Rd.check_pay_type ='Y' AND (Rd.check_pay_date is null or Rd.check_pay_date <= @Date_E + ' 00:00:00')";
+                    }
+                    if (model.pay_type == "N")
+                    {
+                        T_SQL = T_SQL + " AND Rd.check_pay_date is null AND (Rd.check_pay_date is null or Rd.check_pay_date >= @Date_E + ' 00:00:00')";
+                    }
+                }
+                if (!string.IsNullOrEmpty(model.name))
+                {
+                    T_SQL = T_SQL + " AND Ha.CS_name=@CS_name";
+                    parameters.Add(new SqlParameter("@CS_name", model.name));
+                }
+                if (!string.IsNullOrEmpty(model.delay_type))
+                {
+                    switch (model.delay_type)
+                    {
+                        case "0":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) between 1 and 29";
+                            break;
+                        case "1":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) >=30";
+                            break;
+                        case "A":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) between 30 and 59";
+                            break;
+                        case "B":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) between 60 and 89";
+                            break;
+                        case "C":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) >=90";
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                else
+                {
+                    T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) > 0 ";
+                }
+                T_SQL = T_SQL + @" AND Um.U_BC in ('zz','BC0100','BC0200','BC0600','BC0900','BC0700','BC0800','BC0300','BC0500','BC0400','BC0800')
+                    AND convert(varchar(15),Rd.RCM_ID)+'-'+ convert(varchar(3),(RC_count)) 
+                    in (
+                         SELECT convert(varchar(15),Receivable_D.RCM_ID)+'-'+ convert(varchar(3),Min(RC_count)) RC_count
+                         FROM Receivable_D
+                         LEFT JOIN Receivable_M ON Receivable_M.RCM_id = Receivable_D.RCM_id AND Receivable_M.del_tag= '0'
+                         LEFT JOIN House_apply ON House_apply.HA_id = Receivable_M.HA_id AND House_apply.del_tag= '0'
+                         LEFT JOIN (SELECT U_num, U_BC FROM User_M) User_M ON User_M.U_num = House_apply.plan_num
+                         LEFT JOIN House_sendcase ON House_sendcase.HS_id = Receivable_M.HS_id AND House_sendcase.del_tag= '0'
+                         WHERE Receivable_D.del_tag = '0' AND Receivable_D.RC_date <= @Date_E +' 00:00:00' AND (Receivable_D.bad_debt_type= 'N')
+                         AND(Receivable_D.cancel_type= 'N') AND Receivable_M.RCM_id is not null AND Receivable_M.RCM_note not like '%提前結清%'";
+                if (!string.IsNullOrEmpty(model.pay_type))
+                {
+                    if (model.pay_type == "Y")
+                    {
+                        T_SQL = T_SQL + " AND Receivable_D.check_pay_type ='Y' AND (Receivable_D.check_pay_date is null or Receivable_D.check_pay_date <= @Date_E + ' 00:00:00')";
+                    }
+                    if (model.pay_type == "N")
+                    {
+                        T_SQL = T_SQL + " AND Receivable_D.check_pay_date is null AND (Receivable_D.check_pay_date is null or Receivable_D.check_pay_date >= @Date_E + ' 00:00:00')";
+                    }
+                }
+                if (!string.IsNullOrEmpty(model.name))
+                {
+                    T_SQL = T_SQL + " AND House_apply.CS_name=@CS_name";
+                    parameters.Add(new SqlParameter("@CS_name", model.name));
+                }
+                if (!string.IsNullOrEmpty(model.delay_type))
+                {
+                    switch (model.delay_type)
+                    {
+                        case "0":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) between 1 and 29";
+                            break;
+                        case "1":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) >=30";
+                            break;
+                        case "A":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) between 30 and 59";
+                            break;
+                        case "B":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) between 60 and 89";
+                            break;
+                        case "C":
+                            T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) >=90";
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                else
+                {
+                    T_SQL = T_SQL + " AND isnull(DATEDIFF(DAY, RC_date,case when check_pay_date is null then @Date_E + ' 00:00:00' else check_pay_date end),0) > 0 ";
+                }
+
+                T_SQL = T_SQL + @"AND User_M.U_BC in ('zz','BC0100','BC0200','BC0600','BC0900','BC0700','BC0800','BC0300','BC0500','BC0400','BC0800')
+                         group by Receivable_D.RCM_ID) order by Rd.RC_date,CS_name";
+                parameters.Add(new SqlParameter("@Date_E", model.str_Date_E));
+                #endregion
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Late_Pay_res
+                {
+                    RCM_id = row.Field<decimal>("RCM_id"),
+                    RCD_id = row.Field<decimal>("RCD_id"),
+                    CS_name = row.Field<string>("CS_name"),
+                    amount_total = row.Field<decimal>("amount_total"),
+                    month_total = row.Field<int>("month_total"),
+                    RC_count = row.Field<int>("RC_count"),
+                    RC_date = row.Field<string>("RC_date"),
+                    RC_amount = row.Field<decimal>("RC_amount"),
+                    interest = row.Field<decimal>("interest"),
+                    Rmoney = row.Field<decimal>("Rmoney"),
+                    RemainingPrincipal = row.Field<decimal?>("RemainingPrincipal"),
+                    DelayDay = row.Field<int>("DelayDay"),
+                    interest_rate_pass = row.Field<string>("interest_rate_pass"),
+                    loan_grace_num = row.Field<int>("loan_grace_num")
+                }).ToList();
+
+                foreach (var item in result)
+                {
+                    decimal interest_rate_pass = Convert.ToInt32(item.interest_rate_pass);
+                    decimal amountTotal = Math.Round(Convert.ToDecimal(item.amount_total), 2);
+                    decimal interestRatePass = Convert.ToDecimal(item.interest_rate_pass) / 100 / 12;
+                    int monthTotal = Convert.ToInt32(item.month_total);
+                    decimal denominator = 1 - (1 / (decimal)Math.Pow(1 + (double)interestRatePass, monthTotal));
+                    decimal realRCAmount = Math.Round(amountTotal * (interestRatePass / denominator), 2);
+
+                    if ((item.RC_count - item.loan_grace_num) <= 1)
+                    {
+                        item.interest = Math.Round(item.amount_total, 2) * interest_rate_pass / 100 / 12;
+                        if (item.RC_count > item.loan_grace_num)
+                        {
+                            item.Rmoney = Math.Round(realRCAmount - item.interest, 2);
+                        }
+                        else
+                        {
+                            item.Rmoney = 0;
+                        }
+                        item.RemainingPrincipal = Math.Round(item.amount_total - item.Rmoney, 2);
+                    }
+                    else
+                    {
+                        decimal RemainingPrincipal_1 = 0;
+                        //第一期 數字
+                        for (int i = item.loan_grace_num + 1; i <= item.RC_count; i++)
+                        {
+                            if (i == item.loan_grace_num + 1)
+                            {
+                                RemainingPrincipal_1 = Math.Round(item.amount_total, 2);
+                            }
+                            decimal monthlyInterestRate = interest_rate_pass / 100 / 12;
+                            item.interest = Math.Round(Math.Round(RemainingPrincipal_1, 2) * monthlyInterestRate, 2);
+                            item.Rmoney = Math.Round(Math.Round(realRCAmount, 2) - item.interest, 2);
+                            item.RemainingPrincipal = Math.Round(RemainingPrincipal_1 - item.Rmoney, 2);
+                            RemainingPrincipal_1 = Convert.ToDecimal(item.RemainingPrincipal);
+                        }
+                    }
+                    item.interest = Math.Round(item.interest, 0, MidpointRounding.AwayFromZero);
+                    item.Rmoney = Math.Round(item.Rmoney, 0, MidpointRounding.AwayFromZero);
+                    item.RemainingPrincipal = Math.Round(Convert.ToDecimal(item.RemainingPrincipal), 0, MidpointRounding.AwayFromZero);
+                }
+
+                var excelList = result.Select(x => new Receivable_Late_Pay_Excel
+                {
+                    CS_name = x.CS_name,
+                    amount_total = x.amount_total,
+                    month_total = x.month_total,
+                    RC_count = x.RC_count,
+                    RC_date = FuncHandler.ConvertGregorianToROC(x.RC_date),
+                    RC_amount = x.RC_amount,
+                    interest = x.interest,
+                    Rmoney = x.Rmoney,
+                    RemainingPrincipal = Convert.ToDecimal(x.RemainingPrincipal),
+                    DelayDay = x.DelayDay
+                }).ToList();
+
+                var Excel_Headers = new Dictionary<string, string>
+                {
+                    {"index","序號" },
+                    { "CS_name", "客戶姓名" },
+                    { "amount_total", "總金額" },
+                    { "month_total", "期數" },
+                    { "RC_count", "第幾期" },
+                    { "RC_date", "本期繳款日" },
+                    { "RC_amount", "月付金" },
+                    { "interest", "利息" },
+                    { "Rmoney", "償還本金" },
+                    { "RemainingPrincipal", "本金餘額" },
+                    { "DelayDay", "延滯天數" }
+                };
+
+                var fileBytes = FuncHandler.ReceivableLatePayExcel(excelList, Excel_Headers);
+                var fileName = "逾期繳款" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
         #endregion
 
         #region 應收帳款-逾放比
+        /// <summary>
+        /// 逾放比明細資料查詢 RC_Over_Rel_Detail_LQuery/_Ajaxhandler.asp?method=GetOvDtl
+        /// </summary>
+        /// <param name="overDay">60</param>
+        /// <param name="planNum">K0051</param>
+        /// <returns></returns>
+        [HttpGet("RC_Over_Rel_Detail_LQuery")]
+        public ActionResult<ResultClass<string>> RC_Over_Rel_Detail_LQuery(int overDay,string planNum)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
 
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"SELECT RC_count,HA.CS_name,isnull(DATEDIFF(DAY,RC_date,CASE WHEN check_pay_date IS NULL THEN SYSDATETIME() ELSE check_pay_date END),0) DelayDay, 
+                    RM.amount_total,RM.month_total,RM.amount_per_month 
+                    FROM Receivable_D RD 
+                    LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0' 
+                    LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0' 
+                    LEFT JOIN (SELECT U_num,U_BC FROM User_M) User_M ON User_M.U_num = HA.plan_num 
+                    LEFT JOIN House_sendcase HS ON HS.HS_id = RM.HS_id AND HS.del_tag='0' WHERE RD.del_tag = '0' 
+                    AND RD.RC_date <= SYSDATETIME() AND (RD.bad_debt_type='N') 
+                    AND (RD.cancel_type='N') AND RM.RCM_id IS NOT NULL 
+                    AND check_pay_type='N' AND RD.check_pay_date IS NULL/*未繳款*/ 
+                    AND (RD.check_pay_date IS NULL OR RD.check_pay_date >= SYSDATETIME()) 
+                    AND isnull(DATEDIFF(DAY,RC_date,CASE WHEN check_pay_date IS NULL THEN SYSDATETIME() ELSE check_pay_date END), 0) > @overDay
+                    AND convert(varchar(15), RD.RCM_ID)+'-'+ convert(varchar(3), (RC_count)) 
+                    in (
+                         SELECT convert(varchar(15),RD.RCM_ID)+'-'+ convert(varchar(3),Min(RC_count)) RC_count 
+                          FROM Receivable_D RD 
+                          LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0' 
+                          LEFT JOIN House_apply ON HA.HA_id = RM.HA_id AND HA.del_tag='0' 
+                          LEFT JOIN (SELECT U_num,U_BC FROM User_M) User_M ON User_M.U_num = HA.plan_num 
+                          LEFT JOIN House_sendcase HS ON HS.HS_id = RM.HS_id AND HS.del_tag='0' 
+                          WHERE RD.del_tag = '0' AND RD.RC_date <= SYSDATETIME() AND (RD.bad_debt_type='N') 
+                          AND (RD.cancel_type='N') AND RM.RCM_id IS NOT NULL 
+                          AND check_pay_type='N' AND RD.check_pay_date IS NULL/*未繳款*/ 
+                          AND (RD.check_pay_date IS NULL OR RD.check_pay_date >= SYSDATETIME() ) 
+                          AND isnull(DATEDIFF(DAY, RC_date, CASE WHEN check_pay_date IS NULL THEN SYSDATETIME() ELSE check_pay_date END),0) > @overDay
+                          GROUP BY RD.RCM_ID
+                       ) and plan_num=@plan_num
+                    ORDER BY RD.RC_date,CS_name ";
+                parameters.Add(new SqlParameter("@overDay", overDay));
+                parameters.Add(new SqlParameter("@plan_num", planNum));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 逾放比查詢 RC_Over_Rel_LQuery/RC_over_release.asp
+        /// </summary>
+        /// <param name="overDay">60</param>
+        /// <returns></returns>
+        [HttpGet("RC_Over_Rel_LQuery")]
+        public ActionResult<ResultClass<string>> RC_Over_Rel_LQuery(int overDay)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"SELECT BC_name,Tol.*,isnull(OV.OV_Count,0) OV_Count,isnull(OV_total, 0) OV_total,M.u_name,
+                    FORMAT(ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100,2),'N2') + '%' OV_Rate 
+                    FROM (
+                           SELECT plan_num,count(plan_num) TOT_Count,sum(amount_total) amount_total    
+                    	   FROM ( 
+                    	          SELECT HA.plan_num,DATEDIFF(DAY,RD.RC_date,SYSDATETIME()) DiffDay,RM.amount_total 
+                    			  FROM (
+                    			          SELECT RCM_id,min(RC_count) RC_count,min(RC_date) RC_date 
+                    					  FROM Receivable_D 			
+                    					  WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N' GROUP BY RCM_id 		
+                    				   ) RD 		
+                    			  LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0' 		
+                    			  LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0' 		
+                    			  WHERE RM.RCM_id IS NOT NULL
+                    		    ) OV GROUP BY plan_num 
+                    	) Tol 
+                    LEFT JOIN ( 
+                                 SELECT plan_num,count(plan_num) OV_Count,sum(amount_total) OV_total 
+                    			 FROM (
+                    			        SELECT HA.plan_num,DATEDIFF(DAY,RD.RC_date,SYSDATETIME()) DiffDay,RM.amount_total 
+                    					FROM ( 
+                    					        SELECT RCM_id,min(RC_count) RC_count,min(RC_date) RC_date FROM Receivable_D 			
+                    							WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N' GROUP BY RCM_id 		 
+                    						 ) RD 			
+                    				    LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0' 			
+                    				    LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0' 			
+                    				    WHERE RM.RCM_id IS NOT NULL AND (DATEDIFF(DAY,RD.RC_date,SYSDATETIME()) > @overDay) 	  
+                    				 ) OV GROUP BY plan_num    
+                    		  ) OV ON Tol.plan_num=OV.plan_num  
+                    Left Join User_M M on Tol.plan_num=M.u_num    
+                    LEFT JOIN (
+                    		    SELECT a.item_D_name BC_name,a.item_D_code FROM Item_list a WHERE a.item_M_code = 'branch_company' AND a.item_D_type='Y'
+                    		  ) U on M.U_BC =U.item_D_code  
+                    where isnull(OV.OV_Count, 0) <> 0  ORDER BY M.U_BC,ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) desc,Tol.plan_num";
+                parameters.Add(new SqlParameter("@overDay", overDay));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 逾放比查詢Excel下載 RC_Over_Rel_Excel/RC_over_release.asp
+        /// </summary>
+        [HttpPost("RC_Over_Rel_Excel")]
+        public IActionResult RC_Over_Rel_Excel(int overDay)
+        {
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"SELECT BC_name,Tol.*,isnull(OV.OV_Count,0) OV_Count,isnull(OV_total, 0) OV_total,M.u_name,
+                    FORMAT(ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100,2),'N2') + '%' OV_Rate 
+                    FROM (
+                           SELECT plan_num,count(plan_num) TOT_Count,sum(amount_total) amount_total    
+                    	   FROM ( 
+                    	          SELECT HA.plan_num,DATEDIFF(DAY,RD.RC_date,SYSDATETIME()) DiffDay,RM.amount_total 
+                    			  FROM (
+                    			          SELECT RCM_id,min(RC_count) RC_count,min(RC_date) RC_date 
+                    					  FROM Receivable_D 			
+                    					  WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N' GROUP BY RCM_id 		
+                    				   ) RD 		
+                    			  LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0' 		
+                    			  LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0' 		
+                    			  WHERE RM.RCM_id IS NOT NULL
+                    		    ) OV GROUP BY plan_num 
+                    	) Tol 
+                    LEFT JOIN ( 
+                                 SELECT plan_num,count(plan_num) OV_Count,sum(amount_total) OV_total 
+                    			 FROM (
+                    			        SELECT HA.plan_num,DATEDIFF(DAY,RD.RC_date,SYSDATETIME()) DiffDay,RM.amount_total 
+                    					FROM ( 
+                    					        SELECT RCM_id,min(RC_count) RC_count,min(RC_date) RC_date FROM Receivable_D 			
+                    							WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N' GROUP BY RCM_id 		 
+                    						 ) RD 			
+                    				    LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0' 			
+                    				    LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0' 			
+                    				    WHERE RM.RCM_id IS NOT NULL AND (DATEDIFF(DAY,RD.RC_date,SYSDATETIME()) > @overDay) 	  
+                    				 ) OV GROUP BY plan_num    
+                    		  ) OV ON Tol.plan_num=OV.plan_num  
+                    Left Join User_M M on Tol.plan_num=M.u_num    
+                    LEFT JOIN (
+                    		    SELECT a.item_D_name BC_name,a.item_D_code FROM Item_list a WHERE a.item_M_code = 'branch_company' AND a.item_D_type='Y'
+                    		  ) U on M.U_BC =U.item_D_code  
+                    where isnull(OV.OV_Count, 0) <> 0  ORDER BY M.U_BC,ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) desc,Tol.plan_num";
+                parameters.Add(new SqlParameter("@overDay", overDay));
+                #endregion
+                var excelList = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row=> new Receivable_Over_Rel_Excel
+                {
+                    BC_name = row.Field<string>("BC_name"),
+                    u_name = row.Field<string>("BC_name"),
+                    ToT_Count = row.Field<int>("ToT_Count"),
+                    amount_total = row.Field<decimal>("amount_total"),
+                    OV_Count = row.Field<int>("OV_Count"),
+                    OV_total = row.Field<decimal>("OV_total"),
+                    OV_Rate = row.Field<string>("OV_Rate")
+                }).ToList();
+
+                var Excel_Headers = new Dictionary<string, string>
+                {
+                    {"index","序號" },
+                    { "BC_name", "客戶姓名" },
+                    { "u_name", "總金額" },
+                    { "ToT_Count", "期數" },
+                    { "amount_total", "第幾期" },
+                    { "OV_Count", "本期繳款日" },
+                    { "OV_total", "月付金" },
+                    { "OV_Rate", "利息" }
+                };
+
+                var fileBytes = FuncHandler.ReceivableOverRelExcel(excelList, Excel_Headers);
+                var fileName = "逾放比" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 各區逾放比明細資料查詢 RC_Over_Rel_Area_LQuery/RC_over_release.asp
+        /// </summary>
+        [HttpGet("RC_Over_Rel_Area_LQuery")]
+        public ActionResult<ResultClass<string>> RC_Over_Rel_Area_LQuery(int overDay)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"SELECT BC_name,Tol.*,isnull(OV.OV_Count, 0)OV_Count,isnull(OV_total, 0)OV_total,
+                    FORMAT(ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2),'N2') + '%' OV_Rate
+                    FROM (
+                            SELECT U_BC,count(U_BC)TOT_Count,sum(amount_total)amount_total  
+                            FROM (
+                    	           SELECT M.U_BC,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total  
+                                   FROM (
+                    		              SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date  
+                                          FROM Receivable_D  
+                                          WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N'  
+                                          GROUP BY RCM_id
+                    				    ) RD  
+                                   LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id  
+                                   LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id AND RM.HS_id = HS.HS_id LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id   
+                     	           LEFT JOIN User_M M ON HA.plan_num=M.u_num WHERE RM.RCM_id IS NOT NULL AND RM.del_tag='0' AND HA.del_tag='0'   
+                    	         ) OV  
+                            GROUP BY U_BC
+                    	  ) Tol  
+                    LEFT JOIN (   
+                     	        SELECT U_BC,count(U_BC) OV_Count,sum(amount_total) OV_total 
+                    			FROM (
+                    			       SELECT M.U_BC,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total 
+                    				   FROM (
+                    					      SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date  
+                                              FROM Receivable_D  
+                                              WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N'  
+                                              GROUP BY RCM_id
+                    						) RD  
+                                       LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0'  
+                                       LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0'  
+                     	               LEFT JOIN User_M M ON HA.plan_num=M.u_num WHERE RM.RCM_id IS NOT NULL 
+                                       AND (DATEDIFF(DAY,RD.RC_date,SYSDATETIME()) > @overDay ) 
+                    			     ) OV  
+                                GROUP BY U_BC
+                    		  ) OV ON Tol.U_BC=OV.U_BC   
+                    LEFT JOIN (
+                    		    SELECT a.item_D_name BC_name,a.item_D_code  
+                                FROM Item_list a   
+                                WHERE a.item_M_code = 'branch_company' AND a.item_D_type='Y'  
+                              ) U on Tol.U_BC =U.item_D_code  
+                    ORDER BY Tol.U_BC, ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) DESC ";
+                parameters.Add(new SqlParameter("@overDay", overDay));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 各專案逾放比明細資料查詢 RC_Over_Rel_Area_LQuery/RC_over_release.asp
+        /// </summary>
+        [HttpGet("RC_Over_Rel_Case_LQuery")]
+        public ActionResult<ResultClass<string>> RC_Over_Rel_Case_LQuery(int overDay)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"SELECT Tol.*,isnull(OV.OV_Count, 0)OV_Count,isnull(OV_total, 0)OV_total,
+                    FORMAT(ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2),'N2') + '%' OV_Rate								  
+                    FROM (
+                           SELECT pro_name,count(pro_name)TOT_Count,sum(amount_total)amount_total													  
+                           FROM	(
+                    	          SELECT pro_name,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total																				  
+                                  FROM (
+                    			         SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date											  
+                                         FROM Receivable_D																					  
+                                         WHERE del_tag = '0'AND check_pay_type='N' AND bad_debt_type='N'AND cancel_type='N'					  
+                                         GROUP BY RCM_id
+                    				   ) RD																				  
+                                  LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id													  
+                                  LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id and  RM.HS_id = HS.HS_id 							  
+                                  LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id														  
+                     	          LEFT JOIN (																										  
+                     			              SELECT HP_project_id,P.project_title,item_D_name pro_name 
+                    						  FROM House_pre_project P				  
+                     			              left join (																								  
+                     				                      SELECT item_D_code, item_D_name 
+                    									  FROM Item_list												  
+                     				                      WHERE item_M_code = 'project_title' AND item_D_type='Y'										  
+                     			                        ) I on case when P.project_title='PJ00001' then 'PJ00005'else P.project_title end = I.item_D_code WHERE P.del_tag='0'										  
+                     	                    ) P on HS.HP_project_id=P.HP_project_id																  
+                                   WHERE RM.RCM_id IS NOT NULL AND RM.del_tag='0' AND HA.del_tag='0'  AND HS.del_tag='0'	
+                    			 ) OV									  
+                           GROUP BY pro_name) Tol																					  
+                    LEFT JOIN (																			
+                     	        SELECT pro_name,count(pro_name)OV_Count,sum(amount_total)OV_total										  
+                                FROM (
+                    			       SELECT DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total,pro_name						  
+                                       FROM	(
+                    				          SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date											  
+                                              FROM Receivable_D																					  
+                                              WHERE del_tag = '0'AND check_pay_type='N' AND bad_debt_type='N'									  
+                     		                  AND cancel_type='N' GROUP BY RCM_id
+                    						) RD															  
+                                　　　　LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id													  
+                     	        　　　　LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id and  RM.HS_id = HS.HS_id 							  
+                                　　　　LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id														  
+                                　　　　LEFT JOIN (																										  
+                     			            　　　  SELECT HP_project_id,P.project_title,item_D_name pro_name FROM House_pre_project P				  
+                     			            　　　  left join (																								  
+                     				                           SELECT item_D_code, item_D_name FROM Item_list 												  
+                     				                           WHERE item_M_code = 'project_title' AND item_D_type='Y'										  
+                     			                             ) I on case when P.project_title='PJ00001' then 'PJ00005'else P.project_title end = I.item_D_code WHERE P.del_tag='0'										  
+                     	                         ) P on HS.HP_project_id=P.HP_project_id																  
+                    　　　　　　　       WHERE RM.RCM_id IS NOT NULL AND RM.del_tag='0' AND HA.del_tag='0' AND HS.del_tag='0'									  
+                    　　　　　　　       AND (DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) > 60 )
+                    　　　　　        ) OV 
+                                group by pro_name) OV ON Tol.pro_name=OV.pro_name																				   
+                    ORDER BY Tol.pro_name,ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) DESC";
+                parameters.Add(new SqlParameter("@overDay", overDay));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
         #endregion
 
         #region 應收帳款-本金餘額比

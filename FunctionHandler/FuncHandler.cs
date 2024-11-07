@@ -1726,7 +1726,7 @@ namespace KF_WebAPI.FunctionHandler
             }
         }
 
-        public static byte[] ReceivableNewExcel(List<Receivable_New_Excel> items, Dictionary<string, string> headers)
+        public static byte[] ReceivableCollExcel(List<Receivable_Coll_Excel> items, Dictionary<string, string> headers)
         {
             if (items == null || items.Count == 0)
             {
@@ -1783,6 +1783,133 @@ namespace KF_WebAPI.FunctionHandler
                 worksheet.Cells[rowIndex + 1, 10].Value = items.Sum(x => x.Rmoney);
                 worksheet.Cells[rowIndex + 1, 11].Style.Numberformat.Format = "#,##0";
                 worksheet.Cells[rowIndex + 1, 11].Value = items.Sum(x => x.RemainingPrincipal);
+
+                // 添加框線
+                var range = worksheet.Cells[1, 1, rowIndex, headers.Count];
+                range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+
+                // 自動調整列寬
+                worksheet.Cells.AutoFitColumns();
+
+                return package.GetAsByteArray();
+            }
+        }
+
+        public static byte[] ReceivableLatePayExcel(List<Receivable_Late_Pay_Excel> items, Dictionary<string, string> headers)
+        {
+            if (items == null || items.Count == 0)
+            {
+                throw new ArgumentException("列表不能為 null 或空。", nameof(items));
+            }
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Sheet0");
+
+                // 添加表頭行
+                int headerIndex = 1;
+                foreach (var header in headers)
+                {
+                    var cell = worksheet.Cells[1, headerIndex++];
+                    cell.Value = header.Value;
+                    // 設置儲存格底色為淺藍色
+                    cell.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    cell.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                }
+
+                int rowIndex = 1;
+                int colIndex = 1;
+                int index = 1;
+                foreach (var item in items)
+                {
+                    colIndex = 1;
+                    rowIndex++; // 從第二行開始填充數據
+                    worksheet.Cells[rowIndex, colIndex++].Value = index++;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.CS_name;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.amount_total;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.month_total;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RC_count;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RC_date;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RC_amount;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.interest;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.Rmoney;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RemainingPrincipal;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.DelayDay;
+                }
+
+                worksheet.Cells[rowIndex + 1, 7].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex + 1, 7].Value = items.Sum(x => x.RC_amount);
+                worksheet.Cells[rowIndex + 1, 8].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex + 1, 8].Value = items.Sum(x => x.interest);
+                worksheet.Cells[rowIndex + 1, 9].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex + 1, 9].Value = items.Sum(x => x.Rmoney);
+                worksheet.Cells[rowIndex + 1, 10].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex + 1, 10].Value = items.Sum(x => x.RemainingPrincipal);
+
+                // 添加框線
+                var range = worksheet.Cells[1, 1, rowIndex, headers.Count];
+                range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+
+                // 自動調整列寬
+                worksheet.Cells.AutoFitColumns();
+
+                return package.GetAsByteArray();
+            }
+        }
+
+        public static byte[] ReceivableOverRelExcel(List<Receivable_Over_Rel_Excel> items, Dictionary<string, string> headers)
+        {
+            if (items == null || items.Count == 0)
+            {
+                throw new ArgumentException("列表不能為 null 或空。", nameof(items));
+            }
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Sheet0");
+
+                // 添加表頭行
+                int headerIndex = 1;
+                foreach (var header in headers)
+                {
+                    var cell = worksheet.Cells[1, headerIndex++];
+                    cell.Value = header.Value;
+                    // 設置儲存格底色為淺藍色
+                    cell.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    cell.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                }
+
+                int rowIndex = 1;
+                int colIndex = 1;
+                int index = 1;
+                foreach (var item in items)
+                {
+                    colIndex = 1;
+                    rowIndex++; // 從第二行開始填充數據
+                    worksheet.Cells[rowIndex, colIndex++].Value = index++;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.BC_name;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.u_name;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.ToT_Count;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.amount_total;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.OV_Count;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.OV_total;
+                    double rate = double.Parse(item.OV_Rate.TrimEnd('%')) / 100;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "0.00%";
+                    worksheet.Cells[rowIndex, colIndex++].Value = rate;
+                }
 
                 // 添加框線
                 var range = worksheet.Cells[1, 1, rowIndex, headers.Count];
