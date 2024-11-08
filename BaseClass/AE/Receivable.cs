@@ -242,4 +242,62 @@
         public decimal OV_total { get; set; }
         public string OV_Rate { get; set; }
     }
+
+    public class Receivable_ROC_YYYMM_SE
+    {
+        public List<Receivable_ROC_YYYMM_S> ROC_Date_S { get; set; }
+        public List<Receivable_ROC_YYYMM_E> ROC_Date_E { get; set; }
+    }
+    public class Receivable_ROC_YYYMM_S
+    {
+        public string ROC_YYYMM { get; set; }
+        public string Gre_YYYYMM { get;set; }
+    }
+    public class Receivable_ROC_YYYMM_E
+    {
+        public string ROC_YYYMM { get; set; }
+        public string Gre_YYYYMM { get; set; }
+    }
+    public class Receivable_Repay_req
+    {
+        public string Date_S { get; set; }
+        public string Date_E { get; set; }
+    }
+    public class Receivable_Repay_res
+    {
+        public string RC_date { get; set; }
+        public string yyyMM { get; set; }
+        public int ToCount { get; set; }
+        public int YCount { get; set; }
+        public int NCount { get; set; }
+        public int BCount { get; set; }
+        public int SCount { get; set; }
+        public string str_interest_T { get; set; }
+        public string str_interest { get; set; }
+        public string str_interest_U { get; set; }
+        public string str_Rmoney_T { get; set; }    
+        public string str_Rmoney { get; set; }
+        public string str_Rmoney_U { get; set; }
+        public string str_RemainingPrincipal_BB { get; set; }
+        public string str_S_AMT { get; set; }
+        public string str_RemainingPrincipal { get; set; }
+    }
+    public class Receivable_Repay_Excel
+    {
+        public string yyyMM { get; set; }
+        public int ToCount { get; set; }
+        public int YCount { get; set; }
+        public int NCount { get; set; }
+        public int BCount { get; set; }
+        public int SCount { get; set; }
+        public decimal interest_T { get; set; }
+        public decimal interest { get; set; }
+        public decimal interest_U { get; set; }
+        public decimal Rmoney_T { get; set; }
+        public decimal Rmoney { get; set; }
+        public decimal Rmoney_U { get; set; }
+        public decimal RemainingPrincipal_BB { get; set; }
+        public decimal S_AMT { get; set; }
+        public decimal RemainingPrincipal { get; set; }
+    }
 }

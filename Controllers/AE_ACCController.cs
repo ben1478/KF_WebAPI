@@ -2307,16 +2307,453 @@ namespace KF_WebAPI.Controllers
         }
         #endregion
 
-        #region 應收帳款-本金餘額比
+        #region 應收帳款-本金餘額比 RC_repay.asp
+        /// <summary>
+        /// 提供應繳查詢年月 GetSendcaseYYYMM/RC_repay.asp
+        /// </summary>
+        [HttpGet("GetRDYYYMM")]
+        public ActionResult<ResultClass<string>> GetRDYYYMM()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
 
+            try
+            {
+                Receivable_ROC_YYYMM_SE resultData = new Receivable_ROC_YYYMM_SE();
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters_s = new List<SqlParameter>();
+                var parameters_e = new List<SqlParameter>();
+                var T_SQL_S = @"select distinct convert(varchar(4),(convert(varchar(4),RC_date,126)-1911)) + '-' 
+                    + convert(varchar(2),month(RC_date)) yyyMM,convert(varchar(7),D.RC_date,126) yyyymm 
+                    from Receivable_D D where (check_pay_type='Y' OR check_pay_type='S' AND check_pay_date IS NOT NULL) 
+                    and D.RC_date > DATEADD(month,-12,SYSDATETIME()) 
+                    order by convert(varchar(7),D.RC_date,126) desc";
+                var T_SQL = @"select distinct top 1 convert(varchar(7),RC_date,126) yyyymm 
+                    from Receivable_D 
+                    where check_pay_type='Y' 
+                    order by convert(varchar(7),RC_date,126) desc";
+                var dateM = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(x => x.Field<string>("yyyymm")).First();
+                var T_SQL_E = @"select CAST(year(DATEADD(month,3,convert(datetime,@dateM + '-01'))) - 1911 as varchar) + '-' 
+                    + CAST(month(DATEADD(month,4,convert(datetime,@dateM + '-01'))) as varchar) yyyMM,
+                    convert(varchar(7),DATEADD(month,4,convert(datetime,@dateM + '-01')),126) yyyymm 
+                    union all 
+                    select CAST(year(DATEADD(month,3,convert(datetime,@dateM + '-01'))) - 1911 as varchar) + '-' 
+                    + CAST(month(DATEADD(month,3,convert(datetime,@dateM + '-01'))) as varchar) yyyMM,
+                    convert(varchar(7),DATEADD(month,3,convert(datetime,@dateM + '-01')),126) yyyymm 
+                    union all 
+                    select CAST(year(DATEADD(month,2,convert(datetime,@dateM + '-01'))) - 1911 as varchar) + '-' 
+                    + CAST(month(DATEADD(month,2,convert(datetime,@dateM + '-01'))) as varchar) yyyMM,
+                    convert(varchar(7),DATEADD(month,2, convert(datetime,@dateM + '-01')),126)yyyymm 
+                    union all
+                    select CAST(year(DATEADD(month,1, convert(datetime,@dateM + '-01')))-1911 as varchar) + '-' 
+                    + CAST(month(DATEADD(month,1,convert(datetime,@dateM + '-01'))) as varchar) yyyMM,
+                    convert(varchar(7),DATEADD(month,1,convert(datetime,@dateM + '-01')),126) yyyymm
+                    union all
+                    select distinct convert(varchar(4),(convert(varchar(4),RC_date,126)-1911)) + '-' 
+                    + convert(varchar(2),month(RC_date)) yyyMM,convert(varchar(7),D.RC_date,126) yyyymm 
+                    from Receivable_D D where (check_pay_type='Y' OR check_pay_type='S' AND check_pay_date IS NOT NULL) 
+                    and D.RC_date > DATEADD(month,-12,SYSDATETIME())";
+                parameters_e.Add(new SqlParameter("@dateM", dateM));
+                #endregion
+                var dateS = _adoData.ExecuteSQuery(T_SQL_S).AsEnumerable().Select(row => new Receivable_ROC_YYYMM_S 
+                {
+                    ROC_YYYMM = row.Field<string>("yyyMM"),
+                    Gre_YYYYMM = row.Field<string>("yyyymm")
+                }).ToList();
+                var dateE = _adoData.ExecuteQuery(T_SQL_E,parameters_e).AsEnumerable().Select(row => new Receivable_ROC_YYYMM_E
+                {
+                    ROC_YYYMM = row.Field<string>("yyyMM"),
+                    Gre_YYYYMM = row.Field<string>("yyyymm")
+                }).OrderByDescending(x=>x.Gre_YYYYMM).ToList();
+
+                resultData.ROC_Date_S = dateS;
+                resultData.ROC_Date_E = dateE;
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(resultData);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 本金餘額表查詢 RC_Repay_LQuery/RC_repay.asp
+        /// </summary>
+        /// <param name="DateS">2024-08</param>
+        /// <param name="DateE">2024-11</param>
+        [HttpGet("RC_Repay_LQuery")]
+        public ActionResult<ResultClass<string>> RC_Repay_LQuery(string DateS,string DateE)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL_SP = @"exec UpdateRemainingPrincipal";
+                var T_SQL = @"SELECT sum(Rmoney_T) - sum(Rmoney) Rmoney_U,sum(interest_T) - sum(interest) interest_U,convert(varchar(7),RC_date,126) RC_date, 
+                    convert(varchar(4),(convert(varchar(4),RC_date, 126) - 1911)) + '-' + convert(varchar(2),month(RC_date)) yyyMM,         
+                    sum(ToCount) ToCount,sum(YCount) YCount,sum(NCount) NCount,sum(BCount) BCount,sum(SCount) SCount,sum(Rmoney) Rmoney,
+                    sum(Rmoney_T) Rmoney_T,sum(interest) interest,sum(interest_T) interest_T,sum(RemainingPrincipal) RemainingPrincipal,                                              
+                    sum(S_AMT) S_AMT,sum(RemainingPrincipal_BB) RemainingPrincipal_BB                                                   
+                    FROM (                                                                                                                        
+                     	   SELECT  [RCM_id],1 ToCount,case when check_pay_Type ='Y' then 1 else 0 end YCount,case when check_pay_Type ='N' then 1 else 0 end NCount     
+                     	   ,case when check_pay_Type ='S' then 1 else 0 end SCount,case when check_pay_Type ='B' then 1 else 0 end BCount     
+                           ,[cs_name],[check_pay_Type],[check_pay_date],[RC_date],[RC_count],RemainingPrincipal,[interest] interest_T,[Rmoney] Rmoney_T                                                                                           
+                     	   ,[interest] - (case when [check_pay_Type] ='Y'then 0 when [check_pay_Type] ='N' then [interest] else 0 end) interest    
+                           ,[Rmoney]-(case when [check_pay_Type]='Y'then 0 when [check_pay_Type]='N' then [Rmoney] else 0 end) Rmoney          
+                           ,[bad_debt_date],[S_AMT],case when check_pay_Type ='B' then S_AMT else 0 end RemainingPrincipal_BB                  
+                           FROM [dbo].[view_ACC_Receivable]                                                                                 
+                         ) S  
+                    where convert(varchar(7), RC_date, 126)between @DateS and @DateE
+                    GROUP BY convert(varchar(7), RC_date, 126)                                                                                 
+                    ,convert(varchar(4),(convert(varchar(4), RC_date, 126)-1911))+'-'+convert(varchar(2), month(RC_date))                      
+                    ORDER BY convert(varchar(7), RC_date, 126)";
+                parameters.Add(new SqlParameter("@DateS", DateS));
+                parameters.Add(new SqlParameter("@DateE", DateE));
+                #endregion
+                //優先執行資料更新
+                _adoData.ExecuteSQuery(T_SQL_SP);
+                var resultList = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Repay_res
+                {
+                    RC_date = row.Field<string>("RC_date"),
+                    yyyMM = row.Field<string>("yyyMM"),
+                    ToCount = row.Field<int>("ToCount"),
+                    YCount = row.Field<int>("YCount"),
+                    NCount = row.Field<int>("NCount"),
+                    BCount = row.Field<int>("BCount"),
+                    SCount = row.Field<int>("SCount"),
+                    str_interest_T = row.Field<decimal>("interest_T").ToString("N0"),
+                    str_interest = row.Field<decimal>("interest").ToString("N0"),
+                    str_interest_U = row.Field<decimal>("interest_U").ToString("N0"),
+                    str_Rmoney_T = row.Field<decimal>("Rmoney_T").ToString("N0"),
+                    str_Rmoney = row.Field<decimal>("Rmoney").ToString("N0"),
+                    str_Rmoney_U = row.Field<decimal>("Rmoney_U").ToString("N0"),
+                    str_RemainingPrincipal_BB = row.Field<decimal>("RemainingPrincipal_BB").ToString("N0"),
+                    str_S_AMT = row.Field<decimal>("S_AMT").ToString("N0"),
+                    str_RemainingPrincipal = row.Field<decimal>("RemainingPrincipal").ToString("N0"),
+                }).ToList();
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(resultList);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 本金餘額表查詢Excel下載 RC_Repay_LQuery/RC_repay.asp
+        /// </summary>
+        [HttpPost("RC_Repay_Excel")]
+        public IActionResult RC_Repay_Excel(string DateS, string DateE)
+        {
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL_SP = @"exec UpdateRemainingPrincipal";
+                var T_SQL = @"SELECT sum(Rmoney_T) - sum(Rmoney) Rmoney_U,sum(interest_T) - sum(interest) interest_U,convert(varchar(7),RC_date,126) RC_date, 
+                    convert(varchar(4),(convert(varchar(4),RC_date, 126) - 1911)) + '-' + convert(varchar(2),month(RC_date)) yyyMM,         
+                    sum(ToCount) ToCount,sum(YCount) YCount,sum(NCount) NCount,sum(BCount) BCount,sum(SCount) SCount,sum(Rmoney) Rmoney,
+                    sum(Rmoney_T) Rmoney_T,sum(interest) interest,sum(interest_T) interest_T,sum(RemainingPrincipal) RemainingPrincipal,                                              
+                    sum(S_AMT) S_AMT,sum(RemainingPrincipal_BB) RemainingPrincipal_BB                                                   
+                    FROM (                                                                                                                        
+                     	   SELECT  [RCM_id],1 ToCount,case when check_pay_Type ='Y' then 1 else 0 end YCount,case when check_pay_Type ='N' then 1 else 0 end NCount     
+                     	   ,case when check_pay_Type ='S' then 1 else 0 end SCount,case when check_pay_Type ='B' then 1 else 0 end BCount     
+                           ,[cs_name],[check_pay_Type],[check_pay_date],[RC_date],[RC_count],RemainingPrincipal,[interest] interest_T,[Rmoney] Rmoney_T                                                                                           
+                     	   ,[interest] - (case when [check_pay_Type] ='Y'then 0 when [check_pay_Type] ='N' then [interest] else 0 end) interest    
+                           ,[Rmoney]-(case when [check_pay_Type]='Y'then 0 when [check_pay_Type]='N' then [Rmoney] else 0 end) Rmoney          
+                           ,[bad_debt_date],[S_AMT],case when check_pay_Type ='B' then S_AMT else 0 end RemainingPrincipal_BB                  
+                           FROM [dbo].[view_ACC_Receivable]                                                                                 
+                         ) S  
+                    where convert(varchar(7), RC_date, 126)between @DateS and @DateE
+                    GROUP BY convert(varchar(7), RC_date, 126)                                                                                 
+                    ,convert(varchar(4),(convert(varchar(4), RC_date, 126)-1911))+'-'+convert(varchar(2), month(RC_date))                      
+                    ORDER BY convert(varchar(7), RC_date, 126)";
+                parameters.Add(new SqlParameter("@DateS", DateS));
+                parameters.Add(new SqlParameter("@DateE", DateE));
+                #endregion
+                var excelList = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Repay_Excel
+                {
+                    yyyMM = row.Field<string>("yyyMM"),
+                    ToCount = row.Field<int>("ToCount"),
+                    YCount = row.Field<int>("YCount"),
+                    NCount = row.Field<int>("NCount"),
+                    BCount = row.Field<int>("BCount"),
+                    SCount = row.Field<int>("SCount"),
+                    interest_T = row.Field<decimal>("interest_T"),
+                    interest = row.Field<decimal>("interest"),
+                    interest_U = row.Field<decimal>("interest_U"),
+                    Rmoney_T = row.Field<decimal>("Rmoney_T"),
+                    Rmoney = row.Field<decimal>("Rmoney"),
+                    Rmoney_U = row.Field<decimal>("Rmoney_U"),
+                    RemainingPrincipal_BB = row.Field<decimal>("RemainingPrincipal_BB"),
+                    S_AMT = row.Field<decimal>("S_AMT"),
+                    RemainingPrincipal = row.Field<decimal>("RemainingPrincipal")
+                }).ToList();
+
+                var Excel_Headers = new Dictionary<string, string>
+                {
+                    {"index","序號" },
+                    { "yyyMM", "應繳年月" },
+                    { "ToCount", "總件數" },
+                    { "YCount", "已繳件數" },
+                    { "NCount", "未繳件數" },
+                    { "BCount", "呆帳件數" },
+                    { "SCount", "提前清償件數" },
+                    { "interest_T", "應收利息" },
+                    {"interest","已收利息" },
+                    {"interest_U","未收利息" },
+                    {"Rmoney_T","應償還本金" },
+                    {"Rmoney","已償還本金" },
+                    {"Rmoney_U","未償還本金" },
+                    {"RemainingPrincipal_BB","呆帳金額" },
+                    {"S_AMT","提前清償金" },
+                    {"RemainingPrincipal","總本金餘額" }
+                };
+
+                var fileBytes = FuncHandler.ReceivableRepayExcel(excelList, Excel_Headers);
+                var fileName = "本金餘額表" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 本金餘額表明細查詢 RC_Repay_Dateil_LQuery/_Ajaxhandler.asp?method=GetRePayDtl
+        /// </summary>
+        /// <param name="type">N:未繳,B:呆帳,S:提前清償</param>
+        /// <param name="date">2024-11</param>
+        /// <returns></returns>
+        [HttpGet("RC_Repay_Dat-l_LQuery")]
+        public ActionResult<ResultClass<string>> RC_Repay_Dateil_LQuery(string type,string date)
+        {
+            ResultClass<string> resultClass=new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "";
+                switch (type)
+                {
+                    case "N":
+                        T_SQL = @"select cs_name,convert(varchar(10),RC_date,126) RC_date,convert(varchar(10),check_pay_date,126) check_pay_date,RC_count,
+                                  FORMAT(interest,'N0'),FORMAT(Rmoney,'N0')
+                                  from view_ACC_Receivable 
+                                  where check_pay_type='N' AND convert(varchar(7),RC_date, 126) = @date 
+                                  order by RC_date";
+                        break;
+                    case "B":
+                        T_SQL = @"select cs_name,convert(varchar(10),bad_debt_date,126) bad_debt_date,FORMAT(RemainingPrincipal_BB,'N0') 
+                                  from 
+                                  (
+                                  SELECT D.RCM_id,check_pay_type,HA_id,B.bad_debt_date,RemainingPrincipal RemainingPrincipal_BB
+                                  FROM Receivable_D D
+                                  LEFT JOIN Receivable_M M ON M.RCM_id = D.RCM_id
+                                  LEFT JOIN (
+                                              select distinct RCM_id,bad_debt_date from Receivable_D 
+                                              where convert(varchar(7),bad_debt_date,126) = @date
+                                  			) B on M.RCM_id =B.RCM_id
+                                  WHERE convert(varchar,D.RCM_id) + '-' + convert(varchar,(RCD_id)) 
+                                  IN (
+                                  	   SELECT convert(varchar,RCM_id) + '-' + convert(varchar,MAX(RCD_id)) RCD_id 
+                                  	   FROM Receivable_D 
+                                  	   WHERE RCM_id IN (SELECT DISTINCT RCM_id FROM Receivable_D WHERE bad_debt_type = 'Y') 
+                                  	   AND bad_debt_type='N' GROUP BY RCM_id
+                                  	 )
+                                  ) M
+                                  LEFT JOIN House_apply HA ON HA.HA_id = M.HA_id
+                                  where HA.del_tag='0'";
+                        break;
+                    case "S":
+                        T_SQL = @"select convert(varchar(10),D.RC_date,126) RC_date,convert(varchar(10),D.check_pay_date,126) check_pay_date,cs_name,
+                                  A.RCM_id,D.RC_count,A.RCD_id,FORMAT(A.RemainingPrincipal,'N0') S_AMT,
+                                  replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(60)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'') RCM_note   
+                                  from 
+                                  (/*當期有繳款的資料*/																																																													
+                                    select RCM_id,RCD_id,RemainingPrincipal,convert(varchar(7),D.RC_date,126) RC_date,
+                                    convert(varchar(7),D.check_pay_date,126) check_pay_date 
+                                    from Receivable_D D 
+                                    where cast(RCM_id as varchar(20)) + '-' + cast((RCD_id)as varchar(20)) 
+                                    in ( SELECT cast(RCM_id as varchar(20)) + '-' + cast(max(RCD_id)as varchar(20)) 
+                                  	     from Receivable_D 
+                                  	     where RemainingPrincipal is not null and check_pay_type ='S'																				
+                                  	     group by RCM_id )
+                                    union all	
+                                    select D.RCM_id,RCD_id,M.amount_total RemainingPrincipal,convert(varchar(7),D.RC_date,126) RC_date,
+                                    convert(varchar(7),D.check_pay_date, 126) check_pay_date 
+                                    from Receivable_D D 
+                                    left join Receivable_M M   
+                                    left join House_apply H on M.HA_id=H.HA_id on D.RCM_id = M.RCM_id  
+                                    WHERE check_pay_type ='S' and RC_count=1 and check_pay_date is not null   
+                                    union all
+                                    select RCM_id,RCD_id,RemainingPrincipal,convert(varchar(7),D.RC_date,126) RC_date,
+                                    convert(varchar(7),D.check_pay_date,126) check_pay_date 
+                                    from Receivable_D D  
+                                    where cast(RCM_id as varchar(20)) + '-' + cast((RCD_id)as varchar(20)) 
+                                    in (/*有結清但當期無繳款的資料*/																																																					
+                                         SELECT cast(M.RCM_id as varchar(20)) + '-' + cast(max(RCD_id) as varchar(20)) RCD_id 
+                                         from Receivable_D D																																			
+                                         Left Join (
+                                  	                 select * from Receivable_M 
+                                  				     where RCM_id 
+                                  				     in (
+                                                          select M.RCM_id 
+                                                          from Receivable_D D																																																
+                                                          Left Join (	
+                                                                      select * from Receivable_M																																																	
+                                  　　			　　　                 where RCM_id not in (/*排除結清當期有繳款的資料*/																																																		
+                                                                                            select RCM_id from Receivable_D 
+                                  														    where cast(RCM_id as varchar(20)) + '-' + cast((RCD_id)as varchar(20)) 
+                                                                                            in ( SELECT cast(RCM_id as varchar(20)) + '-' + cast(max(RCD_id)as varchar(20)) 
+                                                                                                 from Receivable_D 
+                                  　　			　　　                                            where RemainingPrincipal is not null 
+                                                                                                 and check_pay_type ='S'																
+                                                                                                 group by RCM_id )																																																						
+                                                                                          )																																																							
+                                                                    ) M on D.RCM_id=M.RCM_id																																																		
+                                                          where cast(D.RCM_id as varchar(20)) + '-' + cast((RCD_id)as varchar(20)) 
+                                                          in (																																																						
+                                                               SELECT cast(RCM_id as varchar(20)) + '-' + cast(max(RCD_id)as varchar(20)) 
+                                                               from Receivable_D 
+                                                               where RemainingPrincipal is null and check_pay_type ='S'																	
+                                                               group by RCM_id ) 
+                                                               and M.RCM_id is not null																																																
+                                                             )																																																											
+                                                   ) M on D.RCM_id=M.RCM_id 
+                                         where check_pay_type='Y' and D.del_tag = '0' AND M.del_tag='0'																																																			
+                                  　　　　group by M.RCM_id 
+                                       )
+                                  ) A 																																																												
+                                  LEFT JOIN Receivable_D D ON A.RCM_id = D.RCM_id and  A.RCD_id = D.RCD_id																																											
+                                  LEFT JOIN Receivable_M M ON M.RCM_id = D.RCM_id																																																		
+                                  LEFT JOIN House_apply HA ON HA.HA_id = M.HA_id																																																		
+                                  LEFT JOIN House_sendcase HS ON HS.HS_id = M.HS_id																																																	
+                                  where convert(varchar(7), D.RC_date,126)=@date order by D.RC_date";
+                        break;
+                }
+                parameters.Add(new SqlParameter("@date", date));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
         #endregion
 
-        #region 資產數據分析
+        #region 資產數據分析 RC_Excess.asp
+        //資產數據分析查詢
+        //        select V.diffType, AmtTypeDesc, AmtType, count(V.diffType) Count, Format(sum(amount_total),'N0') amount_total,Tot_Amt,rowspan,
+        //Format(convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)),'N2') + '%' Rate
+        //from view_excess_base V
+        //left join(select sum(isnull(convert(int, get_amount),0)*10000) Tot_Amt
+        //            from House_sendcase H
+        //            LEFT JOIN House_apply A ON A.HA_id = H.HA_id
+        //            where H.del_tag = '0' AND A.del_tag= '0'
+        //            AND H.sendcase_handle_type= 'Y' AND isnull(H.Send_amount, '') <>''     
+        //			AND H.fund_company='FDCOM003' AND get_amount_type = 'GTAT002'
+        //          ) T on 1=1    
+        //left join(select diffType, count(diffType) rowspan
+        //            from (select diffType, AmtType, count(diffType) rowspan
+        //                   from view_excess_base
+        //                   where court_sale = ''--無法拍條件有這行 有法拍條件無這行
+        //                   group by diffType, AmtType
+        //                 ) a
+        //            group by diffType  
+        //          ) R on V.diffType=R.diffType
+        //where court_sale=''--無法拍條件有這行 有法拍條件無這行  
+        //group by AmtType,AmtTypeDesc,V.diffType,Tot_Amt,rowspan
+        //order by V.diffType, AmtType
+
+
+        //資產數據分析查詢Excel下載
+        //        select V.diffType, AmtTypeDesc, AmtType, count(V.diffType) Count, Format(sum(amount_total),'N0') amount_total,Tot_Amt,rowspan,
+        //Format(convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)),'N2') + '%' Rate
+        //from view_excess_base V
+        //left join(select sum(isnull(convert(int, get_amount),0)*10000) Tot_Amt
+        //            from House_sendcase H
+        //            LEFT JOIN House_apply A ON A.HA_id = H.HA_id
+        //            where H.del_tag = '0' AND A.del_tag= '0'
+        //            AND H.sendcase_handle_type= 'Y' AND isnull(H.Send_amount, '')<>''     
+        //			AND H.fund_company='FDCOM003' AND get_amount_type = 'GTAT002'
+        //          ) T on 1=1    
+        //left join(select diffType, count(diffType) rowspan
+        //            from (select diffType, AmtType, count(diffType) rowspan
+        //                   from view_excess_base
+        //                   where court_sale = ''--無法拍條件有這行 有法拍無這行
+        //                   group by diffType, AmtType
+        //                 ) a
+        //            group by diffType  
+        //          ) R on V.diffType=R.diffType
+        //where court_sale=''--無法拍條件有這行 有法拍無這行  
+        //group by AmtType,AmtTypeDesc,V.diffType,Tot_Amt,rowspan
+        //order by V.diffType, AmtType
+
+        //資產數據分析明細查詢 _Ajaxhandler.asp?method=GetExcess_base
+        //      if Method = "GetExcess_base" then
+        //          DiffType = request("DiffType")
+
+        //          AmtType = request("AmtType")
+
+        //          court_sale = request("court_sale")
+
+
+        //          tSQL =" SELECT cs_name,DiffDay,amount_total,RC_count,month_total,court_sale "
+        //	tSQL = tSQL & "  ,replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(max)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'')RCM_note,AmtTypeDesc,AmtType,DiffType  "
+        //	tSQL = tSQL & "   FROM dbo.view_excess_base  "
+        //	tSQL = tSQL & " where DiffType='"& DiffType &"' and  AmtType='"&AmtType&"'"
+        //	if court_sale="1" then
+
+        //	else
+        //		tSQL = tSQL & " and court_sale='' "
+        //	end if
+        //	tSQL = tSQL & " ORDER BY DiffDay "
+        //	'Response.write tSQL
+        //end if
+
+        //資產數據分析查詢明細Excel下載(是把所有的明細資料都抓出來呈現)
+
 
         #endregion
 
         #region 債權憑證
-
+        //債權憑證查詢
+        //債權憑證查詢Excel下載
+        //債權憑證資料查詢
+        //債權憑證資料修改
+        //債權憑證資料刪除
+        //新增債權憑證資料
         #endregion
     }
 }

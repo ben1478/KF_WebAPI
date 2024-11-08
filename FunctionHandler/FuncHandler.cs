@@ -1924,5 +1924,98 @@ namespace KF_WebAPI.FunctionHandler
                 return package.GetAsByteArray();
             }
         }
+
+        public static byte[] ReceivableRepayExcel(List<Receivable_Repay_Excel> items, Dictionary<string, string> headers)
+        {
+            if (items == null || items.Count == 0)
+            {
+                throw new ArgumentException("列表不能為 null 或空。", nameof(items));
+            }
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Sheet0");
+
+                // 添加表頭行
+                int headerIndex = 1;
+                foreach (var header in headers)
+                {
+                    var cell = worksheet.Cells[1, headerIndex++];
+                    cell.Value = header.Value;
+                    // 設置儲存格底色為淺藍色
+                    cell.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    cell.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                }
+
+                int rowIndex = 1;
+                int colIndex = 1;
+                int index = 1;
+                foreach (var item in items)
+                {
+                    colIndex = 1;
+                    rowIndex++; // 從第二行開始填充數據
+                    worksheet.Cells[rowIndex, colIndex++].Value = index++;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.yyyMM;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.ToCount;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.YCount;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.NCount;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.BCount;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.SCount;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.interest_T;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.interest;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.interest_U;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.Rmoney_T;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.Rmoney;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.Rmoney_U;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RemainingPrincipal_BB;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.S_AMT;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RemainingPrincipal;
+                }
+
+                //合併儲存格
+                rowIndex++;
+                worksheet.Cells[rowIndex, 1].Value = "總計：";
+                worksheet.Cells[rowIndex, 1, rowIndex, 7].Merge = true;
+                worksheet.Cells[rowIndex, 1, rowIndex, 7].Style.Font.Bold = true;
+
+                worksheet.Cells[rowIndex, 8].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 8].Value = items.Sum(x => x.interest_T);
+                worksheet.Cells[rowIndex, 9].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 9].Value = items.Sum(x => x.interest);
+                worksheet.Cells[rowIndex, 10].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 10].Value = items.Sum(x => x.interest_U);
+                worksheet.Cells[rowIndex, 11].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 11].Value = items.Sum(x => x.Rmoney_T);
+                worksheet.Cells[rowIndex, 12].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 12].Value = items.Sum(x => x.Rmoney);
+                worksheet.Cells[rowIndex, 13].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 13].Value = items.Sum(x => x.Rmoney_U);
+                worksheet.Cells[rowIndex, 14].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 14].Value = items.Sum(x => x.RemainingPrincipal_BB);
+                worksheet.Cells[rowIndex, 15].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 15].Value = items.Sum(x => x.S_AMT);
+
+                // 添加框線
+                var range = worksheet.Cells[1, 1, rowIndex - 1, headers.Count];
+                range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+
+                // 自動調整列寬
+                worksheet.Cells.AutoFitColumns();
+
+                return package.GetAsByteArray();
+            }
+        }
     }
 }
