@@ -2017,5 +2017,134 @@ namespace KF_WebAPI.FunctionHandler
                 return package.GetAsByteArray();
             }
         }
+
+        public static byte[] ReceivableExcessExcel(List<Receivable_Excess_Excel> items,Dictionary<string,string> headers)
+        {
+            if (items == null || items.Count == 0)
+            {
+                throw new ArgumentException("列表不能為 null 或空。", nameof(items));
+            }
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Sheet0");
+
+                // 添加表頭行
+                int headerIndex = 1;
+                foreach (var header in headers)
+                {
+                    var cell = worksheet.Cells[1, headerIndex++];
+                    cell.Value = header.Value;
+                    // 設置儲存格底色為淺藍色
+                    cell.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    cell.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                }
+
+                
+                int m1 = items.Where(x=>x.diffType=="M1").Count();
+                int m2 = items.Where(x => x.diffType == "M2").Count();
+                int m3 = items.Where(x => x.diffType == "M3").Count();
+
+                worksheet.Cells[2, 1].Value = "M1";
+                worksheet.Cells[2, 1, m1 + 1, 1].Merge = true; // 合併儲存格
+                worksheet.Cells[2, 1, m1 + 1, 1].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                worksheet.Cells[m1 + 2, 1].Value = "M2";
+                worksheet.Cells[m1 + 2, 1, m2 + m1 + 1, 1].Merge = true; // 合併儲存格
+                worksheet.Cells[m1 + 2, 1, m2 + m1 + 1, 1].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                worksheet.Cells[m2 + m1 + 2, 1].Value = "M3";
+                worksheet.Cells[m2 + m1 + 2, 1, m3 + m2 + m1 + 1, 1].Merge = true; // 合併儲存格
+                worksheet.Cells[m2 + m1 + 2, 1, m3 + m2 + m1 + 1, 1].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+
+                int rowIndex = 1;
+                int colIndex = 2;
+                foreach (var item in items)
+                {
+                    colIndex = 2;
+                    rowIndex++;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.AmtTypeDesc;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.Count;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.amount_total;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "0.00%";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.Rate / 100;
+                }
+
+                // 添加框線
+                var range = worksheet.Cells[1, 1, rowIndex, headers.Count];
+                range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+
+                // 自動調整列寬
+                worksheet.Cells.AutoFitColumns();
+
+                return package.GetAsByteArray();
+            }
+        }
+
+        public static byte[] ReceivableExcessDetailExcel(List<Receivable_Excess_Detail_Excel> items, Dictionary<string, string> headers)
+        {
+            if (items == null || items.Count == 0)
+            {
+                throw new ArgumentException("列表不能為 null 或空。", nameof(items));
+            }
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Sheet0");
+
+                // 添加表頭行
+                int headerIndex = 1;
+                foreach (var header in headers)
+                {
+                    var cell = worksheet.Cells[1, headerIndex++];
+                    cell.Value = header.Value;
+                    // 設置儲存格底色為淺藍色
+                    cell.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    cell.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                }
+
+                int m1 = items.Where(x => x.diffType == "M1").Count();
+                int m2 = items.Where(x => x.diffType == "M2").Count();
+                int m3 = items.Where(x => x.diffType == "M3").Count();
+
+                worksheet.Cells[2, 1].Value = "M1";
+                worksheet.Cells[2, 1, m1 + 1, 1].Merge = true; // 合併儲存格
+                worksheet.Cells[2, 1, m1 + 1, 1].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                worksheet.Cells[m1 + 2, 1].Value = "M2";
+                worksheet.Cells[m1 + 2, 1, m2 + m1 + 1, 1].Merge = true; // 合併儲存格
+                worksheet.Cells[m1 + 2, 1, m2 + m1 + 1, 1].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                worksheet.Cells[m2 + m1 + 2, 1].Value = "M3";
+                worksheet.Cells[m2 + m1 + 2, 1, m3 + m2 + m1 + 1, 1].Merge = true; // 合併儲存格
+                worksheet.Cells[m2 + m1 + 2, 1, m3 + m2 + m1 + 1, 1].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+
+                int rowIndex = 1;
+                int colIndex = 2;
+                foreach (var item in items)
+                {
+                    colIndex = 2;
+                    rowIndex++;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.AmtTypeDesc;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.Cs_name;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.DiffDay;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.amount_total;
+                    worksheet.Cells[rowIndex, colIndex++].Value = item.RCM_note;
+                }
+
+                // 添加框線
+                var range = worksheet.Cells[1, 1, rowIndex, headers.Count];
+                range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+
+                // 自動調整列寬
+                worksheet.Cells.AutoFitColumns();
+
+                return package.GetAsByteArray();
+            }
+        }
     }
 }

@@ -300,4 +300,27 @@
         public decimal S_AMT { get; set; }
         public decimal RemainingPrincipal { get; set; }
     }
+    public class Receivable_Excess_Excel
+    {
+        public string diffType { get; set; }
+        public string AmtTypeDesc { get; set; }
+        public int Count { get; set; }
+        public decimal amount_total { get; set; }
+        public decimal Rate { get; set; }
+    }
+    public class Receivable_Excess_req
+    {
+        public string Forec { get; set; }
+        public string DiffType { get; set; }
+        public string AmtType { get; set; }
+    }
+    public class Receivable_Excess_Detail_Excel
+    {
+        public string diffType { get; set; }
+        public string AmtTypeDesc { get; set; }
+        public string Cs_name { get; set; } 
+        public int DiffDay { get; set; }
+        public decimal amount_total { get; set; }
+        public string RCM_note { get;set; }
+    }
 }

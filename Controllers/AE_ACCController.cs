@@ -848,7 +848,7 @@ namespace KF_WebAPI.Controllers
         /// 應收帳款分期管理清單查詢 RC_D_LQuery/RC_D_list.asp
         /// </summary>
         [HttpPost("RC_D_LQuery")]
-        public ActionResult<ResultClass<string>> RC_D_LQuery(Receivable_req model) 
+        public ActionResult<ResultClass<string>> RC_D_LQuery(Receivable_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -888,9 +888,9 @@ namespace KF_WebAPI.Controllers
                 if (!string.IsNullOrEmpty(model.name))
                 {
                     T_SQL = T_SQL + " and Ha.CS_name = @CS_name";
-                    parameters.Add(new SqlParameter("@CS_name",model.name));
+                    parameters.Add(new SqlParameter("@CS_name", model.name));
                 }
-                if(model.check_type != "A")
+                if (model.check_type != "A")
                 {
                     T_SQL = T_SQL + " and Rd.check_pay_type = @check_pay_type";
                     parameters.Add(new SqlParameter("@check_pay_type", model.check_type));
@@ -911,7 +911,7 @@ namespace KF_WebAPI.Controllers
                 }
                 T_SQL = T_SQL + " ORDER BY Rd.RC_date";
                 #endregion
-                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row=>new Receivable_res
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_res
                 {
                     RCM_id = row.Field<decimal>("RCM_id"),
                     RCD_id = row.Field<decimal>("RCD_id"),
@@ -977,7 +977,7 @@ namespace KF_WebAPI.Controllers
 
                     if (item.DelayDay == 0)
                         item.Delaymoney = 0;
-                        
+
                 }
 
                 resultClass.ResultCode = "000";
@@ -1088,7 +1088,7 @@ namespace KF_WebAPI.Controllers
                 }).ToList();
                 foreach (var item in result)
                 {
-                   
+
 
                     //是否呈現延滯天數 延滯利息
                     if (item.isOver_RC == "Y")
@@ -1126,7 +1126,7 @@ namespace KF_WebAPI.Controllers
                         item.DelayDay = 0;
                         item.Delaymoney = 0;
                     }
-                        
+
                 }
 
                 List<Receivable_Excel> excelList = result.Select(x => new Receivable_Excel
@@ -1247,7 +1247,7 @@ namespace KF_WebAPI.Controllers
                 {
                     T_SQL = T_SQL + " and DATEDIFF(day,Rd.RC_date,SYSDATETIME()) >= 90";
                 }
-                T_SQL = T_SQL +" order by  Rd.RC_date";
+                T_SQL = T_SQL + " order by  Rd.RC_date";
                 #endregion
                 var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Coll_res
                 {
@@ -1282,8 +1282,8 @@ namespace KF_WebAPI.Controllers
                         {
                             item.Rmoney = 0;
                         }
-                        item.RemainingPrincipal = Math.Round(item.amount_total - item.Rmoney,2);
-                        item.RemainingPrincipal_1 = Math.Round(item.RemainingPrincipal + item.Rmoney,2);
+                        item.RemainingPrincipal = Math.Round(item.amount_total - item.Rmoney, 2);
+                        item.RemainingPrincipal_1 = Math.Round(item.RemainingPrincipal + item.Rmoney, 2);
                     }
                     else
                     {
@@ -1297,7 +1297,7 @@ namespace KF_WebAPI.Controllers
                             }
                             decimal monthlyInterestRate = interest_rate_pass / 100 / 12;
                             item.interest = Math.Round(Math.Round(item.RemainingPrincipal_1, 2) * monthlyInterestRate, 2);
-                            item.Rmoney = Math.Round(Math.Round(realRCAmount, 2) - item.interest,2);
+                            item.Rmoney = Math.Round(Math.Round(realRCAmount, 2) - item.interest, 2);
                             item.RemainingPrincipal = Math.Round(item.RemainingPrincipal_1 - item.Rmoney, 2);
                             item.RemainingPrincipal_1 = item.RemainingPrincipal;
                         }
@@ -1436,7 +1436,7 @@ namespace KF_WebAPI.Controllers
                     item.RemainingPrincipal = Math.Round(item.RemainingPrincipal, 0, MidpointRounding.AwayFromZero);
                     item.RemainingPrincipal_1 = Math.Round(item.RemainingPrincipal_1, 0, MidpointRounding.AwayFromZero);
                 }
-                
+
                 var excelList = result.Select(x => new Receivable_Coll_Excel
                 {
                     CS_name = x.CS_name,
@@ -1451,7 +1451,7 @@ namespace KF_WebAPI.Controllers
                     RemainingPrincipal = x.RemainingPrincipal,
                     RemainingPrincipal_1 = x.RemainingPrincipal_1
                 }).ToList();
-                
+
                 var Excel_Headers = new Dictionary<string, string>
                 {
                     {"index","序號" },
@@ -1930,7 +1930,7 @@ namespace KF_WebAPI.Controllers
         /// <param name="planNum">K0051</param>
         /// <returns></returns>
         [HttpGet("RC_Over_Rel_Detail_LQuery")]
-        public ActionResult<ResultClass<string>> RC_Over_Rel_Detail_LQuery(int overDay,string planNum)
+        public ActionResult<ResultClass<string>> RC_Over_Rel_Detail_LQuery(int overDay, string planNum)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -1970,7 +1970,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@overDay", overDay));
                 parameters.Add(new SqlParameter("@plan_num", planNum));
                 #endregion
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
@@ -2108,7 +2108,7 @@ namespace KF_WebAPI.Controllers
                     where isnull(OV.OV_Count, 0) <> 0  ORDER BY M.U_BC,ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) desc,Tol.plan_num";
                 parameters.Add(new SqlParameter("@overDay", overDay));
                 #endregion
-                var excelList = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row=> new Receivable_Over_Rel_Excel
+                var excelList = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Over_Rel_Excel
                 {
                     BC_name = row.Field<string>("BC_name"),
                     u_name = row.Field<string>("BC_name"),
@@ -2307,7 +2307,7 @@ namespace KF_WebAPI.Controllers
         }
         #endregion
 
-        #region 應收帳款-本金餘額比 RC_repay.asp
+        #region 應收帳款-本金餘額比
         /// <summary>
         /// 提供應繳查詢年月 GetSendcaseYYYMM/RC_repay.asp
         /// </summary>
@@ -2355,16 +2355,16 @@ namespace KF_WebAPI.Controllers
                     and D.RC_date > DATEADD(month,-12,SYSDATETIME())";
                 parameters_e.Add(new SqlParameter("@dateM", dateM));
                 #endregion
-                var dateS = _adoData.ExecuteSQuery(T_SQL_S).AsEnumerable().Select(row => new Receivable_ROC_YYYMM_S 
+                var dateS = _adoData.ExecuteSQuery(T_SQL_S).AsEnumerable().Select(row => new Receivable_ROC_YYYMM_S
                 {
                     ROC_YYYMM = row.Field<string>("yyyMM"),
                     Gre_YYYYMM = row.Field<string>("yyyymm")
                 }).ToList();
-                var dateE = _adoData.ExecuteQuery(T_SQL_E,parameters_e).AsEnumerable().Select(row => new Receivable_ROC_YYYMM_E
+                var dateE = _adoData.ExecuteQuery(T_SQL_E, parameters_e).AsEnumerable().Select(row => new Receivable_ROC_YYYMM_E
                 {
                     ROC_YYYMM = row.Field<string>("yyyMM"),
                     Gre_YYYYMM = row.Field<string>("yyyymm")
-                }).OrderByDescending(x=>x.Gre_YYYYMM).ToList();
+                }).OrderByDescending(x => x.Gre_YYYYMM).ToList();
 
                 resultData.ROC_Date_S = dateS;
                 resultData.ROC_Date_E = dateE;
@@ -2385,7 +2385,7 @@ namespace KF_WebAPI.Controllers
         /// <param name="DateS">2024-08</param>
         /// <param name="DateE">2024-11</param>
         [HttpGet("RC_Repay_LQuery")]
-        public ActionResult<ResultClass<string>> RC_Repay_LQuery(string DateS,string DateE)
+        public ActionResult<ResultClass<string>> RC_Repay_LQuery(string DateS, string DateE)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2539,9 +2539,9 @@ namespace KF_WebAPI.Controllers
         /// <param name="date">2024-11</param>
         /// <returns></returns>
         [HttpGet("RC_Repay_Dat-l_LQuery")]
-        public ActionResult<ResultClass<string>> RC_Repay_Dateil_LQuery(string type,string date)
+        public ActionResult<ResultClass<string>> RC_Repay_Dateil_LQuery(string type, string date)
         {
-            ResultClass<string> resultClass=new ResultClass<string>();
+            ResultClass<string> resultClass = new ResultClass<string>();
 
             try
             {
@@ -2616,7 +2616,7 @@ namespace KF_WebAPI.Controllers
                                   				     in (
                                                           select M.RCM_id 
                                                           from Receivable_D D																																																
-                                                          Left Join (	
+                                                          Left Join (
                                                                       select * from Receivable_M																																																	
                                   　　			　　　                 where RCM_id not in (/*排除結清當期有繳款的資料*/																																																		
                                                                                             select RCM_id from Receivable_D 
@@ -2635,7 +2635,7 @@ namespace KF_WebAPI.Controllers
                                                                where RemainingPrincipal is null and check_pay_type ='S'																	
                                                                group by RCM_id ) 
                                                                and M.RCM_id is not null																																																
-                                                             )																																																											
+                                                             )							0																																																				
                                                    ) M on D.RCM_id=M.RCM_id 
                                          where check_pay_type='Y' and D.del_tag = '0' AND M.del_tag='0'																																																			
                                   　　　　group by M.RCM_id 
@@ -2650,7 +2650,7 @@ namespace KF_WebAPI.Controllers
                 }
                 parameters.Add(new SqlParameter("@date", date));
                 #endregion
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
@@ -2672,77 +2672,295 @@ namespace KF_WebAPI.Controllers
         }
         #endregion
 
-        #region 資產數據分析 RC_Excess.asp
-        //資產數據分析查詢
-        //        select V.diffType, AmtTypeDesc, AmtType, count(V.diffType) Count, Format(sum(amount_total),'N0') amount_total,Tot_Amt,rowspan,
-        //Format(convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)),'N2') + '%' Rate
-        //from view_excess_base V
-        //left join(select sum(isnull(convert(int, get_amount),0)*10000) Tot_Amt
-        //            from House_sendcase H
-        //            LEFT JOIN House_apply A ON A.HA_id = H.HA_id
-        //            where H.del_tag = '0' AND A.del_tag= '0'
-        //            AND H.sendcase_handle_type= 'Y' AND isnull(H.Send_amount, '') <>''     
-        //			AND H.fund_company='FDCOM003' AND get_amount_type = 'GTAT002'
-        //          ) T on 1=1    
-        //left join(select diffType, count(diffType) rowspan
-        //            from (select diffType, AmtType, count(diffType) rowspan
-        //                   from view_excess_base
-        //                   where court_sale = ''--無法拍條件有這行 有法拍條件無這行
-        //                   group by diffType, AmtType
-        //                 ) a
-        //            group by diffType  
-        //          ) R on V.diffType=R.diffType
-        //where court_sale=''--無法拍條件有這行 有法拍條件無這行  
-        //group by AmtType,AmtTypeDesc,V.diffType,Tot_Amt,rowspan
-        //order by V.diffType, AmtType
+        #region 資產數據分析 
+        /// <summary>
+        /// 資產數據分析查詢 RC_Excess_LQuery/RC_Excess.asp
+        /// </summary>
+        /// <param name="Forec">1</param>
+        [HttpGet("RC_Excess_LQuery")]
+        public ActionResult<ResultClass<string>> RC_Excess_LQuery(string Forec)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
 
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parametes = new List<SqlParameter>();
+                var T_SQL = "";
+                //差在where court_sale = ''條件是否存在
+                if (!string.IsNullOrEmpty(Forec) && Forec == "1")
+                {
+                    T_SQL = @"select V.diffType,AmtTypeDesc,AmtType,count(V.diffType) Count,Format(sum(amount_total),'N0') amount_total,Tot_Amt,rowspan,
+                    Format(convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)),'N2') + '%' Rate
+                    from view_excess_base V
+                    left join (select sum(isnull(convert(int, get_amount),0)*10000) Tot_Amt
+                    from House_sendcase H
+                    left join House_apply A ON A.HA_id = H.HA_id
+                    where H.del_tag = '0' AND A.del_tag= '0'
+                    AND H.sendcase_handle_type= 'Y' AND isnull(H.Send_amount, '') <>''     
+        			AND H.fund_company='FDCOM003' AND get_amount_type = 'GTAT002'
+                    ) T on 1=1    
+                    left join(select diffType, count(diffType) rowspan
+                    from (select diffType, AmtType, count(diffType) rowspan
+                          from view_excess_base
+                          group by diffType, AmtType
+                         ) a
+                    group by diffType  
+                    ) R on V.diffType=R.diffType
+                    group by AmtType,AmtTypeDesc,V.diffType,Tot_Amt,rowspan
+                    order by V.diffType, AmtType";
+                }
+                else
+                {
+                    T_SQL = @"select V.diffType,AmtTypeDesc,AmtType,count(V.diffType) Count,Format(sum(amount_total),'N0') amount_total,Tot_Amt,rowspan,
+                    Format(convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)),'N2') + '%' Rate
+                    from view_excess_base V
+                    left join (select sum(isnull(convert(int, get_amount),0)*10000) Tot_Amt
+                    from House_sendcase H
+                    left join House_apply A ON A.HA_id = H.HA_id
+                    where H.del_tag = '0' AND A.del_tag= '0'
+                    AND H.sendcase_handle_type= 'Y' AND isnull(H.Send_amount, '') <>''     
+        			AND H.fund_company='FDCOM003' AND get_amount_type = 'GTAT002'
+                    ) T on 1=1    
+                    left join (select diffType, count(diffType) rowspan
+                    from (select diffType, AmtType, count(diffType) rowspan
+                          from view_excess_base
+                          where court_sale = ''
+                          group by diffType, AmtType
+                         ) a
+                    group by diffType  
+                    ) R on V.diffType=R.diffType
+                    where court_sale=''
+                    group by AmtType,AmtTypeDesc,V.diffType,Tot_Amt,rowspan
+                    order by V.diffType, AmtType";
+                }
+                #endregion
+                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 資產數據分析查詢Excel下載 RC_Excess_Excel/RC_Excess.asp
+        /// </summary>
+        [HttpPost("RC_Excess_Excel")]
+        public IActionResult RC_Excess_Excel(string Forec)
+        {
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parametes = new List<SqlParameter>();
+                var T_SQL = "";
+                //差在where court_sale = ''條件是否存在
+                if (!string.IsNullOrEmpty(Forec) && Forec == "1")
+                {
+                    T_SQL = @"select V.diffType,AmtTypeDesc,AmtType,count(V.diffType) Count,sum(amount_total) amount_total,Tot_Amt,rowspan,
+                    convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)) Rate
+                    from view_excess_base V
+                    left join (select sum(isnull(convert(int, get_amount),0)*10000) Tot_Amt
+                    from House_sendcase H
+                    left join House_apply A ON A.HA_id = H.HA_id
+                    where H.del_tag = '0' AND A.del_tag= '0'
+                    AND H.sendcase_handle_type= 'Y' AND isnull(H.Send_amount, '') <>''     
+        			AND H.fund_company='FDCOM003' AND get_amount_type = 'GTAT002'
+                    ) T on 1=1    
+                    left join(select diffType, count(diffType) rowspan
+                    from (select diffType, AmtType, count(diffType) rowspan
+                          from view_excess_base
+                          group by diffType, AmtType
+                         ) a
+                    group by diffType  
+                    ) R on V.diffType=R.diffType
+                    group by AmtType,AmtTypeDesc,V.diffType,Tot_Amt,rowspan
+                    order by V.diffType, AmtType";
+                }
+                else
+                {
+                    T_SQL = @"select V.diffType,AmtTypeDesc,AmtType,count(V.diffType) Count,sum(amount_total) amount_total,Tot_Amt,rowspan,
+                    convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)) Rate
+                    from view_excess_base V
+                    left join (select sum(isnull(convert(int, get_amount),0)*10000) Tot_Amt
+                    from House_sendcase H
+                    left join House_apply A ON A.HA_id = H.HA_id
+                    where H.del_tag = '0' AND A.del_tag= '0'
+                    AND H.sendcase_handle_type= 'Y' AND isnull(H.Send_amount, '') <>''     
+        			AND H.fund_company='FDCOM003' AND get_amount_type = 'GTAT002'
+                    ) T on 1=1    
+                    left join (select diffType, count(diffType) rowspan
+                    from (select diffType, AmtType, count(diffType) rowspan
+                          from view_excess_base
+                          where court_sale = ''
+                          group by diffType, AmtType
+                         ) a
+                    group by diffType  
+                    ) R on V.diffType=R.diffType
+                    where court_sale=''
+                    group by AmtType,AmtTypeDesc,V.diffType,Tot_Amt,rowspan
+                    order by V.diffType, AmtType";
+                }
+                #endregion
+                var excelList = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new Receivable_Excess_Excel
+                {
+                    diffType = row.Field<string>("diffType"),
+                    AmtTypeDesc = row.Field<string>("AmtTypeDesc"),
+                    Count = row.Field<int>("Count"),
+                    amount_total = row.Field<decimal>("amount_total"),
+                    Rate = row.Field<decimal>("Rate"),
+                }).ToList();
 
-        //資產數據分析查詢Excel下載
-        //        select V.diffType, AmtTypeDesc, AmtType, count(V.diffType) Count, Format(sum(amount_total),'N0') amount_total,Tot_Amt,rowspan,
-        //Format(convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)),'N2') + '%' Rate
-        //from view_excess_base V
-        //left join(select sum(isnull(convert(int, get_amount),0)*10000) Tot_Amt
-        //            from House_sendcase H
-        //            LEFT JOIN House_apply A ON A.HA_id = H.HA_id
-        //            where H.del_tag = '0' AND A.del_tag= '0'
-        //            AND H.sendcase_handle_type= 'Y' AND isnull(H.Send_amount, '')<>''     
-        //			AND H.fund_company='FDCOM003' AND get_amount_type = 'GTAT002'
-        //          ) T on 1=1    
-        //left join(select diffType, count(diffType) rowspan
-        //            from (select diffType, AmtType, count(diffType) rowspan
-        //                   from view_excess_base
-        //                   where court_sale = ''--無法拍條件有這行 有法拍無這行
-        //                   group by diffType, AmtType
-        //                 ) a
-        //            group by diffType  
-        //          ) R on V.diffType=R.diffType
-        //where court_sale=''--無法拍條件有這行 有法拍無這行  
-        //group by AmtType,AmtTypeDesc,V.diffType,Tot_Amt,rowspan
-        //order by V.diffType, AmtType
+                var Excel_Headers = new Dictionary<string, string>
+                {
+                    { "diffType","逾放期數" },
+                    { "AmtTypeDesc", "放款金額" },
+                    { "Count", "件數" },
+                    { "amount_total", "逾放金額" },
+                    { "Rate", "逾放比%" }
+                };
 
-        //資產數據分析明細查詢 _Ajaxhandler.asp?method=GetExcess_base
-        //      if Method = "GetExcess_base" then
-        //          DiffType = request("DiffType")
+                var fileBytes = FuncHandler.ReceivableExcessExcel(excelList, Excel_Headers);
+                var fileName = "資產數據分析" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 資產數據分析明細查詢 RC_Excess_Detail_LQuery/_Ajaxhandler.asp?method=GetExcess_base
+        /// </summary>
+        [HttpPost("RC_Excess_Detail_LQuery")]
+        public ActionResult<ResultClass<string>> RC_Excess_Detail_LQuery(Receivable_Excess_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
 
-        //          AmtType = request("AmtType")
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "";
+                if(!string.IsNullOrEmpty(model.Forec) && model.Forec == "1")
+                {
+                    T_SQL = @"SELECT cs_name,DiffDay,Format(amount_total,'N0'),RC_count,month_total,court_sale,AmtTypeDesc,AmtType,DiffType
+                    ,replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(max)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'') RCM_note
+                    FROM dbo.view_excess_base
+                    where 1 = 1 
+                    and DiffType=@DiffType and  AmtType=@AmtType
+                    ORDER BY DiffType,AmtType,DiffDay";
+                }
+                else
+                {
+                    T_SQL = @"SELECT cs_name,DiffDay,Format(amount_total,'N0'),RC_count,month_total,court_sale,AmtTypeDesc,AmtType,DiffType
+                    ,replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(max)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'') RCM_note
+                    FROM dbo.view_excess_base
+                    where 1 = 1 
+                    and DiffType=@DiffType and  AmtType=@AmtType
+                    and court_sale=''
+                    ORDER BY DiffType,AmtType,DiffDay";
+                }
+                parameters.Add(new SqlParameter("@DiffType", model.DiffType));
+                parameters.Add(new SqlParameter("@AmtType", model.AmtType));
+                #endregion
+                DataTable dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 資產數據分析查詢明細Excel下載 RC_Excess_Detail_Excel//RC_Excess.asp
+        /// </summary>
+        [HttpPost("RC_Excess_Detail_Excel")]
+        public IActionResult RC_Excess_Detail_Excel(string Forec)
+        {
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = "";
+                if(!string.IsNullOrEmpty(Forec) && Forec == "1")
+                {
+                    T_SQL = @"SELECT cs_name,DiffDay,amount_total,RC_count,month_total,court_sale,AmtTypeDesc,AmtType,DiffType
+                    ,replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(max)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'') RCM_note
+                    FROM dbo.view_excess_base
+                    where 1 = 1 
+                    ORDER BY DiffType,AmtType,DiffDay";
+                }
+                else
+                {
+                    T_SQL = @"SELECT cs_name,DiffDay,amount_total,RC_count,month_total,court_sale,AmtTypeDesc,AmtType,DiffType
+                    ,replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(max)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'') RCM_note
+                    FROM dbo.view_excess_base
+                    where 1 = 1 
+                    and court_sale=''
+                    ORDER BY DiffType,AmtType,DiffDay";
+                }
+                #endregion
+                var excelList =_adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row=>new Receivable_Excess_Detail_Excel 
+                {
+                    diffType = row.Field<string>("diffType"),
+                    AmtTypeDesc = row.Field<string>("AmtTypeDesc"),
+                    Cs_name = row.Field<string>("Cs_name"),
+                    DiffDay = row.Field<int>("DiffDay"),
+                    amount_total = row.Field<decimal>("amount_total"),
+                    RCM_note = row.Field<string>("RCM_note"),
+                }).ToList();
 
-        //          court_sale = request("court_sale")
+                var Excel_Headers = new Dictionary<string, string>
+                {
+                    { "diffType","逾放期數" },
+                    { "AmtTypeDesc", "放款金額" },
+                    { "Cs_name", "客戶名稱" },
+                    { "DiffDay", "延滯天數" },
+                    { "amount_total", "逾放金額" },
+                    { "RCM_note", "備註" }
+                };
 
-
-        //          tSQL =" SELECT cs_name,DiffDay,amount_total,RC_count,month_total,court_sale "
-        //	tSQL = tSQL & "  ,replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(max)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'')RCM_note,AmtTypeDesc,AmtType,DiffType  "
-        //	tSQL = tSQL & "   FROM dbo.view_excess_base  "
-        //	tSQL = tSQL & " where DiffType='"& DiffType &"' and  AmtType='"&AmtType&"'"
-        //	if court_sale="1" then
-
-        //	else
-        //		tSQL = tSQL & " and court_sale='' "
-        //	end if
-        //	tSQL = tSQL & " ORDER BY DiffDay "
-        //	'Response.write tSQL
-        //end if
-
-        //資產數據分析查詢明細Excel下載(是把所有的明細資料都抓出來呈現)
+                var fileBytes = FuncHandler.ReceivableExcessDetailExcel(excelList, Excel_Headers);
+                var fileName = "資產數據分析(明細資料)" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
 
 
         #endregion
