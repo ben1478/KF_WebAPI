@@ -172,6 +172,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -307,7 +308,8 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
         }
         /// <summary>
@@ -354,6 +356,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -401,6 +404,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -477,6 +481,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -621,6 +626,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -643,6 +649,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -698,6 +705,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -838,6 +846,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -987,6 +996,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -1325,6 +1335,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -1688,6 +1699,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -1987,6 +1999,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2058,6 +2071,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2215,6 +2229,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2302,6 +2317,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2376,6 +2392,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2445,6 +2462,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2667,6 +2685,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2678,7 +2697,7 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         /// <param name="Forec">1</param>
         [HttpGet("RC_Excess_LQuery")]
-        public ActionResult<ResultClass<string>> RC_Excess_LQuery(string Forec)
+        public ActionResult<ResultClass<string>> RC_Excess_LQuery(string? Forec)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2753,6 +2772,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2760,7 +2780,7 @@ namespace KF_WebAPI.Controllers
         /// 資產數據分析查詢Excel下載 RC_Excess_Excel/RC_Excess.asp
         /// </summary>
         [HttpPost("RC_Excess_Excel")]
-        public IActionResult RC_Excess_Excel(string Forec)
+        public IActionResult RC_Excess_Excel(string? Forec)
         {
             try
             {
@@ -2898,6 +2918,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2905,7 +2926,7 @@ namespace KF_WebAPI.Controllers
         /// 資產數據分析查詢明細Excel下載 RC_Excess_Detail_Excel//RC_Excess.asp
         /// </summary>
         [HttpPost("RC_Excess_Detail_Excel")]
-        public IActionResult RC_Excess_Detail_Excel(string Forec)
+        public IActionResult RC_Excess_Detail_Excel(string? Forec)
         {
             try
             {
@@ -2961,17 +2982,298 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-
-
         #endregion
 
         #region 債權憑證
-        //債權憑證查詢
-        //債權憑證查詢Excel下載
-        //債權憑證資料查詢
-        //債權憑證資料修改
-        //債權憑證資料刪除
-        //新增債權憑證資料
+        /// <summary>
+        /// 債權憑證查詢 Debt_Certificate_LQuery/Debt_certificate_list.asp
+        /// </summary>
+        [HttpGet("Debt_Certificate_LQuery")]
+        public ActionResult<ResultClass<string>> Debt_Certificate_LQuery(string? cs_name)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"select cs_name,CS_PID,FORMAT(loan_amount,'N0') loan_amount,certificate_date_S,certificate_date_E,Remark 
+                    from Debt_certificate
+                    where del_tag = '0'
+                    order by certificate_date_S";
+                #endregion
+                var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new Debt_Certificate_res
+                {
+                    cs_name = row.Field<string>("cs_name"),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    str_loan_amount = row.Field<string>("loan_amount"),
+                    str_certificate_date_S = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("certificate_date_S").ToString("yyyy/MM/dd")),
+                    str_certificate_date_E = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("certificate_date_E").ToString("yyyy/MM/dd")),
+                    Remark = row.Field<string>("Remark")
+                }).ToList();
+                if (!string.IsNullOrEmpty(cs_name))
+                {
+                    result = result.Where(x => x.cs_name.Equals(cs_name)).ToList();
+                }
+
+                if(result != null && result.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(result);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 債權憑證查詢Excel下載 Debt_Certificate_Exccel/Debt_certificate_list.asp
+        /// </summary>
+        [HttpPost("Debt_Certificate_Exccel")]
+        public IActionResult Debt_Certificate_Exccel(string? cs_name)
+        {
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"select cs_name,CS_PID,loan_amount,certificate_date_S,certificate_date_E,Remark 
+                    from Debt_certificate
+                    where del_tag = '0'
+                    order by certificate_date_S";
+                #endregion
+                var excelList = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row=>new Debt_Certificate_Excel 
+                {
+                    cs_name = row.Field<string>("cs_name"),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    loan_amount = row.Field<decimal>("loan_amount"),
+                    str_certificate_date_S = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("certificate_date_S").ToString("yyyy/MM/dd")),
+                    str_certificate_date_E = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("certificate_date_E").ToString("yyyy/MM/dd")),
+                    Remark = row.Field<string>("Remark")
+                }).ToList();
+                if(!string.IsNullOrEmpty(cs_name))
+                {
+                    excelList = excelList.Where(x=>x.cs_name.Equals(cs_name)).ToList();
+                }
+
+                var Excel_Headers = new Dictionary<string, string>
+                {
+                    { "cs_name","客戶名稱" },
+                    { "CS_PID", "身分證字號" },
+                    { "loan_amount", "貸款金額" },
+                    { "str_certificate_date_S", "憑證起始時間" },
+                    { "str_certificate_date_E", "憑證到期時間" },
+                    { "Remark", "備註" }
+                };
+
+                var fileBytes = FuncHandler.ExportToExcel(excelList, Excel_Headers);
+                var fileName = "資產數據分析(明細資料)" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 債權憑證資料查詢 Debt_Certificate_DetQuery/Debt_certificate_list.asp
+        /// </summary>
+        [HttpGet("Debt_Certificate_DetQuery")]
+        public ActionResult<ResultClass<string>> Debt_Certificate_DetQuery(string PID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"select cs_name,CS_PID,loan_amount,certificate_date_S,certificate_date_E,Remark 
+                    from Debt_certificate
+                    where del_tag = '0' and CS_PID = @CS_PID
+                    order by certificate_date_S";
+                parameters.Add(new SqlParameter("@CS_PID", PID));
+                #endregion
+                var result = _adoData.ExecuteQuery(T_SQL,parameters).AsEnumerable().Select(row => new Debt_Certificate_res
+                {
+                    cs_name = row.Field<string>("cs_name"),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    loan_amount = row.Field<decimal>("loan_amount"),
+                    str_certificate_date_S = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("certificate_date_S").ToString("yyyy/MM/dd")),
+                    str_certificate_date_E = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("certificate_date_E").ToString("yyyy/MM/dd")),
+                    Remark = row.Field<string>("Remark")
+                }).ToList();
+
+                if (result != null && result.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(result);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 債權憑證資料修改 Debt_Certificate_DetUpd/Debt_certificate_list.asp
+        /// </summary>
+        [HttpPost("Debt_Certificate_DetUpd")]
+        public ActionResult<ResultClass<string>> Debt_Certificate_DetUpd(Debt_Certificate_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"Update Debt_certificate set cs_name = @cs_name,CS_PID = @CS_PID,loan_amount = @loan_amount,
+                    certificate_date_S = @certificate_date_S,certificate_date_E = @certificate_date_E,Remark = @Remark, 
+                    edit_date = GETDATE(),edit_num = @edit_num,edit_ip = @edit_ip where CS_PID = @CS_PID";
+                parameters.Add(new SqlParameter("@cs_name", model.cs_name));
+                parameters.Add(new SqlParameter("@CS_PID", model.CS_PID));
+                parameters.Add(new SqlParameter("@loan_amount", model.loan_amount));
+                parameters.Add(new SqlParameter("@certificate_date_S", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_certificate_date_S))));
+                parameters.Add(new SqlParameter("@certificate_date_E", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_certificate_date_E))));
+                parameters.Add(new SqlParameter("@Remark", model.Remark));
+                parameters.Add(new SqlParameter("@edit_num", User_Num));
+                parameters.Add(new SqlParameter("@edit_ip", clientIp));
+                #endregion
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "異動失敗";
+                    return BadRequest(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "異動成功";
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 債權憑證資料刪除 Debt_Certificate_DetDel/Debt_certificate_list.asp
+        /// </summary>
+        [HttpPost("Debt_Certificate_DetDel")]
+        public ActionResult<ResultClass<string>> Debt_Certificate_DetDel(string PID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"Update Debt_certificate set del_tag = '1',del_date = GETDATE(),del_num = @del_num,del_ip = @del_ip where CS_PID = @CS_PID";
+                parameters.Add(new SqlParameter("@del_num", User_Num));
+                parameters.Add(new SqlParameter("@del_ip", clientIp));
+                parameters.Add(new SqlParameter("@CS_PID", PID));
+                #endregion
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "異動失敗";
+                    return BadRequest(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "異動成功";
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 新增債權憑證資料 Debt_Certificate_DetIns/Debt_certificate_list.asp
+        /// </summary>
+        [HttpPost("Debt_Certificate_DetIns")]
+        public ActionResult<ResultClass<string>> Debt_Certificate_DetIns(Debt_Certificate_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"Insert into Debt_certificate (cs_name,CS_PID,loan_amount,certificate_date_S,certificate_date_E,Remark,add_date,add_num,add_ip)
+                    Values (@cs_name,@CS_PID,@loan_amount,@certificate_date_S,@certificate_date_E,@Remark,GETDATE(),@add_num,@add_ip)";
+                parameters.Add(new SqlParameter("@cs_name", model.cs_name));
+                parameters.Add(new SqlParameter("@CS_PID", model.CS_PID));
+                parameters.Add(new SqlParameter("@loan_amount", model.loan_amount));
+                parameters.Add(new SqlParameter("@certificate_date_S", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_certificate_date_S))));
+                parameters.Add(new SqlParameter("@certificate_date_E", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_certificate_date_E))));
+                parameters.Add(new SqlParameter("@Remark", model.Remark));
+                parameters.Add(new SqlParameter("@add_num", User_Num));
+                parameters.Add(new SqlParameter("@add_ip",clientIp));
+                #endregion
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "異動失敗";
+                    return BadRequest(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "異動成功";
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
         #endregion
     }
 }

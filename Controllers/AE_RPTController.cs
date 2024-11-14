@@ -41,6 +41,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
 
@@ -106,6 +107,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -146,6 +148,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -293,6 +296,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
 
@@ -363,6 +367,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -388,6 +393,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
 
@@ -452,6 +458,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -563,6 +570,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -621,6 +629,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -705,6 +714,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -745,6 +755,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -813,6 +824,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -907,6 +919,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -1121,7 +1134,10 @@ namespace KF_WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500);
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
         }
         #endregion
@@ -1163,6 +1179,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -1264,6 +1281,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -1482,7 +1500,10 @@ namespace KF_WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500);
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
         }
         #endregion
@@ -1596,6 +1617,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -1692,6 +1714,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -1751,7 +1774,10 @@ namespace KF_WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500);
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
         }
         /// <summary>
@@ -1972,7 +1998,10 @@ namespace KF_WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500);
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
         }
         #endregion
@@ -2027,6 +2056,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2082,6 +2112,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2147,6 +2178,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2197,6 +2229,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2262,6 +2295,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2316,6 +2350,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2378,6 +2413,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2428,6 +2464,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2485,6 +2522,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2535,6 +2573,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2594,6 +2633,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2645,6 +2685,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2767,6 +2808,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2821,6 +2863,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2860,6 +2903,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2916,6 +2960,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2967,6 +3012,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -2987,65 +3033,59 @@ namespace KF_WebAPI.Controllers
                 InDate_S = FuncHandler.ConvertROCToGregorian(InDate_S);
                 InDate_E = FuncHandler.ConvertROCToGregorian(InDate_E);
 
-                try
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = "";
+                if (TelAsk != "Repeat")
                 {
-                    ADOData _adoData = new ADOData();
-                    #region SQL
-                    var parameters = new List<SqlParameter>();
-                    var T_SQL = "";
-                    if (TelAsk != "Repeat")
-                    {
-                        T_SQL += " SELECT Case When ISnull(tc.cs_rname,'')='' Then tc.cs_name Else tc.cs_rname END AS cs_name,tc.CS_ID,tc.cs_mtel1,li.item_D_name,tc.cs_register_address";
-                        T_SQL += " ,(select top 1 REPLACE(REPLACE(REPLACE(REPLACE(Memo,CHAR(13), ''),CHAR(10), ''),CHAR(9), ''),CHAR(8), '') from Telemarketing_Log tl where td.TM_id=tl.TM_id and tl.TM_D_id=td.TM_D_id order by add_date desc) as CS_remark";
-                        T_SQL += " FROM view_Telemarketing_source tc";
-                        T_SQL += " inner join TelemarketingCSList tcs on tcs.TC_ID=tc.ha_id";
-                        T_SQL += " left join Telemarketing_M tm on tm.HA_id = tc.HA_id";
-                        T_SQL += " left join view_Telemarketing_Curr td ON tm.TM_id = td.tm_id";
-                        T_SQL += " left join Item_list li on li.item_D_code=tc.TelAsk where ISNULL(li.item_D_name,'') <> ''";
-                        T_SQL += " and ISNULL(repeat, '') <> 'Y' and ISNULL(tc.InDate,'') <> ''";
-                        T_SQL += " and convert(datetime, convert(varchar(4),(convert(varchar(3), tc.InDate, 126)+1911)) + SUBSTRING(tc.InDate,4,10)) between @InDate_S and @InDate_E";
-                        T_SQL += " and tc.TelSour = @Sour and tc.TM_type='2' and ISNULL(tc.TelAsk,'') <> '' and tc.TelAsk=@TelAsk";
-                    }
-                    else
-                    {
-                        T_SQL += " SELECT Case When ISnull(tc.cs_rname,'')='' Then tc.cs_name Else tc.cs_rname END AS cs_name,tc.CS_ID,tc.cs_mtel1,'Repeat' AS item_D_name,tc.cs_register_address";
-                        T_SQL += " ,(select top 1 REPLACE(REPLACE(REPLACE(REPLACE(Memo,CHAR(13), ''),CHAR(10), ''),CHAR(9), ''),CHAR(8), '') from Telemarketing_Log tl where td.TM_id=tl.TM_id and tl.TM_D_id=td.TM_D_id order by add_date desc) as CS_remark";
-                        T_SQL += " FROM view_Telemarketing_source tc";
-                        T_SQL += " inner join TelemarketingCSList tcs on tcs.TC_ID=tc.ha_id";
-                        T_SQL += " left join Telemarketing_M tm on tm.HA_id = tc.HA_id";
-                        T_SQL += " left join view_Telemarketing_Curr td ON tm.TM_id = td.tm_id";
-                        T_SQL += " WHERE ISNULL(repeat, '') = 'Y' and ISNULL(tc.TelAsk,'') <> '' and ISNULL(tc.InDate,'') <> ''";
-                        T_SQL += " and convert(datetime, convert(varchar(4),(convert(varchar(3), tc.InDate, 126)+1911)) + SUBSTRING(tc.InDate,4,10)) between @InDate_S and @InDate_E";
-                        T_SQL += " and tc.TelSour = @Sour and tc.TM_type='2'";
-                    }
-                    parameters.Add(new SqlParameter("@InDate_S", InDate_S));
-                    parameters.Add(new SqlParameter("@InDate_E", InDate_E));
-                    parameters.Add(new SqlParameter("@Sour", Sour));
-                    parameters.Add(new SqlParameter("@TelAsk", TelAsk));
-                    #endregion
-                    DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
-                    if (dtResult.Rows.Count > 0)
-                    {
-                        resultClass.ResultCode = "000";
-                        resultClass.objResult = JsonConvert.SerializeObject(dtResult);
-                        return Ok(resultClass);
-                    }
-                    else
-                    {
-                        resultClass.ResultCode = "400";
-                        resultClass.ResultMsg = "查無資料";
-                        return BadRequest(resultClass);
-                    }
+                    T_SQL += " SELECT Case When ISnull(tc.cs_rname,'')='' Then tc.cs_name Else tc.cs_rname END AS cs_name,tc.CS_ID,tc.cs_mtel1,li.item_D_name,tc.cs_register_address";
+                    T_SQL += " ,(select top 1 REPLACE(REPLACE(REPLACE(REPLACE(Memo,CHAR(13), ''),CHAR(10), ''),CHAR(9), ''),CHAR(8), '') from Telemarketing_Log tl where td.TM_id=tl.TM_id and tl.TM_D_id=td.TM_D_id order by add_date desc) as CS_remark";
+                    T_SQL += " FROM view_Telemarketing_source tc";
+                    T_SQL += " inner join TelemarketingCSList tcs on tcs.TC_ID=tc.ha_id";
+                    T_SQL += " left join Telemarketing_M tm on tm.HA_id = tc.HA_id";
+                    T_SQL += " left join view_Telemarketing_Curr td ON tm.TM_id = td.tm_id";
+                    T_SQL += " left join Item_list li on li.item_D_code=tc.TelAsk where ISNULL(li.item_D_name,'') <> ''";
+                    T_SQL += " and ISNULL(repeat, '') <> 'Y' and ISNULL(tc.InDate,'') <> ''";
+                    T_SQL += " and convert(datetime, convert(varchar(4),(convert(varchar(3), tc.InDate, 126)+1911)) + SUBSTRING(tc.InDate,4,10)) between @InDate_S and @InDate_E";
+                    T_SQL += " and tc.TelSour = @Sour and tc.TM_type='2' and ISNULL(tc.TelAsk,'') <> '' and tc.TelAsk=@TelAsk";
                 }
-                catch (Exception ex)
+                else
                 {
-                    resultClass.ResultCode = "500";
-                    return StatusCode(500, resultClass);
+                    T_SQL += " SELECT Case When ISnull(tc.cs_rname,'')='' Then tc.cs_name Else tc.cs_rname END AS cs_name,tc.CS_ID,tc.cs_mtel1,'Repeat' AS item_D_name,tc.cs_register_address";
+                    T_SQL += " ,(select top 1 REPLACE(REPLACE(REPLACE(REPLACE(Memo,CHAR(13), ''),CHAR(10), ''),CHAR(9), ''),CHAR(8), '') from Telemarketing_Log tl where td.TM_id=tl.TM_id and tl.TM_D_id=td.TM_D_id order by add_date desc) as CS_remark";
+                    T_SQL += " FROM view_Telemarketing_source tc";
+                    T_SQL += " inner join TelemarketingCSList tcs on tcs.TC_ID=tc.ha_id";
+                    T_SQL += " left join Telemarketing_M tm on tm.HA_id = tc.HA_id";
+                    T_SQL += " left join view_Telemarketing_Curr td ON tm.TM_id = td.tm_id";
+                    T_SQL += " WHERE ISNULL(repeat, '') = 'Y' and ISNULL(tc.TelAsk,'') <> '' and ISNULL(tc.InDate,'') <> ''";
+                    T_SQL += " and convert(datetime, convert(varchar(4),(convert(varchar(3), tc.InDate, 126)+1911)) + SUBSTRING(tc.InDate,4,10)) between @InDate_S and @InDate_E";
+                    T_SQL += " and tc.TelSour = @Sour and tc.TM_type='2'";
                 }
+                parameters.Add(new SqlParameter("@InDate_S", InDate_S));
+                parameters.Add(new SqlParameter("@InDate_E", InDate_E));
+                parameters.Add(new SqlParameter("@Sour", Sour));
+                parameters.Add(new SqlParameter("@TelAsk", TelAsk));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+
             }
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -3100,6 +3140,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -3158,6 +3199,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -3202,6 +3244,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -3233,6 +3276,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -3282,6 +3326,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -3435,6 +3480,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -3602,7 +3648,10 @@ namespace KF_WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500);
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
         }
         #endregion
@@ -3777,6 +3826,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
 
@@ -3976,7 +4026,9 @@ namespace KF_WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500);
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
 
         }
@@ -4014,6 +4066,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -4077,6 +4130,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
 
@@ -4144,7 +4198,10 @@ namespace KF_WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500);
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
         }
         /// <summary>
@@ -4207,6 +4264,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -4244,6 +4302,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -4284,6 +4343,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -4428,6 +4488,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -4564,6 +4625,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -4797,7 +4859,10 @@ namespace KF_WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500);
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
         }
         /// <summary>
@@ -4846,6 +4911,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -4890,7 +4956,8 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
-                return StatusCode(500,resultClass);
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
         }
         #endregion

@@ -155,6 +155,7 @@ namespace KF_WebAPI.FunctionHandler
                         // 檢查類型並設置值
                         if (value is int || value is long || value is float || value is double || value is decimal)
                         {
+                            worksheet.Cells[i + 2, j + 2].Style.Numberformat.Format = "#,##0";
                             worksheet.Cells[i + 2, j + 2].Value = value; // 直接赋值
                         }
                         else

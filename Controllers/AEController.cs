@@ -152,7 +152,8 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
         }
 
@@ -303,7 +304,8 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
         }
 
@@ -337,8 +339,8 @@ namespace KF_WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                resultClass.ResultMsg = ex.Message;
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -377,6 +379,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -411,8 +414,8 @@ namespace KF_WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                resultClass.ResultMsg = ex.Message;
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -449,7 +452,8 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
 
         }
@@ -485,6 +489,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -524,6 +529,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
