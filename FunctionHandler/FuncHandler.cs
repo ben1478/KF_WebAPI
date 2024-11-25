@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Http;
 using System.Globalization;
 using System;
 using Microsoft.Identity.Client;
+using Newtonsoft.Json.Linq;
+using System.Collections;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -2146,6 +2148,41 @@ namespace KF_WebAPI.FunctionHandler
 
                 return package.GetAsByteArray();
             }
+        }
+
+        public static ArrayList ConvertJsonToArrayList(string json)
+        {
+            ArrayList result = new ArrayList();
+            DataTable dataTable = new DataTable();
+
+            JArray jsonArray = JArray.Parse(json);
+
+            result.Add(jsonArray.Count);
+
+            if (jsonArray.Count > 0)
+            {
+                foreach (var property in jsonArray[0].ToObject<JObject>().Properties())
+                {
+                    dataTable.Columns.Add(property.Name);
+                }
+
+                // 填充 DataTable
+                foreach (var item in jsonArray)
+                {
+                    DataRow row = dataTable.NewRow();
+                    foreach (var property in item.ToObject<JObject>().Properties())
+                    {
+                        row[property.Name] = property.Value.ToString();
+                    }
+                    dataTable.Rows.Add(row);
+                }
+
+                dataTable.TableName = "Table";
+
+                result.Add(dataTable);
+            }
+
+            return result;
         }
     }
 }

@@ -2,11 +2,13 @@
 using KF_WebAPI.BaseClass.AE;
 using KF_WebAPI.FunctionHandler;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.SqlServer.Server;
 using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Data;
 using System.Data.SqlTypes;
 using System.Reflection;
@@ -3002,7 +3004,7 @@ namespace KF_WebAPI.Controllers
                     where del_tag = '0'
                     order by certificate_date_S";
                 #endregion
-                var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new Debt_Certificate_res
+                var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new Debt_Certificate_Lres
                 {
                     cs_name = row.Field<string>("cs_name"),
                     CS_PID = row.Field<string>("CS_PID"),

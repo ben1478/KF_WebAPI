@@ -32,6 +32,16 @@
         public decimal? loan_amount { get; set; }
     }
 
+    public class Debt_Certificate_Lres
+    {
+        public string cs_name { get; set; }
+        public string CS_PID { get; set; }
+        public string? str_loan_amount { get; set; }
+        public string str_certificate_date_S { get; set; }
+        public string str_certificate_date_E { get; set; }
+        public string Remark { get; set; }
+    }
+
     public class Debt_Certificate_Excel
     {
         public string cs_name { get; set; }

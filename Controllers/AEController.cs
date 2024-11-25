@@ -82,7 +82,7 @@ namespace KF_WebAPI.Controllers
 
 
         [HttpPost("Login")]
-        public ActionResult<ResultClass<string>> Login(string uesr,string password)
+        public ActionResult<ResultClass<string>> Login(string user,string password)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -90,7 +90,7 @@ namespace KF_WebAPI.Controllers
             var T_SQL = "SELECT * FROM User_M WHERE U_num = @UserName AND U_psw = @Password";
             var parameters = new List<SqlParameter>
             {
-                new SqlParameter("@UserName", uesr),
+                new SqlParameter("@UserName", user),
                 new SqlParameter("@Password", password) 
             };
 
@@ -102,7 +102,7 @@ namespace KF_WebAPI.Controllers
                     var Role_num = dtResult.Rows[0]["Role_num"].ToString();
                     var User_U_BC = dtResult.Rows[0]["U_BC"].ToString();
                     // 設置 Session
-                    HttpContext.Session.SetString("UserID", uesr);
+                    HttpContext.Session.SetString("UserID", user);
                     HttpContext.Session.SetString("Role_num", string.Join(',', Role_num));
                     HttpContext.Session.SetString("User_U_BC", User_U_BC);
                     var roleNum = HttpContext.Session.GetString("Role_num");

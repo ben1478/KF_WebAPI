@@ -397,7 +397,7 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("GetUserMenuList")]
-        public ActionResult<ResultClass<string>> GetUserMenuList() 
+        public ActionResult<ResultClass<string>> GetUserMenuList(string? U_BC) 
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -405,17 +405,23 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
+                var parameters = new List<SqlParameter>();
                 var T_SQL = @"
                     SELECT bc.item_D_name AS U_BC_name,um.U_num,um.U_name,pft.item_D_name AS U_PFT_name
                     FROM User_M um
                     LEFT JOIN Item_list bc ON bc.item_M_code = 'branch_company'  AND bc.item_D_code = um.U_BC AND bc.item_D_type = 'Y' AND bc.show_tag = '0' AND bc.del_tag = '0'
                     LEFT JOIN Item_list pft ON pft.item_M_code = 'professional_title' AND pft.item_D_code = um.U_PFT AND pft.item_D_type = 'Y' AND pft.show_tag = '0' AND pft.del_tag = '0'
                     WHERE um.del_tag = '0' AND bc.item_D_name is not null AND U_num <> 'AA999'
-                    AND ( U_leave_date is null OR U_leave_date >= GETDATE())
-                    ORDER BY bc.item_sort,pft.item_sort;";
+                    AND ( U_leave_date is null OR U_leave_date >= GETDATE())";
+                if (!string.IsNullOrEmpty(U_BC))
+                {
+                    T_SQL = T_SQL + " and um.U_BC=@U_BC";
+                    parameters.Add(new SqlParameter("@U_BC", U_BC));
+                }
+                T_SQL = T_SQL + " ORDER BY bc.item_sort,pft.item_sort";
                 #endregion
 
-                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
                 if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
@@ -2376,7 +2382,7 @@ namespace KF_WebAPI.Controllers
                     select (select item_D_name from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND item_D_code = UM.U_BC AND del_tag='0') as U_BC_name
                     ,(select item_D_name from Item_list where item_M_code = 'professional_title' AND item_D_type='Y' AND item_D_code = UM.U_PFT AND del_tag='0') as U_PFT_name
                     ,(select U_name FROM User_M where U_num = UM.U_agent_num AND del_tag='0') as U_agent_name
-                    ,U_num,UM.del_tag,(select U_name FROM User_M where U_num = UM.U_leader_1_num AND del_tag='0') as U_leader_1_name
+                    ,U_num,U_name,UM.del_tag,(select U_name FROM User_M where U_num = UM.U_leader_1_num AND del_tag='0') as U_leader_1_name
                     ,(select U_name FROM User_M where U_num = UM.U_leader_2_num AND del_tag='0') as U_leader_2_name
                     ,(select U_name FROM User_M where U_num = UM.U_leader_3_num AND del_tag='0') as U_leader_3_name,Rm.R_name,UM.U_Check_BC
                     ,(select item_sort from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND item_D_code = UM.U_BC AND del_tag='0') as U_BC_sort
@@ -2389,7 +2395,7 @@ namespace KF_WebAPI.Controllers
                 }
                 if (!string.IsNullOrEmpty(model.U_BC))
                 {
-                    T_SQL += " AND U_BC='@U_BC";
+                    T_SQL += " AND U_BC=@U_BC";
                     parameters.Add(new SqlParameter("@U_BC", model.U_BC));
                 }
                 if (!string.IsNullOrEmpty(model.Job_Status)) 
@@ -2417,17 +2423,14 @@ namespace KF_WebAPI.Controllers
                     {
                         U_BC_name = row.Field<string>("U_BC_name"),
                         U_PFT_name = row.Field<string>("U_PFT_name"),
-                        U_agent_name = row.Field<string>("U_agent_name"),
+                        R_name = row.Field<string>("R_name"),
                         U_num = row.Field<string>("U_num"),
-                        del_tag = row.Field<string>("del_tag"),
+                        U_name = row.Field<string>("U_name"),
+                        U_agent_name = row.Field<string>("U_agent_name"),
                         U_leader_1_name = row.Field<string>("U_leader_1_name"),
                         U_leader_2_name = row.Field<string>("U_leader_2_name"),
-                        U_leader_3_name = row.Field<string>("U_leader_3_name"),
-                        R_name = row.Field<string>("R_name"),
-                        U_Check_BC = row.Field<string>("U_Check_BC"),
-                        U_Check_BC_Name = null,
-                        U_BC_sort = row.Field<int>("U_BC_sort"),
-                        U_PFT_sort = row.Field<int>("U_PFT_sort")
+                        del_tag = row.Field<string>("del_tag") == "0" ? "在職" : "離職",
+                        U_Check_BC = row.Field<string>("U_Check_BC")
                     }).ToList();
 
                     foreach (var item in modellist_M)
@@ -2449,12 +2452,11 @@ namespace KF_WebAPI.Controllers
                         var values = result_bc.AsEnumerable()
                              .Select(row => "#" + row.Field<string>("item_D_name"))
                              .ToArray();
-                        item.U_Check_BC_Name = string.Join("", values);
+                        item.U_Check_BC = string.Join("", values);
                     }
 
                     resultClass.ResultCode = "000";
-                    var pageData = FuncHandler.GetPagedList(modellist_M, model.page, 100);
-                    resultClass.objResult = JsonConvert.SerializeObject(pageData);
+                    resultClass.objResult = JsonConvert.SerializeObject(modellist_M);
                     return Ok(resultClass);
                 }
                 else
