@@ -75,6 +75,7 @@ namespace KF_WebAPI.BaseClass.AE
         public decimal FR_total_hour { get; set; }
         public string Sign_name { get; set; }
         public string? FR_U_num { get; set; }
+        public string? FR_ot_compen { get; set; }
     }
 
 }

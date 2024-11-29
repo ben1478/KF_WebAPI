@@ -2994,7 +2994,7 @@ namespace KF_WebAPI.Controllers
         public ActionResult<ResultClass<string>> Debt_Certificate_LQuery(string? cs_name)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
-
+            var User_Num = HttpContext.Session.GetString("UserID");
             try
             {
                 ADOData _adoData = new ADOData();

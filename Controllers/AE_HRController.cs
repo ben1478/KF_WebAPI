@@ -2057,7 +2057,7 @@ namespace KF_WebAPI.Controllers
                     var parameters_fl = new List<SqlParameter>();
                     var T_SQL_FL = @"
                         select FR_id,FR_U_num,Case WHEN ISNULL(li_p.item_D_code,'') <> '' THEN li_p.item_D_name else u.U_name END as U_name,FR_kind
-                        ,FR_note,li.item_D_name as FR_Kind_name,fr.FR_date_begin,fr.FR_date_end,fr.FR_total_hour,li_1.item_D_name as Sign_name 
+                        ,FR_note,li.item_D_name as FR_Kind_name,fr.FR_date_begin,fr.FR_date_end,fr.FR_total_hour,li_1.item_D_name as Sign_name,FR_ot_compen 
                         from Flow_rest fr
                         inner join User_M u on u.U_num = fr.FR_U_num
                         left join Item_list li on li.item_M_code = 'FR_kind' and li.item_D_code = fr.FR_kind and li.del_tag ='0'
@@ -2081,7 +2081,8 @@ namespace KF_WebAPI.Controllers
                         FR_Date_S = row.Field<DateTime>("FR_date_begin"),
                         FR_Date_E = row.Field<DateTime>("FR_date_end"),
                         FR_total_hour = row.Field<decimal>("FR_total_hour"),
-                        Sign_name = row.Field<string>("Sign_name")
+                        Sign_name = row.Field<string>("Sign_name"),
+                        FR_ot_compen = row.Field<string>("FR_ot_compen")
                     }).ToList();
                     #endregion
 
@@ -2314,7 +2315,7 @@ namespace KF_WebAPI.Controllers
                     var parameters_fl = new List<SqlParameter>();
                     var T_SQL_FL = @"
                         select FR_id,FR_U_num,Case WHEN ISNULL(li_p.item_D_code,'') <> '' THEN li_p.item_D_name else u.U_name END as U_name,FR_kind
-                        ,FR_note,li.item_D_name as FR_Kind_name,fr.FR_date_begin,fr.FR_date_end,fr.FR_total_hour,li_1.item_D_name as Sign_name 
+                        ,FR_note,li.item_D_name as FR_Kind_name,fr.FR_date_begin,fr.FR_date_end,fr.FR_total_hour,li_1.item_D_name as Sign_name,FR_ot_compen 
                         from Flow_rest fr
                         inner join User_M u on u.U_num = fr.FR_U_num
                         left join Item_list li on li.item_M_code = 'FR_kind' and li.item_D_code = fr.FR_kind and li.del_tag ='0'
@@ -2338,7 +2339,8 @@ namespace KF_WebAPI.Controllers
                         FR_Date_S = row.Field<DateTime>("FR_date_begin"),
                         FR_Date_E = row.Field<DateTime>("FR_date_end"),
                         FR_total_hour = row.Field<decimal>("FR_total_hour"),
-                        Sign_name = row.Field<string>("Sign_name")
+                        Sign_name = row.Field<string>("Sign_name"),
+                        FR_ot_compen = row.Field<string>("FR_ot_compen")
                     }).ToList();
                     #endregion
 
@@ -2372,7 +2374,7 @@ namespace KF_WebAPI.Controllers
         public ActionResult<ResultClass<string>> User_M_LQuery(Uesr_M_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
-
+            var User_Num = HttpContext.Session.GetString("UserID");
             try
             {
                 ADOData _adoData = new ADOData();
@@ -2382,10 +2384,11 @@ namespace KF_WebAPI.Controllers
                     select (select item_D_name from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND item_D_code = UM.U_BC AND del_tag='0') as U_BC_name
                     ,(select item_D_name from Item_list where item_M_code = 'professional_title' AND item_D_type='Y' AND item_D_code = UM.U_PFT AND del_tag='0') as U_PFT_name
                     ,(select U_name FROM User_M where U_num = UM.U_agent_num AND del_tag='0') as U_agent_name
-                    ,U_num,U_name,UM.del_tag,(select U_name FROM User_M where U_num = UM.U_leader_1_num AND del_tag='0') as U_leader_1_name
+                    ,U_num,U_name,Case When ISNULL(UM.U_leave_date,'')='' THEN '0' ELSE '1' END as del_tag
+                    ,(select U_name FROM User_M where U_num = UM.U_leader_1_num AND del_tag='0') as U_leader_1_name
                     ,(select U_name FROM User_M where U_num = UM.U_leader_2_num AND del_tag='0') as U_leader_2_name
                     ,(select U_name FROM User_M where U_num = UM.U_leader_3_num AND del_tag='0') as U_leader_3_name,Rm.R_name,UM.U_Check_BC
-                    ,(select item_sort from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND item_D_code = UM.U_BC AND del_tag='0') as U_BC_sort
+                    ,(select item_sort from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND item_D_code = UM.U_BC AND del_tag='0') as U_BC_sort,U_cknum
                     ,(select item_sort from Item_list where item_M_code = 'professional_title' AND item_D_type='Y' AND item_D_code = UM.U_PFT AND del_tag='0') as U_PFT_sort
                     from User_M UM left join Role_M Rm on UM.Role_num = Rm.R_num where 1=1";
                 if (!string.IsNullOrEmpty(model.U_Num_Name))
@@ -2430,6 +2433,7 @@ namespace KF_WebAPI.Controllers
                         U_leader_1_name = row.Field<string>("U_leader_1_name"),
                         U_leader_2_name = row.Field<string>("U_leader_2_name"),
                         del_tag = row.Field<string>("del_tag") == "0" ? "在職" : "離職",
+                        cknum = row.Field<string>("U_cknum"),
                         U_Check_BC = row.Field<string>("U_Check_BC")
                     }).ToList();
 
@@ -2520,7 +2524,7 @@ namespace KF_WebAPI.Controllers
         /// 個人資料修改 User_M_SUpd/User_edit.asp
         /// </summary>
         [HttpPost("User_M_SUpd")]
-        public ActionResult<ResultClass<string>> User_M_SUpd(User_M model)
+        public ActionResult<ResultClass<string>> User_M_SUpd(User_M_Upd model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -2547,10 +2551,11 @@ namespace KF_WebAPI.Controllers
                     T_SQL += ",U_Ename=@U_Ename";
                     parameters.Add(new SqlParameter("@U_Ename", model.U_Ename));
                 }
-                if (model.U_Birthday != null)
+                if (!string.IsNullOrEmpty(model.str_U_Birthday))
                 {
                     T_SQL += ",U_Birthday=@U_Birthday";
-                    parameters.Add(new SqlParameter("@U_Birthday", model.U_Birthday));
+                    var Birthday = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_Birthday));
+                    parameters.Add(new SqlParameter("@U_Birthday", Birthday));
                 }
                 if (model.Children != null) 
                 {
@@ -2642,15 +2647,17 @@ namespace KF_WebAPI.Controllers
                     T_SQL += " ,U_address_live=@U_address_live";
                     parameters.Add(new SqlParameter("@U_address_live", model.U_address_live));
                 }
-                if (model.U_arrive_date != null) 
+                if (!string.IsNullOrEmpty(model.str_U_arrive_date)) 
                 {
                     T_SQL += " ,U_arrive_date=@U_arrive_date";
-                    parameters.Add(new SqlParameter("@U_arrive_date", model.U_arrive_date));
+                    var arriveDate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_arrive_date));
+                    parameters.Add(new SqlParameter("@U_arrive_date", arriveDate));
                 }
-                if (model.U_leave_date != null)
+                if (!string.IsNullOrEmpty(model.str_U_leave_date))
                 {
                     T_SQL += " ,U_leave_date=@U_leave_date";
-                    parameters.Add(new SqlParameter("@U_leave_date", model.U_leave_date));
+                    var leaveDate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_leave_date));
+                    parameters.Add(new SqlParameter("@U_leave_date", leaveDate));
                 }
                 else
                 {
@@ -2703,7 +2710,7 @@ namespace KF_WebAPI.Controllers
         /// 個人資料新增 User_M_SUpd/User_add.asp
         /// </summary>
         [HttpPost("User_M_Ins")]
-        public ActionResult<ResultClass<string>> User_M_Ins(User_M model)
+        public ActionResult<ResultClass<string>> User_M_Ins(User_M_Ins model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
@@ -2755,9 +2762,10 @@ namespace KF_WebAPI.Controllers
                 {
                     parameters.Add (new SqlParameter("@U_Ename","")); 
                 }
-                if (model.U_Birthday != null)
+                if (model.str_U_Birthday != null)
                 {
-                    parameters.Add(new SqlParameter("@U_Birthday", model.U_Birthday));
+                    var Birthday = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_Birthday));
+                    parameters.Add(new SqlParameter("@U_Birthday", Birthday));
                 }
                 else
                 {
@@ -2900,7 +2908,7 @@ namespace KF_WebAPI.Controllers
                     parameters.Add(new SqlParameter("@U_leader_2_num", ""));
                 }
                 parameters.Add(new SqlParameter("@U_leader_3_num", ""));
-                parameters.Add(new SqlParameter("@U_Check_BC", ""));
+                parameters.Add(new SqlParameter("@U_Check_BC", "#" + model.U_BC));
                 if (!string.IsNullOrEmpty(model.U_address_live))
                 {
                     parameters.Add(new SqlParameter("@U_address_live", model.U_address_live));
@@ -2909,10 +2917,12 @@ namespace KF_WebAPI.Controllers
                 {
                     parameters.Add(new SqlParameter("@U_address_live", ""));
                 }
-                parameters.Add(new SqlParameter("@U_arrive_date", model.U_arrive_date));
-                if (model.U_leave_date != null)
+                var arriveDate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_arrive_date));
+                parameters.Add(new SqlParameter("@U_arrive_date", arriveDate));
+                if (!string.IsNullOrEmpty(model.str_U_leave_date))
                 {
-                    parameters.Add(new SqlParameter("@U_leave_date", model.U_leave_date));
+                    var leaveDate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_leave_date));
+                    parameters.Add(new SqlParameter("@U_leave_date", leaveDate));
                 }
                 else
                 {
@@ -3420,7 +3430,7 @@ namespace KF_WebAPI.Controllers
         /// 人事異動 User_M_Shanges/User_Form.asp
         /// </summary>
         [HttpPost("User_M_Shanges")]
-        public ActionResult<ResultClass<string>> User_M_Shanges(string U_id)
+        public ActionResult<ResultClass<string>> User_M_Shanges(string U_num)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -3446,8 +3456,8 @@ namespace KF_WebAPI.Controllers
                     Left Join
                     (select item_D_code U_BC,item_D_name BC_NA from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND show_tag='0' AND del_tag='0' )B
                     on M.U_BC=B.U_BC
-                    where M.U_id = @U_id";
-                parameters.Add(new SqlParameter("@U_id", U_id));
+                    where M.U_num = @U_num";
+                parameters.Add(new SqlParameter("@U_num", U_num));
                 #endregion
                 DataTable dtresult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if(dtresult.Rows.Count > 0)

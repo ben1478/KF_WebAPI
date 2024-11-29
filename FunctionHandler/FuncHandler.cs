@@ -743,7 +743,7 @@ namespace KF_WebAPI.FunctionHandler
         /// <param name="rocDate">113/9/25</param>
         public static string ConvertROCToGregorian(string rocDate)
         {
-            var parts = rocDate.Split('/');
+            var parts = rocDate.Split('-');
             int rocYear = int.Parse(parts[0]);
             int month = int.Parse(parts[1]);
             int day = int.Parse(parts[2]);
@@ -1555,7 +1555,7 @@ namespace KF_WebAPI.FunctionHandler
 
                 #region 加班
                 var worksheet_wo = package.Workbook.Worksheets.Add("加班");
-                string[] headers_wo = new string[] { "序號", "名稱", "加班起迄日", "加班時數", "簽核結果" };         
+                string[] headers_wo = new string[] { "序號", "名稱", "加班起迄日", "加班時數","選擇項目", "簽核結果" };         
 
                 int rowIndex_wo = 1;
                 int colIndex_wo = 1;
@@ -1590,8 +1590,21 @@ namespace KF_WebAPI.FunctionHandler
                     worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Merge = true;
                     worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
                     worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
-
                     colIndex_wo++;
+
+                    string compensationType = item.FR_ot_compen;
+                    string compensationDescription = compensationType switch
+                    {
+                        "0" => "補休",     
+                        "1" => "加班費",   
+                        "2" => "其他"
+                    };
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo].Value = compensationDescription;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Merge = true;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                    colIndex_wo++;
+
                     worksheet_wo.Cells[rowIndex_wo, colIndex_wo].Value = item.Sign_name;
                     worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Merge = true;
                     worksheet_wo.Cells[rowIndex_wo, colIndex_wo, rowIndex_wo + 1, colIndex_wo].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;

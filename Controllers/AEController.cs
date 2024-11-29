@@ -80,18 +80,17 @@ namespace KF_WebAPI.Controllers
         }
 
 
-
         [HttpPost("Login")]
-        public ActionResult<ResultClass<string>> Login(string user,string password)
+        public ActionResult<ResultClass<string>> Login(string user, string password)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
-            ADOData _adoData=new ADOData();
+            ADOData _adoData = new ADOData();
             var T_SQL = "SELECT * FROM User_M WHERE U_num = @UserName AND U_psw = @Password";
             var parameters = new List<SqlParameter>
             {
                 new SqlParameter("@UserName", user),
-                new SqlParameter("@Password", password) 
+                new SqlParameter("@Password", password)
             };
 
             try
@@ -101,6 +100,7 @@ namespace KF_WebAPI.Controllers
                 {
                     var Role_num = dtResult.Rows[0]["Role_num"].ToString();
                     var User_U_BC = dtResult.Rows[0]["U_BC"].ToString();
+
                     // 設置 Session
                     HttpContext.Session.SetString("UserID", user);
                     HttpContext.Session.SetString("Role_num", string.Join(',', Role_num));
@@ -114,7 +114,7 @@ namespace KF_WebAPI.Controllers
                     resultClass.ResultMsg = "用戶名或密碼不正確";
                     return Unauthorized(resultClass);
                 }
-                
+
             }
             catch (Exception ex)
             {
@@ -128,11 +128,15 @@ namespace KF_WebAPI.Controllers
         public ActionResult<ResultClass<string>> ASP_File_Query(string cknum)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
-
+            var User_Num = HttpContext.Session.GetString("UserID");
             try
             {
                 ADOData _adoData = new ADOData();
-                var T_SQL = "select upload_id,upload_name_show,add_date,del_tag from ASP_UpLoad where cknum=@cknum";
+                var T_SQL = @"select upload_name_show,FORMAT(add_date, 'yyyy/MM/dd', 'en-US') + ' ' + CASE WHEN DATEPART(HOUR, add_date) < 12 
+                    THEN '上午' ELSE '下午' END + ' ' + FORMAT(add_date, 'hh:mm:ss', 'en-US') AS add_date,upload_id,Case When del_tag='1' 
+                    Then FORMAT(del_date, 'yyyy/MM/dd', 'en-US') + ' ' + CASE WHEN DATEPART(HOUR, del_date) < 12 THEN '上午' 
+                    ELSE '下午' END + ' ' + FORMAT(del_date, 'hh:mm:ss', 'en-US') else '0' end as del_tag 
+                    from ASP_UpLoad where cknum=@cknum order by upload_id";
                 var parameters = new List<SqlParameter>();
                 parameters.Add(new SqlParameter("@cknum", cknum));
 
@@ -254,7 +258,10 @@ namespace KF_WebAPI.Controllers
                         return NotFound(); // 檔案不存在時返回 404
                     }
                     var fileBytes = System.IO.File.ReadAllBytes(_filePath);
-                    var fileName = Path.GetFileName(_filePath);
+                    var fileName = upload_name_show;
+
+                    Response.Headers.Add("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+
                     return File(fileBytes, "application/octet-stream", fileName);
                 }
                 else
@@ -533,6 +540,8 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+
     }
 
 }

@@ -64,6 +64,7 @@ app.UseCors(builder =>
         )
            .AllowAnyMethod()
            .AllowAnyHeader()
+           .WithExposedHeaders("Content-Disposition")
            .AllowCredentials(); // 允許發送憑證（包括 Cookies）
 });
 
@@ -77,5 +78,7 @@ app.UseSession();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseCors("AllowAll");
 
 app.Run();
