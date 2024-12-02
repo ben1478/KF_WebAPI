@@ -1309,17 +1309,17 @@ namespace KF_WebAPI.FunctionHandler
                 var worksheet_ly = package.Workbook.Worksheets.Add("遲到、曠職");
 
                 // 添加合併標題 遲到
-                worksheet_ly.Cells[1, 1].Value = Convert.ToInt32(yyyy) - 1911 + "年" + mm + "月  國峯遲到";
+                worksheet_ly.Cells[1, 1].Value = Convert.ToInt32(yyyy) - 1911 + "年" + mm + "月  國峯遲到、早退";
                 worksheet_ly.Cells[1, 1, 1, 4].Merge = true;
                 worksheet_ly.Cells[1, 1, 1, 4].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
                 worksheet_ly.Cells[1, 1, 1, 4].Style.Font.Bold = true;
 
                 worksheet_ly.Cells[2, 1].Value = "名稱";
-                worksheet_ly.Cells[2, 4].Value = "遲到";
+                worksheet_ly.Cells[2, 4].Value = "遲到、早退";
 
                 int rowindex_ly = 2;
                 int colindex_ly = 1;
-                var userResult = modelList.GroupBy(x => x.userID).Select(g => new { UserID = g.Key, Totalval = g.Sum(x => x.Late)-15 }).OrderBy(x=>x.UserID);
+                var userResult = modelList.Where(x => (x.absenteeism ?? "").Equals("Y") == false).GroupBy(x => x.userID).Select(g => new { UserID = g.Key, Totalval = g.Sum(x => x.Late)-15 }).OrderBy(x=>x.UserID);
                 foreach ( var user in userResult)
                 {
                     if(user.Totalval > 0)
@@ -1341,38 +1341,38 @@ namespace KF_WebAPI.FunctionHandler
                 range_ly1.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 range_ly1.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
 
-                #region 曠職註解
-                //// 添加合併標題 曠職
-                //worksheet_ly.Cells[1, 6].Value = Convert.ToInt32(yyyy) - 1911 + "年" + mm + "月  國峯曠職";
-                //worksheet_ly.Cells[1, 6, 1, 10].Merge = true;
-                //worksheet_ly.Cells[1, 6, 1, 10].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                //worksheet_ly.Cells[1, 6, 1, 10].Style.Font.Bold = true;
+                #region 曠職
+                // 添加合併標題 曠職
+                worksheet_ly.Cells[1, 6].Value = Convert.ToInt32(yyyy) - 1911 + "年" + mm + "月  國峯曠職";
+                worksheet_ly.Cells[1, 6, 1, 10].Merge = true;
+                worksheet_ly.Cells[1, 6, 1, 10].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                worksheet_ly.Cells[1, 6, 1, 10].Style.Font.Bold = true;
 
-                //worksheet_ly.Cells[2, 6].Value = "名稱";
-                //worksheet_ly.Cells[2, 7].Value = "日期";
-                //worksheet_ly.Cells[2, 10].Value = "曠職";
+                worksheet_ly.Cells[2, 6].Value = "名稱";
+                worksheet_ly.Cells[2, 7].Value = "日期";
+                worksheet_ly.Cells[2, 10].Value = "曠職";
 
-                //rowindex_ly = 2;
-                //colindex_ly = 6;
+                rowindex_ly = 2;
+                colindex_ly = 6;
 
-                //foreach (var item in modelList.Where(x => x.early > 0).OrderBy(x => x.userID))
-                //{
-                //    rowindex_ly++;
-                //    worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = $"{item.userID}: {item.user_name}";
-                //    worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = item.attendance_week;
-                //    colindex_ly++;
-                //    colindex_ly++;
-                //    decimal earlyHour = Convert.ToInt32(item.early) / 60m;
-                //    worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = Math.Ceiling(earlyHour / 0.5m) * 0.5m + "H";
-                //    colindex_ly = 6;
-                //}
+                foreach (var item in modelList.Where(x => (x.absenteeism ?? "").Equals("Y") == true).OrderBy(x => x.userID))
+                {
+                    rowindex_ly++;
+                    worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = $"{item.userID}: {item.user_name}";
+                    worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = item.attendance_week;
+                    colindex_ly++;
+                    colindex_ly++;
+                    decimal earlyHour = Convert.ToInt32(item.early) / 60m;
+                    worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = Math.Ceiling(earlyHour / 0.5m) * 0.5m + "H";
+                    colindex_ly = 6;
+                }
 
-                //// 添加框線
-                //var range_ly2 = worksheet_ly.Cells[1, 6, rowindex_ly, 10];
-                //range_ly2.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                //range_ly2.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                //range_ly2.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                //range_ly2.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                // 添加框線
+                var range_ly2 = worksheet_ly.Cells[1, 6, rowindex_ly, 10];
+                range_ly2.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_ly2.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_ly2.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                range_ly2.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 #endregion
 
                 //颱風假&&無請假紀錄&&在職
@@ -1478,11 +1478,11 @@ namespace KF_WebAPI.FunctionHandler
                     }
 
                     // 添加框線
-                    var range_ly2 = worksheet_ly.Cells[1, 6, rowindex_ly, 7];
-                    range_ly2.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range_ly2.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range_ly2.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range_ly2.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    var range_ly3 = worksheet_ly.Cells[1, 6, rowindex_ly, 7];
+                    range_ly3.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range_ly3.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range_ly3.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range_ly3.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                 }
 
                 // 自動調整列寬
