@@ -59,7 +59,6 @@ namespace KF_WebAPI.Controllers
             return Ok(resultClass);
         }
 
-
         [HttpPost("CheckAPI")]
         public ActionResult<ResultClass<string>> CheckAPI()
         {
@@ -78,7 +77,6 @@ namespace KF_WebAPI.Controllers
             }
             return Ok(resultClass);
         }
-
 
         [HttpPost("Login")]
         public ActionResult<ResultClass<string>> Login(string user, string password)
@@ -106,6 +104,7 @@ namespace KF_WebAPI.Controllers
                     HttpContext.Session.SetString("Role_num", string.Join(',', Role_num));
                     HttpContext.Session.SetString("User_U_BC", User_U_BC);
                     var roleNum = HttpContext.Session.GetString("Role_num");
+                    resultClass.objResult = User_U_BC;
                     return Ok(resultClass);
                 }
                 else
@@ -115,6 +114,47 @@ namespace KF_WebAPI.Controllers
                     return Unauthorized(resultClass);
                 }
 
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+            }
+        }
+
+        [HttpPost("GetMenuList")]
+        public ActionResult<ResultClass<string>> GetMenuList(string U_num)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"SELECT distinct Menu_list.*  
+                    FROM Menu_list  
+                    LEFT JOIN (select * from Menu_set where U_num in (select Role_num from User_M where U_num=@U_num) AND del_tag='0') Menu_set ON Menu_list.Menu_id = Menu_set.Menu_id  
+                    WHERE Menu_set.U_num in  (select Role_num from User_M where U_num=@U_num) and Menu_list.item_id = 0 
+                    and (Menu_set.per_read = 1 or Menu_set.per_add = 1 or Menu_set.per_edit = 1 or Menu_set.per_del = 1) 
+                    and Menu_list.del_tag = '0'
+                    ORDER BY  Menu_list.top_id, Menu_list.sub_id, Menu_list.item_id";
+                parameters.Add(new SqlParameter("@U_num", U_num));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
             }
             catch (Exception ex)
             {
@@ -184,8 +224,7 @@ namespace KF_WebAPI.Controllers
                     Directory.CreateDirectory(folderPath);
                 }
                 #endregion
-                FuncHandler Fun = new FuncHandler();
-                string number = Fun.GetCheckNum();
+                string number = FuncHandler.GetCheckNum();
 
                 var fileExtension = Path.GetExtension(file.FileName);
                 var filePath = Path.Combine(folderPath, $"{number}{fileExtension}");
@@ -541,7 +580,41 @@ namespace KF_WebAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// 提供採購單申報類型列表
+        /// </summary>
+        [HttpGet("GetPMPayType")]
+        public ActionResult<ResultClass<string>> GetPMPayType()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
 
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code='Procurement_Pay' and item_D_type='Y' and del_tag='0' and show_tag='0'";
+                #endregion
+                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
     }
 
 }

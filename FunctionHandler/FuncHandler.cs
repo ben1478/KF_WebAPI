@@ -71,7 +71,7 @@ namespace KF_WebAPI.FunctionHandler
         /// <summary>
         /// 獲得Check_Num
         /// </summary>
-        public string GetCheckNum()
+        public static string GetCheckNum()
         {
             Random random = new Random();
 
@@ -773,7 +773,7 @@ namespace KF_WebAPI.FunctionHandler
             string formattedMonth = month.ToString("D2");
             string formattedDay = day.ToString("D2");
 
-            string gregorianDate = $"{gregorianYear}/{formattedMonth}/{formattedDay}";
+            string gregorianDate = $"{gregorianYear}-{formattedMonth}-{formattedDay}";
 
             return gregorianDate;
         }
@@ -2193,6 +2193,92 @@ namespace KF_WebAPI.FunctionHandler
                 dataTable.TableName = "Table";
 
                 result.Add(dataTable);
+            }
+
+            return result;
+        }
+
+        public static bool AuditFlow(string U_num,string FM_ID,string FD_Source_ID,string IP)
+        {
+            bool result = false;
+
+            ADOData _adoData = new ADOData();
+            var parameters_audit = new List<SqlParameter>();
+            var T_SQL_AUDIT = @"select * from AuditFlow_M where FM_ID=@FM_ID";
+            parameters_audit.Add(new SqlParameter("@FM_ID", FM_ID));
+            var dtResultAudit = _adoData.ExecuteQuery(T_SQL_AUDIT, parameters_audit);
+            int FM_step = Convert.ToInt32(dtResultAudit.Rows[0]["FM_Step"]);
+            var FM_Step_Caption = dtResultAudit.Rows[0]["FM_Step_Caption"].ToString();
+            
+            var stepDescriptions = FM_Step_Caption.Split(',');
+            string[] arrNum = new string[0];
+
+            //抓取部門主管
+            var parameters_user = new List<SqlParameter>();
+            var T_SQL_USER = @"select * from User_M where U_num = @U_num";
+            parameters_user.Add(new SqlParameter("@U_num", U_num));
+            var dtResultUser = _adoData.ExecuteQuery(T_SQL_USER, parameters_user);
+            var leaderNum = dtResultUser.Rows[0]["U_leader_2_num"].ToString();
+
+            switch (FM_ID)
+            {
+                case "PO001":
+                    arrNum = new string[] { leaderNum, "K0202", "K0321", "K0108", "K0002" };
+                    break;
+                case "PO002":
+                    arrNum = new string[] { leaderNum, "K0202", "K0321", "K0108", "K0002" };
+                    break;
+                default:
+                    break;
+            }
+
+            #region 動態組合 AuditFlow_D
+            var parameters_d = new List<SqlParameter>();
+            var T_SQL_D = @"Insert into AuditFlow_D (FM_ID, FD_Source_ID,FM_Step_Now,FM_Step, FM_Step_SignType, ";
+            for (int i = 1; i <= FM_step; i++)
+            {
+                T_SQL_D += $"FD_Step{i}_Desc, FD_Step{i}_num, FD_Step{i}_date, FD_Step{i}_SignType";
+
+                if (i < FM_step)
+                {
+                    T_SQL_D += ", ";
+                }
+            }
+            T_SQL_D += @", add_date, add_num, add_ip, edit_date, edit_num, edit_ip) Values (@FM_ID, @FD_Source_ID,@FM_Step_Now, @FM_Step, @FM_Step_SignType,";
+            for (int i = 1; i <= FM_step; i++)
+            {
+                T_SQL_D += $"@FD_Step{i}_Desc, @FD_Step{i}_num, @FD_Step{i}_date, @FD_Step{i}_SignType";
+
+                parameters_d.Add(new SqlParameter($"@FD_Step{i}_Desc", stepDescriptions[i - 1]));
+                parameters_d.Add(new SqlParameter($"@FD_Step{i}_num", arrNum[i - 1]));
+                parameters_d.Add(new SqlParameter($"@FD_Step{i}_date", DBNull.Value));
+                parameters_d.Add(new SqlParameter($"@FD_Step{i}_SignType", "FSIGN001"));
+
+                if (i < FM_step)
+                {
+                    T_SQL_D += ", ";
+                }
+            }
+            T_SQL_D += @", GETDATE(), @add_num, @add_ip, GETDATE(), @edit_num, @edit_ip)";
+            parameters_d.Add(new SqlParameter("@FM_ID", FM_ID));
+            parameters_d.Add(new SqlParameter("@FD_Source_ID", FD_Source_ID));
+            parameters_d.Add(new SqlParameter("@FM_Step_Now", "1"));
+            parameters_d.Add(new SqlParameter("@FM_Step", FM_step));
+            parameters_d.Add(new SqlParameter("@FM_Step_SignType", "FSIGN001"));
+            parameters_d.Add(new SqlParameter("@add_num", U_num));
+            parameters_d.Add(new SqlParameter("@add_ip", IP));
+            parameters_d.Add(new SqlParameter("@edit_num", U_num));
+            parameters_d.Add(new SqlParameter("@edit_ip", IP));
+            #endregion
+
+            int result_d = _adoData.ExecuteNonQuery(T_SQL_D, parameters_d);
+            if (result_d == 0)
+            {
+                result = false;
+            }
+            else
+            {
+                result = true;
             }
 
             return result;

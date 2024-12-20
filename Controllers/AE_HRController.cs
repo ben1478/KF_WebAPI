@@ -500,8 +500,8 @@ namespace KF_WebAPI.Controllers
                 #endregion
 
                 var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
-                var Fun = new FuncHandler();
-                string CheckNum = Fun.GetCheckNum();
+               
+                string CheckNum = FuncHandler.GetCheckNum();
 
                 #region SQL
                 var parameters = new List<SqlParameter>();
@@ -2415,6 +2415,7 @@ namespace KF_WebAPI.Controllers
                 if (!string.IsNullOrEmpty(model.U_Role)) 
                 {
                     T_SQL += " AND Rm.R_num=@R_num";
+                    parameters.Add(new SqlParameter("@R_num", model.U_Role));
                 }
                 T_SQL += " order by U_type desc,U_leave_date,U_BC_sort,U_PFT_sort,U_id";
                 #endregion
@@ -2750,8 +2751,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@add_num", User_Num));
                 parameters.Add(new SqlParameter("@add_date",DateTime.Now));
                 parameters.Add(new SqlParameter("@add_ip", clientIp));
-                var Fun = new FuncHandler();
-                parameters.Add(new SqlParameter("@U_cknum", Fun.GetCheckNum()));
+                parameters.Add(new SqlParameter("@U_cknum", FuncHandler.GetCheckNum()));
                 parameters.Add(new SqlParameter("@U_num", model.U_num));
                 parameters.Add(new SqlParameter("@U_name", model.U_name));
                 if (!string.IsNullOrEmpty(model.U_Ename))
@@ -3011,7 +3011,7 @@ namespace KF_WebAPI.Controllers
         /// 取得或新增年假管理資料 User_Hday_List_Change/User_Hday_edit.asp
         /// </summary>
         [HttpPost("User_Hday_List_Change")]
-        public ActionResult<ResultClass<string>> User_Hday_List_Change(string U_num,DateTime Arrive_Date)
+        public ActionResult<ResultClass<string>> User_Hday_List_Change(string U_num)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
@@ -3034,6 +3034,14 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
+                    var parameters_u = new List<SqlParameter>();
+                    var T_SQL_U = "select U_arrive_date from User_M where U_num=@U_num";
+                    parameters_u.Add(new SqlParameter("@U_num", U_num));
+
+                    DataTable dtResult_U = _adoData.ExecuteQuery(T_SQL_U, parameters_u);
+                    DateTime Arrive_Date = Convert.ToDateTime(dtResult_U.Rows[0]["U_arrive_date"]);
+
+
                     //無資料需新增
                     List<User_Hday> userHdaysList = new List<User_Hday>();
                     for (int i = 1; i < 33; i++)
@@ -3371,7 +3379,7 @@ namespace KF_WebAPI.Controllers
         /// 修改年假管理資料 User_Hday_Upd/User_Hday_edit.asp
         /// </summary>
         [HttpPost("User_Hday_Upd")]
-        public ActionResult<ResultClass<string>> User_Hday_Upd(List<User_Hday> Modellist)
+        public ActionResult<ResultClass<string>> User_Hday_Upd(List<User_Hday_Upd> Modellist)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
@@ -3387,12 +3395,13 @@ namespace KF_WebAPI.Controllers
                     var parameters_up = new List<SqlParameter>();
                     var T_SQL_UP = @"
                         Update User_Hday set H_begin=@H_begin,H_end=@H_end,H_day_base=@H_day_base
-                        ,H_day_adjust=@H_day_adjust,H_day_adjust_note=@H_day_adjust_note,H_day_total=@H_day_total
-                        ,edit_date=@edit_date,edit_num=@edit_num,edit_ip=@edit_ip Where UH_id=@UH_id";                   
-                    parameters_up.Add(new SqlParameter("@H_begin", item.H_begin));
-                    parameters_up.Add(new SqlParameter("@H_end", item.H_end));
+                        ,H_day_adjust=@H_day_adjust,H_hours=@H_hours,H_day_adjust_note=@H_day_adjust_note,H_day_total=@H_day_total
+                        ,edit_date=@edit_date,edit_num=@edit_num,edit_ip=@edit_ip Where U_num=@U_num and H_year_count=@H_year_count";                   
+                    parameters_up.Add(new SqlParameter("@H_begin", DateTime.Parse(FuncHandler.ConvertROCToGregorian(item.str_H_begin))));
+                    parameters_up.Add(new SqlParameter("@H_end", DateTime.Parse(FuncHandler.ConvertROCToGregorian(item.str_H_end))));
                     parameters_up.Add(new SqlParameter("@H_day_base", item.H_day_base));
                     parameters_up.Add(new SqlParameter("@H_day_adjust", item.H_day_adjust));
+                    parameters_up.Add(new SqlParameter("@H_hours", item.H_hours));
                     if (!string.IsNullOrEmpty(item.H_day_adjust_note))
                     {
                         parameters_up.Add(new SqlParameter("@H_day_adjust_note", item.H_day_adjust_note));
@@ -3405,7 +3414,8 @@ namespace KF_WebAPI.Controllers
                     parameters_up.Add(new SqlParameter("@edit_date", DateTime.Now));
                     parameters_up.Add(new SqlParameter("@edit_num", User_Num));
                     parameters_up.Add(new SqlParameter("@edit_ip", clientIp));
-                    parameters_up.Add(new SqlParameter("@UH_id", item.UH_id));
+                    parameters_up.Add(new SqlParameter("@U_num", item.U_num));
+                    parameters_up.Add(new SqlParameter("@H_year_count", item.H_year_count));
                     #endregion
                     int reult_up = _adoData.ExecuteNonQuery(T_SQL_UP, parameters_up);
                     if (reult_up == 0)

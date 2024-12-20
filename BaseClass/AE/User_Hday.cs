@@ -42,4 +42,18 @@
         public string? U_BC { get; set; }
         public string? Job_Status { get; set; }
     }
+
+    public class User_Hday_Upd
+    {
+        public tbInfo? tbInfo { get; set; }
+        public string? U_num { get; set; }
+        public string? H_year_count { get; set; }
+        public string? str_H_begin { get; set; }
+        public string? str_H_end { get; set; }
+        public decimal? H_day_base { get; set; }
+        public decimal? H_day_adjust { get; set; }
+        public decimal? H_hours { get; set; }
+        public string? H_day_adjust_note { get; set; }
+        public decimal? H_day_total { get; set; }
+    }
 }

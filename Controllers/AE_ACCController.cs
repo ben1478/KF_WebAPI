@@ -725,8 +725,7 @@ namespace KF_WebAPI.Controllers
 
             try
             {
-                var Fun = new FuncHandler();
-                var cknum = Fun.GetCheckNum();
+                var cknum = FuncHandler.GetCheckNum();
                 var date_Begin = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_date_begin)).AddHours(6);
                 ADOData _adoData = new ADOData();
                 #region SQL_Rc_Deatil_M
@@ -786,7 +785,7 @@ namespace KF_WebAPI.Controllers
                         decimal pri_bal = (decimal)model.amount_total;
                         for (int i = 1; i <= maxCount; i++)
                         {
-                            var cknum_d = Fun.GetCheckNum();
+                            var cknum_d = FuncHandler.GetCheckNum();
                             var parameters_d = new List<SqlParameter>();
                             var T_SQL_D = @"Insert into Receivable_D (RCD_cknum,RCM_id,RC_count,RC_amount,RC_date,RC_type,RC_note,interest
                                 ,Rmoney,add_date,add_num,add_ip) 
