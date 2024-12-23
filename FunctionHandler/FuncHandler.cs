@@ -1241,7 +1241,17 @@ namespace KF_WebAPI.FunctionHandler
                                 //早退
                                 if (!isRest)
                                 {
-                                    if(items[j].early > 0)
+                                    #region 因為消毒所以12/20 5F人員提早下班不算曠職
+                                    if (bcGroup.Key == "BC0800" || bcGroup.Key == "BC0900" || bcGroup.Key == "BC0100")
+                                    {
+                                        if (items[j].attendance_week == "12/20 (五)")
+                                        {
+                                            items[j].early = 0;
+                                        }
+                                    }
+                                    #endregion
+
+                                    if (items[j].early > 0)
                                     {
                                         decimal earlyHour = Convert.ToInt32(items[j].early) / 60m;
                                         decimal calculatedEarlyHour = Math.Ceiling(earlyHour / 0.5m) * 0.5m;
@@ -1249,6 +1259,7 @@ namespace KF_WebAPI.FunctionHandler
                                             calculatedEarlyHour = 8;
                                         items[j].typename += "曠職" + calculatedEarlyHour + " H";
                                     }
+                                   
                                 }
                                 //到職日
                                 if (items[j].arrive_date.HasValue && items[j].attendance_date == items[j].arrive_date.Value.ToString("yyyy/MM/dd"))
