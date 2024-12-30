@@ -1195,8 +1195,16 @@ namespace KF_WebAPI.FunctionHandler
                                             else if(rest.FR_kind == "FRK016") //外出 FRK016
                                             {
                                                 items[j].typename += rest.FR_note;
-                                                items[j].Late = 0;
-                                                items[j].early = 0;
+                                                TimeSpan LateTime = new TimeSpan(9, 0, 0);
+                                                TimeSpan EarlyTime = new TimeSpan(18, 0, 0);
+                                                if (rest.FR_Date_S.TimeOfDay== LateTime)
+                                                {
+                                                    items[j].Late = 0;
+                                                }
+                                                if(rest.FR_Date_E.TimeOfDay== EarlyTime)
+                                                {
+                                                    items[j].early = 0;
+                                                }
                                             }
                                             else if(rest.FR_total_hour >= 8)
                                             {
@@ -2283,6 +2291,48 @@ namespace KF_WebAPI.FunctionHandler
             #endregion
 
             int result_d = _adoData.ExecuteNonQuery(T_SQL_D, parameters_d);
+            if (result_d == 0)
+            {
+                result = false;
+            }
+            else
+            {
+                result = true;
+
+                //訊息通知
+                switch (FM_ID)
+                {
+                    case "PO001":
+                        result = MsgIns("MSGK0005", U_num, arrNum[0], "採購單簽核通知,請前往處理!!", IP);
+                        break;
+                    case "PO002":
+                        result = MsgIns("MSGK0005", U_num, arrNum[0], "採購單簽核通知,請前往處理!!", IP);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            return result;
+        }
+
+        public static bool MsgIns(string Msg_Kind,string Add_User,string Msg_User,string Msg_Title, string IP)
+        {
+            bool result = false;
+
+            ADOData _adoData = new ADOData();
+            var parameters = new List<SqlParameter>();
+            var T_SQL = @"Insert into Msg (Msg_cknum,Msg_source,Msg_kind,Msg_show_date,Msg_title,Msg_note,Msg_to_num,Msg_read_type,Msg_reply_note,Msg_reply_type
+                ,del_tag,show_tag,add_date,add_num,add_ip) values (@Msg_cknum,'sys',@Msg_kind,GETDATE(),@Msg_title,'',@Msg_to_num,'N',''
+                ,'N','0','0',GETDATE(),@add_num,@add_ip)";
+            parameters.Add(new SqlParameter("@Msg_cknum", GetCheckNum()));
+            parameters.Add(new SqlParameter("@Msg_kind", Msg_Kind));
+            parameters.Add(new SqlParameter("@Msg_title", Msg_Title));
+            parameters.Add(new SqlParameter("@Msg_to_num", Msg_User));
+            parameters.Add(new SqlParameter("@add_num", Add_User));
+            parameters.Add(new SqlParameter("@add_ip", IP));
+
+            int result_d = _adoData.ExecuteNonQuery(T_SQL, parameters);
             if (result_d == 0)
             {
                 result = false;

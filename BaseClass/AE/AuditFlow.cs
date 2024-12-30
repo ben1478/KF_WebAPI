@@ -1,9 +1,5 @@
 ﻿namespace KF_WebAPI.BaseClass.AE
 {
-    public class AuditFlow_M
-    {
-    }
-
     public class AuditFlow_D_Ins
     {
         public tbInfo? tbInfo { get; set; }
@@ -63,5 +59,58 @@
         public string FD_step_sign { get; set; }
         public string FD_step_note { get; set; }
         public string PM_U_num { get; set; }
+        public string Msg_kind { get; set; }
+    }
+
+    public class AuditFlow_M_Ins
+    {
+        public string FM_ID { get; set; }
+        public string FM_Name { get; set; }
+        public string FM_Caption { get; set; }
+        public string FM_Step { get; set; }
+        public string FM_Step_Caption { get; set; }
+        public string add_num { get; set; }
+        public string edit_num { get; set; }
+
+    }
+
+    public class AuditFlow_D_Req
+    {
+        public string FM_ID { get; set; }
+        public string FD_Source_ID { get; set; }
+    }
+
+    public class AuditFlowDetail_Ins
+    {
+        public string edit_num { get; set; }
+        public string FM_ID { get; set; }
+        public string FD_Source_ID { get; set; }
+        public string? FD_Step1_Desc { get; set; }  
+        public string? FD_Step1_num { get; set; }
+        public string? FD_Step2_Desc { get; set; }
+        public string? FD_Step2_num { get; set; }
+        public string? FD_Step3_Desc { get; set; }
+        public string? FD_Step3_num { get; set; }
+        public string? FD_Step4_Desc { get; set; }
+        public string? FD_Step4_num { get; set; }
+        public string? FD_Step5_Desc { get; set; }
+        public string? FD_Step5_num { get; set; }
+        public string? FD_Step6_Desc { get; set; }
+        public string? FD_Step6_num { get; set; }
+        public string? FD_Step7_Desc { get; set; }
+        public string? FD_Step7_num { get; set; }
+        public string? FD_Step8_Desc { get; set; }
+        public string? FD_Step8_num { get; set; }
+        public string? FD_Step9_Desc { get; set; }
+        public string? FD_Step9_num { get; set; }
+    }
+
+    public class AuditFlowReason
+    {
+        public string FM_ID { get; set; }
+        public string FD_Source_ID { get; set; }
+        public string Type { get; set; }
+        public string Reason { get; set; }
+        public string User { get; set; }
     }
 }
