@@ -1176,7 +1176,7 @@ namespace KF_WebAPI.FunctionHandler
 
                                     if( RestList.Count > 0)
                                     {
-                                        foreach( var rest in RestList) 
+                                        foreach( var rest in RestList.Where(x=>x.Sign_name.Equals("同意")).ToList()) 
                                         {
                                             string displayValue = (rest.FR_total_hour % 1 == 0) ? ((int)rest.FR_total_hour).ToString() : rest.FR_total_hour.ToString();
                                             if (rest.FR_kind == "FRK017") //忘打卡FRK017
