@@ -2322,7 +2322,7 @@ namespace KF_WebAPI.Controllers
                         left join Item_list li_1 on li_1.item_M_code = 'Flow_sign_type' and li_1.item_D_code = fr.FR_sign_type and li_1.del_tag ='0'
                         left join Item_list li_p on li_p.item_M_code = 'SpecName' and li_p.item_D_txt_A = u.U_num
                         where YEAR(FR_date_begin) = @yyyy and MONTH(FR_date_begin) = @mm and fr.FR_cancel <> 'Y' and fr.del_tag = '0'
-                        AND FR_U_num IN (select U_num from User_M where U_BC='BC0700') AND FR_sign_type='FSIGN002'                       
+                        AND FR_U_num IN (select U_num from User_M where U_BC='BC0700')                      
                         order by FR_U_num,fr.FR_date_begin";
                     parameters_fl.Add(new SqlParameter("@mm", model.yyyymm.Substring(4, 2)));
                     parameters_fl.Add(new SqlParameter("@yyyy", model.yyyymm.Substring(0, 4)));
