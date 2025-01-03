@@ -202,10 +202,9 @@ namespace KF_WebAPI.Controllers
         }
 
         [HttpPost("ASP_File_Upload")]
-        public ActionResult<ResultClass<string>> ASP_File_Upload(IFormFile file, string cknum)
+        public ActionResult<ResultClass<string>> ASP_File_Upload(IFormFile file, string cknum,string WebUser)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
-            var User_Num = HttpContext.Session.GetString("UserID");
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
 
             try
@@ -248,7 +247,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@upload_code", number));
                 parameters.Add(new SqlParameter("@del_tag", "0"));
                 parameters.Add(new SqlParameter("@add_date", DateTime.Now));
-                parameters.Add(new SqlParameter("@add_num", User_Num));
+                parameters.Add(new SqlParameter("@add_num", WebUser));
                 parameters.Add(new SqlParameter("@add_ip", clientIp));
                 parameters.Add(new SqlParameter("@send_api_name_code", ""));
 
@@ -267,9 +266,10 @@ namespace KF_WebAPI.Controllers
                     return Ok(resultClass);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass); // 返回 500 錯誤碼
             }
             
@@ -315,11 +315,10 @@ namespace KF_WebAPI.Controllers
         }
 
         [HttpPost("ASP_File_Del")]
-        public ActionResult<ResultClass<string>> ASP_File_Del(string upload_id)
+        public ActionResult<ResultClass<string>> ASP_File_Del(string upload_id,string WebUser)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
-            var User_Num = HttpContext.Session.GetString("UserID");
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
 
             try
@@ -329,7 +328,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@del_tag", "1"));
                 parameters.Add(new SqlParameter("@del_date", DateTime.Now));
                 parameters.Add(new SqlParameter("@del_ip", clientIp));
-                parameters.Add(new SqlParameter("@del_num", User_Num));
+                parameters.Add(new SqlParameter("@del_num", WebUser));
                 parameters.Add(new SqlParameter("@upload_id", upload_id));
 
                 ADOData _adoData = new ADOData();

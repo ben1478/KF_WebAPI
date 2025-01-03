@@ -147,7 +147,7 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"SELECT PM.PM_ID,PM_Step,LI.item_D_name,AD.FM_Step,LI.item_D_name AS FM_Step_SignType
-                    ,(SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = PM.PM_cknum) AS PM_cknum_count,PM.PM_cknum,PM.PM_Cancel,AD.FM_Step_Now,AD.FD_Step1_SignType
+                    ,(SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = PM.PM_cknum and del_tag='0') AS PM_cknum_count,PM.PM_cknum,PM.PM_Cancel,AD.FM_Step_Now,AD.FD_Step1_SignType
                     FROM Procurement_M PM
                     INNER JOIN AuditFlow_D AD ON AD.FD_Source_ID = PM.PM_ID AND ((PM.PM_Step = 'A' AND AD.FM_ID = 'PO001') OR (PM.PM_Step = 'B' AND AD.FM_ID = 'PO002'))
                     LEFT JOIN Item_list LI ON LI.item_D_code = AD.FM_Step_SignType AND LI.item_M_code = 'Flow_sign_type'
@@ -458,12 +458,13 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"select PM.PM_ID,PM_Step,LI.item_D_name,AD.FM_Step,LI.item_D_name as FM_Step_SignType,
-                    PM.PM_cknum,(select COUNT(*) from ASP_UpLoad where cknum=PM.PM_cknum) as PM_cknum_count
+                    PM.PM_cknum,(select COUNT(*) from ASP_UpLoad where cknum=PM.PM_cknum and del_tag='0') as PM_cknum_count
                     ,PM.PM_Cancel
                     from Procurement_M PM 
                     inner join AuditFlow_D AD on AD.FD_Source_ID=PM.PM_ID AND ((PM.PM_Step = 'A' AND AD.FM_ID = 'PO001') OR (PM.PM_Step = 'B' AND AD.FM_ID = 'PO002'))
                     left join Item_list LI on LI.item_D_code=AD.FM_Step_SignType and LI.item_M_code='Flow_sign_type'
-                    where PM.add_date between @PD_Date_S and @PD_Date_E";
+                    where PM.add_date between @PD_Date_S and @PD_Date_E
+                    and (PM.PM_Step = 'B' OR (PM.PM_Step = 'A' AND NOT EXISTS (SELECT 1 FROM Procurement_M PM2 WHERE PM2.PM_ID = PM.PM_ID AND PM2.PM_Step = 'B')))";
                 parameters.Add(new SqlParameter("@PD_Date_S", FuncHandler.ConvertROCToGregorian(model.PD_Date_S)));
                 parameters.Add(new SqlParameter("@PD_Date_E", FuncHandler.ConvertROCToGregorian(model.PD_Date_E)));
                 if (!string.IsNullOrEmpty(model.PM_BC))
