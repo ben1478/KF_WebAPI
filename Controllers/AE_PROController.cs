@@ -251,11 +251,10 @@ namespace KF_WebAPI.Controllers
         /// 採購單抽單 Procurement_Canel
         /// </summary>
         [HttpGet("Procurement_Canel")]
-        public ActionResult<ResultClass<string>> Procurement_Canel(string PM_ID)
+        public ActionResult<ResultClass<string>> Procurement_Canel(string PM_ID,string User_Num)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
-            var User_Num = HttpContext.Session.GetString("UserID");
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
 
             try

@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Mvc.Routing;
 using System.Linq;
+using System.Diagnostics.Eventing.Reader;
 
 namespace KF_WebAPI.Controllers
 {
@@ -2360,7 +2361,7 @@ namespace KF_WebAPI.Controllers
         /// <param name="this_YY">2024-09</param>
         /// <param name="last_YY">2023</param>
         /// <param name="U_BC">BC0100</param>
-        /// <param name="fund_Comp">FDCOM003</param>
+        /// <param name="fund_Comp">BC0100</param>
         [HttpGet("GetPerfByYYYY_BC")]
         public ActionResult<ResultClass<string>> GetPerfByYYYY_BC(string this_YY, string last_YY, string U_BC, string? fund_company)
         {
@@ -4958,6 +4959,87 @@ namespace KF_WebAPI.Controllers
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
+
+        #region 部門每月目標維護表/進度表
+        /// <summary>
+        /// 部門每月目標維護表查詢
+        /// </summary>
+        /// <param name="yyymm">114</param>
+        [HttpGet("Depart_Target_Query")]
+        public ActionResult<ResultClass<string>> Depart_Target_Query(int yyy)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"select * from Depart_target where LEFT(target_ym,4) = @YYYY";
+                parameters.Add(new SqlParameter("@YYYY", yyy + 1911));
+                #endregion
+                var dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+            }
+        }
+        //[HttpPost("Depart_Target_Upd")]
+        //public ActionResult<ResultClass<string>> Depart_Target_Upd(string BC,string YYYYMM,string Target)
+        //{
+        //    ResultClass<string> resultClass = new ResultClass<string>();
+
+        //    try
+        //    {
+
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        resultClass.ResultCode = "500";
+        //        resultClass.ResultMsg = $" response: {ex.Message}";
+        //        return StatusCode(500, resultClass); // 返回 500 錯誤碼
+        //    }
+        //}
+        [HttpPost("Month_Perf_Prog_Query")]
+        public ActionResult<ResultClass<string>> Month_Perf_Prog_Query(string? U_BC,string yyyymm)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"exec GetPerformanceInfo @yyyymm,@U_BC";
+                parameters.Add(new SqlParameter("@yyyymm", yyyymm));
+                if(string.IsNullOrEmpty(U_BC))
+                {
+                    parameters.Add(new SqlParameter("@U_BC", ""));
+                }
+                else
+                {
+                    parameters.Add(new SqlParameter("@U_BC", U_BC));
+                }
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass); // 返回 500 錯誤碼
             }
         }
         #endregion
