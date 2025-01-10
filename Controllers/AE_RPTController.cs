@@ -4965,7 +4965,7 @@ namespace KF_WebAPI.Controllers
 
         #region 部門每月目標維護表/進度表
         /// <summary>
-        /// 部門每月目標維護表查詢
+        /// 部門每月目標維護表查詢 Depart_Target_Query
         /// </summary>
         /// <param name="yyymm">114</param>
         [HttpGet("Depart_Target_Query")]
@@ -4993,24 +4993,77 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass); // 返回 500 錯誤碼
             }
         }
-        //[HttpPost("Depart_Target_Upd")]
-        //public ActionResult<ResultClass<string>> Depart_Target_Upd(string BC,string YYYYMM,string Target)
-        //{
-        //    ResultClass<string> resultClass = new ResultClass<string>();
+        /// <summary>
+        /// 部門每月目標修改 Depart_Target_Upd
+        /// </summary>
+        [HttpPost("Depart_Target_Upd")]
+        public ActionResult<ResultClass<string>> Depart_Target_Upd(string BC, string YYYYMM, string Target,string User)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
 
-        //    try
-        //    {
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
 
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        resultClass.ResultCode = "500";
-        //        resultClass.ResultMsg = $" response: {ex.Message}";
-        //        return StatusCode(500, resultClass); // 返回 500 錯誤碼
-        //    }
-        //}
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"select * from Depart_target where depart_bc=@BC and target_ym=@YYYYMM ";
+                parameters.Add(new SqlParameter("@BC", BC));
+                parameters.Add(new SqlParameter("@YYYYMM", YYYYMM));
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                int result = 0;
+                //判斷新增還是修改
+                if (dtResult.Rows.Count > 0)
+                {
+                    var parameters_u = new List<SqlParameter>();
+                    var T_SQL_U = @"Update Depart_target set target_quota=@Target,edit_num=@User,edit_date=GETDATE(),edit_ip=@IP  where depart_bc=@BC and target_ym=@YYYYMM ";
+                    parameters_u.Add(new SqlParameter("@Target", Target));
+                    parameters_u.Add(new SqlParameter("@User", User));
+                    parameters_u.Add(new SqlParameter("@IP", clientIp));
+                    parameters_u.Add(new SqlParameter("@BC", BC));
+                    parameters_u.Add(new SqlParameter("@YYYYMM", YYYYMM));
+                    result = _adoData.ExecuteNonQuery(T_SQL_U, parameters_u);
+                }
+                else
+                {
+                    var parameters_i = new List<SqlParameter>();
+                    var T_SQL_I = @"Insert into Depart_target (depart_bc,target_ym,target_quota,del_tag,add_num,add_date,add_ip) 
+                        Values (@depart_bc,@target_ym,@target_quota,'0',@add_num,GETDATE(),@add_ip)";
+                    parameters_i.Add(new SqlParameter("@depart_bc", BC));
+                    parameters_i.Add(new SqlParameter("@target_ym", YYYYMM));
+                    parameters_i.Add(new SqlParameter("@target_quota", Target));
+                    parameters_i.Add(new SqlParameter("@add_num", User));
+                    parameters_i.Add(new SqlParameter("@add_ip", clientIp));
+                    result = _adoData.ExecuteNonQuery(T_SQL_I, parameters_i);
+                }
+
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "修改失敗";
+                    return BadRequest(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "修改成功";
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+            }
+        }
+        /// <summary>
+        /// 部門每月目標進度表 Month_Perf_Prog_Query
+        /// </summary>
         [HttpPost("Month_Perf_Prog_Query")]
-        public ActionResult<ResultClass<string>> Month_Perf_Prog_Query(string? U_BC,string yyyymm)
+        public ActionResult<ResultClass<string>> Month_Perf_Prog_Query(string? U_BC,string yyyymmdd)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -5020,7 +5073,7 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"exec GetPerformanceInfo @yyyymm,@U_BC";
-                parameters.Add(new SqlParameter("@yyyymm", yyyymm));
+                parameters.Add(new SqlParameter("@yyyymm", yyyymmdd));
                 if(string.IsNullOrEmpty(U_BC))
                 {
                     parameters.Add(new SqlParameter("@U_BC", ""));
