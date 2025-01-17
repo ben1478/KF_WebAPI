@@ -3,13 +3,70 @@
 using System.Data;
 using Microsoft.Data.SqlClient;
 using System.Data.Common;
-
+using KF_WebAPI.BaseClass.Max104;
+using System.Reflection;
 
 namespace KF_WebAPI.FunctionHandler
 {
     public class ADOData
     {
         public  string ConnStr = "Data Source=ERP;Initial Catalog=AE_DB_TEST;User ID=sa;Password=juestcho;";
+
+        /// <summary>
+        /// 根據物件屬性產生Datatable的欄位
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="objects"></param>
+        /// <returns></returns>
+        public static DataTable CreateDataTableFromClass<T>(T[] objects)
+        {
+            DataTable dataTable = new DataTable();
+
+            // 1. 動態建立 DataTable 結構
+            PropertyInfo[] properties = typeof(T).GetProperties();
+            foreach (var prop in properties)
+            {
+                dataTable.Columns.Add(prop.Name, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType);
+            }
+
+            // 2. 填充資料
+            foreach (var obj in objects)
+            {
+                DataRow row = dataTable.NewRow();
+                foreach (var prop in properties)
+                {
+                    row[prop.Name] = prop.GetValue(obj) ?? DBNull.Value;
+                }
+                dataTable.Rows.Add(row);
+            }
+
+            return dataTable;
+        }
+
+        public void DataTableToSQL<T>(string TableName, T[] objects, string p_ConnStr)
+        {
+
+            DataTable dataTable = CreateDataTableFromClass(objects);
+
+           
+            using (SqlConnection connection = new SqlConnection(p_ConnStr))
+            {
+                connection.Open();
+                using (SqlBulkCopy bulkCopy = new SqlBulkCopy(connection))
+                {
+                    bulkCopy.DestinationTableName = TableName; // 替換成你的資料表名稱
+
+                    // 動態設定 ColumnMappings
+                    foreach (DataColumn column in dataTable.Columns)
+                    {
+                        bulkCopy.ColumnMappings.Add(column.ColumnName, column.ColumnName);
+                    }
+
+                    // 寫入資料
+                    bulkCopy.WriteToServer(dataTable);
+                }
+            }
+        }
 
 
         public ADOData(string p_DB = "AE")
