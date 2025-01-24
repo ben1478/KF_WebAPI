@@ -1,5 +1,33 @@
 ﻿namespace KF_WebAPI.BaseClass.AE
 {
+    public class AuditFlow_Ins
+    {
+        public string AF_ID { get; set; }
+        public string AF_Name { get; set; }
+        public string AF_Caption { get; set; }
+        public string AF_Step { get; set; }
+        public string AF_Step_Caption { get; set; }
+        public string AF_Step_Person { get; set; }
+        public string add_num { get; set; }
+        public string edit_num { get; set; }
+
+    }
+
+    public class AuditFlow_M_Req
+    {
+        public string AF_ID { get; set; }
+        public string FM_Source_ID { get; set; }
+    }
+
+    public class RevFlow_Req
+    {
+        public string? U_BC { get; set; }
+        public string? User { get; set; }
+        public string? RF_Date_S { get; set; }
+        public string? RF_Date_E { get; set; }
+    }
+
+    //以下待修正
     public class AuditFlow_D_Ins
     {
         public tbInfo? tbInfo { get; set; }
@@ -60,24 +88,6 @@
         public string FD_step_note { get; set; }
         public string PM_U_num { get; set; }
         public string Msg_kind { get; set; }
-    }
-
-    public class AuditFlow_M_Ins
-    {
-        public string FM_ID { get; set; }
-        public string FM_Name { get; set; }
-        public string FM_Caption { get; set; }
-        public string FM_Step { get; set; }
-        public string FM_Step_Caption { get; set; }
-        public string add_num { get; set; }
-        public string edit_num { get; set; }
-
-    }
-
-    public class AuditFlow_D_Req
-    {
-        public string FM_ID { get; set; }
-        public string FD_Source_ID { get; set; }
     }
 
     public class AuditFlowDetail_Ins

@@ -5,7 +5,6 @@
         public tbInfo? tbInfo { get; set; }
         public List<Procurement_D_Ins>? PD_Ins_List { get; set; }
         public string? PM_ID { get; set; }
-        public string? PM_Step { get; set; }
         public string? PM_BC { get; set; }
         public string? PM_Pay_Type { get; set; }
         public string? PM_AppDate { get; set; }
@@ -14,11 +13,6 @@
         public decimal? PM_Amt { get; set; }
         public decimal? PM_Busin_Tax { get; set; }
         public decimal? PM_Tax_Amt { get; set; }
-        public string? bnak_code { get; set; }
-        public string? bank_name { get; set; }
-        public string? branch_name { get; set; }
-        public string? bank_account { get; set; }
-        public string? payee_name { get; set; }
         public string? PM_Other { get; set; }
         public string? PM_Cancel { get; set; }
     }
@@ -47,14 +41,8 @@
         public decimal? PM_Amt { get; set; }
         public decimal? PM_Busin_Tax { get; set; }
         public decimal? PM_Tax_Amt { get; set; }
-        public string? bnak_code { get; set; }
-        public string? bank_name { get; set; }
-        public string? branch_name { get; set; }
-        public string? bank_account { get; set; }
-        public string? payee_name { get; set; }
         public string? PM_Other { get; set; }
         public string? PM_ID { get; set; }
-        public string? PM_Step { get; set; }
     }
 
     public class Procurement_D_Res 
@@ -78,14 +66,6 @@
         public decimal? PD_Univalent { get; set; }
         public decimal? PD_Amt { get; set; }
         public decimal? PD_Est_Cost { get; set; }
-    }
-
-    public class ProcFlow_Req
-    {
-        public string? PM_BC { get; set; }
-        public string? PM_U_num { get; set; }
-        public string? PD_Date_S { get; set; }
-        public string? PD_Date_E { get; set; }
     }
 
     public class ProcForm_M
