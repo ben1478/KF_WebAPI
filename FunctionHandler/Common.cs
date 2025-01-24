@@ -7,6 +7,7 @@ using System.Text;
 using System.Transactions;
 using KF_WebAPI.BaseClass;
 using Newtonsoft.Json;
+using System.Net.Http.Headers;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -26,6 +27,68 @@ namespace KF_WebAPI.FunctionHandler
         private readonly string _dealerNo = "MM09";
         private readonly string _source = "52611690";
         private readonly string _version = "2.0";
+
+
+        public string Get104API_URL()
+        {
+            string m_104API_URL = "";
+
+       
+            m_104API_URL = "http://192.168.1.239:3001/api/";
+          
+            return m_104API_URL;
+        }
+
+       
+
+
+        public async Task<ResultClass<string>> Call_104API(string p_APIName, string p_JSON,  string p_TransactionId, HttpClient p_HttpClient,string Bearer ="")
+        {
+            ResultClass<string> resultClass = new();
+
+            var m_CallTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+            try
+            {
+                using (var httpClient = p_HttpClient)
+                {
+                    var uri = new Uri(Get104API_URL() + p_APIName);
+                    var request = new HttpRequestMessage(HttpMethod.Post, uri);
+                    var content = new StringContent(p_JSON, Encoding.UTF8, "application/json");
+                   
+                    if (Bearer != "")
+                    {
+                        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
+                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Bearer);
+
+                    }
+
+                    request.Content = content;
+                    var response = await httpClient.SendAsync(request);
+                    ResultClass<string> resultCheckStatus = CheckStatusCode104(p_APIName,response);
+                    if (resultCheckStatus.ResultCode == "000")
+                    {
+                        var AsyncResult = await response.Content.ReadAsStringAsync();
+                        resultClass.ResultCode = "000";
+                        resultClass.objResult = (AsyncResult);
+
+                    }
+                    else
+                    {
+                        resultClass = resultCheckStatus;
+                        resultClass.objResult = (p_JSON);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "999";
+                resultClass.ResultMsg = "API Error:" + ex.Message;
+            }
+
+
+            return resultClass;
+        }
+
 
         /// <summary>
         /// 裕富APIURL
@@ -652,6 +715,57 @@ namespace KF_WebAPI.FunctionHandler
             }
             return resultClass;
         }
+
+
+        public ResultClass<string> CheckStatusCode104(string p_APIName, HttpResponseMessage p_response)
+        {
+            ResultClass<string> resultClass = new() { ResultCode = "000", ResultMsg = "", objResult = "" };
+
+            if (!p_response.IsSuccessStatusCode)
+            {
+                resultClass.objResult = "";
+                resultClass.ResultCode = "999";
+                if (p_response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    resultClass.ResultMsg = "API endpoint not found";
+                }
+                else if (p_response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    resultClass.ResultMsg = "API Unauthorized ";
+                }
+                else if (p_response.StatusCode.ToString() == "490")
+                {
+                    resultClass.ResultMsg = "API 邏輯錯誤 ";
+                }
+                else
+                {
+                    switch (p_APIName)
+                    {
+                        case "auth/signIn":
+                        case "auth/signOut":
+                            switch (p_response.StatusCode.ToString())
+                            {
+                                case "401":
+                                    resultClass.ResultMsg = "認證失敗 (請更新 accessToken 再試一次)";
+                                    break;
+                                case "490":
+                                    resultClass.ResultMsg = "登入失敗";
+                                    break;
+                                case "440":
+                                    resultClass.ResultMsg = "參數錯誤 (請檢查 parameters 或 request body 的欄位、格式是否完整及正確)";
+                                    break;
+                                case "500":
+                                    resultClass.ResultMsg = "系統異常";
+                                    break;
+                            }
+                            break;
+                    }
+                   
+                }
+            }
+            return resultClass;
+        }
+
 
         public ResultClass<bool> CheckStatusCode(HttpResponseMessage p_response)
         {
