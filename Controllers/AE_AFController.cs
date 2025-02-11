@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
+using OfficeOpenXml.ExternalReferences;
 using System;
 using System.Data;
 using System.Text.RegularExpressions;
@@ -184,10 +185,10 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
-        /// 審核主檔列表查詢 AuditFlowM_LQurey
+        /// 審核主檔列表查詢 AuditFlow_M_LQurey
         /// </summary>
-        [HttpPost("AuditFlowM_LQurey")]
-        public ActionResult<ResultClass<string>> AuditFlowM_LQurey(AuditFlow_M_Req model)
+        [HttpPost("AuditFlow_M_LQurey")]
+        public ActionResult<ResultClass<string>> AuditFlow_M_LQurey(AuditFlow_M_Req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -225,10 +226,10 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
-        /// 單筆審核狀態查詢 RevFlow_SQuery
+        /// 單筆審核流程狀態查詢 RevFlow_Query
         /// </summary>
-        [HttpGet("RevFlow_SQuery")]
-        public ActionResult<ResultClass<string>> RevFlow_SQuery(string FormID)
+        [HttpGet("RevFlow_Query")]
+        public ActionResult<ResultClass<string>> RevFlow_Query(string FormID)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -237,8 +238,9 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"select AM.FM_Step,AD.FD_Step,AD.FD_Step_title,AD.FD_Step_SignType from AuditFlow_M AM
-                    inner join AuditFlow_D AD on AM.AF_ID=AD.AF_ID and AM.FM_Source_ID = AD.FM_Source_ID where AM.FM_Source_ID =@FormID";
+                var T_SQL = @"select distinct AM.FM_Step,AD.FD_Step,AD.FD_Step_title,AD.FD_Step_SignType from AuditFlow_M AM
+                    inner join AuditFlow_D AD on AM.AF_ID=AD.AF_ID and AM.FM_Source_ID = AD.FM_Source_ID 
+                    where FD_Sign_Countersign = 'S' and AM.FM_Source_ID =@FormID";
                 parameters.Add(new SqlParameter("@FormID", FormID));
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
@@ -276,8 +278,8 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"SELECT AM.AF_ID,AM.FM_Source_ID,AM.FM_Step,AD.FD_Step,AD.FD_Step_title,LI.item_D_name AS FM_Step_SignType,
-                    COALESCE(PM.PM_cknum, IM.VP_cknum) AS cknum
+                var T_SQL = @"SELECT AM.AF_ID,AM.FM_Source_ID,AM.FM_Step,AD.FD_Step,AD.FD_Step_title,AD.FD_Step_num,LI.item_D_name AS FM_Step_SignType,
+                    AD.FD_Step_SignType,COALESCE(PM.PM_cknum, IM.VP_cknum) AS cknum
                     ,(SELECT COUNT(*) FROM ASP_UpLoad WHERE COALESCE(PM.PM_cknum, IM.VP_cknum) = cknum and del_tag='0') as cknum_count
                     FROM AuditFlow_M AM
                     INNER JOIN AuditFlow_D AD ON AM.AF_ID = AD.AF_ID AND AM.FM_Source_ID = AD.FM_Source_ID
@@ -307,119 +309,10 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
-        /// 審核異動 AuditFlow_Upd
+        /// 審核案件單筆查詢 RevFlow_SQuery
         /// </summary>
-        //[HttpPost("AuditFlow_Upd")]
-        //public ActionResult<ResultClass<string>> AuditFlow_Upd(Flow_Req model)
-        //{
-        //    ResultClass<string> resultClass = new ResultClass<string>();
-
-        //    var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
-
-        //    try
-        //    {
-        //        var step = model.FM_Step_Now;
-        //        string columnSign = $"FD_Step{step}_SignType";
-        //        string columnDate = $"FD_Step{step}_date";
-        //        string columnNote = $"FD_Step{step}_note";
-
-        //        ADOData _adoData = new ADOData();
-        //        #region SQL
-        //        var parameters = new List<SqlParameter>();
-        //        var T_SQL = $@"update AuditFlow_D set FM_Step_SignType=@FM_Step_SignType,FM_Step_Now=@FM_Step_Now,{columnSign}=@columnSign
-        //            ,{columnDate}=GETDATE(),{columnNote}=@columnNote,edit_date=GETDATE(),edit_num=@edit_num,edit_ip=@edit_ip 
-        //            where FM_ID=@FM_ID and FD_Source_ID=@FD_Source_ID";
-
-        //        if(model.FD_step_sign == "FSIGN002") //同意
-        //        {
-        //            if (model.FM_Step != model.FM_Step_Now)
-        //            {
-        //                parameters.Add(new SqlParameter("@FM_Step_Now", Convert.ToInt32(model.FM_Step_Now) + 1));
-        //                parameters.Add(new SqlParameter("@FM_Step_SignType", "FSIGN001"));
-        //            }
-        //            else
-        //            {
-        //                parameters.Add(new SqlParameter("@FM_Step_Now", Convert.ToInt32(model.FM_Step_Now)));
-        //                parameters.Add(new SqlParameter("@FM_Step_SignType", "FSIGN002"));
-        //            }
-        //        }
-        //        else if (model.FD_step_sign == "FSIGN003") //不同意
-        //        {
-        //            parameters.Add(new SqlParameter("@FM_Step_Now", Convert.ToInt32(model.FM_Step_Now)));
-        //            parameters.Add(new SqlParameter("@FM_Step_SignType", "FSIGN003"));
-        //        }
-        //        else
-        //        {
-        //            parameters.Add(new SqlParameter("@FM_Step_Now", Convert.ToInt32(model.FM_Step_Now)));
-        //            parameters.Add(new SqlParameter("@FM_Step_SignType", "FSIGN001"));
-        //        }
-        //        parameters.Add(new SqlParameter("@columnSign", model.FD_step_sign));
-
-
-        //        if (!string.IsNullOrEmpty(model.FD_step_note))
-        //        {
-        //            parameters.Add(new SqlParameter("@columnNote", model.FD_step_note));
-        //        }
-        //        else
-        //        {
-        //            parameters.Add(new SqlParameter("@columnNote", DBNull.Value));
-        //        }
-        //        parameters.Add(new SqlParameter("@edit_num", model.PM_U_num));
-        //        parameters.Add(new SqlParameter("@edit_ip", clientIp));
-        //        parameters.Add(new SqlParameter("@FM_ID", model.FM_ID));
-        //        parameters.Add(new SqlParameter("@FD_Source_ID", model.FD_Source_ID));
-        //        #endregion
-        //        int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
-        //        if (result == 0)
-        //        {
-        //            resultClass.ResultCode = "400";
-        //            resultClass.ResultMsg = "修改失敗";
-        //            return BadRequest(resultClass);
-        //        }
-        //        else
-        //        {
-        //            if (model.FD_step_sign == "FSIGN002" && model.FM_Step != model.FM_Step_Now) //同意且有下一關才進行訊息通知
-        //            {
-        //                var parameters_ad = new List<SqlParameter>();
-        //                var T_SQL_AD = @"select * from AuditFlow_D where FM_ID=@FM_ID and FD_Source_ID=@FD_Source_ID";
-        //                parameters_ad.Add(new SqlParameter("@FM_ID", model.FM_ID));
-        //                parameters_ad.Add(new SqlParameter("@FD_Source_ID", model.FD_Source_ID));
-
-        //                var dtResult_ad=_adoData.ExecuteQuery(T_SQL_AD, parameters_ad);
-        //                var fmStepNowValue = dtResult_ad.Rows[0]["FM_Step_Now"];
-        //                string columnNum = $"FD_Step{fmStepNowValue}_num";
-        //                var User_Num = dtResult_ad.Rows[0][columnNum].ToString();
-
-        //                switch (model.Msg_kind)
-        //                {
-        //                    case "MSGK0005":
-        //                        FuncHandler.MsgIns("MSGK0005", model.PM_U_num, User_Num, "採購單簽核通知,請前往處理!!", clientIp);
-        //                        break;
-        //                    default:
-        //                        break;
-        //                }
-        //            }
-
-        //            resultClass.ResultCode = "000";
-        //            resultClass.ResultMsg = "修改成功";
-        //            return Ok(resultClass);
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        resultClass.ResultCode = "500";
-        //        resultClass.ResultMsg = $" response: {ex.Message}";
-        //        return StatusCode(500, resultClass); // 返回 500 錯誤碼
-        //    }
-        //}
-
-
-
-        /// <summary>
-        /// 審核明細檔單筆查詢 AuditFlowD_SQuery
-        /// </summary>
-        [HttpGet("AuditFlowD_SQuery")]
-        public ActionResult<ResultClass<string>> AuditFlowD_SQuery(string FM_ID,string FD_Source_ID)
+        [HttpGet("RevFlow_SQuery")]
+        public ActionResult<ResultClass<string>> RevFlow_SQuery(string FormID)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -428,22 +321,15 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"select FM_ID,FD_Source_ID
-                    ,FD_Step1_Desc,FD_Step1_num,(select U_name from User_M where U_num=FD_Step1_num) as U_name_1,FD_Step1_Reason
-                    ,FD_Step2_Desc,FD_Step2_num,(select U_name from User_M where U_num=FD_Step2_num) as U_name_2,FD_Step2_Reason
-                    ,FD_Step3_Desc,FD_Step3_num,(select U_name from User_M where U_num=FD_Step3_num) as U_name_3,FD_Step3_Reason 
-                    ,FD_Step4_Desc,FD_Step4_num,(select U_name from User_M where U_num=FD_Step4_num) as U_name_4,FD_Step4_Reason 
-                    ,FD_Step5_Desc,FD_Step5_num,(select U_name from User_M where U_num=FD_Step5_num) as U_name_5,FD_Step5_Reason 
-                    ,FD_Step6_Desc,FD_Step6_num,(select U_name from User_M where U_num=FD_Step6_num) as U_name_6,FD_Step6_Reason 
-                    ,FD_Step7_Desc,FD_Step7_num,(select U_name from User_M where U_num=FD_Step7_num) as U_name_7,FD_Step7_Reason 
-                    ,FD_Step8_Desc,FD_Step8_num,(select U_name from User_M where U_num=FD_Step8_num) as U_name_8,FD_Step8_Reason 
-                    ,FD_Step9_Desc,FD_Step9_num,(select U_name from User_M where U_num=FD_Step9_num) as U_name_9,FD_Step9_Reason 
-                    from AuditFlow_D 
-                    where FM_ID=@FM_ID and FD_Source_ID=@FD_Source_ID";
-                parameters.Add(new SqlParameter("@FM_ID", FM_ID));
-                parameters.Add(new SqlParameter("@FD_Source_ID", FD_Source_ID));
+                var T_SQL = @"select FM.AF_ID,FM.FM_Step,FM.FM_Source_ID,FD.FD_Sign_Countersign,FD.FD_Step_num,
+                    UM.U_name,ISNULL(FD.FD_Step_desc,'') as FD_Step_desc  
+                    from AuditFlow_M FM
+                    inner join AuditFlow_D FD on FM.FM_Source_ID=FD.FM_Source_ID and FM.FM_Step=FD.FD_Step
+                    left join User_M UM on UM.U_num = FD.FD_Step_num
+                    where FM.FM_Source_ID=@FormID";
+                parameters.Add(new SqlParameter("@FormID", FormID));
                 #endregion
-                var dtResult=_adoData.ExecuteQuery(T_SQL,parameters);
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
@@ -461,17 +347,66 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass);
             }
         }
+
         /// <summary>
-        /// 審核明細檔單筆異動 AuditFlowD_Upd
+        /// 寫入會簽人員
         /// </summary>
-        [HttpPost("AuditFlowD_Upd")]
-        public ActionResult<ResultClass<string>> AuditFlowD_Upd(AuditFlowDetail_Ins model)
+        [HttpPost("Counter_Ins")]
+        public ActionResult<ResultClass<string>> Counter_Ins(Counter_Ins model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
 
+            try
+            {
+                ADOData _adoData = new ADOData();
+
+                #region SQL
+                if (model.arr_Unm != null && model.arr_Unm.Length > 0)
+                {
+                    var T_SQL = @"Insert into AuditFlow_D (AF_ID, FM_Source_ID,FD_Step,FD_Step_SignType,FD_Sign_Countersign,FD_Step_num,add_date,add_num
+                        ,add_ip,edit_date,edit_num,edit_ip) 
+                        Values (@AF_ID, @FM_Source_ID,@FD_Step,'FSIGN001','C', @FD_Step_num,GETDATE(),@add_num,@add_ip,GETDATE(),@edit_num,@edit_ip)";
+
+                    foreach (var item in model.arr_Unm)
+                    {
+                        var parameters = new List<SqlParameter>();
+                        parameters.Add(new SqlParameter("@AF_ID", model.AF_ID));
+                        parameters.Add(new SqlParameter("@FM_Source_ID", model.FM_Source_ID));
+                        parameters.Add(new SqlParameter("@FD_Step", model.FM_Step));
+                        parameters.Add(new SqlParameter("@FD_Step_num", item));
+                        parameters.Add(new SqlParameter("@add_num", model.User));
+                        parameters.Add(new SqlParameter("@add_ip", clientIp));
+                        parameters.Add(new SqlParameter("@edit_num", model.User));
+                        parameters.Add(new SqlParameter("@edit_ip", clientIp));
+                        _adoData.ExecuteQuery(T_SQL, parameters);
+                    }
+
+                }
+                #endregion
+                //TODO 發訊息通知會簽人員
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "新增成功";
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 審核明細檔異動
+        /// </summary>
+        [HttpPost("AuditFlow_D_Upd")]
+        public ActionResult<ResultClass<string>> AuditFlow_D_Upd(AuditFlow_D_Upd model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
 
             try
@@ -479,123 +414,57 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"Update AuditFlow_D set FD_Step1_Desc=@FD_Step1_Desc,FD_Step1_num=@FD_Step1_num
-                    ,FD_Step2_Desc=@FD_Step2_Desc,FD_Step2_num=@FD_Step2_num
-                    ,FD_Step3_Desc=@FD_Step3_Desc,FD_Step3_num=@FD_Step3_num
-                    ,FD_Step4_Desc=@FD_Step4_Desc,FD_Step4_num=@FD_Step4_num
-                    ,FD_Step5_Desc=@FD_Step5_Desc,FD_Step5_num=@FD_Step5_num
-                    ,FD_Step6_Desc=@FD_Step6_Desc,FD_Step6_num=@FD_Step6_num
-                    ,FD_Step7_Desc=@FD_Step7_Desc,FD_Step7_num=@FD_Step7_num
-                    ,FD_Step8_Desc=@FD_Step8_Desc,FD_Step8_num=@FD_Step8_num
-                    ,FD_Step9_Desc=@FD_Step9_Desc,FD_Step9_num=@FD_Step9_num
-                    ,edit_date=GETDATE(),edit_num=@edit_num,edit_ip=@edit_ip
-                    where FM_ID=@FM_ID and FD_Source_ID=@FD_Source_ID";
-                if(!string.IsNullOrEmpty(model.FD_Step1_Desc) && !string.IsNullOrEmpty(model.FD_Step1_num))
+                var T_SQL = @"Update AuditFlow_D set FD_Step_desc=@FD_Step_desc,FD_Step_SignType=@FD_Step_SignType,FD_Step_date=GETDATE(),
+                    edit_date=GETDATE(),edit_num=@User,edit_ip=@IP
+                    where FM_Source_ID=@FM_Source_ID and FD_Step_num=@User and FD_Sign_Countersign=@FD_Sign_Countersign and FD_Step=@FD_Step";
+                if(!string.IsNullOrEmpty(model.FD_Step_desc))
                 {
-                    parameters.Add(new SqlParameter("@FD_Step1_Desc", model.FD_Step1_Desc));
-                    parameters.Add(new SqlParameter("@FD_Step1_num", model.FD_Step1_num));
+                    parameters.Add(new SqlParameter("@FD_Step_desc", model.FD_Step_desc));
                 }
                 else
                 {
-                    parameters.Add(new SqlParameter("@FD_Step1_Desc", DBNull.Value));
-                    parameters.Add(new SqlParameter("@FD_Step1_num", DBNull.Value));
+                    parameters.Add(new SqlParameter("@FD_Step_desc", DBNull.Value));
                 }
-                if (!string.IsNullOrEmpty(model.FD_Step2_Desc) && !string.IsNullOrEmpty(model.FD_Step2_num))
-                {
-                    parameters.Add(new SqlParameter("@FD_Step2_Desc", model.FD_Step2_Desc));
-                    parameters.Add(new SqlParameter("@FD_Step2_num", model.FD_Step2_num));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@FD_Step2_Desc", DBNull.Value));
-                    parameters.Add(new SqlParameter("@FD_Step2_num", DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.FD_Step3_Desc) && !string.IsNullOrEmpty(model.FD_Step3_num))
-                {
-                    parameters.Add(new SqlParameter("@FD_Step3_Desc", model.FD_Step3_Desc));
-                    parameters.Add(new SqlParameter("@FD_Step3_num", model.FD_Step3_num));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@FD_Step3_Desc", DBNull.Value));
-                    parameters.Add(new SqlParameter("@FD_Step3_num", DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.FD_Step4_Desc) && !string.IsNullOrEmpty(model.FD_Step4_num))
-                {
-                    parameters.Add(new SqlParameter("@FD_Step4_Desc", model.FD_Step4_Desc));
-                    parameters.Add(new SqlParameter("@FD_Step4_num", model.FD_Step4_num));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@FD_Step4_Desc", DBNull.Value));
-                    parameters.Add(new SqlParameter("@FD_Step4_num", DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.FD_Step5_Desc) && !string.IsNullOrEmpty(model.FD_Step5_num))
-                {
-                    parameters.Add(new SqlParameter("@FD_Step5_Desc", model.FD_Step5_Desc));
-                    parameters.Add(new SqlParameter("@FD_Step5_num", model.FD_Step5_num));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@FD_Step5_Desc", DBNull.Value));
-                    parameters.Add(new SqlParameter("@FD_Step5_num", DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.FD_Step6_Desc) && !string.IsNullOrEmpty(model.FD_Step6_num))
-                {
-                    parameters.Add(new SqlParameter("@FD_Step6_Desc", model.FD_Step6_Desc));
-                    parameters.Add(new SqlParameter("@FD_Step6_num", model.FD_Step6_num));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@FD_Step6_Desc", DBNull.Value));
-                    parameters.Add(new SqlParameter("@FD_Step6_num", DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.FD_Step7_Desc) && !string.IsNullOrEmpty(model.FD_Step7_num))
-                {
-                    parameters.Add(new SqlParameter("@FD_Step7_Desc", model.FD_Step7_Desc));
-                    parameters.Add(new SqlParameter("@FD_Step7_num", model.FD_Step7_num));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@FD_Step7_Desc", DBNull.Value));
-                    parameters.Add(new SqlParameter("@FD_Step7_num", DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.FD_Step8_Desc) && !string.IsNullOrEmpty(model.FD_Step8_num))
-                {
-                    parameters.Add(new SqlParameter("@FD_Step8_Desc", model.FD_Step8_Desc));
-                    parameters.Add(new SqlParameter("@FD_Step8_num", model.FD_Step8_num));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@FD_Step8_Desc", DBNull.Value));
-                    parameters.Add(new SqlParameter("@FD_Step8_num", DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.FD_Step9_Desc) && !string.IsNullOrEmpty(model.FD_Step9_num))
-                {
-                    parameters.Add(new SqlParameter("@FD_Step9_Desc", model.FD_Step9_Desc));
-                    parameters.Add(new SqlParameter("@FD_Step9_num", model.FD_Step9_num));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@FD_Step9_Desc", DBNull.Value));
-                    parameters.Add(new SqlParameter("@FD_Step9_num", DBNull.Value));
-                }
-                parameters.Add(new SqlParameter("@edit_num", model.edit_num));
-                parameters.Add(new SqlParameter("@edit_ip", clientIp));
-                parameters.Add(new SqlParameter("@FM_ID", model.FM_ID));
-                parameters.Add(new SqlParameter("@FD_Source_ID", model.FD_Source_ID));
+                parameters.Add(new SqlParameter("@FD_Step_SignType", model.FD_Step_SignType));
+                parameters.Add(new SqlParameter("@FM_Source_ID", model.FM_Source_ID));
+                parameters.Add(new SqlParameter("@User", model.User));
+                parameters.Add(new SqlParameter("@IP", clientIp));
+                parameters.Add(new SqlParameter("@FD_Sign_Countersign", model.FD_Sign_Countersign));
+                parameters.Add(new SqlParameter("@FD_Step", model.FM_Step));
                 #endregion
-                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
-                if (result == 0)
+                int Result = _adoData.ExecuteNonQuery(T_SQL,parameters);
+                if (Result==0)
                 {
                     resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "修改失敗";
+                    resultClass.ResultMsg = "異動失敗";
                     return BadRequest(resultClass);
                 }
                 else
                 {
+                    var parameters_sp = new List<SqlParameter>();
+                    var T_SQL_SP = @"exec UpdAuditFlowM @Form_ID,@FM_Step,@Signtype,@AF_Back_Reason";
+                    parameters_sp.Add(new SqlParameter("@Form_ID", model.FM_Source_ID));
+                    parameters_sp.Add(new SqlParameter("@FM_Step", model.FM_Step));
+                    parameters_sp.Add(new SqlParameter("@Signtype", model.FD_Step_SignType));
+                    if(model.FD_Step_SignType== "FSIGN003")
+                    {
+                        parameters_sp.Add(new SqlParameter("@AF_Back_Reason", model.FD_Step_desc));
+                    }
+                    else
+                    {
+                        parameters_sp.Add(new SqlParameter("@AF_Back_Reason",DBNull.Value));
+                    }
+                    _adoData.ExecuteQuery(T_SQL_SP, parameters_sp);
+                    //TODO 訊息通知
                     resultClass.ResultCode = "000";
-                    resultClass.ResultMsg = "修改成功";
+                    resultClass.ResultMsg = "異動成功";
+
+                    //TODO 通知API抽單 ??
+                    if (model.FD_Step_SignType == "FSIGN003")
+                    {
+                      
+
+                    }
                     return Ok(resultClass);
                 }
             }
@@ -603,9 +472,54 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass);
+            }
+           
+        }
+
+        /// <summary>
+        /// 查詢案件所有的審核人員(含會簽) AuditFlow_D_LQuery
+        /// </summary>
+        /// <param name="Form_ID">PO20250204002</param>
+        [HttpGet("AuditFlow_D_LQuery")]
+        public ActionResult<ResultClass<string>> AuditFlow_D_LQuery(string Form_ID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"select FD_ID,FD_Step,UM.U_name,FD_Step_num,FD_Step_SignType 
+                    from AuditFlow_D FD 
+                    left join User_M UM on UM.U_num = FD.FD_Step_num
+                    where FM_Source_ID=@Form_ID order by FD_Step";
+                parameters.Add(new SqlParameter("@Form_ID", Form_ID));
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
         }
+
+
         /// <summary>
         /// 審核人員變更原因 AuditFlowD_UpdReason
         /// </summary>
@@ -613,34 +527,32 @@ namespace KF_WebAPI.Controllers
         public ActionResult<ResultClass<string>> AuditFlowD_UpdReason(AuditFlowReason model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
-
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
-            string number = Regex.Match(model.Type, @"\d+").Value;
 
             try
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = $@"Update AuditFlow_D set FD_Step{number}_Reason=@Reason,edit_date=GETDATE(),edit_num=@edit_num,edit_ip=@edit_ip 
-                    where FM_ID=@FM_ID and FD_Source_ID=@FD_Source_ID";
+                var T_SQL = @"Update AuditFlow_D set FD_Step_num=@FD_Step_num,FD_Step_Reason=@Reason,
+                    edit_date=GETDATE(),edit_num=@User,edit_ip=@IP where FD_ID=@FD_ID";
+                parameters.Add(new SqlParameter("@FD_Step_num", model.FD_Step_num));
                 parameters.Add(new SqlParameter("@Reason", model.Reason));
-                parameters.Add(new SqlParameter("@edit_num", model.User));
-                parameters.Add(new SqlParameter("@edit_ip",clientIp));
-                parameters.Add(new SqlParameter("@FM_ID",model.FM_ID));
-                parameters.Add(new SqlParameter("@FD_Source_ID", model.FD_Source_ID));
+                parameters.Add(new SqlParameter("@User", model.User));
+                parameters.Add(new SqlParameter("@IP", clientIp));
+                parameters.Add(new SqlParameter("@FD_ID", model.FD_ID));
                 #endregion
-                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                int result=_adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
                 {
                     resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "修改失敗";
+                    resultClass.ResultMsg = "異動失敗";
                     return BadRequest(resultClass);
                 }
                 else
                 {
                     resultClass.ResultCode = "000";
-                    resultClass.ResultMsg = "修改成功";
+                    resultClass.ResultMsg = "異動成功";
                     return Ok(resultClass);
                 }
             }
@@ -648,8 +560,9 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass);
             }
+            
         }
     }
 }
