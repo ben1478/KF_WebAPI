@@ -8,6 +8,9 @@ using System.Transactions;
 using KF_WebAPI.BaseClass;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
+using Azure.Core;
+using KF_WebAPI.BaseClass.Max104;
+using KF_WebAPI.DataLogic;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -42,7 +45,7 @@ namespace KF_WebAPI.FunctionHandler
        
 
 
-        public async Task<ResultClass<string>> Call_104API(string p_APIName, string p_JSON,  string p_TransactionId, HttpClient p_HttpClient,string Bearer ="")
+        public async Task<ResultClass<string>> Call_104API(string p_APIName, string p_JSON,  string SESSION_KEY, HttpClient p_HttpClient,string ACCESS_TOKEN = "")
         {
             ResultClass<string> resultClass = new();
 
@@ -55,10 +58,10 @@ namespace KF_WebAPI.FunctionHandler
                     var request = new HttpRequestMessage(HttpMethod.Post, uri);
                     var content = new StringContent(p_JSON, Encoding.UTF8, "application/json");
                    
-                    if (Bearer != "")
+                    if (ACCESS_TOKEN != "")
                     {
                         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
-                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Bearer);
+                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", ACCESS_TOKEN);
 
                     }
 
@@ -77,6 +80,8 @@ namespace KF_WebAPI.FunctionHandler
                         resultClass = resultCheckStatus;
                         resultClass.objResult = (p_JSON);
                     }
+                    
+
                 }
             }
             catch (Exception ex)
@@ -84,7 +89,26 @@ namespace KF_WebAPI.FunctionHandler
                 resultClass.ResultCode = "999";
                 resultClass.ResultMsg = "API Error:" + ex.Message;
             }
+            try
+            {
+                if (ACCESS_TOKEN != "")
+                {
+                    AE_TO_104API_Log _AE_TO_104API_Log = new AE_TO_104API_Log();
+                    _AE_TO_104API_Log.ACCESS_TOKEN = ACCESS_TOKEN;
+                    _AE_TO_104API_Log.APIName = p_APIName;
+                    _AE_TO_104API_Log.SESSION_KEY = SESSION_KEY;
+                    _AE_TO_104API_Log.JSON = p_JSON;
+                    _AE_TO_104API_Log.Result = resultClass.ResultCode;
+                    _AE_TO_104API_Log.Msg = resultClass.ResultMsg;
+                    AE_HR m_AE_HR = new AE_HR();
+                    m_AE_HR.InsertAE_TO_104API_Log(_AE_TO_104API_Log);
+                }
+            }
+            catch { 
+            
+            }
 
+           
 
             return resultClass;
         }

@@ -8,6 +8,8 @@ using System.Data;
 
 using static KF_WebAPI.FunctionHandler.Common;
 using Microsoft.Data.SqlClient;
+using System;
+using Azure.Core;
 
 namespace KF_WebAPI.Controllers
 {
@@ -192,33 +194,36 @@ namespace KF_WebAPI.Controllers
 
         [Route("batchOtNew")]
         [HttpPost]
-        public async Task<ActionResult<string>> batchOtNew([FromBody] batchOtNew ReqClass, string TOKEN_KEY)
+        public async Task<ActionResult<string>> batchOtNew(string U_num, string ACCESS_TOKEN, string FR_kind, string Date_S, string Date_E)
         {
-            ReqClass.CO_ID = 1;
-            ReqClass.SESSION_KEY = "2025011417000002";
-            ReqClass.WF_NO = "OT" + ReqClass.SESSION_KEY;
-           
-            var otDataArray = new OT_DATA[] { 
-                new OT_DATA("52", "2025/01/13 18:30", "2025/01/13 20:30", "2", "0", "0", "USER")
-            };
-            ReqClass.OT_DATA = otDataArray; 
+            AE_HR m_AE_HR = new AE_HR();
+            string SESSION_KEY = DateTime.Now.ToString("yyyyMMddhhmmssffff");
+            batchOtNew ReqClass = m_AE_HR.GetAE_OT_DATA(SESSION_KEY, FR_kind, Date_S, Date_E);
 
             ResultClass_104<object> resultClass = new ResultClass_104<object>();
             try
             {
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
+
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("wf/wf021/batchOtNew", p_JSON, ReqClass.SESSION_KEY, _httpClient, TOKEN_KEY);
+                APIResult = await _Comm.Call_104API("wf/wf021/batchOtNew", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
 
                 if (APIResult.ResultCode == "000")
                 {
                     resultClass = JsonConvert.DeserializeObject<ResultClass_104<object>>(APIResult.objResult);
+
+                    m_AE_HR.ModifyAE_SESSION_KEY("Flow_rest", SESSION_KEY, FR_kind, Date_S, Date_E);
                 }
                 else
                 {
                     resultClass.code = "999";
                     resultClass.msg = $"{APIResult.ResultMsg}";
+                    if (APIResult.objResult != null)
+                    {
+                        resultClass.data = APIResult.objResult;
+                    }
                 }
+               
             }
             catch (Exception ex)
             {
@@ -231,30 +236,29 @@ namespace KF_WebAPI.Controllers
 
         [Route("batchOtSign")]
         [HttpPost]
-        public async Task<ActionResult<string>> batchOtSign([FromBody] batchSign ReqClass, string TOKEN_KEY)
+        public async Task<ActionResult<string>> batchOtSign(string U_num, string ACCESS_TOKEN, [FromBody] batchSign ReqClass)
         {
             
             ResultClass_104<Object> resultClass = new ResultClass_104<Object>();
             try
             {
-                ReqClass.CO_ID = 1;
-                ReqClass.SESSION_KEY = "2025011417000001";
-                ReqClass.WF_NO = "OT" + ReqClass.SESSION_KEY;
-
+               
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
-
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("wf/wf021/batchOtSign", p_JSON, ReqClass.SESSION_KEY, _httpClient, TOKEN_KEY);
+                APIResult = await _Comm.Call_104API("wf/wf021/batchOtSign", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
 
                 if (APIResult.ResultCode == "000")
                 {
                     resultClass = JsonConvert.DeserializeObject<ResultClass_104<Object>>(APIResult.objResult);
+                    AE_HR m_AE_HR = new AE_HR();
+                    m_AE_HR.ModifyAE_Sign("Flow_rest", ReqClass.SESSION_KEY);
                 }
                 else
                 {
                     resultClass.code = "999";
                     resultClass.msg = $"{APIResult.ResultMsg}";
                 }
+                
             }
             catch (Exception ex)
             {
@@ -273,12 +277,8 @@ namespace KF_WebAPI.Controllers
             ResultClass_104<object> resultClass = new ResultClass_104<object>();
             try
             {
-                ReqClass.CO_ID = 1;
-                ReqClass.SESSION_KEY = "2025011417000002";
-                ReqClass.WF_NO = "OT" + ReqClass.SESSION_KEY;
 
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
-
                 ResultClass<string> APIResult = new();
                 APIResult = await _Comm.Call_104API("wf/wf021/batchOtDelete", p_JSON, ReqClass.SESSION_KEY, _httpClient, TOKEN_KEY);
 
@@ -333,23 +333,17 @@ namespace KF_WebAPI.Controllers
         }
 
 
-
-
-
         [Route("batchLeaveSign")]
         [HttpPost]
-        public async Task<ActionResult<string>> batchLeaveSign([FromBody] batchSign ReqClass, string TOKEN_KEY)
+        public async Task<ActionResult<string>> batchLeaveSign(string U_num, string ACCESS_TOKEN, [FromBody] batchSign ReqClass)
         {
 
             ResultClass_104<Object> resultClass = new ResultClass_104<Object>();
             try
             {
-               
-
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
-
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("wf/wf011/batchLeaveSign", p_JSON, ReqClass.SESSION_KEY, _httpClient, TOKEN_KEY);
+                APIResult = await _Comm.Call_104API("wf/wf011/batchLeaveSign", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
 
                 if (APIResult.ResultCode == "000")
                 {
@@ -362,6 +356,7 @@ namespace KF_WebAPI.Controllers
                     resultClass.code = "999";
                     resultClass.msg = $"{APIResult.ResultMsg}";
                 }
+               
             }
             catch (Exception ex)
             {
@@ -372,22 +367,20 @@ namespace KF_WebAPI.Controllers
         }
 
 
-
         [Route("batchLeaveNew")]
         [HttpPost]
-        public async Task<ActionResult<string>> batchLeaveNew(string TOKEN_KEY, string FR_kind, string Date_S, string Date_E)
+        public async Task<ActionResult<string>> batchLeaveNew(string U_num, string ACCESS_TOKEN, string FR_kind, string Date_S, string Date_E)
         {
             AE_HR m_AE_HR = new AE_HR();
             string SESSION_KEY = DateTime.Now.ToString("yyyyMMddhhmmssffff");
             batchLeaveNew ReqClass = m_AE_HR.GetAE_LEAVE_DATA(SESSION_KEY, FR_kind,  Date_S,  Date_E);
-
             ResultClass_104<object> resultClass = new ResultClass_104<object>();
             try
             {
 
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("wf/wf011/batchLeaveNew", p_JSON, ReqClass.SESSION_KEY, _httpClient, TOKEN_KEY);
+                APIResult = await _Comm.Call_104API("wf/wf011/batchLeaveNew", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
 
                 if (APIResult.ResultCode == "000")
                 {
@@ -404,6 +397,84 @@ namespace KF_WebAPI.Controllers
                         resultClass.data = APIResult.objResult;
                     }
                 }
+                
+            }
+            catch (Exception ex)
+            {
+                resultClass.code = "999";
+                resultClass.msg = $" response: {ex.Message}";
+            }
+            return Ok(resultClass);
+        }
+
+
+        [Route("batchLeaveLate15")]
+        [HttpPost]
+        public async Task<ActionResult<string>> batchLeaveLate15(string U_num, string ACCESS_TOKEN, string FR_kind, string Date_S, string Date_E)
+        {
+            AE_HR m_AE_HR = new AE_HR();
+            string SESSION_KEY = DateTime.Now.ToString("yyyyMMddhhmmssffff");
+            
+            ResultClass_104<object> resultClass = new ResultClass_104<object>();
+            try
+            {
+               
+                    batchLeaveNew ReqClass = m_AE_HR.GetLate15To104(SESSION_KEY,  Date_S, Date_E);
+                    string p_JSON = JsonConvert.SerializeObject(ReqClass);
+                    ResultClass<string> APIResult = new();
+                    APIResult = await _Comm.Call_104API("wf/wf011/batchLeaveNew", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
+
+                    if (APIResult.ResultCode == "000")
+                    {
+                        resultClass = JsonConvert.DeserializeObject<ResultClass_104<object>>(APIResult.objResult);
+
+                        m_AE_HR.ModifyAE_SESSION_KEY("Late15To104", SESSION_KEY, FR_kind, Date_S, Date_E);
+                    }
+                    else
+                    {
+                        resultClass.code = "999";
+                        resultClass.msg = $"{APIResult.ResultMsg}";
+                        if (APIResult.objResult != null)
+                        {
+                            resultClass.data = APIResult.objResult;
+                        }
+                    }
+               
+                
+
+            }
+            catch (Exception ex)
+            {
+                resultClass.code = "999";
+                resultClass.msg = $" response: {ex.Message}";
+            }
+            return Ok(resultClass);
+        }
+
+        [Route("batchLeaveLate15Sign")]
+        [HttpPost]
+        public async Task<ActionResult<string>> batchLeaveLate15Sign(string U_num, string ACCESS_TOKEN, [FromBody] batchSign ReqClass)
+        {
+
+            ResultClass_104<Object> resultClass = new ResultClass_104<Object>();
+            try
+            {
+                string p_JSON = JsonConvert.SerializeObject(ReqClass);
+                ResultClass<string> APIResult = new();
+                APIResult = await _Comm.Call_104API("wf/wf011/batchLeaveSign", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
+
+                if (APIResult.ResultCode == "000")
+                {
+                    resultClass = JsonConvert.DeserializeObject<ResultClass_104<Object>>(APIResult.objResult);
+                    AE_HR m_AE_HR = new AE_HR();
+                    m_AE_HR.ModifyAE_Sign("Late15To104", ReqClass.SESSION_KEY);
+                }
+                else
+                {
+                    resultClass.code = "999";
+                    resultClass.msg = $"{APIResult.ResultMsg}";
+                }
+
             }
             catch (Exception ex)
             {

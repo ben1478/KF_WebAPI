@@ -21,6 +21,8 @@ namespace KF_WebAPI.BaseClass.AE
     public class Attendance_req 
     {
         public string yyyymm { get; set; }
+        public string yyyymmdd_s { get; set; }
+        public string yyyymmdd_e { get; set; }
         public int AttStatus { get; set;}
         public string? U_num { get;set; }
         public string? U_BC { get; set; }

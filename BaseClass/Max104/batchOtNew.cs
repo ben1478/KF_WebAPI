@@ -34,7 +34,7 @@
         public OT_DATA() { }
         // 簡化構造函數
         public OT_DATA(string? empId, string? otStart, string? otEnd, string? payType, string? isMeal, string? isCardMatch, string? reason) =>
-            (EMP_ID, OT_START, OT_END, PAY_TYPE, IS_MEAL, IS_CARDMATCH, REASON) = (empId, otStart, otEnd, payType, isMeal, isCardMatch, reason);
+            (EMP_ID, OT_START, OT_END, PAY_TYPE, IS_MEAL, IS_CARDMATCH, REASON) = (empId, otStart, otEnd, payType, isMeal, isCardMatch, reason=="" ? "加班": reason);
     }
 
 }
