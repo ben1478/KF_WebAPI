@@ -324,16 +324,16 @@ namespace KF_WebAPI.DataLogic
            
         }
 
-        public void InsertAE_TO_104API_Log(AE_TO_104API_Log p_Loginfo)
+        public void InsertExternal_API_Log(External_API_Log p_External_API_Log)
         {
 
             try
             {
-                string TableName = "AE_TO_104API_Log";
-                AE_TO_104API_Log[] arrAE_TO_104API_Log =new AE_TO_104API_Log[1];
-                arrAE_TO_104API_Log[0] = p_Loginfo;
+                string TableName = "External_API_Log";
+                External_API_Log[] arrExternal_API_Log = new External_API_Log[1];
+                arrExternal_API_Log[0] = p_External_API_Log;
 
-                _ADO.DataTableToSQL(TableName, arrAE_TO_104API_Log, _ADO.ConnStr);
+                _ADO.DataTableToSQL(TableName, arrExternal_API_Log, _ADO.ConnStr);
             }
             catch
             {
