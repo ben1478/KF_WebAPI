@@ -588,7 +588,7 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"select * from User_M where U_num=@User and Role_num in ('1004','1005','1007','1020')";
+                var T_SQL = @"select * from User_M where U_num=@User and Role_num in ('1004','1005','1020')";
                 parameters.Add(new SqlParameter("@User", User));
                 #endregion
                 var dtresult = _adoData.ExecuteQuery(T_SQL, parameters);

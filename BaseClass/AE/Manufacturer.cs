@@ -27,6 +27,8 @@
         public string? Company_number { get; set; }
         public string? Company_addr { get; set; }
         public string? Company_busin { get; set; }
+        public string Company_tel { get; set; }
+        public string Company_fax { get; set; }
         public string? Invoice_Iss { get; set; }
         public string? Overseas { get; set; }
         public string? add_num { get; set; }

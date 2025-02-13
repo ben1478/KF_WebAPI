@@ -286,7 +286,8 @@ namespace KF_WebAPI.Controllers
                     LEFT JOIN Item_list LI ON LI.item_D_code = AM.FM_Step_SignType AND LI.item_M_code = 'Flow_sign_type'
                     LEFT JOIN Procurement_M PM ON AM.FM_Source_ID = PM.PM_ID 
                     LEFT JOIN InvPrepay_M IM ON AM.FM_Source_ID = IM.VP_ID 
-                    WHERE AM.add_date BETWEEN @RF_Date_S AND @RF_Date_E";
+                    WHERE (PM.PM_Cancel='N' OR IM.VP_Cancel='N') and AM.add_date BETWEEN @RF_Date_S AND @RF_Date_E
+                    order by AM.add_date desc";
                 if (!string.IsNullOrEmpty(model.U_BC))
                 {
                     T_SQL += " and AM.FM_BC = @U_BC";
