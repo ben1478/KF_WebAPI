@@ -12,6 +12,9 @@ using System;
 using Microsoft.Identity.Client;
 using Newtonsoft.Json.Linq;
 using System.Collections;
+using KF_WebAPI.Controllers;
+using System.Net.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -2303,16 +2306,15 @@ namespace KF_WebAPI.FunctionHandler
                 if (result)
                 {
                     //訊息通知
-                    result = MsgIns("MSGK0005", U_num, MsgNum, "請採購單簽核通知,請前往處理!!", IP);
+                    var Fun = new FuncHandler();
+                    Fun.MsgIns("MSGK0005", U_num, MsgNum, "請採購單簽核通知,請前往處理!!", IP);
                 }
             }
             return result;
         }
 
-        public static bool MsgIns(string Msg_Kind,string Add_User,string Msg_User,string Msg_Title, string IP)
+        public void MsgIns(string Msg_Kind, string Add_User, string Msg_User, string Msg_Title, string IP)
         {
-            bool result = false;
-
             ADOData _adoData = new ADOData();
             var parameters = new List<SqlParameter>();
             var T_SQL = @"Insert into Msg (Msg_cknum,Msg_source,Msg_kind,Msg_show_date,Msg_title,Msg_note,Msg_to_num,Msg_read_type,Msg_reply_note,Msg_reply_type
@@ -2325,17 +2327,40 @@ namespace KF_WebAPI.FunctionHandler
             parameters.Add(new SqlParameter("@add_num", Add_User));
             parameters.Add(new SqlParameter("@add_ip", IP));
 
-            int result_d = _adoData.ExecuteNonQuery(T_SQL, parameters);
-            if (result_d == 0)
+            try
             {
-                result = false;
+                _adoData.ExecuteNonQuery(T_SQL, parameters);
             }
-            else
+            catch (Exception)
             {
-                result = true;
+                throw;
             }
+           
+        }
 
-            return result;
+        public void ExtAPILogIns(string API_CODE,string API_NAME,string API_KEY,string ACCESS_TOKEN,string PARAM_JSON,string RESULT_CODE,string RESULT_MSG)
+        {
+            ADOData _adoData = new ADOData();
+            var parameters = new List<SqlParameter>();
+            var T_SQL = @"Insert into External_API_Log (API_CODE,API_NAME,API_KEY,ACCESS_TOKEN,PARAM_JSON,RESULT_CODE,RESULT_MSG,
+                Add_date,Add_User) values (@API_CODE,@API_NAME,@API_KEY,@ACCESS_TOKEN,@PARAM_JSON,@RESULT_CODE,
+                @RESULT_MSG,GETDATE(),'sys')";
+            parameters.Add(new SqlParameter("@API_CODE", API_CODE));
+            parameters.Add(new SqlParameter("@API_NAME", API_NAME));
+            parameters.Add(new SqlParameter("@API_KEY", API_KEY));
+            parameters.Add(new SqlParameter("@ACCESS_TOKEN", ACCESS_TOKEN));
+            parameters.Add(new SqlParameter("@PARAM_JSON", PARAM_JSON));
+            parameters.Add(new SqlParameter("@RESULT_CODE", RESULT_CODE));
+            parameters.Add(new SqlParameter("@RESULT_MSG", RESULT_MSG));
+
+            try
+            {
+                _adoData.ExecuteNonQuery(T_SQL, parameters);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
     }
 }

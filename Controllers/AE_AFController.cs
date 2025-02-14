@@ -405,7 +405,7 @@ namespace KF_WebAPI.Controllers
         /// 審核明細檔異動
         /// </summary>
         [HttpPost("AuditFlow_D_Upd")]
-        public ActionResult<ResultClass<string>> AuditFlow_D_Upd(AuditFlow_D_Upd model)
+        public async Task<ActionResult<ResultClass<string>>> AuditFlow_D_Upd(AuditFlow_D_Upd model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
@@ -418,14 +418,7 @@ namespace KF_WebAPI.Controllers
                 var T_SQL = @"Update AuditFlow_D set FD_Step_desc=@FD_Step_desc,FD_Step_SignType=@FD_Step_SignType,FD_Step_date=GETDATE(),
                     edit_date=GETDATE(),edit_num=@User,edit_ip=@IP
                     where FM_Source_ID=@FM_Source_ID and FD_Step_num=@User and FD_Sign_Countersign=@FD_Sign_Countersign and FD_Step=@FD_Step";
-                if(!string.IsNullOrEmpty(model.FD_Step_desc))
-                {
-                    parameters.Add(new SqlParameter("@FD_Step_desc", model.FD_Step_desc));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@FD_Step_desc", DBNull.Value));
-                }
+                parameters.Add(new SqlParameter("@FD_Step_desc", model.FD_Step_desc ?? ""));
                 parameters.Add(new SqlParameter("@FD_Step_SignType", model.FD_Step_SignType));
                 parameters.Add(new SqlParameter("@FM_Source_ID", model.FM_Source_ID));
                 parameters.Add(new SqlParameter("@User", model.User));
@@ -460,11 +453,11 @@ namespace KF_WebAPI.Controllers
                     resultClass.ResultCode = "000";
                     resultClass.ResultMsg = "異動成功";
 
-                    //TODO 通知API抽單 ??
-                    if (model.FD_Step_SignType == "FSIGN003")
+                    //呼叫文中傳票API
+                    if (model.FD_Step_SignType == "FSIGN002" && model.FM_Step=="2" && new[] { "PA", "PP", "PS" }.Any(p => model.FM_Source_ID.StartsWith(p)))
                     {
-                      
-
+                        var _aWintonController = new A_WintonController();
+                        Task.Run(() => _aWintonController.Summons_Ins(model.FM_Source_ID));
                     }
                     return Ok(resultClass);
                 }

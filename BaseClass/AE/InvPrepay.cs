@@ -16,6 +16,7 @@ namespace KF_WebAPI.BaseClass.AE
         public string branch_name { get; set; }
         public string bank_account { get; set; }
         public string payee_name { get; set; }
+        public string VP_MFG_Date { get; set; }
         public string User { get; set; }
     }
 

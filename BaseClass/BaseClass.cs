@@ -119,4 +119,20 @@ namespace KF_WebAPI.BaseClass
         public String StatusCode { get; set; } = "";
     }
 
+    public class ExAPILog
+    {
+        public String API_CODE { get; set; }
+        public String API_NAME { get; set; }
+        public String API_KEY { get; set; }
+        public String ACCESS_TOKEN { get; set; }
+        public String PARAM_JSON { get; set; }
+        public String RESULT_CODE { get; set; }
+        public String RESULT_MSG { get; set; }
+        public String? HANDLER { get; set; }
+        public String? HANDLE_NOTE { get; set; }
+        public String? HANDLE_STATUS { get; set; }
+        public DateTime Add_date { get; set; }
+        public String Add_User { get; set; }
+    }
+
 }

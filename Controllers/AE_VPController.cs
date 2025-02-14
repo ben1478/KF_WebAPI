@@ -100,55 +100,21 @@ namespace KF_WebAPI.Controllers
 
                 var parameters_m = new List<SqlParameter>();
                 var T_SQL_M = @"Insert into InvPrepay_M (VP_ID,VP_type,VP_BC,VP_Pay_Type,VP_AppDate,VP_U_num,VP_Total_Money,bank_code,bank_name,
-                    branch_name,bank_account,payee_name,VP_cknum,add_date,add_num,add_ip,edit_date,edit_num,edit_ip) 
+                    branch_name,bank_account,payee_name,VP_MFG_Date,VP_cknum,add_date,add_num,add_ip,edit_date,edit_num,edit_ip) 
                     Values (@VP_ID,@VP_type,@VP_BC,@VP_Pay_Type,FORMAT(GETDATE(),'yyyy/MM/dd'),@VP_U_num,@VP_Total_Money,@bank_code,@bank_name,@branch_name,
-                    @bank_account,@payee_name,@VP_cknum,GETDATE(),@add_num,@add_ip,GETDATE(),@edit_num,@edit_ip)";
+                    @bank_account,@payee_name,@VP_MFG_Date,@VP_cknum,GETDATE(),@add_num,@add_ip,GETDATE(),@edit_num,@edit_ip)";
                 parameters_m.Add(new SqlParameter("@VP_ID", VP_ID));
                 parameters_m.Add(new SqlParameter("@VP_type", str_type));
                 parameters_m.Add(new SqlParameter("@VP_BC", model.VP_BC));
                 parameters_m.Add(new SqlParameter("@VP_Pay_Type", model.VP_Pay_Type));
                 parameters_m.Add(new SqlParameter("@VP_U_num", model.User));
                 parameters_m.Add(new SqlParameter("@VP_Total_Money", model.VP_Total_Money));
-                if (!string.IsNullOrEmpty(model.bank_code))
-                {
-                    parameters_m.Add(new SqlParameter("@bank_code", model.bank_code));
-                }
-                else
-                {
-                    parameters_m.Add(new SqlParameter("@bank_code",DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.bank_name))
-                {
-                    parameters_m.Add(new SqlParameter("@bank_name", model.bank_name));
-                }
-                else
-                {
-                    parameters_m.Add(new SqlParameter("@bank_name", DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.branch_name))
-                {
-                    parameters_m.Add(new SqlParameter("@branch_name", model.branch_name));
-                }
-                else
-                {
-                    parameters_m.Add(new SqlParameter("@branch_name", DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.bank_account))
-                {
-                    parameters_m.Add(new SqlParameter("@bank_account", model.bank_account));
-                }
-                else
-                {
-                    parameters_m.Add(new SqlParameter("@bank_account", DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.payee_name))
-                {
-                    parameters_m.Add(new SqlParameter("@payee_name", model.payee_name));
-                }
-                else
-                {
-                    parameters_m.Add(new SqlParameter("@payee_name", DBNull.Value));
-                }
+                parameters_m.Add(new SqlParameter("@bank_code", model.bank_code ?? ""));
+                parameters_m.Add(new SqlParameter("@bank_name", model.bank_name ?? ""));
+                parameters_m.Add(new SqlParameter("@branch_name", model.branch_name ?? ""));
+                parameters_m.Add(new SqlParameter("@bank_account", model.bank_account ?? ""));
+                parameters_m.Add(new SqlParameter("@payee_name", model.payee_name ?? ""));
+                parameters_m.Add(new SqlParameter("@VP_MFG_Date", model.VP_MFG_Date ?? ""));
                 parameters_m.Add(new SqlParameter("@VP_cknum", FuncHandler.GetCheckNum()));
                 parameters_m.Add(new SqlParameter("@add_num", model.User));
                 parameters_m.Add(new SqlParameter("@add_ip", clientIp));
@@ -317,7 +283,7 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"select VP_type,VP_BC,VP_Pay_Type,VP_Total_Money,bank_code,bank_name,branch_name,bank_account,payee_name 
+                var T_SQL = @"select VP_type,VP_BC,VP_Pay_Type,VP_Total_Money,bank_code,bank_name,branch_name,bank_account,payee_name,VP_MFG_Date 
                     from InvPrepay_M where VP_ID=@VP_ID ";
                 parameters.Add(new SqlParameter("@VP_ID", VP_ID));
                 #endregion
@@ -335,7 +301,8 @@ namespace KF_WebAPI.Controllers
                         bank_name = row.Field<string>("bank_name"),
                         branch_name = row.Field<string>("branch_name"),
                         bank_account = row.Field<string>("bank_account"),
-                        payee_name = row.Field<string>("payee_name")
+                        payee_name = row.Field<string>("payee_name"),
+                        VP_MFG_Date = row.Field<string>("VP_MFG_Date")
                     }).FirstOrDefault();
 
                     #region SQL Procurement_D
@@ -396,50 +363,17 @@ namespace KF_WebAPI.Controllers
                 }
                 var parameters_m = new List<SqlParameter>();
                 var T_SQL_M = @"Update InvPrepay_M set VP_type=@VP_type,VP_Pay_Type=@VP_Pay_Type,VP_Total_Money=@VP_Total_Money,bank_code=@bank_code,bank_name=@bank_name, 
-                branch_name=@branch_name,bank_account=@bank_account,payee_name=@payee_name,edit_date=GETDATE(),edit_num=@edit_num,edit_ip=@edit_ip where VP_ID=@VP_ID";
+                branch_name=@branch_name,bank_account=@bank_account,payee_name=@payee_name,VP_MFG_Date=@VP_MFG_Date,
+                edit_date=GETDATE(),edit_num=@edit_num,edit_ip=@edit_ip where VP_ID=@VP_ID";
                 parameters_m.Add(new SqlParameter("@VP_type",str_type));
                 parameters_m.Add(new SqlParameter("@VP_Pay_Type", model.VP_Pay_Type));
                 parameters_m.Add(new SqlParameter("@VP_Total_Money", model.VP_Total_Money));
-                if (!string.IsNullOrEmpty(model.bank_code))
-                {
-                    parameters_m.Add(new SqlParameter("@bank_code", model.bank_code));
-                }
-                else
-                {
-                    parameters_m.Add(new SqlParameter("@bank_code", DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.bank_name))
-                {
-                    parameters_m.Add(new SqlParameter("@bank_name", model.bank_name));
-                }
-                else
-                {
-                    parameters_m.Add(new SqlParameter("@bank_name", DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.branch_name))
-                {
-                    parameters_m.Add(new SqlParameter("@branch_name", model.branch_name));
-                }
-                else
-                {
-                    parameters_m.Add(new SqlParameter("@branch_name", DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.bank_account))
-                {
-                    parameters_m.Add(new SqlParameter("@bank_account", model.bank_account));
-                }
-                else
-                {
-                    parameters_m.Add(new SqlParameter("@bank_account", DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.payee_name))
-                {
-                    parameters_m.Add(new SqlParameter("@payee_name", model.payee_name));
-                }
-                else
-                {
-                    parameters_m.Add(new SqlParameter("@payee_name", DBNull.Value));
-                }
+                parameters_m.Add(new SqlParameter("@bank_code", model.bank_code ?? ""));
+                parameters_m.Add(new SqlParameter("@bank_name", model.bank_name ?? ""));
+                parameters_m.Add(new SqlParameter("@branch_name", model.branch_name ?? ""));
+                parameters_m.Add(new SqlParameter("@bank_account", model.bank_account ?? ""));
+                parameters_m.Add(new SqlParameter("@payee_name", model.payee_name ?? ""));
+                parameters_m.Add(new SqlParameter("@VP_MFG_Date", model.VP_MFG_Date ?? ""));
                 parameters_m.Add(new SqlParameter("@edit_num", model.User));
                 parameters_m.Add(new SqlParameter("@edit_ip", clientIp));
                 parameters_m.Add(new SqlParameter("@VP_ID", model.VP_ID));
