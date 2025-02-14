@@ -7,6 +7,21 @@ namespace KF_WebAPI.BaseClass
     {
         
     }
+
+    public class External_API_Log
+    {
+        public string? API_CODE { get; set; }
+        public string? API_NAME { get; set; }
+        public string? API_KEY { get; set; }
+        public string? ACCESS_TOKEN { get; set; }
+        public string? PARAM_JSON { get; set; }
+        public string? RESULT_CODE { get; set; }
+        public string? RESULT_MSG { get; set; }
+        public string? Add_User { get; set; }
+       
+    }
+
+
     /// <summary>
     /// 交易Info
     /// </summary>

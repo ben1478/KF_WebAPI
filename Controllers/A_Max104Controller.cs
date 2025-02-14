@@ -10,6 +10,7 @@ using static KF_WebAPI.FunctionHandler.Common;
 using Microsoft.Data.SqlClient;
 using System;
 using Azure.Core;
+using KF_WebAPI.BaseClass.AE;
 
 namespace KF_WebAPI.Controllers
 {
@@ -43,19 +44,20 @@ namespace KF_WebAPI.Controllers
         /// <returns></returns>
         [Route("Login")]
         [HttpPost]
-        public async Task<ActionResult<string>> Login(string USER_ACCOUNT, string USER_PWD)
+        public async Task<ActionResult<string>> Login(string UserID)
         {
             string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
             ResultClass_104<signIn> resultClass = new ResultClass_104<signIn>();
             try
             {
-
+                string USER_ACCOUNT = "KF_ERP";
+                string USER_PWD = "Kf52611690";
                 string p_JSON = "{ \"USER_ACCOUNT\": \"" + USER_ACCOUNT + "\", \"USER_PWD\": \"" + USER_PWD + "\"}";
 
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("auth/signIn", p_JSON, TransactionId, _httpClient);
+                APIResult = await _Comm.Call_104API(UserID,"auth/signIn", p_JSON, TransactionId, _httpClient);
 
-                if (APIResult.ResultCode == "000")
+                if (APIResult.ResultCode == "200")
                 {
                     resultClass = JsonConvert.DeserializeObject<ResultClass_104<signIn>>(APIResult.objResult);
                 }
@@ -81,21 +83,21 @@ namespace KF_WebAPI.Controllers
         /// <returns></returns>
         [Route("GetCompany")]
         [HttpPost]
-        public async Task<ActionResult<string>> GetCompany(string ACCESS_TOKEN)
+        public async Task<ActionResult<string>> GetCompany(string UserID,string ACCESS_TOKEN)
         {
             string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
-            ResultClass_104<signIn> resultClass = new ResultClass_104<signIn>();
+            arrResultClass_104<company> resultClass = new arrResultClass_104<company>();
             try
             {
 
                 string p_JSON = "{ \"ACCESS_TOKEN\": \"" + ACCESS_TOKEN + "\"}";
 
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("os/company", p_JSON, TransactionId, _httpClient, ACCESS_TOKEN);
+                APIResult = await _Comm.Call_104API(UserID, "os/company", p_JSON, TransactionId, _httpClient, ACCESS_TOKEN);
 
-                if (APIResult.ResultCode == "000")
+                if (APIResult.ResultCode == "200")
                 {
-                    resultClass = JsonConvert.DeserializeObject<ResultClass_104<signIn>>(APIResult.objResult);
+                    resultClass = JsonConvert.DeserializeObject<arrResultClass_104<company>>(APIResult.objResult);
                 }
                 else
                 {
@@ -115,7 +117,7 @@ namespace KF_WebAPI.Controllers
 
         [Route("GetEmp_ID")]
         [HttpPost]
-        public async Task<ActionResult<string>> GetEmp_ID(string EMP_NO, string ACCESS_TOKEN)
+        public async Task<ActionResult<string>> GetEmp_ID(string UserID, string EMP_NO, string ACCESS_TOKEN)
         {
             string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
             arrResultClass_104<emp_id> resultClass = new arrResultClass_104<emp_id>();
@@ -125,9 +127,9 @@ namespace KF_WebAPI.Controllers
                 string p_JSON = "{ \"ACCESS_TOKEN\": \"" + ACCESS_TOKEN + "\", \"CO_CODE\": \"" + g_CO_CODE + "\", \"EMP_NO\": \"" + EMP_NO + "\"}";
 
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("ed/emp_id", p_JSON, TransactionId, _httpClient, ACCESS_TOKEN);
+                APIResult = await _Comm.Call_104API(UserID,"ed/emp_id", p_JSON, TransactionId, _httpClient, ACCESS_TOKEN);
 
-                if (APIResult.ResultCode == "000")
+                if (APIResult.ResultCode == "200")
                 {
                     resultClass = JsonConvert.DeserializeObject<arrResultClass_104<emp_id>>(APIResult.objResult);
                 }
@@ -152,7 +154,7 @@ namespace KF_WebAPI.Controllers
         /// <returns></returns>
         [Route("UPD_EmpIdToKF_ERP")]
         [HttpPost]
-        public async Task<ActionResult<string>> UPD_EmpIdToKF_ERP( string ACCESS_TOKEN)
+        public async Task<ActionResult<string>> UPD_EmpIdToKF_ERP(string UserID, string ACCESS_TOKEN)
         {
             string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
             arrResultClass_104<emp_id> resultClass = new arrResultClass_104<emp_id>();
@@ -160,9 +162,9 @@ namespace KF_WebAPI.Controllers
             {
                 string p_JSON = "{ \"ACCESS_TOKEN\": \"" + ACCESS_TOKEN + "\", \"CO_ID\": 1, \"LIMIT\": 300}";
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("ed/emp", p_JSON, TransactionId, _httpClient, ACCESS_TOKEN);
+                APIResult = await _Comm.Call_104API(UserID,"ed/emp", p_JSON, TransactionId, _httpClient, ACCESS_TOKEN);
                 ADOData _adoData = new ADOData();
-                if (APIResult.ResultCode == "000")
+                if (APIResult.ResultCode == "200")
                 {
                     resultClass = JsonConvert.DeserializeObject<arrResultClass_104<emp_id>>(APIResult.objResult);
                     if (resultClass.code == "200")
@@ -194,7 +196,7 @@ namespace KF_WebAPI.Controllers
 
         [Route("batchOtNew")]
         [HttpPost]
-        public async Task<ActionResult<string>> batchOtNew(string U_num, string ACCESS_TOKEN, string FR_kind, string Date_S, string Date_E)
+        public async Task<ActionResult<string>> batchOtNew(string UserID, string ACCESS_TOKEN, string FR_kind, string Date_S, string Date_E)
         {
             AE_HR m_AE_HR = new AE_HR();
             string SESSION_KEY = DateTime.Now.ToString("yyyyMMddhhmmssffff");
@@ -206,9 +208,9 @@ namespace KF_WebAPI.Controllers
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
 
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("wf/wf021/batchOtNew", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
+                APIResult = await _Comm.Call_104API(UserID,"wf/wf021/batchOtNew", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
 
-                if (APIResult.ResultCode == "000")
+                if (APIResult.ResultCode == "200")
                 {
                     resultClass = JsonConvert.DeserializeObject<ResultClass_104<object>>(APIResult.objResult);
 
@@ -236,7 +238,7 @@ namespace KF_WebAPI.Controllers
 
         [Route("batchOtSign")]
         [HttpPost]
-        public async Task<ActionResult<string>> batchOtSign(string U_num, string ACCESS_TOKEN, [FromBody] batchSign ReqClass)
+        public async Task<ActionResult<string>> batchOtSign(string UserID, string ACCESS_TOKEN, [FromBody] batchSign ReqClass)
         {
             
             ResultClass_104<Object> resultClass = new ResultClass_104<Object>();
@@ -245,9 +247,9 @@ namespace KF_WebAPI.Controllers
                
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("wf/wf021/batchOtSign", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
+                APIResult = await _Comm.Call_104API(UserID,"wf/wf021/batchOtSign", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
 
-                if (APIResult.ResultCode == "000")
+                if (APIResult.ResultCode == "200")
                 {
                     resultClass = JsonConvert.DeserializeObject<ResultClass_104<Object>>(APIResult.objResult);
                     AE_HR m_AE_HR = new AE_HR();
@@ -271,7 +273,7 @@ namespace KF_WebAPI.Controllers
 
         [Route("batchOtDelete")]
         [HttpPost]
-        public async Task<ActionResult<string>> batchOtDelete([FromBody] batchSign ReqClass, string TOKEN_KEY)
+        public async Task<ActionResult<string>> batchOtDelete([FromBody] batchSign ReqClass, string UserID, string TOKEN_KEY)
         {
 
             ResultClass_104<object> resultClass = new ResultClass_104<object>();
@@ -280,9 +282,9 @@ namespace KF_WebAPI.Controllers
 
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("wf/wf021/batchOtDelete", p_JSON, ReqClass.SESSION_KEY, _httpClient, TOKEN_KEY);
+                APIResult = await _Comm.Call_104API(UserID, "wf/wf021/batchOtDelete", p_JSON, ReqClass.SESSION_KEY, _httpClient, TOKEN_KEY);
 
-                if (APIResult.ResultCode == "000")
+                if (APIResult.ResultCode == "200")
                 {
                     resultClass = JsonConvert.DeserializeObject<ResultClass_104<object>>(APIResult.objResult);
                 }
@@ -303,7 +305,7 @@ namespace KF_WebAPI.Controllers
 
         [Route("deleteOt")]
         [HttpPost]
-        public async Task<ActionResult<string>> deleteOt([FromBody] deleteOt ReqClass, string TOKEN_KEY)
+        public async Task<ActionResult<string>> deleteOt([FromBody] deleteOt ReqClass, string UserID, string TOKEN_KEY)
         {
             string SESSION_KEY = DateTime.Now.ToString("yyyyMMddhhmmssffff");
             ResultClass_104<object> resultClass = new ResultClass_104<object>();
@@ -312,9 +314,9 @@ namespace KF_WebAPI.Controllers
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
 
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("wf/wf020/deleteOt", p_JSON, SESSION_KEY, _httpClient, TOKEN_KEY);
+                APIResult = await _Comm.Call_104API(  UserID,"wf/wf020/deleteOt", p_JSON, SESSION_KEY, _httpClient, TOKEN_KEY);
 
-                if (APIResult.ResultCode == "000")
+                if (APIResult.ResultCode == "200")
                 {
                     resultClass = JsonConvert.DeserializeObject<ResultClass_104<object>>(APIResult.objResult);
                 }
@@ -335,7 +337,7 @@ namespace KF_WebAPI.Controllers
 
         [Route("batchLeaveSign")]
         [HttpPost]
-        public async Task<ActionResult<string>> batchLeaveSign(string U_num, string ACCESS_TOKEN, [FromBody] batchSign ReqClass)
+        public async Task<ActionResult<string>> batchLeaveSign(string UserID, string ACCESS_TOKEN, [FromBody] batchSign ReqClass)
         {
 
             ResultClass_104<Object> resultClass = new ResultClass_104<Object>();
@@ -343,9 +345,9 @@ namespace KF_WebAPI.Controllers
             {
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("wf/wf011/batchLeaveSign", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
+                APIResult = await _Comm.Call_104API(UserID, "wf/wf011/batchLeaveSign", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
 
-                if (APIResult.ResultCode == "000")
+                if (APIResult.ResultCode == "200")
                 {
                     resultClass = JsonConvert.DeserializeObject<ResultClass_104<Object>>(APIResult.objResult);
                     AE_HR m_AE_HR = new AE_HR();
@@ -369,7 +371,7 @@ namespace KF_WebAPI.Controllers
 
         [Route("batchLeaveNew")]
         [HttpPost]
-        public async Task<ActionResult<string>> batchLeaveNew(string U_num, string ACCESS_TOKEN, string FR_kind, string Date_S, string Date_E)
+        public async Task<ActionResult<string>> batchLeaveNew(string UserID, string ACCESS_TOKEN, string FR_kind, string Date_S, string Date_E)
         {
             AE_HR m_AE_HR = new AE_HR();
             string SESSION_KEY = DateTime.Now.ToString("yyyyMMddhhmmssffff");
@@ -380,9 +382,9 @@ namespace KF_WebAPI.Controllers
 
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("wf/wf011/batchLeaveNew", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
+                APIResult = await _Comm.Call_104API(UserID, "wf/wf011/batchLeaveNew", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
 
-                if (APIResult.ResultCode == "000")
+                if (APIResult.ResultCode == "200")
                 {
                     resultClass = JsonConvert.DeserializeObject<ResultClass_104<object>>(APIResult.objResult);
                     
@@ -410,7 +412,7 @@ namespace KF_WebAPI.Controllers
 
         [Route("batchLeaveLate15")]
         [HttpPost]
-        public async Task<ActionResult<string>> batchLeaveLate15(string U_num, string ACCESS_TOKEN, string FR_kind, string Date_S, string Date_E)
+        public async Task<ActionResult<string>> batchLeaveLate15(string UserID, string ACCESS_TOKEN, string FR_kind, string Date_S, string Date_E)
         {
             AE_HR m_AE_HR = new AE_HR();
             string SESSION_KEY = DateTime.Now.ToString("yyyyMMddhhmmssffff");
@@ -422,9 +424,9 @@ namespace KF_WebAPI.Controllers
                     batchLeaveNew ReqClass = m_AE_HR.GetLate15To104(SESSION_KEY,  Date_S, Date_E);
                     string p_JSON = JsonConvert.SerializeObject(ReqClass);
                     ResultClass<string> APIResult = new();
-                    APIResult = await _Comm.Call_104API("wf/wf011/batchLeaveNew", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
+                    APIResult = await _Comm.Call_104API(UserID, "wf/wf011/batchLeaveNew", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
 
-                    if (APIResult.ResultCode == "000")
+                    if (APIResult.ResultCode == "200")
                     {
                         resultClass = JsonConvert.DeserializeObject<ResultClass_104<object>>(APIResult.objResult);
 
@@ -453,7 +455,7 @@ namespace KF_WebAPI.Controllers
 
         [Route("batchLeaveLate15Sign")]
         [HttpPost]
-        public async Task<ActionResult<string>> batchLeaveLate15Sign(string U_num, string ACCESS_TOKEN, [FromBody] batchSign ReqClass)
+        public async Task<ActionResult<string>> batchLeaveLate15Sign(string UserID, string ACCESS_TOKEN, [FromBody] batchSign ReqClass)
         {
 
             ResultClass_104<Object> resultClass = new ResultClass_104<Object>();
@@ -461,9 +463,9 @@ namespace KF_WebAPI.Controllers
             {
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("wf/wf011/batchLeaveSign", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
+                APIResult = await _Comm.Call_104API(UserID, "wf/wf011/batchLeaveSign", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
 
-                if (APIResult.ResultCode == "000")
+                if (APIResult.ResultCode == "200")
                 {
                     resultClass = JsonConvert.DeserializeObject<ResultClass_104<Object>>(APIResult.objResult);
                     AE_HR m_AE_HR = new AE_HR();
@@ -488,7 +490,7 @@ namespace KF_WebAPI.Controllers
 
         [Route("batchLeaveDelete")]
         [HttpPost]
-        public async Task<ActionResult<string>> batchLeaveDelete([FromBody] batchSign ReqClass, string TOKEN_KEY)
+        public async Task<ActionResult<string>> batchLeaveDelete([FromBody] batchSign ReqClass, string UserID, string TOKEN_KEY)
         {
 
             ResultClass_104<object> resultClass = new ResultClass_104<object>();
@@ -498,9 +500,9 @@ namespace KF_WebAPI.Controllers
                 string p_JSON = JsonConvert.SerializeObject(ReqClass);
 
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("wf/wf011/batchLeaveDelete", p_JSON, ReqClass.SESSION_KEY, _httpClient, TOKEN_KEY);
+                APIResult = await _Comm.Call_104API(UserID, "wf/wf011/batchLeaveDelete", p_JSON, ReqClass.SESSION_KEY, _httpClient, TOKEN_KEY);
 
-                if (APIResult.ResultCode == "000")
+                if (APIResult.ResultCode == "200")
                 {
                     resultClass = JsonConvert.DeserializeObject<ResultClass_104<object>>(APIResult.objResult);
                 }
@@ -526,19 +528,19 @@ namespace KF_WebAPI.Controllers
         /// <returns></returns>
         [Route("calendar_leave")]
         [HttpPost]
-        public async Task<ActionResult<string>> calendar_leave(string ACCESS_TOKEN)
+        public async Task<ActionResult<string>> calendar_leave(string UserID, string ACCESS_TOKEN)
         {
             string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
-            arrResultClass_104<object> resultClass = new arrResultClass_104<object>();
+            arrResultClass_104<calendar_leave> resultClass = new arrResultClass_104<calendar_leave>();
             try
             {
                 string p_JSON = "{ \"ACCESS_TOKEN\": \"" + ACCESS_TOKEN + "\"}";
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("am/calendar_leave", p_JSON, TransactionId, _httpClient, ACCESS_TOKEN);
+                APIResult = await _Comm.Call_104API(UserID, "am/calendar_leave", p_JSON, TransactionId, _httpClient, ACCESS_TOKEN);
                 ADOData _adoData = new ADOData();
-                if (APIResult.ResultCode == "000")
+                if (APIResult.ResultCode == "200")
                 {
-                    resultClass = JsonConvert.DeserializeObject<arrResultClass_104<Object>>(APIResult.objResult);
+                    resultClass = JsonConvert.DeserializeObject<arrResultClass_104<calendar_leave>>(APIResult.objResult);
                 }
                 else
                 {
@@ -562,7 +564,7 @@ namespace KF_WebAPI.Controllers
         /// <returns></returns>
         [Route("calendar_basic")]
         [HttpPost]
-        public async Task<ActionResult<string>> calendar_basic(string ACCESS_TOKEN)
+        public async Task<ActionResult<string>> calendar_basic(string UserID, string ACCESS_TOKEN)
         {
             string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
             arrResultClass_104<object> resultClass = new arrResultClass_104<object>();
@@ -570,9 +572,9 @@ namespace KF_WebAPI.Controllers
             {
                 string p_JSON = "{ \"ACCESS_TOKEN\": \"" + ACCESS_TOKEN + "\",\"CO_ID\": 1}";
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("am/calendar_basic", p_JSON, TransactionId, _httpClient, ACCESS_TOKEN);
+                APIResult = await _Comm.Call_104API(UserID, "am/calendar_basic", p_JSON, TransactionId, _httpClient, ACCESS_TOKEN);
                 ADOData _adoData = new ADOData();
-                if (APIResult.ResultCode == "000")
+                if (APIResult.ResultCode == "200")
                 {
                     resultClass = JsonConvert.DeserializeObject<arrResultClass_104<Object>>(APIResult.objResult);
                 }
@@ -600,7 +602,7 @@ namespace KF_WebAPI.Controllers
         /// <returns></returns>
         [Route("calendar_day")]
         [HttpPost]
-        public async Task<ActionResult<string>> calendar_day(string ACCESS_TOKEN,string CALENDAR_YEAR)
+        public async Task<ActionResult<string>> calendar_day(string UserID, string ACCESS_TOKEN,string CALENDAR_YEAR)
         {
             string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
             ResultClass_104<string> resultClass = new ResultClass_104<string>();
@@ -608,9 +610,9 @@ namespace KF_WebAPI.Controllers
             {
                 string p_JSON = "{ \"ACCESS_TOKEN\": \"" + ACCESS_TOKEN + "\",\"CO_ID\": 1,\"CALENDAR_BASIC_ID\": 1,\"CALENDAR_YEAR\": " + CALENDAR_YEAR + "}";
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("am/calendar_day", p_JSON, TransactionId, _httpClient, ACCESS_TOKEN);
+                APIResult = await _Comm.Call_104API(UserID, "am/calendar_day", p_JSON, TransactionId, _httpClient, ACCESS_TOKEN);
               
-                if (APIResult.ResultCode == "000")
+                if (APIResult.ResultCode == "200")
                 {
                     arrResultClass_104<calendar_day> objResult = JsonConvert.DeserializeObject<arrResultClass_104<calendar_day>>(APIResult.objResult);
                     AE_HR m_hr = new AE_HR();
@@ -641,17 +643,17 @@ namespace KF_WebAPI.Controllers
         /// <returns></returns>
         [Route("leaveitem")]
         [HttpPost]
-        public async Task<ActionResult<string>>leaveitem(string ACCESS_TOKEN)
+        public async Task<ActionResult<string>>leaveitem(string UserID, string ACCESS_TOKEN)
         {
             string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
-            ResultClass_104<string> resultClass = new ResultClass_104<string>();
+            arrResultClass_104<leaveitem> resultClass = new arrResultClass_104<leaveitem>();
             try
             {
                 string p_JSON = "{ \"ACCESS_TOKEN\": \"" + ACCESS_TOKEN + "\",\"CO_ID\": 1}";
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API("am/leaveitem", p_JSON, TransactionId, _httpClient, ACCESS_TOKEN);
+                APIResult = await _Comm.Call_104API(UserID, "am/leaveitem", p_JSON, TransactionId, _httpClient, ACCESS_TOKEN);
 
-                if (APIResult.ResultCode == "000")
+                if (APIResult.ResultCode == "200")
                 {
                     arrResultClass_104<leaveitem> objResult = JsonConvert.DeserializeObject<arrResultClass_104<leaveitem>>(APIResult.objResult);
                     AE_HR m_hr = new AE_HR();

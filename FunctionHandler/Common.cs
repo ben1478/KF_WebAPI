@@ -11,6 +11,7 @@ using System.Net.Http.Headers;
 using Azure.Core;
 using KF_WebAPI.BaseClass.Max104;
 using KF_WebAPI.DataLogic;
+using Microsoft.AspNetCore.Http;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -45,7 +46,7 @@ namespace KF_WebAPI.FunctionHandler
        
 
 
-        public async Task<ResultClass<string>> Call_104API(string p_APIName, string p_JSON,  string SESSION_KEY, HttpClient p_HttpClient,string ACCESS_TOKEN = "")
+        public async Task<ResultClass<string>> Call_104API(string p_USER, string p_APIName, string p_JSON,  string SESSION_KEY, HttpClient p_HttpClient,string ACCESS_TOKEN = "")
         {
             ResultClass<string> resultClass = new();
 
@@ -67,8 +68,11 @@ namespace KF_WebAPI.FunctionHandler
 
                     request.Content = content;
                     var response = await httpClient.SendAsync(request);
-                    ResultClass<string> resultCheckStatus = CheckStatusCode104(p_APIName,response);
-                    if (resultCheckStatus.ResultCode == "000")
+                    // ResultClass<string> resultCheckStatus = CheckStatusCode104(p_APIName,response);
+                    var AsyncResult = await response.Content.ReadAsStringAsync();
+                    resultClass.ResultCode = "200";
+                    resultClass.objResult = (AsyncResult);
+                    /*if (resultCheckStatus.ResultCode == "000")
                     {
                         var AsyncResult = await response.Content.ReadAsStringAsync();
                         resultClass.ResultCode = "000";
@@ -79,9 +83,7 @@ namespace KF_WebAPI.FunctionHandler
                     {
                         resultClass = resultCheckStatus;
                         resultClass.objResult = (p_JSON);
-                    }
-                    
-
+                    }*/
                 }
             }
             catch (Exception ex)
@@ -91,24 +93,31 @@ namespace KF_WebAPI.FunctionHandler
             }
             try
             {
+                ResultClass_104<object> resultClass_log = new ResultClass_104<object>();
+
+                resultClass_log = JsonConvert.DeserializeObject<ResultClass_104<object>>(resultClass.objResult);
+
+                resultClass.ResultCode = resultClass_log.code;
+                resultClass.ResultMsg = resultClass_log.msg;
                 if (ACCESS_TOKEN != "")
                 {
-                    AE_TO_104API_Log _AE_TO_104API_Log = new AE_TO_104API_Log();
-                    _AE_TO_104API_Log.ACCESS_TOKEN = ACCESS_TOKEN;
-                    _AE_TO_104API_Log.APIName = p_APIName;
-                    _AE_TO_104API_Log.SESSION_KEY = SESSION_KEY;
-                    _AE_TO_104API_Log.JSON = p_JSON;
-                    _AE_TO_104API_Log.Result = resultClass.ResultCode;
-                    _AE_TO_104API_Log.Msg = resultClass.ResultMsg;
+                    External_API_Log _External_API_Log= new External_API_Log();
+                    _External_API_Log.API_CODE = "104MAX";
+                    _External_API_Log.API_NAME = p_APIName;
+                    _External_API_Log.API_KEY = SESSION_KEY;
+                    _External_API_Log.ACCESS_TOKEN = ACCESS_TOKEN;
+                    _External_API_Log.PARAM_JSON = p_JSON;
+                    _External_API_Log.RESULT_CODE = resultClass_log.code;
+                    _External_API_Log.RESULT_MSG = resultClass_log.msg;
+                    _External_API_Log.Add_User = p_USER;
+                   
                     AE_HR m_AE_HR = new AE_HR();
-                    m_AE_HR.InsertAE_TO_104API_Log(_AE_TO_104API_Log);
+                    m_AE_HR.InsertExternal_API_Log(_External_API_Log);
                 }
             }
             catch { 
             
             }
-
-           
 
             return resultClass;
         }
