@@ -96,24 +96,34 @@ namespace KF_WebAPI.FunctionHandler
                 ResultClass_104<object> resultClass_log = new ResultClass_104<object>();
 
                 resultClass_log = JsonConvert.DeserializeObject<ResultClass_104<object>>(resultClass.objResult);
+                if (resultClass_log is not null)
+                {
+                    resultClass.ResultCode = resultClass_log.code;
+                    resultClass.ResultMsg = resultClass_log.msg;
+                   
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "無資料";
+                }
 
-                resultClass.ResultCode = resultClass_log.code;
-                resultClass.ResultMsg = resultClass_log.msg;
                 if (ACCESS_TOKEN != "")
                 {
-                    External_API_Log _External_API_Log= new External_API_Log();
+                    External_API_Log _External_API_Log = new External_API_Log();
                     _External_API_Log.API_CODE = "104MAX";
                     _External_API_Log.API_NAME = p_APIName;
                     _External_API_Log.API_KEY = SESSION_KEY;
                     _External_API_Log.ACCESS_TOKEN = ACCESS_TOKEN;
                     _External_API_Log.PARAM_JSON = p_JSON;
-                    _External_API_Log.RESULT_CODE = resultClass_log.code;
-                    _External_API_Log.RESULT_MSG = resultClass_log.msg;
+                    _External_API_Log.RESULT_CODE = resultClass.ResultCode;
+                    _External_API_Log.RESULT_MSG = resultClass.ResultMsg;
                     _External_API_Log.Add_User = p_USER;
-                   
+
                     AE_HR m_AE_HR = new AE_HR();
                     m_AE_HR.InsertExternal_API_Log(_External_API_Log);
                 }
+
             }
             catch { 
             

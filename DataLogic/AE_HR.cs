@@ -35,7 +35,7 @@ namespace KF_WebAPI.DataLogic
                         "  AGENT_IDS " +
                         " FROM[dbo].[Late15To104] F LEFT JOIN User_M M1 on F.u_num = M1.u_num " +
                         " LEFT JOIN User_M M2 on M1.U_agent_num = M2.U_num " +
-                        " where[SESSION_KEY_104] is null and  [Date_S] between @Date_S+' 00:00' and @Date_E +' 23:59' ";
+                        " where[SESSION_KEY_104] is null and   cast( [Date_S] as datetime) between @Date_S+' 00:00' and @Date_E +' 23:59' ";
 
                     List<SqlParameter> Params = new List<SqlParameter>()
                     {
@@ -84,9 +84,9 @@ namespace KF_WebAPI.DataLogic
 
         }
 
-        public string GetAE_Flow_rest( string FR_kind, string Date_S, string Date_E)
+        public string GetAE_Flow_rest( string FR_kind)
         {
-             string m_SQL = "SELECT top 100  F.FR_ID WF_NO,F.FR_cknum SESSION_KEY,M.ID_104,  format( F.FR_date_begin,'yyyy/MM/dd HH:mm') FR_date_begin," +
+             string m_SQL = "SELECT  F.FR_ID WF_NO,F.FR_cknum SESSION_KEY,M.ID_104,  format( F.FR_date_begin,'yyyy/MM/dd HH:mm') FR_date_begin," +
                 "format( F.FR_date_end,'yyyy/MM/dd HH:mm')  FR_date_end, F.FR_ot_compen," +
                     "  /*[CALENDAR_LEAVE_ID]:4例假日,類別為7*/  " +
                     "  case when [CALENDAR_LEAVE_ID]='4' then '7' else " +
@@ -127,88 +127,21 @@ namespace KF_WebAPI.DataLogic
                 {
                     m_SQL += "AND FR_kind not IN ('FRK005','FRK004','FRK021','FRK007','FRK022','FRK023','FRK008','FRK009','FRK010')  ";
                 }
-                m_SQL += "AND format( F.FR_date_begin,'yyyy-MM-dd') between @Date_S and @Date_E  ";
+                m_SQL += " AND  format( F.FR_step_HR_date,'yyyy-MM-dd') between @Date_S and @Date_E  ";
             }
-
 
             m_SQL += " ORDER BY F.FR_U_num,  F.FR_cknum ";
             return m_SQL;
 
         }
 
-        public batchOtNew GetAE_OT_DATA(string SESSION_KEY, string FR_kind, string Date_S, string Date_E)
-        {
-            batchOtNew ReqClass = new batchOtNew();
-            ReqClass.CO_ID = 1;
-
-            ReqClass.SESSION_KEY = SESSION_KEY;
-            ReqClass.WF_NO = "WO" + SESSION_KEY;
-            try
-            {
-                List<SqlParameter> Params = new List<SqlParameter>()
-                {
-                    new SqlParameter() {ParameterName = "@Date_S", SqlDbType = SqlDbType.VarChar, Value= Date_S},
-                     new SqlParameter() {ParameterName = "@Date_E", SqlDbType = SqlDbType.VarChar, Value= Date_E}
-                };
-                string m_SQL = GetAE_Flow_rest(FR_kind, Date_S, Date_E);
-                DataTable m_RtnDT = new("Data");
-                m_RtnDT = _ADO.ExecuteQuery(m_SQL, Params);
-                List<OT_DATA> m_lisOT_DATA = new List<OT_DATA>();
-                foreach (DataRow dr in m_RtnDT.Rows)
-                {
-                    OT_DATA m_OT_DATA =
-                    new OT_DATA(dr["ID_104"].ToString(), dr["FR_date_begin"].ToString(), dr["FR_date_end"].ToString(), dr["PAY_TYPE"].ToString(), "0", "0", dr["FR_note"].ToString());
-                    m_lisOT_DATA.Add(m_OT_DATA);
-                }
-                ReqClass.OT_DATA = m_lisOT_DATA.ToArray();
-            }
-            catch
-            {
-                throw;
-            }
-            return ReqClass;
-        }
-
-        public batchLeaveNew GetAE_LEAVE_DATA(string SESSION_KEY, string FR_kind, string Date_S, string Date_E)
-        {
-            batchLeaveNew ReqClass = new batchLeaveNew();
-            ReqClass.CO_ID = 1;
-
-            ReqClass.SESSION_KEY = SESSION_KEY;
-            ReqClass.WF_NO = "WO" + SESSION_KEY;
-            try
-            {
-                List<SqlParameter> Params = new List<SqlParameter>()
-                {
-                    new SqlParameter() {ParameterName = "@Date_S", SqlDbType = SqlDbType.VarChar, Value= Date_S},
-                     new SqlParameter() {ParameterName = "@Date_E", SqlDbType = SqlDbType.VarChar, Value= Date_E}
-                };
-                string m_SQL = GetAE_Flow_rest(FR_kind, Date_S, Date_E);
-                DataTable m_RtnDT = new("Data");
-                m_RtnDT = _ADO.ExecuteQuery(m_SQL, Params);
-                List<LEAVE_DATA> m_lisLEAVE_DATA = new List<LEAVE_DATA>();
-                foreach (DataRow dr in m_RtnDT.Rows)
-                {
-                    LEAVE_DATA m_LEAVE_DATA =
-                    new LEAVE_DATA(dr["ID_104"].ToString(), dr["LEAVEITEM_ID"].ToString(), dr["FR_date_begin"].ToString(), dr["FR_date_end"].ToString(), dr["AGENT_IDS"].ToString(), dr["FR_note"].ToString());
-                    m_lisLEAVE_DATA.Add(m_LEAVE_DATA);
-                }
-                ReqClass.LEAVE_DATA = m_lisLEAVE_DATA.ToArray();
-            }
-            catch
-            {
-                throw;
-            }
-            return ReqClass;
-        }
-
-
         public int ModifyAE_SESSION_KEY(string TableName, string SESSION_KEY, string FR_kind, string Date_S, string Date_E)
         {
             int m_UPDCount = 0;
             try
             {
-               
+                Date_S = ConvertYYYYMMDD(Date_S);
+                Date_E = ConvertYYYYMMDD(Date_E);
                 List<SqlParameter> Params = new List<SqlParameter>()
                 {
                     new SqlParameter() {ParameterName = "@SESSION_KEY", SqlDbType = SqlDbType.VarChar, Value= SESSION_KEY},
@@ -218,13 +151,13 @@ namespace KF_WebAPI.DataLogic
                 string m_SQL = "update  " + TableName + "  set SESSION_KEY_104=@SESSION_KEY ";
                 if (TableName == "Late15To104")
                 {
-                    m_SQL += " WHERE [Date_S] between @Date_S+' 00:00' and @Date_E +' 23:59'    ";
+                    m_SQL += " WHERE cast([Date_S] as datetime) between @Date_S+' 00:00' and @Date_E +' 23:59' and SESSION_KEY_104=@SESSION_KEY   ";
                 }
                 else
                 {
                     m_SQL += " WHERE FR_ID in  ";
 
-                    m_SQL += " (SELECT top 100  F.FR_ID " +
+                    m_SQL += " (SELECT  F.FR_ID " +
                         "FROM Flow_rest F LEFT JOIN User_M M on F.FR_U_num=M.U_num LEFT JOIN Leaveitem_104 L on F.FR_kind=L.AE_FR_kind LEFT JOIN User_M M1 on F.FR_step_01_num=M1.U_num LEFT JOIN User_M M2 on M.U_agent_num=M2.U_num " +
                         "WHERE F.del_tag = '0' AND FR_sign_type = 'FSIGN002' and SESSION_KEY_104 is null and M.ID_104 is not null and M.U_leave_date is null and FR_ID not in (149618,151692,152802,152431) ";
 
@@ -254,21 +187,18 @@ namespace KF_WebAPI.DataLogic
                         {
                             m_SQL += "AND FR_kind not IN ('FRK005','FRK004','FRK021','FRK007','FRK022','FRK023','FRK008','FRK009','FRK010')  ";
                         }
-                        m_SQL += "AND format( F.FR_date_begin,'yyyy-MM-dd') between @Date_S and @Date_E  ";
+                        m_SQL += "AND format( F.FR_step_HR_date,'yyyy-MM-dd') between @Date_S and @Date_E  ";
                     }
-
-                    m_SQL += "ORDER BY F.FR_U_num,  F.FR_cknum )";
-
-
+                    m_SQL += " )";
                 }
 
 
 
-               
+
 
                 m_UPDCount = _ADO.ExecuteNonQuery(m_SQL, Params);
 
-                
+
             }
             catch
             {
@@ -277,6 +207,84 @@ namespace KF_WebAPI.DataLogic
             return m_UPDCount;
         }
 
+        public string ConvertYYYYMMDD(string p_Date)
+        {
+            string m_date = Convert.ToDateTime(p_Date).ToString("yyyy-MM-dd");
+
+            return m_date;
+        }
+        public batchOtNew GetAE_OT_DATA(string SESSION_KEY, string FR_kind, string Date_S, string Date_E)
+        {
+            batchOtNew ReqClass = new batchOtNew();
+            ReqClass.CO_ID = 1;
+
+            ReqClass.SESSION_KEY = SESSION_KEY;
+            ReqClass.WF_NO = "WO" + SESSION_KEY;
+            Date_S = ConvertYYYYMMDD(Date_S);
+            Date_E = ConvertYYYYMMDD(Date_E);
+            try
+            {
+                List<SqlParameter> Params = new List<SqlParameter>()
+                {
+                    new SqlParameter() {ParameterName = "@Date_S", SqlDbType = SqlDbType.VarChar, Value= Date_S},
+                     new SqlParameter() {ParameterName = "@Date_E", SqlDbType = SqlDbType.VarChar, Value= Date_E}
+                };
+                string m_SQL = GetAE_Flow_rest(FR_kind);
+                DataTable m_RtnDT = new("Data");
+                m_RtnDT = _ADO.ExecuteQuery(m_SQL, Params);
+                List<OT_DATA> m_lisOT_DATA = new List<OT_DATA>();
+                foreach (DataRow dr in m_RtnDT.Rows)
+                {
+                    OT_DATA m_OT_DATA =
+                    new OT_DATA(dr["ID_104"].ToString(), dr["FR_date_begin"].ToString(), dr["FR_date_end"].ToString(), dr["PAY_TYPE"].ToString(), "0", "0", dr["FR_note"].ToString());
+                    m_lisOT_DATA.Add(m_OT_DATA);
+                }
+                ReqClass.OT_DATA = m_lisOT_DATA.ToArray();
+            }
+            catch
+            {
+                throw;
+            }
+            return ReqClass;
+        }
+
+        public batchLeaveNew GetAE_LEAVE_DATA(string SESSION_KEY, string FR_kind, string Date_S, string Date_E)
+        {
+            batchLeaveNew ReqClass = new batchLeaveNew();
+            ReqClass.CO_ID = 1;
+            ReqClass.SESSION_KEY = SESSION_KEY;
+            ReqClass.WF_NO = "WO" + SESSION_KEY;
+
+            Date_S = ConvertYYYYMMDD(Date_S);
+            Date_E = ConvertYYYYMMDD(Date_E);
+            try
+            {
+                List<SqlParameter> Params = new List<SqlParameter>()
+                {
+                    new SqlParameter() {ParameterName = "@Date_S", SqlDbType = SqlDbType.VarChar, Value= Date_S},
+                     new SqlParameter() {ParameterName = "@Date_E", SqlDbType = SqlDbType.VarChar, Value= Date_E}
+                };
+                string m_SQL = GetAE_Flow_rest(FR_kind);
+                DataTable m_RtnDT = new("Data");
+                m_RtnDT = _ADO.ExecuteQuery(m_SQL, Params);
+                List<LEAVE_DATA> m_lisLEAVE_DATA = new List<LEAVE_DATA>();
+                foreach (DataRow dr in m_RtnDT.Rows)
+                {
+                    LEAVE_DATA m_LEAVE_DATA =
+                    new LEAVE_DATA(dr["ID_104"].ToString(), dr["LEAVEITEM_ID"].ToString(), dr["FR_date_begin"].ToString(), dr["FR_date_end"].ToString(), dr["AGENT_IDS"].ToString(), dr["FR_note"].ToString());
+                    m_lisLEAVE_DATA.Add(m_LEAVE_DATA);
+                }
+                ReqClass.LEAVE_DATA = m_lisLEAVE_DATA.ToArray();
+            }
+            catch
+            {
+                throw;
+            }
+            return ReqClass;
+        }
+
+
+      
         public int ModifyAE_Sign(string TableName, string SESSION_KEY)
         {
             int m_UPDCount = 0;
