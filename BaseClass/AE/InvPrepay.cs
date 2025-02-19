@@ -16,15 +16,19 @@ namespace KF_WebAPI.BaseClass.AE
         public string branch_name { get; set; }
         public string bank_account { get; set; }
         public string payee_name { get; set; }
-        public string VP_MFG_Date { get; set; }
+        public string? VP_Summary { get; set; }
+        public string? VP_MFG_Date { get; set; }
+        public string? VP_Nsummary { get; set; }
         public string User { get; set; }
     }
 
     public class InvPrepay_D_Ins
     {
+        public string? VD_ID { get; set; }
         public string FormID { get; set; }
         public string FormCaption { get; set; }
         public string FormMoney { get; set; }
+        public string VD_VAT { get; set; }
         public string ChangeReason { get; set; }
         public string? VD_Account_code { get; set; }
         public string? VD_Account { get; set; }

@@ -2305,9 +2305,12 @@ namespace KF_WebAPI.FunctionHandler
                 result = true;
                 if (result)
                 {
-                    //訊息通知
                     var Fun = new FuncHandler();
-                    Fun.MsgIns("MSGK0005", U_num, MsgNum, "請採購單簽核通知,請前往處理!!", IP);
+                    //訊息通知
+                    if (new[] { "PO", "PP", "PS", "PA" }.Contains(AF_ID))
+                        Fun.MsgIns("MSGK0005", U_num, MsgNum, "請採購單或請款單簽核通知,請前往處理!!", IP);
+                    
+                    
                 }
             }
             return result;

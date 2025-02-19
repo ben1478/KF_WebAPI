@@ -179,7 +179,7 @@ namespace KF_WebAPI.Controllers
                     from Procurement_M PM
                     INNER JOIN AuditFlow_M AM ON AM.FM_Source_ID = PM.PM_ID and AM.AF_ID = PM.PM_type
                     LEFT JOIN Item_list LI ON LI.item_D_code = AM.FM_Step_SignType AND LI.item_M_code = 'Flow_sign_type'
-                    where PM.add_num = @User ";
+                    where PM.add_num = @User order by PM.add_date desc";
                 parameters.Add(new SqlParameter("@User", User));
                 #endregion
                 var dtResult=_adoData.ExecuteQuery(T_SQL, parameters);

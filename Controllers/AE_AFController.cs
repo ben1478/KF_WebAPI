@@ -287,7 +287,7 @@ namespace KF_WebAPI.Controllers
                     LEFT JOIN Procurement_M PM ON AM.FM_Source_ID = PM.PM_ID 
                     LEFT JOIN InvPrepay_M IM ON AM.FM_Source_ID = IM.VP_ID 
                     WHERE (PM.PM_Cancel='N' OR IM.VP_Cancel='N') and AM.add_date BETWEEN @RF_Date_S AND @RF_Date_E
-                    order by AM.add_date desc";
+                    order by AM.add_date desc,FD_Step";
                 if (!string.IsNullOrEmpty(model.U_BC))
                 {
                     T_SQL += " and AM.FM_BC = @U_BC";
@@ -364,6 +364,7 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
+                var Fun = new FuncHandler();
 
                 #region SQL
                 if (model.arr_Unm != null && model.arr_Unm.Length > 0)
@@ -384,11 +385,15 @@ namespace KF_WebAPI.Controllers
                         parameters.Add(new SqlParameter("@edit_num", model.User));
                         parameters.Add(new SqlParameter("@edit_ip", clientIp));
                         _adoData.ExecuteQuery(T_SQL, parameters);
+
+                        //訊息通知會簽人員
+                        Fun.MsgIns("MSGK0005", model.User, item, "請採購單或請款單會簽通知,請前往處理!!", clientIp);
                     }
 
                 }
                 #endregion
-                //TODO 發訊息通知會簽人員
+               
+
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "新增成功";
                 return Ok(resultClass);
@@ -449,12 +454,11 @@ namespace KF_WebAPI.Controllers
                         parameters_sp.Add(new SqlParameter("@AF_Back_Reason",DBNull.Value));
                     }
                     _adoData.ExecuteQuery(T_SQL_SP, parameters_sp);
-                    //TODO 訊息通知
+
                     resultClass.ResultCode = "000";
                     resultClass.ResultMsg = "異動成功";
 
-                    //呼叫文中傳票API
-                    if (model.FD_Step_SignType == "FSIGN002" && model.FM_Step=="2" && new[] { "PA", "PP", "PS" }.Any(p => model.FM_Source_ID.StartsWith(p)))
+                    if (model.FD_Step_SignType == "FSIGN002" && model.FM_Step == "2" && new[] { "PA", "PP", "PS" }.Any(p => model.FM_Source_ID.StartsWith(p)))
                     {
                         var _aWintonController = new A_WintonController();
                         Task.Run(() => _aWintonController.Summons_Ins(model.FM_Source_ID));

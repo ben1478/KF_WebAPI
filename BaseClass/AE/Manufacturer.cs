@@ -22,6 +22,7 @@
 
     public class Manufacturer_Ins
     {
+        public string? MF_Number { get; set; }
         public string? MF_ID { get; set; }
         public string? Company_name { get; set; }
         public string? Company_number { get; set; }
@@ -33,5 +34,12 @@
         public string? Overseas { get; set; }
         public string? add_num { get; set; }
         public string? edit_num { get; set; }
+    }
+
+    public class Manufacturer_Req
+    {
+        public string? MF_ID { get; set; }
+        public string? Company_name { get; set; }
+        public string? Company_addr { get; set; }
     }
 }
