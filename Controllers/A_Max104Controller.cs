@@ -196,11 +196,15 @@ namespace KF_WebAPI.Controllers
 
         [Route("batchOtNew")]
         [HttpPost]
-        public async Task<ActionResult<string>> batchOtNew(string UserID, string ACCESS_TOKEN, string FR_kind, string Date_S, string Date_E)
+        public async Task<ActionResult<string>> batchOtNew(string UserID, string ACCESS_TOKEN, string FR_kind, string Date_S, string Date_E, string SESSION_KEY)
         {
             AE_HR m_AE_HR = new AE_HR();
-            string SESSION_KEY = DateTime.Now.ToString("yyyyMMddhhmmssffff");
-            batchOtNew ReqClass = m_AE_HR.GetAE_OT_DATA(SESSION_KEY, FR_kind, Date_S, Date_E);
+            string m_SESSION_KEY = DateTime.Now.ToString("yyyyMMddhhmmssffff");
+            if (SESSION_KEY != "" && SESSION_KEY != "null")
+            {
+                m_SESSION_KEY = SESSION_KEY;
+            }
+            batchOtNew ReqClass = m_AE_HR.GetAE_OT_DATA(m_SESSION_KEY, FR_kind, Date_S, Date_E);
 
             ResultClass_104<object> resultClass = new ResultClass_104<object>();
             try
@@ -214,7 +218,8 @@ namespace KF_WebAPI.Controllers
                 {
                     resultClass = JsonConvert.DeserializeObject<ResultClass_104<object>>(APIResult.objResult);
 
-                    m_AE_HR.ModifyAE_SESSION_KEY("Flow_rest", SESSION_KEY, FR_kind, Date_S, Date_E);
+                    Int32 m_UpdCount = m_AE_HR.ModifyAE_SESSION_KEY("Flow_rest", m_SESSION_KEY, FR_kind, Date_S, Date_E);
+                    resultClass.msg += "新增筆數:" + m_UpdCount;
                 }
                 else
                 {
@@ -253,7 +258,8 @@ namespace KF_WebAPI.Controllers
                 {
                     resultClass = JsonConvert.DeserializeObject<ResultClass_104<Object>>(APIResult.objResult);
                     AE_HR m_AE_HR = new AE_HR();
-                    m_AE_HR.ModifyAE_Sign("Flow_rest", ReqClass.SESSION_KEY);
+                    Int32 m_UpdCount = m_AE_HR.ModifyAE_Sign("Flow_rest", ReqClass.SESSION_KEY);
+                    resultClass.msg += "更新筆數:" + m_UpdCount;
                 }
                 else
                 {
@@ -351,7 +357,8 @@ namespace KF_WebAPI.Controllers
                 {
                     resultClass = JsonConvert.DeserializeObject<ResultClass_104<Object>>(APIResult.objResult);
                     AE_HR m_AE_HR = new AE_HR();
-                    m_AE_HR.ModifyAE_Sign("Flow_rest", ReqClass.SESSION_KEY);
+                    Int32 m_UpdCount = m_AE_HR.ModifyAE_Sign("Flow_rest", ReqClass.SESSION_KEY);
+                    resultClass.msg += "更新筆數:"+ m_UpdCount;
                 }
                 else
                 {
@@ -371,11 +378,15 @@ namespace KF_WebAPI.Controllers
 
         [Route("batchLeaveNew")]
         [HttpPost]
-        public async Task<ActionResult<string>> batchLeaveNew(string UserID, string ACCESS_TOKEN, string FR_kind, string Date_S, string Date_E)
+        public async Task<ActionResult<string>> batchLeaveNew(string UserID, string ACCESS_TOKEN, string FR_kind, string Date_S, string Date_E, string SESSION_KEY)
         {
             AE_HR m_AE_HR = new AE_HR();
-            string SESSION_KEY = DateTime.Now.ToString("yyyyMMddhhmmssffff");
-            batchLeaveNew ReqClass = m_AE_HR.GetAE_LEAVE_DATA(SESSION_KEY, FR_kind,  Date_S,  Date_E);
+            string m_SESSION_KEY = DateTime.Now.ToString("yyyyMMddhhmmssffff");
+            if (SESSION_KEY != "" && SESSION_KEY != "null")
+            {
+                m_SESSION_KEY = SESSION_KEY;
+            }
+            batchLeaveNew ReqClass = m_AE_HR.GetAE_LEAVE_DATA(m_SESSION_KEY, FR_kind,  Date_S,  Date_E);
             ResultClass_104<object> resultClass = new ResultClass_104<object>();
             try
             {
@@ -388,7 +399,8 @@ namespace KF_WebAPI.Controllers
                 {
                     resultClass = JsonConvert.DeserializeObject<ResultClass_104<object>>(APIResult.objResult);
                     
-                    m_AE_HR.ModifyAE_SESSION_KEY("Flow_rest", SESSION_KEY, FR_kind, Date_S, Date_E);
+                    Int32 m_UpdCount=  m_AE_HR.ModifyAE_SESSION_KEY("Flow_rest", m_SESSION_KEY, FR_kind, Date_S, Date_E);
+                    resultClass.msg += "新增筆數:" + m_UpdCount;
                 }
                 else
                 {
@@ -412,38 +424,39 @@ namespace KF_WebAPI.Controllers
 
         [Route("batchLeaveLate15")]
         [HttpPost]
-        public async Task<ActionResult<string>> batchLeaveLate15(string UserID, string ACCESS_TOKEN, string FR_kind, string Date_S, string Date_E)
+        public async Task<ActionResult<string>> batchLeaveLate15(string UserID, string ACCESS_TOKEN, string FR_kind, string Date_S, string Date_E, string SESSION_KEY)
         {
             AE_HR m_AE_HR = new AE_HR();
-            string SESSION_KEY = DateTime.Now.ToString("yyyyMMddhhmmssffff");
-            
+            string m_SESSION_KEY = DateTime.Now.ToString("yyyyMMddhhmmssffff");
+            if (SESSION_KEY != "" && SESSION_KEY != "null")
+            {
+                m_SESSION_KEY = SESSION_KEY;
+            }
+
             ResultClass_104<object> resultClass = new ResultClass_104<object>();
             try
             {
-               
-                    batchLeaveNew ReqClass = m_AE_HR.GetLate15To104(SESSION_KEY,  Date_S, Date_E);
-                    string p_JSON = JsonConvert.SerializeObject(ReqClass);
-                    ResultClass<string> APIResult = new();
-                    APIResult = await _Comm.Call_104API(UserID, "wf/wf011/batchLeaveNew", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
+                batchLeaveNew ReqClass = m_AE_HR.GetLate15To104(m_SESSION_KEY, Date_S, Date_E);
+                string p_JSON = JsonConvert.SerializeObject(ReqClass);
+                ResultClass<string> APIResult = new();
+                APIResult = await _Comm.Call_104API(UserID, "wf/wf011/batchLeaveNew", p_JSON, ReqClass.SESSION_KEY, _httpClient, ACCESS_TOKEN);
 
-                    if (APIResult.ResultCode == "200")
+                if (APIResult.ResultCode == "200")
+                {
+                    resultClass = JsonConvert.DeserializeObject<ResultClass_104<object>>(APIResult.objResult);
+
+                    Int32 m_UpdCount = m_AE_HR.ModifyAE_SESSION_KEY("Late15To104", m_SESSION_KEY, FR_kind, Date_S, Date_E);
+                    resultClass.msg += "新增筆數:" + m_UpdCount;
+                }
+                else
+                {
+                    resultClass.code = "999";
+                    resultClass.msg = $"{APIResult.ResultMsg}";
+                    if (APIResult.objResult != null)
                     {
-                        resultClass = JsonConvert.DeserializeObject<ResultClass_104<object>>(APIResult.objResult);
-
-                        m_AE_HR.ModifyAE_SESSION_KEY("Late15To104", SESSION_KEY, FR_kind, Date_S, Date_E);
+                        resultClass.data = APIResult.objResult;
                     }
-                    else
-                    {
-                        resultClass.code = "999";
-                        resultClass.msg = $"{APIResult.ResultMsg}";
-                        if (APIResult.objResult != null)
-                        {
-                            resultClass.data = APIResult.objResult;
-                        }
-                    }
-               
-                
-
+                }
             }
             catch (Exception ex)
             {
@@ -469,7 +482,8 @@ namespace KF_WebAPI.Controllers
                 {
                     resultClass = JsonConvert.DeserializeObject<ResultClass_104<Object>>(APIResult.objResult);
                     AE_HR m_AE_HR = new AE_HR();
-                    m_AE_HR.ModifyAE_Sign("Late15To104", ReqClass.SESSION_KEY);
+                    Int32 m_UpdCount = m_AE_HR.ModifyAE_Sign("Late15To104", ReqClass.SESSION_KEY);
+                    resultClass.msg += "更新筆數:" + m_UpdCount;
                 }
                 else
                 {
