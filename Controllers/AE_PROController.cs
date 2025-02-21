@@ -265,7 +265,6 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-
         /// <summary>
         /// 採購單抽單 Procurement_Canel
         /// </summary>
@@ -499,58 +498,11 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-        //TODO 以下須跟著畫面異動
-
         /// <summary>
-        /// 採購單報表 Procurement_Rpt
+        /// 財務表單報表 PT_Rpt
         /// </summary>
-        [HttpPost("Procurement_Rpt")]
-        public ActionResult<ResultClass<string>> Procurement_Rpt(string PM_Step)
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
-
-            try
-            {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var T_SQL = @"select PM_ID,PM_Step,(select item_D_name from Item_list where item_M_code = 'branch_company' and item_D_code = PM_BC) as PM_BC_Name
-                    ,(select U_name from User_M where U_num = PM_U_num) as PM_Name
-                    ,(select item_D_name from Item_list where item_M_code = 'Procurement_Pay' and item_D_code = PM_Pay_Type) as PM_Pay_Name
-                    ,FORMAT(PM_Amt,'N0') as str_PM_Amt from Procurement_M";
-                switch (PM_Step)
-                {
-                    case "N": 
-                        T_SQL += " where 1=1";
-                        break;
-                    case "A":
-                        T_SQL += " where PM_Step='A'";
-                        break;
-                    case "B":
-                        T_SQL += " where PM_Step='B'";
-                        break;
-                    default:
-                        break;
-                }
-                T_SQL += " order by PM_ID";
-                #endregion
-                var dtResult = _adoData.ExecuteSQuery(T_SQL);
-                resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
-                return Ok(resultClass);
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
-            }
-        }
-
-        /// <summary>
-        /// 採購單報表明細 Procurement_DList_Rpt
-        /// </summary>
-        [HttpPost("Procurement_DList_Rpt")]
-        public ActionResult<ResultClass<string>> Procurement_DList_Rpt(string PM_ID,string PM_Step)
+        [HttpPost("PT_Rpt")]
+        public ActionResult<ResultClass<string>> PT_Rpt (PT_Rpt_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -559,81 +511,97 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"select * from Procurement_D where PM_ID=@PM_ID and PM_Step=@PM_Step";
-                parameters.Add(new SqlParameter("@PM_ID", PM_ID));
-                parameters.Add(new SqlParameter("@PM_Step", PM_Step));
+                var T_SQL = @"select VP_ID as Form_ID,VP_type as strType,LI.item_D_name as BC_Name,UM.U_name as U_Name
+                    ,VP_Summary as str_Name,Format(VP_Total_Money,'N0') as str_Amt
+                    from InvPrepay_M VP
+                    left join Item_list LI on LI.item_M_code='branch_company' and LI.item_D_code=VP_BC
+                    left join User_M UM on UM.U_num=VP.add_num
+                    where VP.add_date BETWEEN @Date_S AND @Date_E";
+                if (!string.IsNullOrEmpty(model.Type))
+                {
+                    T_SQL += " and VP_type=@VP_type";
+                    parameters.Add(new SqlParameter("@VP_type", model.Type));
+                }
+                if (string.IsNullOrEmpty(model.Type) || model.Type=="PO")
+                {
+                    T_SQL += @" union
+                    select PM_ID as Form_ID,'PO' as strType,LI.item_D_name as BC_Name,UM.U_name as U_Name
+                    ,PM_Caption as str_Name,Format(PM_Amt,'N0') as str_Amt
+                    from Procurement_M PM
+                    left join Item_list LI on LI.item_M_code='branch_company' and LI.item_D_code=PM_BC
+                    left join User_M UM on UM.U_num=PM.add_num
+                    where PM.add_date BETWEEN @Date_S AND @Date_E";
+                }
+                parameters.Add(new SqlParameter("@Date_S", FuncHandler.ConvertROCToGregorian(model.Date_S)));
+                parameters.Add(new SqlParameter("@Date_E", FuncHandler.ConvertROCToGregorian(model.Date_E)));
                 #endregion
-                var dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
-                if (dtResult.Rows.Count > 0)
-                {
-                    resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
-                    return Ok(resultClass);
-                }
-                else
-                {
-                    resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "查無資料";
-                    return BadRequest(resultClass);
-                }
+                var dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
             }
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass);
             }
         }
 
         /// <summary>
-        /// 採購單報表Excel下載 Procurement_Excel
+        /// 採購單報表Excel下載 PT_Rpt_Excel
         /// </summary>
-        [HttpGet("Procurement_Excel")]
-        public IActionResult Procurement_Excel(string PM_Step)
+        [HttpPost("PT_Rpt_Excel")]
+        public IActionResult PT_Rpt_Excel(PT_Rpt_req model)
         {
             try
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"select PM_ID,PM_Step,(select item_D_name from Item_list where item_M_code = 'branch_company' and item_D_code = PM_BC) as PM_BC_Name
-                    ,(select U_name from User_M where U_num = PM_U_num) as PM_Name
-                    ,(select item_D_name from Item_list where item_M_code = 'Procurement_Pay' and item_D_code = PM_Pay_Type) as PM_Pay_Name
-                    ,FORMAT(PM_Amt,'N0') as str_PM_Amt from Procurement_M";
-                switch (PM_Step)
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"select VP_ID as Form_ID,VP_type as strType,LI.item_D_name as BC_Name,UM.U_name as U_Name
+                    ,VP_Summary as str_Name,Format(VP_Total_Money,'N0') as str_Amt
+                    from InvPrepay_M VP
+                    left join Item_list LI on LI.item_M_code='branch_company' and LI.item_D_code=VP_BC
+                    left join User_M UM on UM.U_num=VP.add_num
+                    where VP.add_date BETWEEN @Date_S AND @Date_E";
+                if (!string.IsNullOrEmpty(model.Type))
                 {
-                    case "N":
-                        T_SQL += " where 1=1";
-                        break;
-                    case "A":
-                        T_SQL += " where PM_Step='A'";
-                        break;
-                    case "B":
-                        T_SQL += " where PM_Step='B'";
-                        break;
-                    default:
-                        break;
+                    T_SQL += " and VP_type=@VP_type";
+                    parameters.Add(new SqlParameter("@VP_type", model.Type));
                 }
-                T_SQL += " order by PM_ID";
+                if (string.IsNullOrEmpty(model.Type) || model.Type == "PO")
+                {
+                    T_SQL += @" union
+                    select PM_ID as Form_ID,'PO' as strType,LI.item_D_name as BC_Name,UM.U_name as U_Name
+                    ,PM_Caption as str_Name,Format(PM_Amt,'N0') as str_Amt
+                    from Procurement_M PM
+                    left join Item_list LI on LI.item_M_code='branch_company' and LI.item_D_code=PM_BC
+                    left join User_M UM on UM.U_num=PM.add_num
+                    where PM.add_date BETWEEN @Date_S AND @Date_E";
+                }
+                parameters.Add(new SqlParameter("@Date_S", FuncHandler.ConvertROCToGregorian(model.Date_S)));
+                parameters.Add(new SqlParameter("@Date_E", FuncHandler.ConvertROCToGregorian(model.Date_E)));
                 #endregion
-                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
-                    var excelList = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new Proc_M_Excel
+                    var excelList = dtResult.AsEnumerable().Select(row => new PT_Excel
                     {
-                        PM_ID = row.Field<string>("PM_ID"),
-                        PM_Step = row.Field<string>("PM_Step") == "A" ? "請購" : row.Field<string>("PM_Step") == "B" ? "請款" : row.Field<string>("PM_Step"),
-                        PM_BC_Name = row.Field<string>("PM_BC_Name"),
-                        PM_Name = row.Field<string>("PM_Name"),
-                        PM_Pay_Name = row.Field<string>("PM_Pay_Name"),
-                        str_PM_Amt = row.Field<string>("str_PM_Amt")
+                        Form_ID = row.Field<string>("Form_ID"),
+                        strType = GetStrType(row),
+                        BC_Name = row.Field<string>("BC_Name"),
+                        U_Name = row.Field<string>("U_Name"),
+                        str_Name = row.Field<string>("str_Name"),
+                        str_Amt = row.Field<string>("str_Amt")
                     }).ToList();
 
                     var Excel_Headers = new Dictionary<string, string>
                     {
                         { "PM_ID","單號" },
-                        { "PM_Step", "階段" },
-                        { "PM_BC_Name", "部門" },
-                        { "PM_Name", "請款人" },
+                        { "PM_Step", "類型" },
+                        { "PM_BC_Name", "申請部門" },
+                        { "PM_Name", "申請人" },
                         { "PM_Pay_Name", "費用類別" },
                         { "str_PM_Amt","總價" }
                     };
@@ -653,6 +621,14 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-        
+        private string GetStrType(DataRow row)
+        {
+            string typeStr = row.Field<string>("strType");
+            return typeStr == "PO" ? "請採購" :
+                   typeStr == "PA" ? "請款" :
+                   typeStr == "PP" ? "預支" :
+                   typeStr == "PS" ? "沖銷預支":"-";
+        }
+
     }
 }

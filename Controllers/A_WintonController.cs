@@ -15,6 +15,7 @@ using System.Data;
 using System.Reflection;
 using OfficeOpenXml.FormulaParsing.LexicalAnalysis;
 using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
 
 namespace KF_WebAPI.Controllers
 {
@@ -63,9 +64,9 @@ namespace KF_WebAPI.Controllers
 
                 return Ok(token);
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
-                _fun.ExtAPILogIns(apiCode, apiName, "", "", jsonData, "500", "token失誤");
+                _fun.ExtAPILogIns(apiCode, apiName, "", "", jsonData, "500", $" error: {ex.Message}");
                 return BadRequest();
             }
         }
@@ -171,6 +172,7 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
+                    responseObject.Error = Regex.Unescape(responseObject.Error);
                     _fun.ExtAPILogIns(apiCode, apiName, Form_ID, token, jsonData, "500", JsonConvert.SerializeObject(responseObject));
                     return BadRequest();
                 }

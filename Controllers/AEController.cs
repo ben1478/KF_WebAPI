@@ -647,7 +647,7 @@ namespace KF_WebAPI.Controllers
 
                     string caseStatement = $@" (CASE WHEN Msg.Msg_kind='{model.MsgID}' THEN 1 ELSE 0 END) AS 'Msg_kind_{model.MsgID}'";
                     caseStatements.Add(caseStatement);
-                    sumStatements.Add($"sum(Msg_kind_{model.MsgID}) AS '{model.Name}'");
+                    sumStatements.Add($"ISNULL(sum(Msg_kind_{model.MsgID}),0) AS '{model.Name}'");
 
                     labels.Add(model.Name);
                     modelList.Add(model);
@@ -663,6 +663,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@EndDate", EndDate));
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+
                 foreach (DataRow row in dtResult.Rows)
                 {
                     foreach (var model in modelList)
