@@ -2225,9 +2225,11 @@ namespace KF_WebAPI.FunctionHandler
             bool result = false;
 
             ADOData _adoData = new ADOData();
-            var parameters_audit = new List<SqlParameter>();
             var T_SQL_AUDIT = @"select * from AuditFlow where AF_ID=@AF_ID";
-            parameters_audit.Add(new SqlParameter("@AF_ID", AF_ID));
+            var parameters_audit = new List<SqlParameter> 
+            {
+                new SqlParameter("@AF_ID", AF_ID)
+            };
             var dtResultAudit = _adoData.ExecuteQuery(T_SQL_AUDIT, parameters_audit);
             int FM_step = Convert.ToInt32(dtResultAudit.Rows[0]["AF_Step"]); //流程步驟
             var FM_Step_Caption = dtResultAudit.Rows[0]["AF_Step_Caption"].ToString(); //流程步驟說明
@@ -2237,16 +2239,18 @@ namespace KF_WebAPI.FunctionHandler
             var stepPersontions = AF_Step_Person.Split(',');
 
             //新增主流程
-            var parameters_m = new List<SqlParameter>();
             var T_SQL_M = @"Insert into AuditFlow_M(AF_ID,FM_Source_ID,FM_BC,FM_Step,FM_Step_SignType,add_date,add_num,add_ip,edit_date,edit_num,edit_ip) 
                 Values (@AF_ID,@FM_Source_ID,@FM_BC,'1','FSIGN001',GETDATE(),@add_num,@add_ip,GETDATE(),@edit_num,@edit_ip) ";
-            parameters_m.Add(new SqlParameter("@AF_ID", AF_ID));
-            parameters_m.Add(new SqlParameter("@FM_Source_ID", FM_Source_ID));
-            parameters_m.Add(new SqlParameter("@FM_BC",U_BC));
-            parameters_m.Add(new SqlParameter("@add_num", U_num));
-            parameters_m.Add(new SqlParameter("@add_ip", IP));
-            parameters_m.Add(new SqlParameter("@edit_num", U_num));
-            parameters_m.Add(new SqlParameter("@edit_ip", IP));
+            var parameters_m = new List<SqlParameter> 
+            {
+                new SqlParameter("@AF_ID", AF_ID),
+                new SqlParameter("@FM_Source_ID", FM_Source_ID),
+                new SqlParameter("@FM_BC",U_BC),
+                new SqlParameter("@add_num", U_num),
+                new SqlParameter("@add_ip", IP),
+                new SqlParameter("@edit_num", U_num),
+                new SqlParameter("@edit_ip", IP)
+            };
             int dtResult_m = _adoData.ExecuteNonQuery(T_SQL_M, parameters_m);
             if (dtResult_m == 0)
             {
@@ -2257,36 +2261,42 @@ namespace KF_WebAPI.FunctionHandler
                 var MsgNum = "";
                 for (int i = 1; i <= FM_step; i++)
                 {
-                    var parameters_d = new List<SqlParameter>();
+                   
                     var T_SQL_D = @"Insert into AuditFlow_D (AF_ID,FM_Source_ID,FD_Step,FD_Sign_Countersign,FD_Step_title,FD_Step_num,FD_Step_SignType,add_date,add_num,add_ip)
                         Values (@AF_ID,@FM_Source_ID,@FD_Step,'S',@FD_Step_title,@FD_Step_num,'FSIGN001',GETDATE(),@add_num,@add_ip)";
-                    parameters_d.Add(new SqlParameter("@AF_ID", AF_ID));
-                    parameters_d.Add(new SqlParameter("@FM_Source_ID", FM_Source_ID));
-                    parameters_d.Add(new SqlParameter("@FD_Step", i));
-                    parameters_d.Add(new SqlParameter("@FD_Step_title", stepDescriptions[i - 1]));
-                    parameters_d.Add(new SqlParameter("@add_num", U_num));
-                    parameters_d.Add(new SqlParameter("@add_ip", IP));
-
+                    var parameters_d = new List<SqlParameter> 
+                    {
+                        new SqlParameter("@AF_ID", AF_ID),
+                        new SqlParameter("@FM_Source_ID", FM_Source_ID),
+                        new SqlParameter("@FD_Step", i),
+                        new SqlParameter("@FD_Step_title", stepDescriptions[i - 1]),
+                        new SqlParameter("@add_num", U_num),
+                        new SqlParameter("@add_ip", IP)
+                    };
 
                     switch (stepPersontions[i - 1])
                     {
                         case "U0000": //雙副總
                             parameters_d.Add(new SqlParameter("@FD_Step_num", "K0002"));
                             _adoData.ExecuteNonQuery(T_SQL_D, parameters_d);
-                            var parameters_dx = new List<SqlParameter>();
-                            parameters_dx.Add(new SqlParameter("@AF_ID", AF_ID));
-                            parameters_dx.Add(new SqlParameter("@FM_Source_ID", FM_Source_ID));
-                            parameters_dx.Add(new SqlParameter("@FD_Step", i));
-                            parameters_dx.Add(new SqlParameter("@FD_Step_title", stepDescriptions[i - 1]));
-                            parameters_dx.Add(new SqlParameter("@add_num", U_num));
-                            parameters_dx.Add(new SqlParameter("@add_ip", IP));
-                            parameters_dx.Add(new SqlParameter("@FD_Step_num", "K0001"));
+                            var parameters_dx = new List<SqlParameter> 
+                            {
+                                new SqlParameter("@AF_ID", AF_ID),
+                                new SqlParameter("@FM_Source_ID", FM_Source_ID),
+                                new SqlParameter("@FD_Step", i),
+                                new SqlParameter("@FD_Step_title", stepDescriptions[i - 1]),
+                                new SqlParameter("@add_num", U_num),
+                                new SqlParameter("@add_ip", IP),
+                                new SqlParameter("@FD_Step_num", "K0001")
+                            };
                             _adoData.ExecuteNonQuery(T_SQL_D, parameters_dx);
                             break;
                         case "U0001": //部門主管
-                            var parameters_user = new List<SqlParameter>();
                             var T_SQL_USER = @"select * from User_M where U_num = @U_num";
-                            parameters_user.Add(new SqlParameter("@U_num", U_num));
+                            var parameters_user = new List<SqlParameter> 
+                            {
+                                new SqlParameter("@U_num", U_num)
+                            };
                             var dtResultUser = _adoData.ExecuteQuery(T_SQL_USER, parameters_user);
                             var leaderNum = dtResultUser.Rows[0]["U_leader_2_num"].ToString();
                             parameters_d.Add(new SqlParameter("@FD_Step_num", leaderNum));

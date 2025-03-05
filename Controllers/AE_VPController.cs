@@ -29,7 +29,6 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = "";
                 switch (Type)
                 {
@@ -50,7 +49,10 @@ namespace KF_WebAPI.Controllers
                     default:
                         break;
                 }
-                parameters.Add(new SqlParameter("@User", User));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@User", User)
+                };
                 #endregion
                 var dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
                 resultClass.ResultCode = "000";
@@ -78,7 +80,6 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 //取VP_ID
-                var parameters_id = new List<SqlParameter>();
                 var T_SQL_ID = @"exec GetFormID @formtype,@tablename,@New_ID output";
                 var str_type = "PA";
                 if (model.VP_type != null && model.VP_type.Length > 0 )
@@ -88,40 +89,45 @@ namespace KF_WebAPI.Controllers
                     if (model.VP_type.Contains("PS"))
                         str_type = "PS";
                 }
-                parameters_id.Add(new SqlParameter("@formtype", str_type));
-                parameters_id.Add(new SqlParameter("@tablename", "InvPrepay_M"));
+                var parameters_id = new List<SqlParameter> 
+                {
+                    new SqlParameter("@formtype", str_type),
+                    new SqlParameter("@tablename", "InvPrepay_M")
+                };
                 SqlParameter newIdParameter = new SqlParameter("@New_ID", SqlDbType.VarChar, 20)
                 {
                     Direction = ParameterDirection.Output
                 };
                 parameters_id.Add(newIdParameter);
+
                 var result_id = _adoData.ExecuteQuery(T_SQL_ID, parameters_id);
                 var VP_ID = newIdParameter.Value.ToString();
-
-                var parameters_m = new List<SqlParameter>();
                 var T_SQL_M = @"Insert into InvPrepay_M (VP_ID,VP_type,VP_BC,VP_Pay_Type,VP_AppDate,VP_U_num,VP_Total_Money,bank_code,bank_name,
                     branch_name,bank_account,payee_name,VP_Summary,VP_MFG_Date,VP_Nsummary,VP_cknum,add_date,add_num,add_ip,edit_date,edit_num,edit_ip) 
                     Values (@VP_ID,@VP_type,@VP_BC,@VP_Pay_Type,FORMAT(GETDATE(),'yyyy/MM/dd'),@VP_U_num,@VP_Total_Money,@bank_code,@bank_name,@branch_name,
                     @bank_account,@payee_name,@VP_Summary,@VP_MFG_Date,@VP_Nsummary,@VP_cknum,GETDATE(),@add_num,@add_ip,GETDATE(),@edit_num,@edit_ip)";
-                parameters_m.Add(new SqlParameter("@VP_ID", VP_ID));
-                parameters_m.Add(new SqlParameter("@VP_type", str_type));
-                parameters_m.Add(new SqlParameter("@VP_BC", model.VP_BC));
-                parameters_m.Add(new SqlParameter("@VP_Pay_Type", model.VP_Pay_Type));
-                parameters_m.Add(new SqlParameter("@VP_U_num", model.User));
-                parameters_m.Add(new SqlParameter("@VP_Total_Money", model.VP_Total_Money));
-                parameters_m.Add(new SqlParameter("@bank_code", model.bank_code ?? ""));
-                parameters_m.Add(new SqlParameter("@bank_name", model.bank_name ?? ""));
-                parameters_m.Add(new SqlParameter("@branch_name", model.branch_name ?? ""));
-                parameters_m.Add(new SqlParameter("@bank_account", model.bank_account ?? ""));
-                parameters_m.Add(new SqlParameter("@payee_name", model.payee_name ?? ""));
-                parameters_m.Add(new SqlParameter("@VP_Summary", model.VP_Summary ?? ""));
-                parameters_m.Add(new SqlParameter("@VP_MFG_Date", model.VP_MFG_Date ?? ""));
-                parameters_m.Add(new SqlParameter("@VP_Nsummary", model.VP_Nsummary ?? ""));
-                parameters_m.Add(new SqlParameter("@VP_cknum", FuncHandler.GetCheckNum()));
-                parameters_m.Add(new SqlParameter("@add_num", model.User));
-                parameters_m.Add(new SqlParameter("@add_ip", clientIp));
-                parameters_m.Add(new SqlParameter("@edit_num", model.User));
-                parameters_m.Add(new SqlParameter("@edit_ip", clientIp));
+                var parameters_m = new List<SqlParameter> 
+                {
+                    new SqlParameter("@VP_ID", VP_ID),
+                    new SqlParameter("@VP_type", str_type),
+                    new SqlParameter("@VP_BC", model.VP_BC),
+                    new SqlParameter("@VP_Pay_Type", model.VP_Pay_Type),
+                    new SqlParameter("@VP_U_num", model.User),
+                    new SqlParameter("@VP_Total_Money", model.VP_Total_Money),
+                    new SqlParameter("@bank_code", string.IsNullOrEmpty(model.bank_code) ? DBNull.Value : model.bank_code),
+                    new SqlParameter("@bank_name", string.IsNullOrEmpty(model.bank_name) ? DBNull.Value : model.bank_name),
+                    new SqlParameter("@branch_name", string.IsNullOrEmpty(model.branch_name) ? DBNull.Value : model.branch_name),
+                    new SqlParameter("@bank_account", string.IsNullOrEmpty(model.bank_account) ? DBNull.Value : model.bank_account),
+                    new SqlParameter("@payee_name", string.IsNullOrEmpty(model.payee_name) ? DBNull.Value : model.payee_name),
+                    new SqlParameter("@VP_Summary", string.IsNullOrEmpty(model.VP_Summary) ? DBNull.Value : model.VP_Summary),
+                    new SqlParameter("@VP_MFG_Date", string.IsNullOrEmpty(model.VP_MFG_Date) ? DBNull.Value : model.VP_MFG_Date),
+                    new SqlParameter("@VP_Nsummary", string.IsNullOrEmpty(model.VP_Nsummary) ? DBNull.Value : model.VP_Nsummary),
+                    new SqlParameter("@VP_cknum", FuncHandler.GetCheckNum()),
+                    new SqlParameter("@add_num", model.User),
+                    new SqlParameter("@add_ip", clientIp),
+                    new SqlParameter("@edit_num", model.User),
+                    new SqlParameter("@edit_ip", clientIp)
+                };
                 #endregion
                 int result_m = _adoData.ExecuteNonQuery(T_SQL_M, parameters_m);
                 if(result_m == 0) 
@@ -135,44 +141,26 @@ namespace KF_WebAPI.Controllers
                     foreach (var item in model.Ins_List)
                     {
                         #region SQL
-                        var parameters_d = new List<SqlParameter>();
                         var T_SQL_D = @"Insert into InvPrepay_D (VP_ID,VP_type,Form_ID,VD_Fee_Summary,VD_Fee,VD_VAT,VD_Account_code,VD_Account,
                             add_date,add_num,add_ip,edit_date,edit_num,edit_ip,Change_reason,Change_num,Change_date,Change_ip) 
                             Values (@VP_ID,@VP_type,@Form_ID,@VD_Fee_Summary,@VD_Fee,@VD_VAT,@VD_Account_code,@VD_Account,GETDATE(),@add_num,@add_ip,
                             GETDATE(),@edit_num,@edit_ip,@Change_reason,@Change_num,@Change_date,@Change_ip)";
-                        parameters_d.Add(new SqlParameter("@VP_ID", VP_ID));
-                        parameters_d.Add(new SqlParameter("@VP_type", str_type));
-                        if (!string.IsNullOrEmpty(item.FormID))
+
+                        var parameters_d = new List<SqlParameter> 
                         {
-                            parameters_d.Add(new SqlParameter("@Form_ID", item.FormID));
-                        }
-                        else
-                        {
-                            parameters_d.Add(new SqlParameter("@Form_ID", DBNull.Value));
-                        }
-                        parameters_d.Add(new SqlParameter("@VD_Fee_Summary", item.FormCaption));
-                        parameters_d.Add(new SqlParameter("@VD_Fee", item.FormMoney));
-                        parameters_d.Add(new SqlParameter("@VD_VAT", item.VD_VAT));
-                        parameters_d.Add(new SqlParameter("@add_num", model.User));
-                        if (!string.IsNullOrEmpty(item.VD_Account_code))
-                        {
-                            parameters_d.Add(new SqlParameter("@VD_Account_code", item.VD_Account_code));
-                        }
-                        else
-                        {
-                            parameters_d.Add(new SqlParameter("@VD_Account_code", DBNull.Value));
-                        }
-                        if (!string.IsNullOrEmpty(item.VD_Account))
-                        {
-                            parameters_d.Add(new SqlParameter("@VD_Account", item.VD_Account));
-                        }
-                        else
-                        {
-                            parameters_d.Add(new SqlParameter("@VD_Account",DBNull.Value));
-                        }
-                        parameters_d.Add(new SqlParameter("@add_ip", clientIp));
-                        parameters_d.Add(new SqlParameter("@edit_num", model.User));
-                        parameters_d.Add(new SqlParameter("@edit_ip", clientIp));
+                            new SqlParameter("@VP_ID", VP_ID),
+                            new SqlParameter("@VP_type", str_type),
+                            new SqlParameter("@Form_ID", string.IsNullOrEmpty(item.FormID) ? DBNull.Value : item.FormID),
+                            new SqlParameter("@VD_Fee_Summary", item.FormCaption),
+                            new SqlParameter("@VD_Fee", item.FormMoney),
+                            new SqlParameter("@VD_VAT", item.VD_VAT),
+                            new SqlParameter("@add_num", model.User),
+                            new SqlParameter("@VD_Account_code", string.IsNullOrEmpty(item.VD_Account_code) ? DBNull.Value : item.VD_Account_code),
+                            new SqlParameter("@VD_Account", string.IsNullOrEmpty(item.VD_Account) ? DBNull.Value : item.VD_Account),
+                            new SqlParameter("@add_ip", clientIp),
+                            new SqlParameter("@edit_num", model.User),
+                            new SqlParameter("@edit_ip", clientIp)
+                        };
                         if (!string.IsNullOrEmpty(item.ChangeReason))
                         {
                             parameters_d.Add(new SqlParameter("@Change_reason", item.ChangeReason));
@@ -213,10 +201,12 @@ namespace KF_WebAPI.Controllers
                             {
                                 foreach (var item in distinctFormIDs)
                                 {
-                                    var parameters_p = new List<SqlParameter>();
                                     var T_SQL_P = @"Update Procurement_M set VP_ID=@VP_ID where PM_ID=@Form_ID";
-                                    parameters_p.Add(new SqlParameter("@VP_ID", VP_ID));
-                                    parameters_p.Add(new SqlParameter("@Form_ID", item));
+                                    var parameters_p = new List<SqlParameter> 
+                                    {
+                                        new SqlParameter("@VP_ID", VP_ID),
+                                        new SqlParameter("@Form_ID", item)
+                                    };
                                     _adoData.ExecuteQuery(T_SQL_P, parameters_p);
                                 }
                             }
@@ -251,14 +241,16 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"select VP.VP_ID,AM.FM_Step,LI.item_D_name,LI.item_D_name AS FM_Step_SignType,VP.VP_cknum,VP.VP_Cancel
                     ,(SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = VP.VP_cknum and del_tag='0') AS VP_cknum_count 
                     from InvPrepay_M VP
                     INNER JOIN AuditFlow_M AM ON AM.FM_Source_ID = VP.VP_ID and AM.AF_ID = VP.VP_type
                     LEFT JOIN Item_list LI ON LI.item_D_code = AM.FM_Step_SignType AND LI.item_M_code = 'Flow_sign_type'
                     where VP.add_num = @User order by VP.add_Date desc";
-                parameters.Add(new SqlParameter("@User", User));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@User", User)
+                };
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
 
@@ -285,11 +277,13 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"select VP_type,VP_BC,VP_Pay_Type,VP_Total_Money,bank_code,bank_name,branch_name,bank_account,
                     payee_name,VP_Summary,VP_MFG_Date,VP_Nsummary 
                     from InvPrepay_M where VP_ID=@VP_ID ";
-                parameters.Add(new SqlParameter("@VP_ID", VP_ID));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@VP_ID", VP_ID)
+                };
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
 
@@ -312,12 +306,15 @@ namespace KF_WebAPI.Controllers
                     }).FirstOrDefault();
 
                     #region SQL Procurement_D
-                    var parameters_d = new List<SqlParameter>();
                     var T_SQL_D = @"select VD_ID,Form_ID,VD_Fee_Summary,VD_Fee,VD_VAT,VD_Account_code,VD_Account from InvPrepay_D where VP_ID=@VP_ID ";
-                    parameters_d.Add(new SqlParameter("@VP_ID", VP_ID));
+                    var parameters_d = new List<SqlParameter> 
+                    {
+                        new SqlParameter("@VP_ID", VP_ID)
+                    };
                     #endregion
                     var dtResult_d = _adoData.ExecuteQuery(T_SQL_D, parameters_d);
-                    var modelist_d = dtResult_d.AsEnumerable().Select(row => new InvPrepay_D_Ins
+                    
+                    model.Ins_List = dtResult_d.AsEnumerable().Select(row => new InvPrepay_D_Ins
                     {
                         VD_ID = row.Field<int>("VD_ID").ToString(),
                         FormID = row.Field<string>("Form_ID"),
@@ -326,9 +323,7 @@ namespace KF_WebAPI.Controllers
                         VD_VAT = row.Field<string>("VD_VAT"),
                         VD_Account_code = row.Field<string>("VD_Account_code"),
                         VD_Account = row.Field<string>("VD_Account")
-                    });
-
-                    model.Ins_List = modelist_d.ToList();
+                    }).ToList();
 
                     resultClass.ResultCode = "000";
                     resultClass.objResult = JsonConvert.SerializeObject(model);
@@ -369,24 +364,26 @@ namespace KF_WebAPI.Controllers
                     if (model.VP_type.Contains("PS"))
                         str_type = "PS";
                 }
-                var parameters_m = new List<SqlParameter>();
                 var T_SQL_M = @"Update InvPrepay_M set VP_type=@VP_type,VP_Pay_Type=@VP_Pay_Type,VP_Total_Money=@VP_Total_Money,bank_code=@bank_code,bank_name=@bank_name, 
                 branch_name=@branch_name,bank_account=@bank_account,payee_name=@payee_name,VP_Summary=@VP_Summary,VP_MFG_Date=@VP_MFG_Date,
                 VP_Nsummary=@VP_Nsummary,edit_date=GETDATE(),edit_num=@edit_num,edit_ip=@edit_ip where VP_ID=@VP_ID";
-                parameters_m.Add(new SqlParameter("@VP_type",str_type));
-                parameters_m.Add(new SqlParameter("@VP_Pay_Type", model.VP_Pay_Type));
-                parameters_m.Add(new SqlParameter("@VP_Total_Money", model.VP_Total_Money));
-                parameters_m.Add(new SqlParameter("@bank_code", model.bank_code ?? ""));
-                parameters_m.Add(new SqlParameter("@bank_name", model.bank_name ?? ""));
-                parameters_m.Add(new SqlParameter("@branch_name", model.branch_name ?? ""));
-                parameters_m.Add(new SqlParameter("@bank_account", model.bank_account ?? ""));
-                parameters_m.Add(new SqlParameter("@payee_name", model.payee_name ?? ""));
-                parameters_m.Add(new SqlParameter("@VP_Summary", model.VP_Summary ?? ""));
-                parameters_m.Add(new SqlParameter("@VP_MFG_Date", model.VP_MFG_Date ?? ""));
-                parameters_m.Add(new SqlParameter("@VP_Nsummary", model.VP_Nsummary ?? ""));
-                parameters_m.Add(new SqlParameter("@edit_num", model.User));
-                parameters_m.Add(new SqlParameter("@edit_ip", clientIp));
-                parameters_m.Add(new SqlParameter("@VP_ID", model.VP_ID));
+                var parameters_m = new List<SqlParameter> 
+                {
+                    new SqlParameter("@VP_type",str_type),
+                    new SqlParameter("@VP_Pay_Type", model.VP_Pay_Type),
+                    new SqlParameter("@VP_Total_Money", model.VP_Total_Money),
+                    new SqlParameter("@bank_code", string.IsNullOrEmpty(model.bank_code) ? DBNull.Value : model.bank_code),
+                    new SqlParameter("@bank_name", string.IsNullOrEmpty(model.bank_name) ? DBNull.Value : model.bank_name),
+                    new SqlParameter("@branch_name", string.IsNullOrEmpty(model.branch_name) ? DBNull.Value : model.branch_name),
+                    new SqlParameter("@bank_account", string.IsNullOrEmpty(model.bank_account) ? DBNull.Value : model.bank_account),
+                    new SqlParameter("@payee_name", string.IsNullOrEmpty(model.payee_name) ? DBNull.Value : model.payee_name),
+                    new SqlParameter("@VP_Summary", string.IsNullOrEmpty(model.VP_Summary) ? DBNull.Value : model.VP_Summary),
+                    new SqlParameter("@VP_MFG_Date", string.IsNullOrEmpty(model.VP_MFG_Date) ? DBNull.Value : model.VP_MFG_Date),
+                    new SqlParameter("@VP_Nsummary", string.IsNullOrEmpty(model.VP_Nsummary) ? DBNull.Value : model.VP_Nsummary),
+                    new SqlParameter("@edit_num", model.User),
+                    new SqlParameter("@edit_ip", clientIp),
+                    new SqlParameter("@VP_ID", model.VP_ID)
+                };
                 #endregion
                 int result_m = _adoData.ExecuteNonQuery(T_SQL_M, parameters_m);
                 if (result_m == 0)
@@ -410,9 +407,12 @@ namespace KF_WebAPI.Controllers
                             if (!string.IsNullOrEmpty(item.ChangeReason))
                             {
                                 T_SQL_D += ",Change_reason=@Change_reason,Change_num=@Change_num,Change_date=GETDATE(),Change_ip=@Change_ip";
-                                parameters_d.Add(new SqlParameter("@Change_reason", item.ChangeReason));
-                                parameters_d.Add(new SqlParameter("@Change_num", model.User));
-                                parameters_d.Add(new SqlParameter("@Change_ip", clientIp));
+                                parameters_d.AddRange(new List<SqlParameter> 
+                                {
+                                    new SqlParameter("@Change_reason", item.ChangeReason),
+                                    new SqlParameter("@Change_num", model.User),
+                                    new SqlParameter("@Change_ip", clientIp)
+                                });
                             }
 
                             T_SQL_D += " where VD_ID=@VD_ID and VP_ID=@VP_ID";
@@ -422,41 +422,26 @@ namespace KF_WebAPI.Controllers
                             T_SQL_D += @"Insert into InvPrepay_D (VP_ID,VP_type,Form_ID,VD_Fee_Summary,VD_Fee,VD_VAT,VD_Account_code,
                             VD_Account,add_date,add_num,add_ip) Values (@VP_ID,@VP_type,@Form_ID,@VD_Fee_Summary,@VD_Fee,@VD_VAT,
                             @VD_Account_code,@VD_Account,GETDATE(),@add_num,@add_ip)";
-                            parameters_d.Add(new SqlParameter("@VP_type", str_type));
-                            parameters_d.Add(new SqlParameter("@add_num", model.User));
-                            parameters_d.Add(new SqlParameter("@add_ip", clientIp));
+                            parameters_d.AddRange(new List<SqlParameter> 
+                            {
+                                new SqlParameter("@VP_type", str_type),
+                                new SqlParameter("@add_num", model.User),
+                                new SqlParameter("@add_ip", clientIp)
+                            });
                         }
-                        if (!string.IsNullOrEmpty(item.FormID))
+                        parameters_d.AddRange(new List<SqlParameter> 
                         {
-                            parameters_d.Add(new SqlParameter("@Form_ID", item.FormID));
-                        }
-                        else
-                        {
-                            parameters_d.Add(new SqlParameter("@Form_ID", DBNull.Value));
-                        }
-                        parameters_d.Add(new SqlParameter("@VD_Fee_Summary", item.FormCaption));
-                        parameters_d.Add(new SqlParameter("@VD_Fee", item.FormMoney));
-                        parameters_d.Add(new SqlParameter("@VD_VAT", item.VD_VAT));
-                        if (!string.IsNullOrEmpty(item.VD_Account_code))
-                        {
-                            parameters_d.Add(new SqlParameter("@VD_Account_code", item.VD_Account_code));
-                        }
-                        else
-                        {
-                            parameters_d.Add(new SqlParameter("@VD_Account_code", DBNull.Value));
-                        }
-                        if (!string.IsNullOrEmpty(item.VD_Account))
-                        {
-                            parameters_d.Add(new SqlParameter("@VD_Account", item.VD_Account));
-                        }
-                        else
-                        {
-                            parameters_d.Add(new SqlParameter("@VD_Account", DBNull.Value));
-                        }
-                        parameters_d.Add(new SqlParameter("@edit_num", model.User));
-                        parameters_d.Add(new SqlParameter("@edit_ip", clientIp));
-                        parameters_d.Add(new SqlParameter("@VD_ID", item.VD_ID));
-                        parameters_d.Add(new SqlParameter("@VP_ID", model.VP_ID));
+                            new SqlParameter("@Form_ID", string.IsNullOrEmpty(item.FormID) ? DBNull.Value : item.FormID),
+                            new SqlParameter("@VD_Fee_Summary", item.FormCaption),
+                            new SqlParameter("@VD_Fee", item.FormMoney),
+                            new SqlParameter("@VD_VAT", item.VD_VAT),
+                            new SqlParameter("@VD_Account_code", string.IsNullOrEmpty(item.VD_Account_code) ? DBNull.Value : item.VD_Account_code),
+                            new SqlParameter("@VD_Account", string.IsNullOrEmpty(item.VD_Account) ? DBNull.Value : item.VD_Account),
+                            new SqlParameter("@edit_num", model.User),
+                            new SqlParameter("@edit_ip", clientIp),
+                            new SqlParameter("@VD_ID", item.VD_ID),
+                            new SqlParameter("@VP_ID", model.VP_ID)
+                        });
                         #endregion
                         int result_d = _adoData.ExecuteNonQuery(T_SQL_D, parameters_d);
                         if (result_d == 0)
@@ -493,11 +478,13 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"update InvPrepay_M set VP_Cancel='Y',cancel_date=GETDATE(),cancel_num=@cancel_num,candel_ip=@candel_ip where VP_ID=@VP_ID";
-                parameters.Add(new SqlParameter("@cancel_num", User));
-                parameters.Add(new SqlParameter("@candel_ip", clientIp));
-                parameters.Add(new SqlParameter("@VP_ID", VP_ID));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@cancel_num", User),
+                    new SqlParameter("@candel_ip", clientIp),
+                    new SqlParameter("@VP_ID", VP_ID)
+                };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
@@ -533,9 +520,11 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"select * from User_M where U_num=@User and Role_num in ('1004','1005','1020')";
-                parameters.Add(new SqlParameter("@User", User));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@User", User)
+                };
                 #endregion
                 var dtresult = _adoData.ExecuteQuery(T_SQL, parameters);
                 resultClass.ResultCode = "000";
@@ -569,7 +558,6 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters_m = new List<SqlParameter>();
                 var T_SQL_M = @"select LI.item_d_name as BC_Name,UM.U_name,VP_ID,VP.VP_AppDate,VP.VP_Pay_Type,bank_code,bank_name,branch_name,
                     bank_account,payee_name,Format(VP_Total_Money,'N0') as VP_Total_Money,VP.VP_type,
                     FORMAT(VP.add_date,'yyyy/MM/dd HH:mm') as add_date,
@@ -578,7 +566,10 @@ namespace KF_WebAPI.Controllers
                     left join User_M UM on UM.U_num = VP.VP_U_num
                     left join Item_list LI on LI.item_D_code = VP.VP_BC
                     where VP.VP_ID=@VP_ID";
-                parameters_m.Add(new SqlParameter("@VP_ID", VP_ID));
+                var parameters_m = new List<SqlParameter> 
+                {
+                    new SqlParameter("@VP_ID", VP_ID)
+                };
                 #endregion
                 var resultModel = _adoData.ExecuteQuery(T_SQL_M, parameters_m).AsEnumerable().Select(row => new Invp_Print
                 {
@@ -599,10 +590,12 @@ namespace KF_WebAPI.Controllers
                 }).FirstOrDefault();
 
                 #region Invp_Print_Deatil
-                var parameters_dt = new List<SqlParameter>();
                 var T_SQL_DT = @"select Form_ID,VD_Fee_Summary,Format(VD_Fee,'N0') as VD_Fee from InvPrepay_D where VP_ID=@VP_ID";
-                parameters_dt.Add(new SqlParameter("@VP_ID", VP_ID));
-                var result_dt = _adoData.ExecuteQuery(T_SQL_DT, parameters_dt).AsEnumerable().Select(row => new Invp_Print_Deatil
+                var parameters_dt = new List<SqlParameter> 
+                {
+                    new SqlParameter("@VP_ID", VP_ID)
+                };
+                resultModel.VP_Deatil_List = _adoData.ExecuteQuery(T_SQL_DT, parameters_dt).AsEnumerable().Select(row => new Invp_Print_Deatil
                 {
                     Form_ID = row.Field<string>("Form_ID"),
                     VD_Fee_Summary = row.Field<string>("VD_Fee_Summary"),
@@ -611,14 +604,16 @@ namespace KF_WebAPI.Controllers
                 #endregion
 
                 #region Invp_Print_Flow
-                var parameters_fw = new List<SqlParameter>();
                 var T_SQL_FW = @"select AD.FD_Sign_Countersign,AD.FD_Step,UM.U_name,
                     FORMAT(AD.FD_Step_date,'yyyy/MM/dd HH:mm') as FD_Step_date,AD.FD_Step_desc 
                     from AuditFlow_D AD
                     inner join User_M UM on UM.U_num = AD.FD_Step_num
                     where FM_Source_ID=@VP_ID and FD_Sign_Countersign='S' order by AD.FD_Step  ";
-                parameters_fw.Add(new SqlParameter("@VP_ID", VP_ID));
-                var result_fw = _adoData.ExecuteQuery(T_SQL_FW, parameters_fw).AsEnumerable().Select(row => new Invp_Print_Flow
+                var parameters_fw = new List<SqlParameter> 
+                {
+                    new SqlParameter("@VP_ID", VP_ID)
+                };
+                resultModel.VP_Flow_List = _adoData.ExecuteQuery(T_SQL_FW, parameters_fw).AsEnumerable().Select(row => new Invp_Print_Flow
                 {
                     FD_Sign_Countersign = row.Field<string>("FD_Sign_Countersign"),
                     FD_Step = row.Field<string>("FD_Step"),
@@ -627,9 +622,6 @@ namespace KF_WebAPI.Controllers
                     FD_Step_desc = row.Field<string>("FD_Step_desc")
                 }).ToList();
                 #endregion
-
-                resultModel.VP_Deatil_List = result_dt;
-                resultModel.VP_Flow_List = result_fw;
 
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(resultModel);
