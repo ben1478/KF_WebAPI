@@ -577,7 +577,7 @@ namespace KF_WebAPI.Controllers
                 };
                 var queryBuilder = new StringBuilder();
                 queryBuilder.AppendLine(@"select VP_ID as Form_ID,VP_type as strType,LI.item_D_name as BC_Name,UM.U_name as U_Name,
-                                          VP_Summary as str_Name,Format(VP_Total_Money,'N0') as str_Amt
+                                          VP_Summary as str_Name,Format(VP_Total_Money,'N0') as str_Amt,VP.add_date AS add_date
                                           from InvPrepay_M VP
                                           left join Item_list LI on LI.item_M_code='branch_company' and LI.item_D_code=VP_BC
                                           left join User_M UM on UM.U_num=VP.add_num
