@@ -613,12 +613,12 @@ namespace KF_WebAPI.Controllers
 
                     var Excel_Headers = new Dictionary<string, string>
                     {
-                        { "PM_ID","單號" },
-                        { "PM_Step", "類型" },
-                        { "PM_BC_Name", "申請部門" },
-                        { "PM_Name", "申請人" },
-                        { "PM_Pay_Name", "費用類別" },
-                        { "str_PM_Amt","總價" }
+                        { "Form_ID","單號" },
+                        { "strType", "類型" },
+                        { "BC_Name", "申請部門" },
+                        { "U_Name", "申請人" },
+                        { "str_Name", "費用類別" },
+                        { "str_Amt","總價" }
                     };
 
                     var fileBytes = FuncHandler.ExportToExcel(excelList, Excel_Headers);
