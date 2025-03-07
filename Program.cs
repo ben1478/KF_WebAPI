@@ -62,7 +62,8 @@ app.UseCors(builder =>
         "https://www.kuofongweb.com.tw/",
         "https://localhost:7135",
         "http://localhost:8080",
-        "http://192.168.1.240:8080"
+        "http://192.168.1.240:8080",
+        "http://192.168.1.240:8081"
         )
            .AllowAnyMethod()
            .AllowAnyHeader()

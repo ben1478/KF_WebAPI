@@ -521,7 +521,11 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@Date_S", FuncHandler.ConvertROCToGregorian(model.Date_S)),
+                    new SqlParameter("@Date_E", FuncHandler.ConvertROCToGregorian(model.Date_E))
+                };
                 var T_SQL = @"select VP_ID as Form_ID,VP_type as strType,LI.item_D_name as BC_Name,UM.U_name as U_Name
                     ,VP_Summary as str_Name,Format(VP_Total_Money,'N0') as str_Amt,VP.add_date as add_date
                     from InvPrepay_M VP
@@ -543,8 +547,6 @@ namespace KF_WebAPI.Controllers
                     left join User_M UM on UM.U_num=PM.add_num
                     where PM.add_date BETWEEN @Date_S AND @Date_E";
                 }
-                parameters.Add(new SqlParameter("@Date_S", FuncHandler.ConvertROCToGregorian(model.Date_S)));
-                parameters.Add(new SqlParameter("@Date_E", FuncHandler.ConvertROCToGregorian(model.Date_E)));
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL,parameters).AsEnumerable()
                     .OrderByDescending(row=> row.Field<DateTime>("add_date")).CopyToDataTable(); ;
