@@ -27,11 +27,12 @@ namespace KF_WebAPI.DataLogic
 
             try
             {
-                int iResult = insertToLate15To104(Date_S, Date_E);
+                int iResult = 0;
+                iResult = insertToLate15To104(Date_S, Date_E);
                 if (iResult != 0)
                 {
                     string m_SQL = "SELECT F.[ID_104],[LEAVEITEM_ID],F.[U_num],[Date_S]  ,[Date_E]  , " +
-                            " case when M2.U_arrive_date < F.[Date_S] then M2.ID_104 else 2  end " +
+                            " case when M2.U_arrive_date < F.[Date_S] then case when M2.U_leave_date < F.[Date_S] then 2 else M2.ID_104 end  else 2  end " +
                         "  AGENT_IDS " +
                         " FROM[dbo].[Late15To104] F LEFT JOIN User_M M1 on F.u_num = M1.u_num " +
                         " LEFT JOIN User_M M2 on M1.U_agent_num = M2.U_num " +
@@ -75,7 +76,10 @@ namespace KF_WebAPI.DataLogic
             
             string m_SQL = "insert into Late15To104 ([ID_104],[LEAVEITEM_ID],[U_num],[Date_S],[Date_E])" +
                 " select F.[ID_104],[LEAVEITEM_ID],F.[U_num],format([Date_S],'yyyy/MM/dd HH:mm'),format([Date_E],'yyyy/MM/dd HH:mm') " +
-                " from [fun_LateOver15_To104](@Date_S,@Date_E)F ";
+                " from [fun_LateOver15_To104](@Date_S,@Date_E)F  " +
+                " Left join  (select * from Flow_rest R  where  del_tag = '0' AND FR_cancel<>'Y' and format( FR_date_begin,'yyyy/MM/dd')   " +
+                " between @Date_S and @Date_E and FR_kind <> 'FRK021' )R on F.[U_num]=R.FR_U_num and format([Date_E],'yyyy/MM/dd HH:mm') between R.FR_date_begin and R.FR_date_end  " +
+                "   where R.FR_date_begin is null  ";
             var parameters = new List<SqlParameter>();
             parameters.Add(new SqlParameter("@Date_S", Date_S));
             parameters.Add(new SqlParameter("@Date_E", Date_E));
