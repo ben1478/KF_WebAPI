@@ -15,6 +15,7 @@ using System.Data;
 using System.Reflection;
 using OfficeOpenXml.FormulaParsing.LexicalAnalysis;
 using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
 
 namespace KF_WebAPI.Controllers
 {
@@ -63,9 +64,9 @@ namespace KF_WebAPI.Controllers
 
                 return Ok(token);
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
-                _fun.ExtAPILogIns(apiCode, apiName, "", "", jsonData, "500", "token失誤");
+                _fun.ExtAPILogIns(apiCode, apiName, "", "", jsonData, "500", $" error: {ex.Message}");
                 return BadRequest();
             }
         }
@@ -89,46 +90,46 @@ namespace KF_WebAPI.Controllers
 
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
-                var T_SQL = @"select * from InvPrepay_M where VP_ID=@VP_ID ";
-                parameters.Add(new SqlParameter("@VP_ID", Form_ID));
-
-                var parameters_d = new List<SqlParameter>();
-                var T_SQL_D = @"select * from InvPrepay_D where VP_ID=@VP_ID ";
-                parameters_d.Add(new SqlParameter("@VP_ID", Form_ID));
+                var T_SQL = @"select MA.MF_ID,VP.*,VD.* from InvPrepay_M VP inner join InvPrepay_D VD on VP.VP_ID=VD.VP_ID
+                    left join Manufacturer MA on MA.Company_name = VP.payee_name";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@VP_ID", Form_ID)
+                };
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
 
                 var vpMFGDate = dtResult.Rows[0]["VP_MFG_Date"];
-                var parameters_mf = new List<SqlParameter>();
+                var MF_ID = dtResult.Rows[0]["MF_ID"].ToString();
+
                 var T_SQL_MF = @"select * from InvPrepay_M where LEFT(VP_MFG_Date,7)=@yyyMMdd";
-                parameters_mf.Add(new SqlParameter("@yyyMMdd", vpMFGDate));
+                var parameters_mf = new List<SqlParameter> 
+                {
+                    new SqlParameter("@yyyMMdd", vpMFGDate)
+                };
                 var no = _adoData.ExecuteQuery(T_SQL_MF, parameters_mf).AsEnumerable().Count();
                 var vpMFGID = vpMFGDate + no.ToString("D4");
 
-                var parameters_upd = new List<SqlParameter>();
+               
                 var T_SQL_UPD = @"Update InvPrepay_M set VP_MFG_ID=@VP_MFG_ID where VP_ID=@VP_ID";
-                parameters_upd.Add(new SqlParameter("@VP_MFG_ID", vpMFGID));
-                parameters_upd.Add(new SqlParameter("@VP_ID", Form_ID));
+                var parameters_upd = new List<SqlParameter> 
+                {
+                    new SqlParameter("@VP_MFG_ID", vpMFGID),
+                    new SqlParameter("@VP_ID", Form_ID)
+                };
                 _adoData.ExecuteQuery(T_SQL_UPD, parameters_upd);
 
-                var m_modelist_m = new Summons_M_req();
-                m_modelist_m.MFGL003 = "A" + vpMFGID;
-                m_modelist_m.MFGL004 = "3";
-                m_modelist_m.MFGL005 = DateTime.Now.ToString("yyyy-MM-dd");
-                m_modelist_m.MFGL006 = dtResult.Rows[0]["VP_Summary"].ToString();
-                m_modelist_m.MFGL009 = "N";
-                m_Summons_req.ADataSetMaster = m_modelist_m;
-
-                var parameters_mfa = new List<SqlParameter>();
-                var T_SQL_MFA = @"select * from Manufacturer where Company_name = @Company_name";
-                parameters_mfa.Add(new SqlParameter("@Company_name", dtResult.Rows[0]["payee_name"].ToString()));
-                var dtResult_mfa = _adoData.ExecuteQuery(T_SQL_MFA,parameters_mfa);
-                var MF_ID = dtResult_mfa.Rows[0]["MF_ID"].ToString();
+                m_Summons_req.ADataSetMaster = new Summons_M_req 
+                {
+                    MFGL003 = "A" + vpMFGID,
+                    MFGL004 = "3",
+                    MFGL005 = DateTime.Now.ToString("yyyy-MM-dd"),
+                    MFGL006 = dtResult.Rows[0]["VP_Summary"].ToString(),
+                    MFGL009 = "N"
+                };
 
                 int indexnumber = 0;
-                var modelist_d = _adoData.ExecuteQuery(T_SQL_D, parameters_d).AsEnumerable().Select(row => new Summons_D_req 
-                {
+                m_Summons_req.ADataSetDetail = dtResult.AsEnumerable().Select(row => new Summons_D_req {
                     DTGL004 = m_Summons_req.ADataSetMaster.MFGL003,
                     DTGL005 = (indexnumber++).ToString("D4"),
                     DTGL008 = row.Field<string>("VD_Account_code"),
@@ -140,20 +141,17 @@ namespace KF_WebAPI.Controllers
                     DTGL028 = 1
                 }).ToList();
 
-
-                modelist_d.Add(new Summons_D_req {
+                m_Summons_req.ADataSetDetail.Add(new Summons_D_req {
                     DTGL004 = m_Summons_req.ADataSetMaster.MFGL003,
                     DTGL005 = (indexnumber++).ToString("D4"),
                     DTGL008 = "2145",
                     DTGL009 = MF_ID,
                     DTGL011 = dtResult.Rows[0]["VP_Nsummary"].ToString(),
                     DTGL012 = "2",
-                    DTGL013 = modelist_d.Sum(x => x.DTGL013),
-                    DTGL021 = modelist_d.Sum(x => x.DTGL013),
+                    DTGL013 = m_Summons_req.ADataSetDetail.Sum(x => x.DTGL013),
+                    DTGL021 = m_Summons_req.ADataSetDetail.Sum(x => x.DTGL013),
                     DTGL028 = 1
                 });
-
-                m_Summons_req.ADataSetDetail = modelist_d;
 
                 jsonData = JsonConvert.SerializeObject(m_Summons_req);
                 var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
@@ -171,6 +169,7 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
+                    responseObject.Error = Regex.Unescape(responseObject.Error);
                     _fun.ExtAPILogIns(apiCode, apiName, Form_ID, token, jsonData, "500", JsonConvert.SerializeObject(responseObject));
                     return BadRequest();
                 }

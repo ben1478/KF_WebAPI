@@ -7,6 +7,7 @@ using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
 using System.Data;
 using System.Reflection;
+using System.Text;
 
 namespace KF_WebAPI.Controllers
 {
@@ -25,9 +26,11 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"select Company_name as name from Manufacturer where Company_name like @Name";
-                parameters.Add(new SqlParameter("@Name", "%" + Name + "%"));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@Name", "%" + Name + "%")
+                };
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 resultClass.ResultCode = "000";
@@ -54,47 +57,43 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL_Procurement_M
-                var parameters_m = new List<SqlParameter>();
-                var T_SQL_M = @"Insert into Procurement_M (PM_ID,PM_type,PM_BC,PM_Pay_Type,PM_AppDate,PM_U_num,PM_Caption,PM_Amt,PM_Busin_Tax,PM_Tax_Amt
-                    ,PM_Other,add_date,add_num,add_ip,edit_date,edit_num,edit_ip,PM_cknum)
-                    Values (@PM_ID,@PM_type,@PM_BC,@PM_Pay_Type,@PM_AppDate,@PM_U_num,@PM_Caption,@PM_Amt,@PM_Busin_Tax,@PM_Tax_Amt
-                    ,@PM_Other,GETDATE(),@add_num,@add_ip,GETDATE(),@edit_num,@edit_ip,@PM_cknum)";
                 //取PM_ID
-                var parameters_id = new List<SqlParameter>();
                 var T_SQL_ID = @"exec GetFormID @formtype,@tablename,@New_ID output";
-                parameters_id.Add(new SqlParameter("@formtype", "PO"));
-                parameters_id.Add(new SqlParameter("@tablename", "Procurement_M"));
+                var parameters_id = new List<SqlParameter> 
+                {
+                    new SqlParameter("@formtype", "PO"),
+                    new SqlParameter("@tablename", "Procurement_M")
+                };
                 SqlParameter newIdParameter = new SqlParameter("@New_ID", SqlDbType.VarChar, 20)
                 {
                     Direction = ParameterDirection.Output
                 };
                 parameters_id.Add(newIdParameter);
+
                 var result_id = _adoData.ExecuteQuery(T_SQL_ID, parameters_id);
                 model.PM_ID = newIdParameter.Value.ToString();
-
-                parameters_m.Add(new SqlParameter("@PM_ID", model.PM_ID));
-                parameters_m.Add(new SqlParameter("@PM_type", "PO"));
-                parameters_m.Add(new SqlParameter("@PM_BC", model.PM_BC));
-                parameters_m.Add(new SqlParameter("@PM_Pay_Type", model.PM_Pay_Type));
-                parameters_m.Add(new SqlParameter("@PM_AppDate", DateTime.Now.ToString("yyyy/MM/dd")));
-                parameters_m.Add(new SqlParameter("@PM_U_num", model.PM_U_num));
-                parameters_m.Add(new SqlParameter("@PM_Caption", model.PM_Caption));
-                parameters_m.Add(new SqlParameter("@PM_Amt", model.PM_Amt));
-                parameters_m.Add(new SqlParameter("@PM_Busin_Tax", model.PM_Busin_Tax));
-                parameters_m.Add(new SqlParameter("@PM_Tax_Amt", model.PM_Tax_Amt));
-                if (!string.IsNullOrEmpty(model.PM_Other))
+                
+                var T_SQL_M = @"Insert into Procurement_M (PM_ID,PM_type,PM_BC,PM_Pay_Type,PM_AppDate,PM_U_num,PM_Caption,PM_Amt,PM_Busin_Tax,PM_Tax_Amt
+                    ,PM_Other,add_date,add_num,add_ip,PM_cknum)
+                    Values (@PM_ID,@PM_type,@PM_BC,@PM_Pay_Type,@PM_AppDate,@PM_U_num,@PM_Caption,@PM_Amt,@PM_Busin_Tax,@PM_Tax_Amt
+                    ,@PM_Other,GETDATE(),@add_num,@add_ip,@PM_cknum)";
+                var parameters_m = new List<SqlParameter> 
                 {
-                    parameters_m.Add(new SqlParameter("@PM_Other", model.PM_Other));
-                }
-                else
-                {
-                    parameters_m.Add(new SqlParameter("@PM_Other", DBNull.Value));
-                }
-                parameters_m.Add(new SqlParameter("@add_num", model.PM_U_num));
-                parameters_m.Add(new SqlParameter("@add_ip", clientIp));
-                parameters_m.Add(new SqlParameter("@edit_num", model.PM_U_num));
-                parameters_m.Add(new SqlParameter("@edit_ip", clientIp));
-                parameters_m.Add(new SqlParameter("@PM_cknum", FuncHandler.GetCheckNum()));
+                    new SqlParameter("@PM_ID", model.PM_ID),
+                    new SqlParameter("@PM_type", "PO"),
+                    new SqlParameter("@PM_BC", model.PM_BC),
+                    new SqlParameter("@PM_Pay_Type", model.PM_Pay_Type),
+                    new SqlParameter("@PM_AppDate", DateTime.Now.ToString("yyyy/MM/dd")),
+                    new SqlParameter("@PM_U_num", model.PM_U_num),
+                    new SqlParameter("@PM_Caption", model.PM_Caption),
+                    new SqlParameter("@PM_Amt", model.PM_Amt),
+                    new SqlParameter("@PM_Busin_Tax", model.PM_Busin_Tax),
+                    new SqlParameter("@PM_Tax_Amt", model.PM_Tax_Amt),
+                    new SqlParameter("@PM_Other", string.IsNullOrEmpty(model.PM_Other) ? DBNull.Value : model.PM_Other),
+                    new SqlParameter("@add_num", model.PM_U_num),
+                    new SqlParameter("@add_ip", clientIp),
+                    new SqlParameter("@PM_cknum", FuncHandler.GetCheckNum())
+                };
                 #endregion
                 int result_m = _adoData.ExecuteNonQuery(T_SQL_M, parameters_m);
                 if (result_m == 0)
@@ -108,24 +107,26 @@ namespace KF_WebAPI.Controllers
                     foreach (var item in model.PD_Ins_List) 
                     {
                         #region Procurement_D
-                        var parameters_d = new List<SqlParameter>();
                         var T_SQL_D = @"Insert into Procurement_D (PM_ID,PD_Pro_name,PD_Unit,PD_Count,PD_Date,PD_Univalent,PD_Amt,PD_Company_name,PD_Est_Cost
                             ,add_date,add_num,add_ip,edit_date,edit_num,edit_ip) 
                             values (@PM_ID,@PD_Pro_name,@PD_Unit,@PD_Count,@PD_Date,@PD_Univalent,@PD_Amt,@PD_Company_name,@PD_Est_Cost,GETDATE()
                             ,@add_num,@add_ip,GETDATE(),@edit_num,@edit_ip)";
-                        parameters_d.Add(new SqlParameter("@PM_ID", model.PM_ID));
-                        parameters_d.Add(new SqlParameter("@PD_Pro_name", item.PD_Pro_name));
-                        parameters_d.Add(new SqlParameter("@PD_Unit", item.PD_Unit));
-                        parameters_d.Add(new SqlParameter("@PD_Count", item.PD_Count));
-                        parameters_d.Add(new SqlParameter("@PD_Date", FuncHandler.ConvertROCToGregorian(item.PD_Date)));
-                        parameters_d.Add(new SqlParameter("@PD_Univalent", item.PD_Univalent));
-                        parameters_d.Add(new SqlParameter("@PD_Amt", item.PD_Amt));
-                        parameters_d.Add(new SqlParameter("@PD_Company_name", item.PD_Company_name));
-                        parameters_d.Add(new SqlParameter("@PD_Est_Cost", item.PD_Est_Cost));
-                        parameters_d.Add(new SqlParameter("@add_num", model.PM_U_num));
-                        parameters_d.Add(new SqlParameter("@add_ip", clientIp));
-                        parameters_d.Add(new SqlParameter("@edit_num", model.PM_U_num));
-                        parameters_d.Add(new SqlParameter("@edit_ip", clientIp));
+                        var parameters_d = new List<SqlParameter> 
+                        {
+                            new SqlParameter("@PM_ID", model.PM_ID),
+                            new SqlParameter("@PD_Pro_name", item.PD_Pro_name),
+                            new SqlParameter("@PD_Unit", item.PD_Unit),
+                            new SqlParameter("@PD_Count", item.PD_Count),
+                            new SqlParameter("@PD_Date", FuncHandler.ConvertROCToGregorian(item.PD_Date)),
+                            new SqlParameter("@PD_Univalent", item.PD_Univalent),
+                            new SqlParameter("@PD_Amt", item.PD_Amt),
+                            new SqlParameter("@PD_Company_name", item.PD_Company_name),
+                            new SqlParameter("@PD_Est_Cost", item.PD_Est_Cost),
+                            new SqlParameter("@add_num", model.PM_U_num),
+                            new SqlParameter("@add_ip", clientIp),
+                            new SqlParameter("@edit_num", model.PM_U_num),
+                            new SqlParameter("@edit_ip", clientIp)
+                        };
                         #endregion
                         int result_d = _adoData.ExecuteNonQuery(T_SQL_D, parameters_d);
                         if (result_d == 0)
@@ -173,14 +174,16 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"select PM.PM_ID,AM.FM_Step,LI.item_D_name,LI.item_D_name AS FM_Step_SignType,PM.PM_cknum,PM.PM_Cancel
                     ,(SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = PM.PM_cknum and del_tag='0') AS PM_cknum_count 
                     from Procurement_M PM
                     INNER JOIN AuditFlow_M AM ON AM.FM_Source_ID = PM.PM_ID and AM.AF_ID = PM.PM_type
                     LEFT JOIN Item_list LI ON LI.item_D_code = AM.FM_Step_SignType AND LI.item_M_code = 'Flow_sign_type'
                     where PM.add_num = @User order by PM.add_date desc";
-                parameters.Add(new SqlParameter("@User", User));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@User", User)
+                };
                 #endregion
                 var dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
 
@@ -192,7 +195,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass); 
             }
         }
 
@@ -207,9 +210,11 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"select PM_BC,PM_Pay_Type,PM_Caption,PM_Amt,PM_Busin_Tax,PM_Tax_Amt,PM_Other　from Procurement_M where PM_ID=@PM_ID ";
-                parameters.Add(new SqlParameter("@PM_ID", PM_ID));
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@PM_ID", PM_ID)
+                };
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
 
@@ -226,13 +231,14 @@ namespace KF_WebAPI.Controllers
                     }).FirstOrDefault();
 
                     #region SQL Procurement_D
-                    var parameters_d = new List<SqlParameter>();
                     var T_SQL_D = @"select PD_ID,PD_Pro_name,PD_Unit,PD_Count,PD_Date,PD_Univalent,PD_Amt,PD_Company_name,PD_Est_Cost
                         from Procurement_D where PM_ID=@PM_ID ";
-                    parameters_d.Add(new SqlParameter("@PM_ID", PM_ID));
+                    var parameters_d = new List<SqlParameter> 
+                    {
+                        new SqlParameter("@PM_ID", PM_ID)
+                    };
                     #endregion
-                    var dtResult_d = _adoData.ExecuteQuery(T_SQL_D, parameters_d);
-                    var modelist_d = dtResult_d.AsEnumerable().Select(row => new Procurement_D_Res {
+                    model.Procurement_D = _adoData.ExecuteQuery(T_SQL_D, parameters_d).AsEnumerable().Select(row => new Procurement_D_Res {
                         PD_ID = row.Field<int>("PD_ID"),
                         PD_Pro_name = row.Field<string>("PD_Pro_name"),
                         PD_Unit = row.Field<string>("PD_Unit"),
@@ -242,9 +248,8 @@ namespace KF_WebAPI.Controllers
                         PD_Amt = row.Field<decimal>("PD_Amt"),
                         PD_Company_name = row.Field<string>("PD_Company_name"),
                         PD_Est_Cost = row.Field<decimal>("PD_Est_Cost")
-                    });
+                    }).ToList();
 
-                    model.Procurement_D = modelist_d.ToList();
 
                     resultClass.ResultCode = "000";
                     resultClass.objResult = JsonConvert.SerializeObject(model);
@@ -261,10 +266,9 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass); 
             }
         }
-
 
         /// <summary>
         /// 採購單抽單 Procurement_Canel
@@ -280,11 +284,13 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"update Procurement_M set PM_Cancel='Y',cancel_date=GETDATE(),cancel_num=@cancel_num,candel_ip=@candel_ip where PM_ID=@PM_ID";
-                parameters.Add(new SqlParameter("@cancel_num", User));
-                parameters.Add(new SqlParameter("@candel_ip", clientIp));
-                parameters.Add(new SqlParameter("@PM_ID", PM_ID));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@cancel_num", User),
+                    new SqlParameter("@candel_ip", clientIp),
+                    new SqlParameter("@PM_ID", PM_ID)
+                };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
@@ -304,7 +310,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass);
             }
         }
 
@@ -320,25 +326,20 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"update Procurement_M set PM_Pay_Type=@PM_Pay_Type,PM_Caption=@PM_Caption,PM_Amt=@PM_Amt,PM_Busin_Tax=@PM_Busin_Tax,
                     PM_Tax_Amt=@PM_Tax_Amt,PM_Other=@PM_Other,edit_num=@User,edit_date=GETDATE(),edit_ip=@IP where PM_ID=@PM_ID ";
-                parameters.Add(new SqlParameter("@PM_ID", model.PM_ID));
-                parameters.Add(new SqlParameter("@PM_Pay_Type", model.PM_Pay_Type));
-                parameters.Add(new SqlParameter("@PM_Caption", model.PM_Caption));
-                parameters.Add(new SqlParameter("@PM_Amt", model.PM_Amt));
-                parameters.Add(new SqlParameter("@PM_Busin_Tax", model.PM_Busin_Tax));
-                parameters.Add(new SqlParameter("@PM_Tax_Amt", model.PM_Tax_Amt));
-                if (!string.IsNullOrEmpty(model.PM_Other))
+                var parameters = new List<SqlParameter> 
                 {
-                    parameters.Add(new SqlParameter("@PM_Other", model.PM_Other));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@PM_Other", DBNull.Value));
-                }
-                parameters.Add(new SqlParameter("@User", model.PM_U_num));
-                parameters.Add(new SqlParameter("@IP", clientIp));
+                    new SqlParameter("@PM_ID", model.PM_ID),
+                    new SqlParameter("@PM_Pay_Type", model.PM_Pay_Type),
+                    new SqlParameter("@PM_Caption", model.PM_Caption),
+                    new SqlParameter("@PM_Amt", model.PM_Amt),
+                    new SqlParameter("@PM_Busin_Tax", model.PM_Busin_Tax),
+                    new SqlParameter("@PM_Tax_Amt", model.PM_Tax_Amt),
+                    new SqlParameter("@PM_Other", string.IsNullOrEmpty(model.PM_Other) ? DBNull.Value : model.PM_Other),
+                    new SqlParameter("@User", model.PM_U_num),
+                    new SqlParameter("@IP", clientIp)
+                };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
@@ -349,31 +350,36 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
-                    var parameters_de = new List<SqlParameter>();
                     var T_SQL_DE = @"Delete Procurement_D where PM_ID=@PM_ID";
-                    parameters_de.Add(new SqlParameter("@PM_ID", model.PM_ID));
+                    var parameters_de = new List<SqlParameter> 
+                    {
+                        new SqlParameter("@PM_ID", model.PM_ID)
+                    };
                     _adoData.ExecuteQuery(T_SQL_DE, parameters_de);
+
                     foreach (var item in model.PD_Ins_List)
                     {
                         #region Procurement_D
-                        var parameters_d = new List<SqlParameter>();
                         var T_SQL_D = @"Insert into Procurement_D (PM_ID,PD_Pro_name,PD_Unit,PD_Count,PD_Date,PD_Univalent,PD_Amt,PD_Company_name,PD_Est_Cost
                             ,add_date,add_num,add_ip,edit_date,edit_num,edit_ip) 
                             values (@PM_ID,@PD_Pro_name,@PD_Unit,@PD_Count,@PD_Date,@PD_Univalent,@PD_Amt,@PD_Company_name,@PD_Est_Cost,GETDATE()
                             ,@add_num,@add_ip,GETDATE(),@edit_num,@edit_ip)";
-                        parameters_d.Add(new SqlParameter("@PM_ID", model.PM_ID));
-                        parameters_d.Add(new SqlParameter("@PD_Pro_name", item.PD_Pro_name));
-                        parameters_d.Add(new SqlParameter("@PD_Unit", item.PD_Unit));
-                        parameters_d.Add(new SqlParameter("@PD_Count", item.PD_Count));
-                        parameters_d.Add(new SqlParameter("@PD_Date", FuncHandler.ConvertROCToGregorian(item.PD_Date)));
-                        parameters_d.Add(new SqlParameter("@PD_Univalent", item.PD_Univalent));
-                        parameters_d.Add(new SqlParameter("@PD_Amt", item.PD_Amt));
-                        parameters_d.Add(new SqlParameter("@PD_Company_name", item.PD_Company_name));
-                        parameters_d.Add(new SqlParameter("@PD_Est_Cost", item.PD_Est_Cost));
-                        parameters_d.Add(new SqlParameter("@add_num", model.PM_U_num));
-                        parameters_d.Add(new SqlParameter("@add_ip", clientIp));
-                        parameters_d.Add(new SqlParameter("@edit_num", model.PM_U_num));
-                        parameters_d.Add(new SqlParameter("@edit_ip", clientIp));
+                        var parameters_d = new List<SqlParameter> 
+                        {
+                            new SqlParameter("@PM_ID", model.PM_ID),
+                            new SqlParameter("@PD_Pro_name", item.PD_Pro_name),
+                            new SqlParameter("@PD_Unit", item.PD_Unit),
+                            new SqlParameter("@PD_Count", item.PD_Count),
+                            new SqlParameter("@PD_Date", FuncHandler.ConvertROCToGregorian(item.PD_Date)),
+                            new SqlParameter("@PD_Univalent", item.PD_Univalent),
+                            new SqlParameter("@PD_Amt", item.PD_Amt),
+                            new SqlParameter("@PD_Company_name", item.PD_Company_name),
+                            new SqlParameter("@PD_Est_Cost", item.PD_Est_Cost),
+                            new SqlParameter("@add_num", model.PM_U_num),
+                            new SqlParameter("@add_ip", clientIp),
+                            new SqlParameter("@edit_num", model.PM_U_num),
+                            new SqlParameter("@edit_ip", clientIp)
+                        };
                         #endregion
                         int result_d = _adoData.ExecuteNonQuery(T_SQL_D, parameters_d);
                         if (result_d == 0)
@@ -392,7 +398,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass); 
             }
         }
 
@@ -408,7 +414,6 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters_m = new List<SqlParameter>();
                 var T_SQL_M = @"select LI.item_d_name as BC_Name,UM.U_name,PM.PM_AppDate,PM.PM_ID,PM.PM_Caption,Format(PM.PM_Amt,'N0') as PM_Amt,
                     Format(PM.PM_Busin_Tax,'N0') as PM_Busin_Tax,Format(PM.PM_Tax_Amt,'N0') as PM_Tax_Amt,PM.PM_cknum,
                     Case PM.PM_Pay_Type When 'GC' THEN '領現' When 'MT' THEN '匯款' END as PM_Pay_Type,PM.PM_Other,
@@ -417,7 +422,10 @@ namespace KF_WebAPI.Controllers
                     left join User_M UM on UM.U_num = PM.PM_U_num
                     left join Item_list LI on LI.item_D_code = PM.PM_BC
                     where PM.PM_ID=@PM_ID";
-                parameters_m.Add(new SqlParameter("@PM_ID", PM_ID));
+                var parameters_m = new List<SqlParameter> 
+                {
+                    new SqlParameter("@PM_ID", PM_ID)
+                };
                 #endregion
                 var resultModel = _adoData.ExecuteQuery(T_SQL_M, parameters_m).AsEnumerable().Select(row => new Proc_Print
                 {
@@ -436,12 +444,14 @@ namespace KF_WebAPI.Controllers
                 }).FirstOrDefault();
 
                 #region Proc_Print_Deatil
-                var parameters_dt = new List<SqlParameter>();
                 var T_SQL_DT = @"select PD_Pro_name,PD_Unit,PD_Count,PD_Date,Format(PD_Univalent,'N0') as PD_Univalent,
                     Format(PD_Amt,'N0') as PD_Amt,PD_Company_name,Format(PD_Est_Cost,'N0') as PD_Est_Cost 
                     from Procurement_D where PM_ID=@PM_ID";
-                parameters_dt.Add(new SqlParameter("@PM_ID", PM_ID));
-                var result_dt = _adoData.ExecuteQuery(T_SQL_DT, parameters_dt).AsEnumerable().Select(row => new Proc_Print_Deatil
+                var parameters_dt = new List<SqlParameter> 
+                {
+                    new SqlParameter("@PM_ID", PM_ID)
+                };
+                resultModel.PT_Deatil_List = _adoData.ExecuteQuery(T_SQL_DT, parameters_dt).AsEnumerable().Select(row => new Proc_Print_Deatil
                 {
                     PD_Pro_name = row.Field<string>("PD_Pro_name"),
                     PD_Unit = row.Field<string>("PD_Unit"),
@@ -455,24 +465,28 @@ namespace KF_WebAPI.Controllers
                 #endregion
 
                 #region Proc_Print_File
-                var parameters_fi = new List<SqlParameter>();
                 var T_SQL_FI = @"select upload_name_show from ASP_UpLoad where cknum=@cknum";
-                parameters_fi.Add(new SqlParameter("@cknum", resultModel.PM_cknum));
-                var result_fi = _adoData.ExecuteQuery(T_SQL_FI, parameters_fi).AsEnumerable().Select(row => new Proc_Print_File
+                var parameters_fi = new List<SqlParameter> 
+                {
+                    new SqlParameter("@cknum", resultModel.PM_cknum)
+                };
+                resultModel.PT_File_List = _adoData.ExecuteQuery(T_SQL_FI, parameters_fi).AsEnumerable().Select(row => new Proc_Print_File
                 {
                     upload_name_show = row.Field<string>("upload_name_show"),
                 }).ToList();
                 #endregion
 
                 #region Proc_Print_Flow
-                var parameters_fw = new List<SqlParameter>();
                 var T_SQL_FW = @"select AD.FD_Sign_Countersign,AD.FD_Step,UM.U_name,
                     FORMAT(AD.FD_Step_date,'yyyy/MM/dd HH:mm') as FD_Step_date,AD.FD_Step_desc 
                     from AuditFlow_D AD
                     inner join User_M UM on UM.U_num = AD.FD_Step_num
                     where FM_Source_ID=@PM_ID order by AD.FD_Step";
-                parameters_fw.Add(new SqlParameter("@PM_ID", PM_ID));
-                var result_fw = _adoData.ExecuteQuery(T_SQL_FW, parameters_fw).AsEnumerable().Select(row => new Proc_Print_Flow
+                var parameters_fw = new List<SqlParameter> 
+                {
+                    new SqlParameter("@PM_ID", PM_ID)
+                };
+                resultModel.PT_Flow_List = _adoData.ExecuteQuery(T_SQL_FW, parameters_fw).AsEnumerable().Select(row => new Proc_Print_Flow
                 {
                     FD_Sign_Countersign = row.Field<string>("FD_Sign_Countersign"),
                     FD_Step = row.Field<string>("FD_Step"),
@@ -481,10 +495,6 @@ namespace KF_WebAPI.Controllers
                     FD_Step_desc = row.Field<string>("FD_Step_desc")
                 }).ToList();
                 #endregion
-
-                resultModel.PT_Deatil_List = result_dt;
-                resultModel.PT_File_List = result_fi;
-                resultModel.PT_Flow_List = result_fw;
 
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(resultModel);
@@ -499,13 +509,11 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-        //TODO 以下須跟著畫面異動
-
         /// <summary>
-        /// 採購單報表 Procurement_Rpt
+        /// 財務表單報表 PT_Rpt
         /// </summary>
-        [HttpPost("Procurement_Rpt")]
-        public ActionResult<ResultClass<string>> Procurement_Rpt(string PM_Step)
+        [HttpPost("PT_Rpt")]
+        public ActionResult<ResultClass<string>> PT_Rpt (PT_Rpt_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -513,27 +521,35 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"select PM_ID,PM_Step,(select item_D_name from Item_list where item_M_code = 'branch_company' and item_D_code = PM_BC) as PM_BC_Name
-                    ,(select U_name from User_M where U_num = PM_U_num) as PM_Name
-                    ,(select item_D_name from Item_list where item_M_code = 'Procurement_Pay' and item_D_code = PM_Pay_Type) as PM_Pay_Name
-                    ,FORMAT(PM_Amt,'N0') as str_PM_Amt from Procurement_M";
-                switch (PM_Step)
+                var parameters = new List<SqlParameter> 
                 {
-                    case "N": 
-                        T_SQL += " where 1=1";
-                        break;
-                    case "A":
-                        T_SQL += " where PM_Step='A'";
-                        break;
-                    case "B":
-                        T_SQL += " where PM_Step='B'";
-                        break;
-                    default:
-                        break;
+                    new SqlParameter("@Date_S", FuncHandler.ConvertROCToGregorian(model.Date_S)),
+                    new SqlParameter("@Date_E", FuncHandler.ConvertROCToGregorian(model.Date_E))
+                };
+                var T_SQL = @"select VP_ID as Form_ID,VP_type as strType,LI.item_D_name as BC_Name,UM.U_name as U_Name
+                    ,VP_Summary as str_Name,Format(VP_Total_Money,'N0') as str_Amt,VP.add_date as add_date
+                    from InvPrepay_M VP
+                    left join Item_list LI on LI.item_M_code='branch_company' and LI.item_D_code=VP_BC
+                    left join User_M UM on UM.U_num=VP.add_num
+                    where VP.add_date BETWEEN @Date_S AND @Date_E";
+                if (!string.IsNullOrEmpty(model.Type))
+                {
+                    T_SQL += " and VP_type=@VP_type";
+                    parameters.Add(new SqlParameter("@VP_type", model.Type));
                 }
-                T_SQL += " order by PM_ID";
+                if (string.IsNullOrEmpty(model.Type) || model.Type=="PO")
+                {
+                    T_SQL += @" union
+                    select PM_ID as Form_ID,'PO' as strType,LI.item_D_name as BC_Name,UM.U_name as U_Name
+                    ,PM_Caption as str_Name,Format(PM_Amt,'N0') as str_Amt,PM.add_date as add_date
+                    from Procurement_M PM
+                    left join Item_list LI on LI.item_M_code='branch_company' and LI.item_D_code=PM_BC
+                    left join User_M UM on UM.U_num=PM.add_num
+                    where PM.add_date BETWEEN @Date_S AND @Date_E";
+                }
                 #endregion
-                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+                var dtResult = _adoData.ExecuteQuery(T_SQL,parameters).AsEnumerable()
+                    .OrderByDescending(row=> row.Field<DateTime>("add_date")).CopyToDataTable(); ;
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(dtResult);
                 return Ok(resultClass);
@@ -542,100 +558,69 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass);
             }
         }
 
         /// <summary>
-        /// 採購單報表明細 Procurement_DList_Rpt
+        /// 採購單報表Excel下載 PT_Rpt_Excel
         /// </summary>
-        [HttpPost("Procurement_DList_Rpt")]
-        public ActionResult<ResultClass<string>> Procurement_DList_Rpt(string PM_ID,string PM_Step)
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
-
-            try
-            {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var parameters = new List<SqlParameter>();
-                var T_SQL = @"select * from Procurement_D where PM_ID=@PM_ID and PM_Step=@PM_Step";
-                parameters.Add(new SqlParameter("@PM_ID", PM_ID));
-                parameters.Add(new SqlParameter("@PM_Step", PM_Step));
-                #endregion
-                var dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
-                if (dtResult.Rows.Count > 0)
-                {
-                    resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
-                    return Ok(resultClass);
-                }
-                else
-                {
-                    resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "查無資料";
-                    return BadRequest(resultClass);
-                }
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
-            }
-        }
-
-        /// <summary>
-        /// 採購單報表Excel下載 Procurement_Excel
-        /// </summary>
-        [HttpGet("Procurement_Excel")]
-        public IActionResult Procurement_Excel(string PM_Step)
+        [HttpPost("PT_Rpt_Excel")]
+        public IActionResult PT_Rpt_Excel(PT_Rpt_req model)
         {
             try
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"select PM_ID,PM_Step,(select item_D_name from Item_list where item_M_code = 'branch_company' and item_D_code = PM_BC) as PM_BC_Name
-                    ,(select U_name from User_M where U_num = PM_U_num) as PM_Name
-                    ,(select item_D_name from Item_list where item_M_code = 'Procurement_Pay' and item_D_code = PM_Pay_Type) as PM_Pay_Name
-                    ,FORMAT(PM_Amt,'N0') as str_PM_Amt from Procurement_M";
-                switch (PM_Step)
+                var parameters = new List<SqlParameter>
                 {
-                    case "N":
-                        T_SQL += " where 1=1";
-                        break;
-                    case "A":
-                        T_SQL += " where PM_Step='A'";
-                        break;
-                    case "B":
-                        T_SQL += " where PM_Step='B'";
-                        break;
-                    default:
-                        break;
+                    new SqlParameter("@Date_S", FuncHandler.ConvertROCToGregorian(model.Date_S)),
+                    new SqlParameter("@Date_E", FuncHandler.ConvertROCToGregorian(model.Date_E))
+                };
+                var queryBuilder = new StringBuilder();
+                queryBuilder.AppendLine(@"select VP_ID as Form_ID,VP_type as strType,LI.item_D_name as BC_Name,UM.U_name as U_Name,
+                                          VP_Summary as str_Name,Format(VP_Total_Money,'N0') as str_Amt,VP.add_date AS add_date
+                                          from InvPrepay_M VP
+                                          left join Item_list LI on LI.item_M_code='branch_company' and LI.item_D_code=VP_BC
+                                          left join User_M UM on UM.U_num=VP.add_num
+                                          where VP.add_date BETWEEN @Date_S AND @Date_E");
+                if (!string.IsNullOrEmpty(model.Type))
+                {
+                    queryBuilder.AppendLine("  AND VP_type = @VP_type");
+                    parameters.Add(new SqlParameter("@VP_type", model.Type));
                 }
-                T_SQL += " order by PM_ID";
+                if (string.IsNullOrEmpty(model.Type) || model.Type == "PO")
+                {
+                    queryBuilder.AppendLine("UNION");
+                    queryBuilder.AppendLine(@"SELECT PM_ID AS Form_ID,'PO' AS strType,LI.item_D_name AS BC_Name,UM.U_name AS U_Name,
+                                              PM_Caption AS str_Name,FORMAT(PM_Amt, 'N0') AS str_Amt,PM.add_date AS add_date
+                                              FROM Procurement_M PM
+                                              LEFT JOIN Item_list LI ON LI.item_M_code = 'branch_company' AND LI.item_D_code = PM_BC
+                                              LEFT JOIN User_M UM ON UM.U_num = PM.add_num
+                                              WHERE PM.add_date BETWEEN @Date_S AND @Date_E");
+                }
                 #endregion
-                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+                var dtResult = _adoData.ExecuteQuery(queryBuilder.ToString(), parameters);
                 if (dtResult.Rows.Count > 0)
                 {
-                    var excelList = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new Proc_M_Excel
+                    var excelList = dtResult.AsEnumerable().Select(row => new PT_Excel
                     {
-                        PM_ID = row.Field<string>("PM_ID"),
-                        PM_Step = row.Field<string>("PM_Step") == "A" ? "請購" : row.Field<string>("PM_Step") == "B" ? "請款" : row.Field<string>("PM_Step"),
-                        PM_BC_Name = row.Field<string>("PM_BC_Name"),
-                        PM_Name = row.Field<string>("PM_Name"),
-                        PM_Pay_Name = row.Field<string>("PM_Pay_Name"),
-                        str_PM_Amt = row.Field<string>("str_PM_Amt")
+                        Form_ID = row.Field<string>("Form_ID"),
+                        strType = GetStrType(row),
+                        BC_Name = row.Field<string>("BC_Name"),
+                        U_Name = row.Field<string>("U_Name"),
+                        str_Name = row.Field<string>("str_Name"),
+                        str_Amt = row.Field<string>("str_Amt")
                     }).ToList();
 
                     var Excel_Headers = new Dictionary<string, string>
                     {
-                        { "PM_ID","單號" },
-                        { "PM_Step", "階段" },
-                        { "PM_BC_Name", "部門" },
-                        { "PM_Name", "請款人" },
-                        { "PM_Pay_Name", "費用類別" },
-                        { "str_PM_Amt","總價" }
+                        { "Form_ID","單號" },
+                        { "strType", "類型" },
+                        { "BC_Name", "申請部門" },
+                        { "U_Name", "申請人" },
+                        { "str_Name", "費用類別" },
+                        { "str_Amt","總價" }
                     };
 
                     var fileBytes = FuncHandler.ExportToExcel(excelList, Excel_Headers);
@@ -653,6 +638,14 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-        
+        private string GetStrType(DataRow row)
+        {
+            string typeStr = row.Field<string>("strType");
+            return typeStr == "PO" ? "請採購" :
+                   typeStr == "PA" ? "請款" :
+                   typeStr == "PP" ? "預支" :
+                   typeStr == "PS" ? "沖銷預支":"-";
+        }
+
     }
 }

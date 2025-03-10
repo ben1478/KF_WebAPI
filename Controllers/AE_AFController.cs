@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using OfficeOpenXml.ExternalReferences;
 using System;
 using System.Data;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace KF_WebAPI.Controllers
@@ -47,7 +48,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass); 
             }
         }
 
@@ -63,9 +64,11 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"select * from AuditFlow where AF_ID=@AF_ID";
-                parameters.Add(new SqlParameter("@AF_ID", AF_ID));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@AF_ID", AF_ID)
+                };
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
@@ -85,7 +88,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass); 
             }
 
         }
@@ -102,19 +105,21 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"Insert into AuditFlow(AF_ID,AF_Name,AF_Caption,AF_Step,AF_Step_Caption,AF_Step_Person,add_date,add_num,add_ip,edit_date,edit_num,edit_ip) 
                     values (@AF_ID,@AF_Name,@AF_Caption,@AF_Step,@AF_Step_Caption,@AF_Step_Person,GETDATE(),@add_num,@add_ip,GETDATE(),@edit_num,@edit_ip)";
-                parameters.Add(new SqlParameter("@AF_ID", model.AF_ID));
-                parameters.Add(new SqlParameter("@AF_Name", model.AF_Name));
-                parameters.Add(new SqlParameter("@AF_Caption", model.AF_Caption));
-                parameters.Add(new SqlParameter("@AF_Step", model.AF_Step));
-                parameters.Add(new SqlParameter("@AF_Step_Caption", model.AF_Step_Caption));
-                parameters.Add(new SqlParameter("@AF_Step_Person", model.AF_Step_Person));
-                parameters.Add(new SqlParameter("@add_num", model.add_num));
-                parameters.Add(new SqlParameter("@add_ip", clientIp));
-                parameters.Add(new SqlParameter("@edit_num", model.edit_num));
-                parameters.Add(new SqlParameter("@edit_ip", clientIp));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@AF_ID", model.AF_ID),
+                    new SqlParameter("@AF_Name", model.AF_Name),
+                    new SqlParameter("@AF_Caption", model.AF_Caption),
+                    new SqlParameter("@AF_Step", model.AF_Step),
+                    new SqlParameter("@AF_Step_Caption", model.AF_Step_Caption),
+                    new SqlParameter("@AF_Step_Person", model.AF_Step_Person),
+                    new SqlParameter("@add_num", model.add_num),
+                    new SqlParameter("@add_ip", clientIp),
+                    new SqlParameter("@edit_num", model.edit_num),
+                    new SqlParameter("@edit_ip", clientIp)
+                };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
@@ -134,7 +139,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass); 
             }
         }
 
@@ -150,17 +155,19 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"Update AuditFlow set AF_Name=@AF_Name,AF_Caption=@AF_Caption,AF_Step=@AF_Step,AF_Step_Caption=@AF_Step_Caption,AF_Step_Person=@AF_Step_Person
                     ,edit_date=GETDATE(),edit_num=@edit_num where AF_ID=@AF_ID";
-                parameters.Add(new SqlParameter("@AF_ID", model.AF_ID));
-                parameters.Add(new SqlParameter("@AF_Name", model.AF_Name));
-                parameters.Add(new SqlParameter("@AF_Caption", model.AF_Caption));
-                parameters.Add(new SqlParameter("@AF_Step", model.AF_Step));
-                parameters.Add(new SqlParameter("@AF_Step_Caption", model.AF_Step_Caption));
-                parameters.Add(new SqlParameter("@AF_Step_Person", model.AF_Step_Person));
-                parameters.Add(new SqlParameter("@edit_num", model.edit_num));
-                parameters.Add(new SqlParameter("@edit_ip", clientIp));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@AF_ID", model.AF_ID),
+                    new SqlParameter("@AF_Name", model.AF_Name),
+                    new SqlParameter("@AF_Caption", model.AF_Caption),
+                    new SqlParameter("@AF_Step", model.AF_Step),
+                    new SqlParameter("@AF_Step_Caption", model.AF_Step_Caption),
+                    new SqlParameter("@AF_Step_Person", model.AF_Step_Person),
+                    new SqlParameter("@edit_num", model.edit_num),
+                    new SqlParameter("@edit_ip", clientIp)
+                };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
@@ -180,7 +187,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass); 
             }
         }
 
@@ -188,31 +195,35 @@ namespace KF_WebAPI.Controllers
         /// 審核主檔列表查詢 AuditFlow_M_LQurey
         /// </summary>
         [HttpPost("AuditFlow_M_LQurey")]
-        public ActionResult<ResultClass<string>> AuditFlow_M_LQurey(AuditFlow_M_Req model)
+        public ActionResult<ResultClass<string>> AuditFlow_M_LQuery(AuditFlow_M_Req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
             try
             {
                 ADOData _adoData = new ADOData();
-                #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"select AM.AF_ID,FM_Source_ID,AM.FM_Step ,LI.item_D_name as FM_Step_SignType 
-                    from AuditFlow_M AM
-                    left join Item_list LI on LI.item_D_code=AM.FM_Step_SignType and LI.item_M_code='Flow_sign_type'
-                    where 1=1";
+
+                var sqlBuilder = new StringBuilder(@"SELECT AM.AF_ID, FM_Source_ID, AM.FM_Step,LI.item_D_name AS FM_Step_SignType 
+                                                     FROM AuditFlow_M AM
+                                                     LEFT JOIN Item_list LI ON LI.item_D_code = AM.FM_Step_SignType 
+                                                     AND LI.item_M_code = 'Flow_sign_type'
+                                                     WHERE 1 = 1");
+
                 if (!string.IsNullOrEmpty(model.AF_ID))
                 {
-                    T_SQL += " and AF_ID=@AF_ID";
+                    sqlBuilder.Append(" AND AF_ID = @AF_ID");
                     parameters.Add(new SqlParameter("@AF_ID", model.AF_ID));
                 }
+
                 if (!string.IsNullOrEmpty(model.FM_Source_ID))
                 {
-                    T_SQL += " and FM_Source_ID=@FM_Source_ID";
+                    sqlBuilder.Append(" AND FM_Source_ID = @FM_Source_ID");
                     parameters.Add(new SqlParameter("@FM_Source_ID", model.FM_Source_ID));
                 }
-                #endregion
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+
+                DataTable dtResult = _adoData.ExecuteQuery(sqlBuilder.ToString(), parameters);
+
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(dtResult);
                 return Ok(resultClass);
@@ -220,10 +231,11 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                resultClass.ResultMsg = $"Response error: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
         }
+
 
         /// <summary>
         /// 單筆審核流程狀態查詢 RevFlow_Query
@@ -237,11 +249,13 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"select distinct AM.FM_Step,AD.FD_Step,AD.FD_Step_title,AD.FD_Step_SignType from AuditFlow_M AM
                     inner join AuditFlow_D AD on AM.AF_ID=AD.AF_ID and AM.FM_Source_ID = AD.FM_Source_ID 
                     where FD_Sign_Countersign = 'S' and AM.FM_Source_ID =@FormID";
-                parameters.Add(new SqlParameter("@FormID", FormID));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@FormID", FormID)
+                };
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
@@ -262,7 +276,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass); 
             }
         }
 
@@ -321,14 +335,16 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"select FM.AF_ID,FM.FM_Step,FM.FM_Source_ID,FD.FD_Sign_Countersign,FD.FD_Step_num,
                     UM.U_name,ISNULL(FD.FD_Step_desc,'') as FD_Step_desc  
                     from AuditFlow_M FM
                     inner join AuditFlow_D FD on FM.FM_Source_ID=FD.FM_Source_ID and FM.FM_Step=FD.FD_Step
                     left join User_M UM on UM.U_num = FD.FD_Step_num
                     where FM.FM_Source_ID=@FormID";
-                parameters.Add(new SqlParameter("@FormID", FormID));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@FormID", FormID)
+                };
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
@@ -375,15 +391,17 @@ namespace KF_WebAPI.Controllers
 
                     foreach (var item in model.arr_Unm)
                     {
-                        var parameters = new List<SqlParameter>();
-                        parameters.Add(new SqlParameter("@AF_ID", model.AF_ID));
-                        parameters.Add(new SqlParameter("@FM_Source_ID", model.FM_Source_ID));
-                        parameters.Add(new SqlParameter("@FD_Step", model.FM_Step));
-                        parameters.Add(new SqlParameter("@FD_Step_num", item));
-                        parameters.Add(new SqlParameter("@add_num", model.User));
-                        parameters.Add(new SqlParameter("@add_ip", clientIp));
-                        parameters.Add(new SqlParameter("@edit_num", model.User));
-                        parameters.Add(new SqlParameter("@edit_ip", clientIp));
+                        var parameters = new List<SqlParameter> 
+                        {
+                            new SqlParameter("@AF_ID", model.AF_ID),
+                            new SqlParameter("@FM_Source_ID", model.FM_Source_ID),
+                            new SqlParameter("@FD_Step", model.FM_Step),
+                            new SqlParameter("@FD_Step_num", item),
+                            new SqlParameter("@add_num", model.User),
+                            new SqlParameter("@add_ip", clientIp),
+                            new SqlParameter("@edit_num", model.User),
+                            new SqlParameter("@edit_ip", clientIp)
+                        };
                         _adoData.ExecuteQuery(T_SQL, parameters);
 
                         //訊息通知會簽人員
@@ -392,7 +410,6 @@ namespace KF_WebAPI.Controllers
 
                 }
                 #endregion
-               
 
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "新增成功";
@@ -419,17 +436,20 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
+               
                 var T_SQL = @"Update AuditFlow_D set FD_Step_desc=@FD_Step_desc,FD_Step_SignType=@FD_Step_SignType,FD_Step_date=GETDATE(),
                     edit_date=GETDATE(),edit_num=@User,edit_ip=@IP
                     where FM_Source_ID=@FM_Source_ID and FD_Step_num=@User and FD_Sign_Countersign=@FD_Sign_Countersign and FD_Step=@FD_Step";
-                parameters.Add(new SqlParameter("@FD_Step_desc", model.FD_Step_desc ?? ""));
-                parameters.Add(new SqlParameter("@FD_Step_SignType", model.FD_Step_SignType));
-                parameters.Add(new SqlParameter("@FM_Source_ID", model.FM_Source_ID));
-                parameters.Add(new SqlParameter("@User", model.User));
-                parameters.Add(new SqlParameter("@IP", clientIp));
-                parameters.Add(new SqlParameter("@FD_Sign_Countersign", model.FD_Sign_Countersign));
-                parameters.Add(new SqlParameter("@FD_Step", model.FM_Step));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@FD_Step_desc", string.IsNullOrEmpty(model.FD_Step_desc) ? DBNull.Value : model.FD_Step_desc),
+                    new SqlParameter("@FD_Step_SignType", model.FD_Step_SignType),
+                    new SqlParameter("@FM_Source_ID", model.FM_Source_ID),
+                    new SqlParameter("@User", model.User),
+                    new SqlParameter("@IP", clientIp),
+                    new SqlParameter("@FD_Sign_Countersign", model.FD_Sign_Countersign),
+                    new SqlParameter("@FD_Step", model.FM_Step)
+                };
                 #endregion
                 int Result = _adoData.ExecuteNonQuery(T_SQL,parameters);
                 if (Result==0)
@@ -440,25 +460,21 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
-                    var parameters_sp = new List<SqlParameter>();
                     var T_SQL_SP = @"exec UpdAuditFlowM @Form_ID,@FM_Step,@Signtype,@AF_Back_Reason";
-                    parameters_sp.Add(new SqlParameter("@Form_ID", model.FM_Source_ID));
-                    parameters_sp.Add(new SqlParameter("@FM_Step", model.FM_Step));
-                    parameters_sp.Add(new SqlParameter("@Signtype", model.FD_Step_SignType));
-                    if(model.FD_Step_SignType== "FSIGN003")
+                    var parameters_sp = new List<SqlParameter> 
                     {
-                        parameters_sp.Add(new SqlParameter("@AF_Back_Reason", model.FD_Step_desc));
-                    }
-                    else
-                    {
-                        parameters_sp.Add(new SqlParameter("@AF_Back_Reason",DBNull.Value));
-                    }
+                        new SqlParameter("@Form_ID", model.FM_Source_ID),
+                        new SqlParameter("@FM_Step", model.FM_Step),
+                        new SqlParameter("@Signtype", model.FD_Step_SignType),
+                        new SqlParameter("@AF_Back_Reason", model.FD_Step_SignType== "FSIGN003" ? model.FD_Step_desc : DBNull.Value),
+                    };
                     _adoData.ExecuteQuery(T_SQL_SP, parameters_sp);
 
                     resultClass.ResultCode = "000";
                     resultClass.ResultMsg = "異動成功";
 
-                    if (model.FD_Step_SignType == "FSIGN002" && model.FM_Step == "2" && new[] { "PA", "PP", "PS" }.Any(p => model.FM_Source_ID.StartsWith(p)))
+                    //通知文中傳票API
+                    if (model.FD_Step_SignType == "FSIGN002" && model.FM_Step == "2" && new[] { "PA", "PP" }.Any(p => model.FM_Source_ID.StartsWith(p)))
                     {
                         var _aWintonController = new A_WintonController();
                         Task.Run(() => _aWintonController.Summons_Ins(model.FM_Source_ID));
@@ -488,12 +504,14 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"select FD_ID,FD_Step,UM.U_name,FD_Step_num,FD_Step_SignType 
                     from AuditFlow_D FD 
                     left join User_M UM on UM.U_num = FD.FD_Step_num
                     where FM_Source_ID=@Form_ID order by FD_Step";
-                parameters.Add(new SqlParameter("@Form_ID", Form_ID));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@Form_ID", Form_ID)
+                };
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
@@ -531,14 +549,16 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"Update AuditFlow_D set FD_Step_num=@FD_Step_num,FD_Step_Reason=@Reason,
                     edit_date=GETDATE(),edit_num=@User,edit_ip=@IP where FD_ID=@FD_ID";
-                parameters.Add(new SqlParameter("@FD_Step_num", model.FD_Step_num));
-                parameters.Add(new SqlParameter("@Reason", model.Reason));
-                parameters.Add(new SqlParameter("@User", model.User));
-                parameters.Add(new SqlParameter("@IP", clientIp));
-                parameters.Add(new SqlParameter("@FD_ID", model.FD_ID));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@FD_Step_num", model.FD_Step_num),
+                    new SqlParameter("@Reason", model.Reason),
+                    new SqlParameter("@User", model.User),
+                    new SqlParameter("@IP", clientIp),
+                    new SqlParameter("@FD_ID", model.FD_ID)
+                };
                 #endregion
                 int result=_adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)

@@ -120,7 +120,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass); 
             }
         }
 
@@ -133,7 +133,6 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"SELECT distinct Menu_list.*  
                     FROM Menu_list  
                     LEFT JOIN (select * from Menu_set where U_num in (select Role_num from User_M where U_num=@U_num) AND del_tag='0') Menu_set ON Menu_list.Menu_id = Menu_set.Menu_id  
@@ -141,7 +140,10 @@ namespace KF_WebAPI.Controllers
                     and (Menu_set.per_read = 1 or Menu_set.per_add = 1 or Menu_set.per_edit = 1 or Menu_set.per_del = 1) 
                     and Menu_list.del_tag = '0'
                     ORDER BY  Menu_list.top_id, Menu_list.sub_id, Menu_list.item_id";
-                parameters.Add(new SqlParameter("@U_num", U_num));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@U_num", U_num)
+                };
                 #endregion
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
@@ -161,7 +163,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass); 
             }
         }
 
@@ -178,8 +180,10 @@ namespace KF_WebAPI.Controllers
                     Then FORMAT(del_date, 'yyyy/MM/dd', 'en-US') + ' ' + CASE WHEN DATEPART(HOUR, del_date) < 12 THEN '上午' 
                     ELSE '下午' END + ' ' + FORMAT(del_date, 'hh:mm:ss', 'en-US') else '0' end as del_tag 
                     from ASP_UpLoad where cknum=@cknum order by upload_id";
-                var parameters = new List<SqlParameter>();
-                parameters.Add(new SqlParameter("@cknum", cknum));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@cknum", cknum)
+                };
 
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
@@ -235,22 +239,24 @@ namespace KF_WebAPI.Controllers
                     file.CopyTo(stream);
                 }
 
-                var T_SQL = "Insert into ASP_UpLoad (cknum,upload_name_show,upload_name_code,upload_folder";
-                T_SQL = T_SQL + ",upload_code,del_tag,add_date,add_num,add_ip,send_api_name_code) Values";
-                T_SQL = T_SQL + " (@cknum,@upload_name_show,@upload_name_code,@upload_folder,@upload_code,@del_tag,@add_date,@add_num";
-                T_SQL = T_SQL + " ,@add_ip,@send_api_name_code)";
+                var T_SQL = @"Insert into ASP_UpLoad (cknum,upload_name_show,upload_name_code,upload_folder,
+                    upload_code,del_tag,add_date,add_num,add_ip,send_api_name_code) Values
+                    ( @cknum,@upload_name_show,@upload_name_code,@upload_folder,@upload_code,@del_tag,@add_date,@add_num,
+                    @add_ip,@send_api_name_code )";
 
-                var parameters = new List<SqlParameter>();
-                parameters.Add(new SqlParameter("@cknum", cknum));
-                parameters.Add(new SqlParameter("@upload_name_show", file.FileName));
-                parameters.Add(new SqlParameter("@upload_name_code", $"{number}{fileExtension}"));
-                parameters.Add(new SqlParameter("@upload_folder", "AE_Web_UpLoad"));
-                parameters.Add(new SqlParameter("@upload_code", number));
-                parameters.Add(new SqlParameter("@del_tag", "0"));
-                parameters.Add(new SqlParameter("@add_date", DateTime.Now));
-                parameters.Add(new SqlParameter("@add_num", WebUser));
-                parameters.Add(new SqlParameter("@add_ip", clientIp));
-                parameters.Add(new SqlParameter("@send_api_name_code", ""));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@cknum", cknum),
+                    new SqlParameter("@upload_name_show", file.FileName),
+                    new SqlParameter("@upload_name_code", $"{number}{fileExtension}"),
+                    new SqlParameter("@upload_folder", "AE_Web_UpLoad"),
+                    new SqlParameter("@upload_code", number),
+                    new SqlParameter("@del_tag", "0"),
+                    new SqlParameter("@add_date", DateTime.Now),
+                    new SqlParameter("@add_num", WebUser),
+                    new SqlParameter("@add_ip", clientIp),
+                    new SqlParameter("@send_api_name_code", "")
+                };
 
                 ADOData _adoData = new ADOData();
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
@@ -271,7 +277,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass); 
             }
 
         }
@@ -282,8 +288,10 @@ namespace KF_WebAPI.Controllers
             try
             {
                 var T_SQL = "select upload_name_code,upload_name_show from ASP_UpLoad where upload_id=@upload_id";
-                var parameters = new List<SqlParameter>();
-                parameters.Add(new SqlParameter("@upload_id", upload_id));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@upload_id", upload_id)
+                };
                 ADOData _adoData = new ADOData();
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
@@ -324,15 +332,17 @@ namespace KF_WebAPI.Controllers
 
             try
             {
-                var T_SQL = "Update ASP_UpLoad set del_tag=@del_tag,del_date=@del_date,del_ip=@del_ip,del_num=@del_num where upload_id=@upload_id";
-                var parameters = new List<SqlParameter>();
-                parameters.Add(new SqlParameter("@del_tag", "1"));
-                parameters.Add(new SqlParameter("@del_date", DateTime.Now));
-                parameters.Add(new SqlParameter("@del_ip", clientIp));
-                parameters.Add(new SqlParameter("@del_num", WebUser));
-                parameters.Add(new SqlParameter("@upload_id", upload_id));
-
                 ADOData _adoData = new ADOData();
+                var T_SQL = "Update ASP_UpLoad set del_tag=@del_tag,del_date=@del_date,del_ip=@del_ip,del_num=@del_num where upload_id=@upload_id";
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@del_tag", "1"),
+                    new SqlParameter("@del_date", DateTime.Now),
+                    new SqlParameter("@del_ip", clientIp),
+                    new SqlParameter("@del_num", WebUser),
+                    new SqlParameter("@upload_id", upload_id)
+                };
+
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
                 {
@@ -405,7 +415,8 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code = 'school_level' AND item_D_type='Y' AND show_tag='0' AND del_tag='0' order by item_sort";
+                var T_SQL = @"select item_D_code,item_D_name from Item_list where item_M_code = 'school_level' AND item_D_type='Y' 
+                    AND show_tag='0' AND del_tag='0' order by item_sort";
                 #endregion
 
                 DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
@@ -442,7 +453,8 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code='professional_title' and item_D_type='Y' and show_tag ='0'";
+                var T_SQL = @"select item_D_code,item_D_name from Item_list where item_M_code='professional_title' and item_D_type='Y' 
+                    and show_tag ='0'";
                 #endregion
                 DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
                 if (dtResult.Rows.Count > 0)
@@ -516,7 +528,8 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code='fund_company' and item_D_type='Y' and del_tag='0' and show_tag='0'";
+                var T_SQL = @"select item_D_code,item_D_name from Item_list where item_M_code='fund_company' and item_D_type='Y' 
+                    and del_tag='0' and show_tag='0'";
                 #endregion
                 var dtResult = _adoData.ExecuteSQuery(T_SQL);
                 if (dtResult.Rows.Count > 0)
@@ -581,42 +594,6 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
-        /// 提供採購單申報類型列表 GetPMPayType
-        /// </summary>
-        [HttpGet("GetPMPayType")]
-        public ActionResult<ResultClass<string>> GetPMPayType()
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
-
-            try
-            {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code='Procurement_Pay' and item_D_type='Y' and del_tag='0' and show_tag='0'";
-                #endregion
-                var dtResult = _adoData.ExecuteSQuery(T_SQL);
-                if (dtResult.Rows.Count > 0)
-                {
-                    resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
-                    return Ok(resultClass);
-                }
-                else
-                {
-                    resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "查無資料";
-                    return BadRequest(resultClass);
-                }
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
-            }
-        }
-
-        /// <summary>
         /// 提供所有訊息類型及筆數 GetMesListCount
         /// </summary>
         [HttpGet("GetMesListCount")]
@@ -628,7 +605,8 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL_M = @"select item_D_code,item_D_name from Item_list where item_M_code = 'Msg_kind' AND item_D_type='Y'  AND del_tag='0'  order by item_sort";
+                var T_SQL_M = @"select item_D_code,item_D_name from Item_list where item_M_code = 'Msg_kind' AND item_D_type='Y'  
+                    AND del_tag='0'  order by item_sort";
                 #endregion
                 var dtResult_m = _adoData.ExecuteSQuery(T_SQL_M);
 
@@ -647,7 +625,7 @@ namespace KF_WebAPI.Controllers
 
                     string caseStatement = $@" (CASE WHEN Msg.Msg_kind='{model.MsgID}' THEN 1 ELSE 0 END) AS 'Msg_kind_{model.MsgID}'";
                     caseStatements.Add(caseStatement);
-                    sumStatements.Add($"sum(Msg_kind_{model.MsgID}) AS '{model.Name}'");
+                    sumStatements.Add($"ISNULL(sum(Msg_kind_{model.MsgID}),0) AS '{model.Name}'");
 
                     labels.Add(model.Name);
                     modelList.Add(model);
@@ -657,12 +635,15 @@ namespace KF_WebAPI.Controllers
 
                 string T_SQL = $@"SELECT  {sumColumns} FROM ( SELECT *,{caseColumns} FROM Msg WHERE del_tag = '0' AND Msg_read_type = 'N' 
                                AND msg_to_num = @num and Msg_show_date between @StartDate and @EndDate) AS SubQuery";
-                var parameters = new List<SqlParameter>();
-                parameters.Add(new SqlParameter("@num", User));
-                parameters.Add(new SqlParameter("@StartDate", StartDate));
-                parameters.Add(new SqlParameter("@EndDate", EndDate));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@num", User),
+                    new SqlParameter("@StartDate", StartDate),
+                    new SqlParameter("@EndDate", EndDate)
+                };
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+
                 foreach (DataRow row in dtResult.Rows)
                 {
                     foreach (var model in modelList)
@@ -699,39 +680,48 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
-                var T_SQL = @"select Msg_id,Case When Msg_source ='sys' Then '系統通知' Else Msg_source End as Msg_source,li.item_D_name as Msg_kind_Name
-                    ,Um.U_name as Msg_to_name,FORMAT(Msg_show_date, 'yyyy/MM/dd tt hh:mm:ss') AS Msg_show_date,Msg_title,Msg_note,Um_1.U_name as add_num_name,Msg_read_type 
-                    from Msg
-                    Left join Item_list li on li.item_M_code='Msg_kind' and li.item_D_code=Msg.Msg_kind
-                    Left join User_M Um on Um.U_num=Msg.Msg_to_num
-                    Left join User_M Um_1 on Um_1.U_num=Msg.add_num
-                    where Msg_show_date between @StartDate and @EndDate";
+                
+
+                var queryBuilder = new StringBuilder();
+
+                queryBuilder.AppendLine(@"select Msg_id,Case When Msg_source ='sys' Then '系統通知' Else Msg_source End as Msg_source,
+                                          li.item_D_name as Msg_kind_Name,
+                                          Um.U_name as Msg_to_name,FORMAT(Msg_show_date, 'yyyy/MM/dd tt hh:mm:ss') AS Msg_show_date,
+                                          Msg_title,Msg_note,Um_1.U_name as add_num_name,Msg_read_type 
+                                          from Msg
+                                          Left join Item_list li on li.item_M_code='Msg_kind' and li.item_D_code=Msg.Msg_kind
+                                          Left join User_M Um on Um.U_num=Msg.Msg_to_num
+                                          Left join User_M Um_1 on Um_1.U_num=Msg.add_num
+                                          where Msg_show_date between @StartDate and @EndDate");
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@StartDate", model.StartDate),
+                    new SqlParameter("@EndDate", model.EndDate)
+                };
                 if (model.UserType == "kind_get")
                 {
-                    T_SQL += " and Msg.Msg_to_num = @User";
+                    queryBuilder.AppendLine(" and Msg.Msg_to_num = @User");
                     parameters.Add(new SqlParameter("@User", model.User));
                 }
                 if (model.UserType == "kind_add")
                 {
-                    T_SQL += " and Msg.add_num = @User";
+                    queryBuilder.AppendLine(" and Msg.add_num = @User");
                     parameters.Add(new SqlParameter("@User", model.User));
                 }
                 if (model.ReadType != "X")
                 {
-                    T_SQL += " and Msg.Msg_read_type = @ReadType";
+                    queryBuilder.AppendLine(" and Msg.Msg_read_type = @ReadType");
                     parameters.Add(new SqlParameter("@ReadType", model.ReadType));
                 }
                 if (!string.IsNullOrEmpty(model.Mes_Kind))
                 {
-                    T_SQL += " and Msg.Msg_kind = @Msg_kind";
+                    queryBuilder.AppendLine(" and Msg.Msg_kind = @Msg_kind");
                     parameters.Add(new SqlParameter("@Msg_kind", model.Mes_Kind));
                 }
-                T_SQL += " order by Msg_show_date desc";
-                parameters.Add(new SqlParameter("@StartDate", model.StartDate));
-                parameters.Add(new SqlParameter("@EndDate", model.EndDate));
+                queryBuilder.AppendLine(" order by Msg_show_date desc");
+                var sqlQuery = queryBuilder.ToString();
                 #endregion
-                var drResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                var drResult = _adoData.ExecuteQuery(sqlQuery, parameters);
 
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "查詢成功";
@@ -759,34 +749,39 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
-                var T_SQL = @"Update Msg set Msg_read_type='Y',edit_date=GETDATE(),edit_num=@User,edit_ip=@UserIp where Msg_read_type='N' 
-                    and Msg_show_date between @StartDate and @EndDate";
+                var queryBuilder = new StringBuilder();
+                queryBuilder.AppendLine( @"Update Msg set Msg_read_type='Y',edit_date=GETDATE(),edit_num=@User,edit_ip=@UserIp 
+                                           where Msg_read_type='N' and Msg_show_date between @StartDate and @EndDate");
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@User", model.User),
+                    new SqlParameter("@UserIp", clientIp),
+                    new SqlParameter("@StartDate", model.StartDate),
+                    new SqlParameter("@EndDate", model.EndDate)
+                };
+
                 if (model.UserType == "kind_get")
                 {
-                    T_SQL += " and Msg.Msg_to_num = @User";
+                    queryBuilder.AppendLine(" and Msg.Msg_to_num = @User");
                   
                 }
                 if (model.UserType == "kind_add")
                 {
-                    T_SQL += " and Msg.add_num = @User";
+                    queryBuilder.AppendLine(" and Msg.add_num = @User");
                 }
                 if (model.ReadType != "X")
                 {
-                    T_SQL += " and Msg.Msg_read_type = @ReadType";
+                    queryBuilder.AppendLine(" and Msg.Msg_read_type = @ReadType");
                     parameters.Add(new SqlParameter("@ReadType", model.ReadType));
                 }
                 if (!string.IsNullOrEmpty(model.Mes_Kind))
                 {
-                    T_SQL += " and Msg.Msg_kind = @Msg_kind";
+                    queryBuilder.AppendLine(" and Msg.Msg_kind = @Msg_kind");
                     parameters.Add(new SqlParameter("@Msg_kind", model.Mes_Kind));
                 }
-                parameters.Add(new SqlParameter("@User", model.User));
-                parameters.Add(new SqlParameter("@UserIp", clientIp));
-                parameters.Add(new SqlParameter("@StartDate", model.StartDate));
-                parameters.Add(new SqlParameter("@EndDate", model.EndDate));
+                var sqlQuery = queryBuilder.ToString();
                 #endregion
-                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                int result = _adoData.ExecuteNonQuery(sqlQuery, parameters);
                 if (result == 0)
                 {
                     resultClass.ResultCode = "400";
@@ -820,11 +815,13 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"Update Msg set Msg_read_type='Y',edit_date=GETDATE(),edit_num=@User,edit_ip=@UserIp where Msg_id=@Msg_id";
-                parameters.Add(new SqlParameter("@Msg_id", Msg_id));
-                parameters.Add(new SqlParameter("@User", User));
-                parameters.Add(new SqlParameter("@UserIp", clientIp));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@Msg_id", Msg_id),
+                    new SqlParameter("@User", User),
+                    new SqlParameter("@UserIp", clientIp)
+                };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
@@ -839,6 +836,44 @@ namespace KF_WebAPI.Controllers
                     resultClass.ResultMsg = "變更成功";
                     return Ok(resultClass);
                 }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 特殊權限判定
+        /// </summary>
+        [HttpGet("SpecialCkeck")]
+        public ActionResult<ResultClass<string>> SpecialCkeck(string User,string Sp_ID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var T_SQL = @"select * from Special_list ST inner join Special_set SS on SS.sp_id = ST.sp_id 
+                    where ST.del_tag='0' and SS.del_tag='0' and SS.U_num = @User and SS.sp_id = @Sp_ID";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@User",User),
+                    new SqlParameter("@Sp_ID",Sp_ID)
+                };
+                var dtresult = _adoData.ExecuteQuery(T_SQL, parameters);
+                resultClass.ResultCode = "000";
+                if (dtresult.Rows.Count == 0)
+                {
+                    resultClass.objResult = "N";
+                }
+                else
+                {
+                    resultClass.objResult = "Y";
+                }
+                return Ok(resultClass);
             }
             catch (Exception ex)
             {

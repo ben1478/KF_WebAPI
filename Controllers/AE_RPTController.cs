@@ -4990,7 +4990,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass); 
             }
         }
         /// <summary>
@@ -5056,7 +5056,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass); 
             }
         }
         /// <summary>
@@ -5092,7 +5092,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); // 返回 500 錯誤碼
+                return StatusCode(500, resultClass); 
             }
         }
         #endregion
