@@ -20,7 +20,7 @@ namespace KF_WebAPI.Controllers
     public class AE_VPController : ControllerBase
     {
         /// <summary>
-        /// 查詢已核准的請款或請採購
+        /// 查詢已核准的請款或請採購_test
         /// </summary>
         [HttpGet("Fina_form_LQuery")]
         public ActionResult<ResultClass<string>> Fina_form_LQuery(string User, string Type)
