@@ -26,6 +26,7 @@ namespace KF_WebAPI.BaseClass.AE
     {
         public string? VD_ID { get; set; }
         public string FormID { get; set; }
+        public string VD_BC { get; set; }
         public string FormCaption { get; set; }
         public string FormMoney { get; set; }
         public string VD_VAT { get; set; }

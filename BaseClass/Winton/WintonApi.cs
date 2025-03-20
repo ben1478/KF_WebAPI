@@ -3,18 +3,26 @@ using Newtonsoft.Json.Linq;
 
 namespace KF_WebAPI.BaseClass.Winton
 {
-    public class ApiResponse<T>
+    public class ApietokenResponse
     {
         public string Status { get; set; }
         public string Error { get; set; }
-        public T Data { get; set; }
+        public string Data { get; set; }
     }
 
     public class ApiResponse
     {
         public string Status { get; set; }
         public string Error { get; set; }
-        public string Data { get; set; }
+        public ApiResponseData Data { get; set; }
+    }
+
+    public class ApiResponseData
+    {
+        public string failure { get; set; }
+        public int success { get; set; }
+        public string total { get; set; }
+        public JArray dataset { get; set; }
     }
 
     public class Summons_req
@@ -75,4 +83,17 @@ namespace KF_WebAPI.BaseClass.Winton
         public DateTime? DTGL811 { get; set; }
         public DateTime? DTGL812 { get; set; }
     }
+
+    public class Manufacturer_req
+    {
+        public string AToken { get; set; }
+        public string AUpdateType { get; set; }
+        public Manufacturer_M_req ADataSet { get; set; }
+    }
+
+    public class Manufacturer_M_req
+    {
+        
+    }
+
 }
