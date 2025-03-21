@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using System;
 using System.Data;
 using System.Diagnostics.Eventing.Reader;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
@@ -141,9 +142,9 @@ namespace KF_WebAPI.Controllers
                     foreach (var item in model.Ins_List)
                     {
                         #region SQL
-                        var T_SQL_D = @"Insert into InvPrepay_D (VP_ID,VP_type,Form_ID,VD_Fee_Summary,VD_Fee,VD_VAT,VD_Account_code,VD_Account,
+                        var T_SQL_D = @"Insert into InvPrepay_D (VP_ID,VP_type,Form_ID,VD_BC,VD_Fee_Summary,VD_Fee,VD_VAT,VD_Account_code,VD_Account,
                             add_date,add_num,add_ip,edit_date,edit_num,edit_ip,Change_reason,Change_num,Change_date,Change_ip) 
-                            Values (@VP_ID,@VP_type,@Form_ID,@VD_Fee_Summary,@VD_Fee,@VD_VAT,@VD_Account_code,@VD_Account,GETDATE(),@add_num,@add_ip,
+                            Values (@VP_ID,@VP_type,@Form_ID,@VD_BC,@VD_Fee_Summary,@VD_Fee,@VD_VAT,@VD_Account_code,@VD_Account,GETDATE(),@add_num,@add_ip,
                             GETDATE(),@edit_num,@edit_ip,@Change_reason,@Change_num,@Change_date,@Change_ip)";
 
                         var parameters_d = new List<SqlParameter> 
@@ -151,6 +152,7 @@ namespace KF_WebAPI.Controllers
                             new SqlParameter("@VP_ID", VP_ID),
                             new SqlParameter("@VP_type", str_type),
                             new SqlParameter("@Form_ID", string.IsNullOrEmpty(item.FormID) ? DBNull.Value : item.FormID),
+                            new SqlParameter("@VD_BC",  item.VD_BC),
                             new SqlParameter("@VD_Fee_Summary", item.FormCaption),
                             new SqlParameter("@VD_Fee", item.FormMoney),
                             new SqlParameter("@VD_VAT", item.VD_VAT),
@@ -306,7 +308,7 @@ namespace KF_WebAPI.Controllers
                     }).FirstOrDefault();
 
                     #region SQL Procurement_D
-                    var T_SQL_D = @"select VD_ID,Form_ID,VD_Fee_Summary,VD_Fee,VD_VAT,VD_Account_code,VD_Account from InvPrepay_D where VP_ID=@VP_ID ";
+                    var T_SQL_D = @"select VD_ID,Form_ID,VD_BC,VD_Fee_Summary,VD_Fee,VD_VAT,VD_Account_code,VD_Account from InvPrepay_D where VP_ID=@VP_ID ";
                     var parameters_d = new List<SqlParameter> 
                     {
                         new SqlParameter("@VP_ID", VP_ID)
@@ -318,6 +320,7 @@ namespace KF_WebAPI.Controllers
                     {
                         VD_ID = row.Field<int>("VD_ID").ToString(),
                         FormID = row.Field<string>("Form_ID"),
+                        VD_BC = row.Field<string>("VD_BC"),
                         FormCaption = row.Field<string>("VD_Fee_Summary"),
                         FormMoney = row.Field<int>("VD_Fee").ToString(),
                         VD_VAT = row.Field<string>("VD_VAT"),
@@ -401,7 +404,7 @@ namespace KF_WebAPI.Controllers
                         var T_SQL_D = "";
                         if (!string.IsNullOrEmpty(item.VD_ID))
                         {
-                            T_SQL_D += @"Update InvPrepay_D set Form_ID=@Form_ID,VD_Fee_Summary=@VD_Fee_Summary,VD_Fee=@VD_Fee,VD_VAT=@VD_VAT, 
+                            T_SQL_D += @"Update InvPrepay_D set Form_ID=@Form_ID,VD_BC=@VD_BC,VD_Fee_Summary=@VD_Fee_Summary,VD_Fee=@VD_Fee,VD_VAT=@VD_VAT, 
                             VD_Account_code=@VD_Account_code,VD_Account=@VD_Account,edit_date=GETDATE(),edit_num=@edit_num,edit_ip=@edit_ip";
 
                             if (!string.IsNullOrEmpty(item.ChangeReason))
@@ -419,8 +422,8 @@ namespace KF_WebAPI.Controllers
                         }
                         else
                         {
-                            T_SQL_D += @"Insert into InvPrepay_D (VP_ID,VP_type,Form_ID,VD_Fee_Summary,VD_Fee,VD_VAT,VD_Account_code,
-                            VD_Account,add_date,add_num,add_ip) Values (@VP_ID,@VP_type,@Form_ID,@VD_Fee_Summary,@VD_Fee,@VD_VAT,
+                            T_SQL_D += @"Insert into InvPrepay_D (VP_ID,VP_type,Form_ID,VD_BC,VD_Fee_Summary,VD_Fee,VD_VAT,VD_Account_code,
+                            VD_Account,add_date,add_num,add_ip) Values (@VP_ID,@VP_type,@Form_ID,@VD_BC,@VD_Fee_Summary,@VD_Fee,@VD_VAT,
                             @VD_Account_code,@VD_Account,GETDATE(),@add_num,@add_ip)";
                             parameters_d.AddRange(new List<SqlParameter> 
                             {
@@ -432,6 +435,7 @@ namespace KF_WebAPI.Controllers
                         parameters_d.AddRange(new List<SqlParameter> 
                         {
                             new SqlParameter("@Form_ID", string.IsNullOrEmpty(item.FormID) ? DBNull.Value : item.FormID),
+                            new SqlParameter("@VD_BC",item.VD_BC),
                             new SqlParameter("@VD_Fee_Summary", item.FormCaption),
                             new SqlParameter("@VD_Fee", item.FormMoney),
                             new SqlParameter("@VD_VAT", item.VD_VAT),
@@ -464,6 +468,45 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
             
+        }
+
+        /// <summary>
+        /// 刪除單筆明細
+        /// </summary>
+        [HttpDelete("InvPrepay_D_Del")]
+        public ActionResult<ResultClass<string>> InvPrepay_D_Del(string VD_ID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"Delete InvPrepay_D where VD_ID=@VD_ID";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@VD_ID",VD_ID)
+                };
+                #endregion
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (result == 0) 
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "明細刪除失敗";
+                    return BadRequest(resultClass);
+                } 
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "明細刪除成功";
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
         }
 
         /// <summary>
@@ -627,6 +670,42 @@ namespace KF_WebAPI.Controllers
                 resultClass.objResult = JsonConvert.SerializeObject(resultModel);
 
                 return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 提供所有文中系統分公司清單 item_M_code='winton_company'
+        /// </summary>
+        [HttpGet("GetWintonBCList")]
+        public ActionResult<ResultClass<string>> GetWintonBCList()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code='winton_company' and item_D_type='Y' and show_tag ='0'";
+                #endregion
+                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
             }
             catch (Exception ex)
             {

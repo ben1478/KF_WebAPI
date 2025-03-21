@@ -58,7 +58,7 @@ namespace KF_WebAPI.Controllers
 
                 var responseContent = await response.Content.ReadAsStringAsync();
 
-                var responseObject = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
+                var responseObject = JsonConvert.DeserializeObject<ApietokenResponse>(responseContent);
 
                 var token = responseObject.Data;
 
@@ -91,7 +91,8 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var T_SQL = @"select MA.MF_ID,VP.*,VD.* from InvPrepay_M VP inner join InvPrepay_D VD on VP.VP_ID=VD.VP_ID
-                    left join Manufacturer MA on MA.Company_name = VP.payee_name";
+                    left join Manufacturer MA on MA.Company_name = VP.payee_name
+                    where VP.VP_ID =@VP_ID";
                 var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@VP_ID", Form_ID)
@@ -128,7 +129,7 @@ namespace KF_WebAPI.Controllers
                     MFGL009 = "N"
                 };
 
-                int indexnumber = 0;
+                int indexnumber = 1;
                 m_Summons_req.ADataSetDetail = dtResult.AsEnumerable().Select(row => new Summons_D_req {
                     DTGL004 = m_Summons_req.ADataSetMaster.MFGL003,
                     DTGL005 = (indexnumber++).ToString("D4"),
@@ -137,6 +138,7 @@ namespace KF_WebAPI.Controllers
                     DTGL011 = row.Field<string>("VD_Fee_Summary"),
                     DTGL012 = "1",
                     DTGL013 = row.Field<string>("VD_VAT") == "Y" ? (int)Math.Round(row.Field<int>("VD_Fee") / 1.05) : row.Field<int>("VD_Fee"),
+                    DTGL014 = row.Field<string>("VD_BC"),
                     DTGL021 = row.Field<string>("VD_VAT") == "Y" ? (int)Math.Round(row.Field<int>("VD_Fee") / 1.05) : row.Field<int>("VD_Fee"),
                     DTGL028 = 1
                 }).ToList();
@@ -160,16 +162,16 @@ namespace KF_WebAPI.Controllers
                 response.EnsureSuccessStatusCode();
 
                 var responseContent = await response.Content.ReadAsStringAsync();
-                var responseObject = JsonConvert.DeserializeObject<ApiResponse<Dictionary<string, object>>>(responseContent);
-               
-                if (responseObject.Status == "200" && responseObject.Error == null)
+                var responseObject = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
+
+
+                if (responseObject.Status == "200" && responseObject.Error == null && responseObject.Data.success==1)
                 {
                     _fun.ExtAPILogIns(apiCode, apiName, Form_ID, token, jsonData, "200", JsonConvert.SerializeObject(responseObject));
                     return Ok();
                 }
                 else
                 {
-                    responseObject.Error = Regex.Unescape(responseObject.Error);
                     _fun.ExtAPILogIns(apiCode, apiName, Form_ID, token, jsonData, "500", JsonConvert.SerializeObject(responseObject));
                     return BadRequest();
                 }
@@ -177,6 +179,33 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 _fun.ExtAPILogIns(apiCode, apiName, Form_ID, token, jsonData, "500", $" error: {ex.Message}");
+                return BadRequest();
+            }
+        }
+
+        [HttpPost("SendManufacturer")]
+        public async Task<IActionResult> Manufacturer_Ins(string MID)
+        {
+            var apiName = "rest/TdmServerMethodsOT/ImpWD2SU01";
+            var url = urlBase + apiName;
+
+            var result = await GetLoginToken() as OkObjectResult;
+            var token = result.Value.ToString();
+
+            var jsonData = "";
+            try
+            {
+                var m_Req = new Manufacturer_req();
+                m_Req.AToken = token;
+                m_Req.AUpdateType = "0";
+
+                //TODO 細節 ADataSet
+
+                return Ok();
+            }
+            catch (Exception)
+            {
+                //_fun.ExtAPILogIns(apiCode, apiName, Form_ID, token, jsonData, "500", $" error: {ex.Message}");
                 return BadRequest();
             }
         }

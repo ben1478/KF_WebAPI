@@ -535,7 +535,6 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-
         /// <summary>
         /// 審核人員變更原因 AuditFlowD_UpdReason
         /// </summary>
@@ -581,6 +580,46 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
             
+        }
+
+        /// <summary>
+        /// 抓取退回案件件號跟原因
+        /// </summary>
+        [HttpGet("GetBackInfo")]
+        public ActionResult<ResultClass<string>> GetBackInfo(string FormID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"select AF_Back_ID,AF_Back_Reason from AuditFlow_M where FM_Source_ID=@FormID and AF_Back_ID is not null";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@FormID", FormID)
+                };
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
         }
     }
 }

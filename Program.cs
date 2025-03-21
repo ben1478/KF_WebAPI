@@ -60,9 +60,10 @@ app.UseCors(builder =>
         "http://192.168.1.27/KF_Web/",
         "http://192.168.1.27/KF_WebAPI/",
         "https://www.kuofongweb.com.tw/",
-        "https://localhost:7135",
+        "http://localhost:7135",
         "http://localhost:8080",
         "http://192.168.1.240:8080",
+         "http://192.168.1.240:8088",
         "http://192.168.1.240:8081"
         )
            .AllowAnyMethod()
