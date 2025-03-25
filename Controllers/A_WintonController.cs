@@ -72,7 +72,7 @@ namespace KF_WebAPI.Controllers
         }
 
         [HttpPost("SendSummons")]
-        public async Task<IActionResult> Summons_Ins(string Form_ID)
+        public async Task<IActionResult> SendSummons(string Form_ID)
         {
             var apiName = "rest/TdmServerMethodsTR/ImpWD4MFGL";
             var url = urlBase + apiName;
@@ -183,31 +183,91 @@ namespace KF_WebAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// strType:來源 FormID:PKey
+        /// </summary>
         [HttpPost("SendManufacturer")]
-        public async Task<IActionResult> Manufacturer_Ins(string MID)
+        public async Task<IActionResult> SendManufacturer(string strType, string FormID)
         {
             var apiName = "rest/TdmServerMethodsOT/ImpWD2SU01";
             var url = urlBase + apiName;
 
-            var result = await GetLoginToken() as OkObjectResult;
-            var token = result.Value.ToString();
-
             var jsonData = "";
+            Manufacturer_req model = await Manufacturer_Map(strType, FormID);
             try
             {
-                var m_Req = new Manufacturer_req();
-                m_Req.AToken = token;
-                m_Req.AUpdateType = "0";
+                jsonData = JsonConvert.SerializeObject(model);
+                var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
 
-                //TODO 細節 ADataSet
+                var response = await _httpClient.PostAsync(url, content);
+                response.EnsureSuccessStatusCode();
 
-                return Ok();
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseObject = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
+
+
+                if (responseObject.Status == "200" && responseObject.Error == null)
+                {
+                    _fun.ExtAPILogIns(apiCode, apiName, model.ADataSet.SU01001, model.AToken, jsonData, "200", JsonConvert.SerializeObject(responseObject));
+                    return Ok();
+                }
+                else
+                {
+                    _fun.ExtAPILogIns(apiCode, apiName, model.ADataSet.SU01001, model.AToken, jsonData, "500", JsonConvert.SerializeObject(responseObject));
+                    return BadRequest();
+                }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                //_fun.ExtAPILogIns(apiCode, apiName, Form_ID, token, jsonData, "500", $" error: {ex.Message}");
+                _fun.ExtAPILogIns(apiCode, apiName, model.ADataSet.SU01001, model.AToken, jsonData, "500", $" error: {ex.Message}");
                 return BadRequest();
             }
         }
+
+        private async Task<Manufacturer_req> Manufacturer_Map(string strType, string FormID)
+        {
+            var result = await GetLoginToken();
+
+            if (result is OkObjectResult okResult)
+            {
+                var token = okResult.Value.ToString();
+
+                Manufacturer_req model = new Manufacturer_req();
+                model.AToken = token;
+                model.AUpdateType = "0";
+                model.ADataSet = new Manufacturer_M_req();
+                ADOData _adoData = new ADOData();
+                //來源為廠商資料
+                if (strType == "1")
+                {
+                    #region SQL
+                    var T_SQL = @"select * from Manufacturer where MF_ID=@MF_ID";
+                    var parameters = new List<SqlParameter>
+                    {
+                        new SqlParameter("@MF_ID", FormID)
+                    };
+                    #endregion
+                    var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+
+                    model.ADataSet.SU01001 = dtResult.Rows[0]["MF_ID"].ToString();
+                    model.ADataSet.SU01082 = dtResult.Rows[0]["MF_ID"].ToString();
+                    model.ADataSet.SU01004 = dtResult.Rows[0]["Company_name"].ToString();
+                    model.ADataSet.SU01003 = dtResult.Rows[0]["Company_name"].ToString();
+                    model.ADataSet.SU01007 = dtResult.Rows[0]["Company_number"].ToString();
+                    model.ADataSet.SU01011 = dtResult.Rows[0]["Company_addr"] != DBNull.Value ? dtResult.Rows[0]["Company_addr"].ToString() : null;
+                    model.ADataSet.SU01010 = dtResult.Rows[0]["Company_busin"] != DBNull.Value ? dtResult.Rows[0]["Company_busin"].ToString() : null;
+                    model.ADataSet.SU01014 = dtResult.Rows[0]["Company_tel"] != DBNull.Value ? dtResult.Rows[0]["Company_tel"].ToString() : null;
+                    model.ADataSet.SU01016 = dtResult.Rows[0]["Company_fax"] != DBNull.Value ? dtResult.Rows[0]["Company_fax"].ToString() : null;
+                }
+
+                return model;
+            }
+            else
+            {
+                _fun.ExtAPILogIns(apiCode, "eToken", FormID, "", "", "500", $" error: Failed to get token");
+                throw new Exception("Failed to get token.");
+            }
+        }
+
     }
 }
