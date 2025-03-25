@@ -69,8 +69,8 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
                 #region SQL
                 var T_SQL = @"SELECT " +
-                    " show_fund_company, show_project_title, cs_name, cs_id, get_amount, period, interest_rate_pass, FORMAT(get_amount_date,'yyyy/MM/dd') as get_amount_date, comm_amt, case_remark, case_id " +
-                    ",(select U_name FROM User_M where U_num = House_othercase.plan_num AND del_tag='0') as plan_name " +
+                    " show_fund_company, show_project_title, cs_name, cs_id, get_amount, period, interest_rate_pass, FORMAT(get_amount_date,'yyyy/MM/dd') as get_amount_date, comm_amt, case_remark, act_perf_amt, case_id " +
+                    " ,plan_num,(select U_name FROM User_M where U_num = House_othercase.plan_num AND del_tag='0') as plan_name " +
                     ",(SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = House_othercase.case_id and del_tag = '0') AS case_id_count "+
                     " FROM House_othercase WHERE case_id = @ID";
                 var parameters = new List<SqlParameter>
