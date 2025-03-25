@@ -477,7 +477,7 @@ namespace KF_WebAPI.Controllers
                     if (model.FD_Step_SignType == "FSIGN002" && model.FM_Step == "2" && new[] { "PA", "PP" }.Any(p => model.FM_Source_ID.StartsWith(p)))
                     {
                         var _aWintonController = new A_WintonController();
-                        Task.Run(() => _aWintonController.Summons_Ins(model.FM_Source_ID));
+                        Task.Run(() => _aWintonController.SendSummons(model.FM_Source_ID));
                     }
                     return Ok(resultClass);
                 }
