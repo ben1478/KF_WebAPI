@@ -129,6 +129,12 @@ namespace KF_WebAPI.Controllers
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
 
+                if (!string.IsNullOrEmpty(model.MF_ID))
+                {
+                    var _aWintonController = new A_WintonController();
+                    Task.Run(() => _aWintonController.SendManufacturer("1", model.MF_ID));
+                }
+
                 if (result == 0)
                 {
                     resultClass.ResultCode = "400";
@@ -182,6 +188,12 @@ namespace KF_WebAPI.Controllers
                 };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+
+                if (!string.IsNullOrEmpty(model.MF_ID))
+                {
+                    var _aWintonController = new A_WintonController();
+                    Task.Run(() => _aWintonController.SendManufacturer("1", model.MF_ID));
+                }
 
                 if (result == 0)
                 {

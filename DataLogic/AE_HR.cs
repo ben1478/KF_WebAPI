@@ -123,13 +123,13 @@ namespace KF_WebAPI.DataLogic
                 {
                     m_SQL += "  AND FR_kind IN ('FRK021')   ";
                 }
-                else if (FR_kind == "Other1")//喪假、產假、陪產假、產檢假
+                else if (FR_kind == "Other1")//婚假、產假、陪產假、產檢假、喪假(3,6,8天)
                 {
-                    m_SQL += "  AND FR_kind IN ('FRK007','FRK022','FRK023','FRK008','FRK009','FRK010')   ";
+                    m_SQL += "  AND FR_kind IN ('FRK006','FRK007','FRK022','FRK023','FRK008','FRK009','FRK010')   ";
                 }
-                else//非特休,補休,加班,喪假、產假、陪產假、產檢假
+                else//非特休,補休,加班,婚假、產假、陪產假、產檢假、喪假(3,6,8天)
                 {
-                    m_SQL += "AND FR_kind not IN ('FRK005','FRK004','FRK021','FRK007','FRK022','FRK023','FRK008','FRK009','FRK010')  ";
+                    m_SQL += "AND FR_kind not IN ('FRK006','FRK005','FRK004','FRK021','FRK007','FRK022','FRK023','FRK008','FRK009','FRK010')  ";
                 }
                 m_SQL += " AND  format( F.FR_step_HR_date,'yyyy-MM-dd') between @Date_S and @Date_E  ";
             }
@@ -183,13 +183,13 @@ namespace KF_WebAPI.DataLogic
                         {
                             m_SQL += "  AND FR_kind IN ('FRK021')    ";
                         }
-                        else if (FR_kind == "Other1")//喪假、產假、陪產假、產檢假
+                        else if (FR_kind == "Other1")//婚假、產假、陪產假、產檢假、喪假(3,6,8天)
                         {
-                            m_SQL += "  AND FR_kind IN ('FRK007','FRK022','FRK023','FRK008','FRK009','FRK010')   ";
+                            m_SQL += "  AND FR_kind IN ('FRK006','FRK007','FRK022','FRK023','FRK008','FRK009','FRK010')   ";
                         }
-                        else//非特休,補休,加班,喪假、產假、陪產假、產檢假
+                        else//非特休,補休,加班,婚假、產假、陪產假、產檢假、喪假(3,6,8天)
                         {
-                            m_SQL += "AND FR_kind not IN ('FRK005','FRK004','FRK021','FRK007','FRK022','FRK023','FRK008','FRK009','FRK010')  ";
+                            m_SQL += "AND FR_kind not IN ('FRK006','FRK005','FRK004','FRK021','FRK007','FRK022','FRK023','FRK008','FRK009','FRK010')  ";
                         }
                         m_SQL += "AND format( F.FR_step_HR_date,'yyyy-MM-dd') between @Date_S and @Date_E  ";
                     }
