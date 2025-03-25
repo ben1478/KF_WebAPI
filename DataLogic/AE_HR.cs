@@ -77,8 +77,8 @@ namespace KF_WebAPI.DataLogic
             string m_SQL = "insert into Late15To104 ([ID_104],[LEAVEITEM_ID],[U_num],[Date_S],[Date_E])" +
                 " select F.[ID_104],[LEAVEITEM_ID],F.[U_num],format([Date_S],'yyyy/MM/dd HH:mm'),format([Date_E],'yyyy/MM/dd HH:mm') " +
                 " from [fun_LateOver15_To104](@Date_S,@Date_E)F  " +
-                " Left join  (select * from Flow_rest R  where  del_tag = '0' AND FR_cancel<>'Y' and format( FR_date_begin,'yyyy/MM/dd')   " +
-                " between @Date_S and @Date_E and FR_kind <> 'FRK021' )R on F.[U_num]=R.FR_U_num and format([Date_E],'yyyy/MM/dd HH:mm') between R.FR_date_begin and R.FR_date_end  " +
+                " Left join  (select * from Flow_rest R  where  del_tag = '0' AND FR_cancel<>'Y' and FR_date_begin   " +
+                " between @Date_S+' 00:00' and @Date_E+' 23:59' and FR_kind <> 'FRK021' )R on F.[U_num]=R.FR_U_num and format([Date_E],'yyyy/MM/dd HH:mm') between R.FR_date_begin and R.FR_date_end  " +
                 "   where R.FR_date_begin is null  ";
             var parameters = new List<SqlParameter>();
             parameters.Add(new SqlParameter("@Date_S", Date_S));
