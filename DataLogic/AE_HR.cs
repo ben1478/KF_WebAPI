@@ -155,7 +155,7 @@ namespace KF_WebAPI.DataLogic
                 string m_SQL = "update  " + TableName + "  set SESSION_KEY_104=@SESSION_KEY ";
                 if (TableName == "Late15To104")
                 {
-                    m_SQL += " WHERE cast([Date_S] as datetime) between @Date_S+' 00:00' and @Date_E +' 23:59' and SESSION_KEY_104=@SESSION_KEY   ";
+                    m_SQL += " WHERE cast([Date_S] as datetime) between @Date_S+' 00:00' and @Date_E +' 23:59'   ";
                 }
                 else
                 {
