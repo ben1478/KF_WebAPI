@@ -691,8 +691,9 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"select item_D_code,item_D_name,(select Winton_Group from User_Winton_Group where U_num=@User) as WBC 
-                    from Item_list where item_M_code='winton_company' and item_D_type='Y' and show_tag ='0'";
+                var T_SQL = @"select Li.item_D_code, Li.item_D_name, UWG.Winton_Group as WBC 
+                    from Item_list Li left join User_Winton_Group UWG on UWG.U_num = @User 
+                    where item_M_code='winton_company' and item_D_type='Y' and show_tag ='0'";
                 var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@User", User)
