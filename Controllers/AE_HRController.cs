@@ -2329,7 +2329,7 @@ namespace KF_WebAPI.Controllers
                         left join Item_list li on li.item_M_code = 'FR_kind' and li.item_D_code = fr.FR_kind and li.del_tag ='0'
                         left join Item_list li_1 on li_1.item_M_code = 'Flow_sign_type' and li_1.item_D_code = fr.FR_sign_type and li_1.del_tag ='0'
                         left join Item_list li_p on li_p.item_M_code = 'SpecName' and li_p.item_D_txt_A = u.U_num
-                        where FR_date_begin between @yyyymmdd_S and @yyyymmdd_E and fr.FR_cancel <> 'Y' and fr.del_tag = '0'
+                        where CAST(FR_date_begin AS DATE) between @yyyymmdd_S and @yyyymmdd_E and fr.FR_cancel <> 'Y' and fr.del_tag = '0'
                         AND FR_U_num NOT IN (select U_num from User_M where U_BC='BC0700')                        
                         order by FR_U_num,fr.FR_date_begin";
                     parameters_fl.Add(new SqlParameter("@yyyymmdd_S", model.yyyymmdd_s));

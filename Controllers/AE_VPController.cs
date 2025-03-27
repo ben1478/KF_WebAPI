@@ -683,7 +683,7 @@ namespace KF_WebAPI.Controllers
         /// 提供所有文中系統分公司清單 item_M_code='winton_company'
         /// </summary>
         [HttpGet("GetWintonBCList")]
-        public ActionResult<ResultClass<string>> GetWintonBCList()
+        public ActionResult<ResultClass<string>> GetWintonBCList(string User)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -691,9 +691,15 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code='winton_company' and item_D_type='Y' and show_tag ='0'";
+                var T_SQL = @"select Li.item_D_code, Li.item_D_name, UWG.Winton_Group as WBC 
+                    from Item_list Li left join User_Winton_Group UWG on UWG.U_num = @User 
+                    where item_M_code='winton_company' and item_D_type='Y' and show_tag ='0'";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@User", User)
+                };
                 #endregion
-                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
                 if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";

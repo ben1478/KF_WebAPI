@@ -21,7 +21,7 @@ namespace KF_WebAPI.Controllers
         [HttpGet("GetManufaList")]
         public ActionResult<ResultClass<string>> GetManufaList(string Name)
         {
-            ResultClass<string> resultClass = new ResultClass<string>();
+           ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
                 ADOData _adoData = new ADOData();
