@@ -126,60 +126,16 @@ namespace KF_WebAPI.Controllers
                 #region SQL
 
                 var T_SQL = @"INSERT INTO [dbo].[House_agency]
-                               ([AG_cknum]
-                               ,[HS_id]
-                               ,[case_com]
-                               ,[agency_com]
-                               ,[case_text]
-                               ,[CS_text]
-                               ,[check_date]
-                               ,[check_address]
-                               ,[pass_amount]
-                               ,[set_amount]
-                               ,[print_data]
-                               ,[get_data]
-                               ,[process_charge]
-                               ,[AG_note]
-                               ,[check_leader_num]
-                               ,[check_process_num]
-                               ,[set_process_date]
-                               ,[check_process_type]
-                               ,[check_process_date]
-                               ,[check_process_note]
-                               ,[close_type]
-                               ,[close_type_date]
-                               ,[del_tag]
-                               ,[add_date]
-                               ,[add_num]
-                               ,[add_ip]
+                               ([AG_cknum],[case_com],[agency_com],[case_text],[CS_text],[check_date],[check_address]
+                               ,[pass_amount],[set_amount],[print_data],[get_data],[process_charge],[AG_note],[check_leader_num]
+                               ,[check_process_num],[set_process_date],[check_process_type],[check_process_date],[check_process_note]
+                               ,[close_type],[close_type_date],[del_tag],[add_date],[add_num],[add_ip]
                                )
                          VALUES
-                               (@AG_cknum, 
-                               @HS_id, 
-                               @case_com, 
-                               @agency_com, 
-                               @case_text, 
-                               @CS_text, 
-                               @check_date, 
-                               @check_address, 
-                               @pass_amount, 
-                               @set_amount, 
-                               @print_data, 
-                               @get_data, 
-                               @process_charge, 
-                               @AG_note, ntext,>
-                               @check_leader_num, 
-                               @check_process_num, 
-                               @set_process_date, 
-                               @check_process_type, 
-                               @check_process_date, 
-                               @check_process_note, 
-                               @close_type, 
-                               @close_type_date, 
-                               @del_tag, 
-                               @add_date, 
-                               @add_num, 
-                               @add_ip 
+                               (@AG_cknum, @case_com, @agency_com, @case_text, @CS_text, @check_date, @check_address, 
+                               @pass_amount,@set_amount, @print_data,@get_data,@process_charge, @AG_note,  @check_leader_num, 
+                               @check_process_num,  @set_process_date, @check_process_type, @check_process_date, @check_process_note, 
+                               @close_type, @close_type_date, @del_tag, @add_date, @add_num, @add_ip 
                                )";
 
                 var parameters = new List<SqlParameter>
