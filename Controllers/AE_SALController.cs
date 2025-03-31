@@ -58,10 +58,10 @@ namespace KF_WebAPI.Controllers
 
 
         /// <summary>
-        /// 廠商資料單筆查詢 Manufacturer_SQuery
+        /// 車貸單筆查詢 Manufacturer_SQuery
         /// </summary>
         [HttpGet("House_othercase_SQuery")]
-        public ActionResult<ResultClass<string>> House_othercase_SQuery(string case_id)
+        public ActionResult<ResultClass<string>> House_othercase_SQuery(string Id)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
@@ -75,7 +75,7 @@ namespace KF_WebAPI.Controllers
                     " FROM House_othercase WHERE case_id = @ID";
                 var parameters = new List<SqlParameter>
                 {
-                    new SqlParameter("@ID", case_id)
+                    new SqlParameter("@ID", Id)
                 };
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
@@ -213,7 +213,7 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
-        /// 修改廠商資料 House_othercase_Upd
+        /// 修改車貸資料 House_othercase_Upd
         /// </summary>
         [HttpPost("House_othercase_Upd")]
         public ActionResult<ResultClass<string>> House_othercase_Upd(House_othercase_Ins model)
@@ -296,17 +296,17 @@ namespace KF_WebAPI.Controllers
         /// 刪除單筆 House_othercase_Del
         /// </summary>
         [HttpDelete("House_othercase_Del")]
-        public ActionResult<ResultClass<string>> House_othercase_Del(string case_id)
+        public ActionResult<ResultClass<string>> House_othercase_Del(string Id)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"Delete House_othercase where case_id=@case_id";
+                var T_SQL = @"Delete House_othercase where case_id=@Id";
                 var parameters = new List<SqlParameter>
                 {
-                    new SqlParameter("@case_id",case_id)
+                    new SqlParameter("@Id",Id)
                 };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
