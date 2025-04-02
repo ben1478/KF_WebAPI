@@ -1,5 +1,6 @@
 ﻿using KF_WebAPI.BaseClass;
 using KF_WebAPI.BaseClass.AE;
+using KF_WebAPI.BaseClass.Max104;
 using KF_WebAPI.FunctionHandler;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
@@ -20,6 +21,54 @@ namespace KF_WebAPI.Controllers
     [Route("[controller]")]
     public class AE_ACCController : ControllerBase
     {
+        /// <summary>
+        /// 抓取延滯利息金額
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("GetDelayAMT")]
+        public ActionResult<ResultClass<string>> GetDelayAMT(string RCM_id,string RC_date_E)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"select Delay_AMT from (select isnull(sum(case when isNewFun ='Y' then Fee 
+                    else OldFee+Fee+CEILING((CEILING(ex_RemainingPrincipal)+CEILING(Rmoney))*EXrate) end),0) Delay_AMT
+                    from (SELECT D.RC_count,DelayDay,case when DelayDay >=3 and DelayDay <=6 then 100 
+                    when DelayDay >= 7 And DelayDay <= 14  then 200 else 300 end OldFee,
+                    CASE WHEN S.sendcase_handle_date >='2023-04-24 00:00:00.000' OR S.HS_id= 90006840 THEN 'Y' ELSE 'N' END isNewFun,
+                    CASE WHEN DATEDIFF(DAY, RC_date, @RC_date_E) > 0 THEN CEILING(RC_amount*0.2/365*DATEDIFF(DAY, RC_date, @RC_date_E)) ELSE 0 END Fee,
+                    CASE WHEN DATEDIFF(DAY, RC_date, @RC_date_E) > 0 THEN
+                    convert(decimal(12,6),convert(decimal(12,6),convert(decimal(4,2),convert(decimal(4,2),interest_rate_pass)/100)*5/10000*DATEDIFF(DAY,RC_date,@RC_date_E))) ELSE 1 END EXrate,
+                    H.CS_name,ex_RemainingPrincipal,Rmoney FROM (select isnull(DATEDIFF(DAY,RC_date, @RC_date_E),0)DelayDay,* from Receivable_D) D
+                    LEFT JOIN Receivable_M M ON M.RCM_id = D.RCM_id
+                    LEFT JOIN House_apply H ON H.HA_id = M.HA_id
+                    LEFT JOIN House_sendcase S ON S.HS_id = M.HS_id
+                    WHERE D.del_tag = '0' AND M.del_tag='0' AND S.del_tag='0' AND H.del_tag='0'
+                    AND D.RCM_id=@RCM_id AND D.bad_debt_type='N' AND D.cancel_type='N'
+                    AND isnull(RecPayAmt,0) = 0 AND RC_date <= @RC_date_E) A where RC_count not in(select max(RC_count) from Receivable_D
+                    where del_tag='0' AND RCM_id=@RCM_id AND bad_debt_type='N' AND cancel_type='N' AND isnull(RecPayAmt,0) = 0 AND RC_date <= @RC_date_E)) M";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@RCM_id", RCM_id),
+                    new SqlParameter("@RC_date_E",RC_date_E)
+                };
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
         #region 通用
         /// <summary>
         /// 每日未沖銷清單 RC_D_daily_LQuery/RC_D_daily.asp

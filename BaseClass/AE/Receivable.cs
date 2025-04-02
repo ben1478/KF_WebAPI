@@ -1,5 +1,18 @@
 ﻿namespace KF_WebAPI.BaseClass.AE
 {
+    public class SettleInfo_Req
+    {
+        public string isSettle { get; set; }
+        public string RCM_id { get; set; }
+        public int sett_rate { get; set; }  
+        public string sett_date_s { get; set; }
+        public string sett_date_e { get; set; }
+
+    }
+    public class SettleInfo_Res
+    {
+        public decimal Break_AMT { get; set; }
+    }
     public class Receivable_M
     {
         public tbInfo? tbInfo { get; set; }
