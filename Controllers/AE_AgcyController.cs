@@ -74,7 +74,7 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
                 #region SQL
-                var T_SQL = @"select AG_id, FORMAT(add_date,'yyyy/MM/dd') add_date, case_com, agency_com, case_text,CS_text,check_date,check_address, pass_amount,set_amount, print_data,get_data,process_charge,AG_note, check_leader_num, check_process_type, close_type " +
+                var T_SQL = @"select AG_id, FORMAT(add_date,'yyyy/MM/dd') add_date, case_com, agency_com, case_text,CS_text,check_date,check_address, pass_amount,set_amount, print_data,get_data,process_charge,AG_note, check_leader_num, check_process_type, check_process_date, check_process_note,check_process_num,set_process_date, close_type " +
                     ", (select U_name FROM User_M where U_num = agcy.check_leader_num AND del_tag = '0') as check_leader_name " +
                     ",(select U_name FROM User_M where U_num = agcy.add_num AND del_tag = '0') as add_name " +
                     ",(select U_name FROM User_M where U_num = agcy.check_process_num AND del_tag='0') as check_process_name " +
