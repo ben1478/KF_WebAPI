@@ -162,7 +162,7 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@close_type",  string.IsNullOrEmpty(model.close_type) ? "N" : model.close_type),
                     new SqlParameter("@close_type_date",  string.IsNullOrEmpty(model.close_type_date) ? DBNull.Value : model.close_type_date),
                     new SqlParameter("@del_tag",  string.IsNullOrEmpty(model.del_tag) ? DBNull.Value : model.del_tag),
-                    
+
                     new SqlParameter("@add_date", DateTime.Today),
                     new SqlParameter("@add_num", model.add_num),
                     new SqlParameter("@add_ip", clientIp)
