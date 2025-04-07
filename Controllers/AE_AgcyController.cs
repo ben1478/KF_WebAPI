@@ -128,13 +128,17 @@ namespace KF_WebAPI.Controllers
                 var T_SQL = @"INSERT INTO [dbo].[House_agency]
                                ([AG_cknum],[case_com],[agency_com],[case_text],[CS_text],[check_date],[check_address]
                                ,[pass_amount],[set_amount],[print_data],[get_data],[process_charge],[AG_note],[check_leader_num]
-                               ,[check_process_num],[set_process_date],[check_process_type],[check_process_date],[check_process_note]
+                               ,[check_process_num]
+                               ,[check_process_type]
+                               ,[check_process_note]
                                ,[close_type],[close_type_date],[del_tag],[add_date],[add_num],[add_ip]
                                )
                          VALUES
                                (@AG_cknum, @case_com, @agency_com, @case_text, @CS_text, @check_date, @check_address, 
                                @pass_amount,@set_amount, @print_data,@get_data,@process_charge, @AG_note,  @check_leader_num, 
-                               @check_process_num,  @set_process_date, @check_process_type, @check_process_date, @check_process_note, 
+                               @check_process_num,  
+                                @check_process_type, 
+                                @check_process_note, 
                                @close_type, @close_type_date, @del_tag, @add_date, @add_num, @add_ip 
                                )";
 
@@ -155,9 +159,9 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@AG_note",  string.IsNullOrEmpty(model.AG_note) ? DBNull.Value : model.AG_note),
                     new SqlParameter("@check_leader_num",  string.IsNullOrEmpty(model.check_leader_num) ? DBNull.Value : model.check_leader_num),
                     new SqlParameter("@check_process_num",  string.IsNullOrEmpty(model.check_process_num) ? DBNull.Value : model.check_process_num),
-                    new SqlParameter("@set_process_date",  string.IsNullOrEmpty(model.set_process_date) ? DBNull.Value : model.set_process_date),
+                    //new SqlParameter("@set_process_date",  string.IsNullOrEmpty(model.set_process_date) ? DBNull.Value : model.set_process_date),
                     new SqlParameter("@check_process_type",  string.IsNullOrEmpty(model.check_process_type) ? "N" : model.check_process_type),
-                    new SqlParameter("@check_process_date",  string.IsNullOrEmpty(model.check_process_date) ? DBNull.Value : model.check_process_date),
+                    //new SqlParameter("@check_process_date",  string.IsNullOrEmpty(model.check_process_date) ? DBNull.Value : model.check_process_date),
                     new SqlParameter("@check_process_note",  string.IsNullOrEmpty(model.check_process_note) ? DBNull.Value : model.check_process_note),
                     new SqlParameter("@close_type",  string.IsNullOrEmpty(model.close_type) ? "N" : model.close_type),
                     new SqlParameter("@close_type_date",  string.IsNullOrEmpty(model.close_type_date) ? DBNull.Value : model.close_type_date),
