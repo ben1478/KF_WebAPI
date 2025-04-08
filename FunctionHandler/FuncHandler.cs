@@ -1264,13 +1264,13 @@ namespace KF_WebAPI.FunctionHandler
                                 if (!isRest)
                                 {
                                     #region 因為消毒所以12/20 5F人員提早下班不算曠職
-                                    if (bcGroup.Key == "BC0800" || bcGroup.Key == "BC0900" || bcGroup.Key == "BC0100")
-                                    {
-                                        if (items[j].attendance_week == "12/20 (五)")
-                                        {
-                                            items[j].early = 0;
-                                        }
-                                    }
+                                    //if (bcGroup.Key == "BC0800" || bcGroup.Key == "BC0900" || bcGroup.Key == "BC0100")
+                                    //{
+                                    //    if (items[j].attendance_week == "12/20 (五)")
+                                    //    {
+                                    //        items[j].early = 0;
+                                    //    }
+                                    //}
                                     #endregion
 
                                     if (items[j].early > 0)
@@ -1310,7 +1310,15 @@ namespace KF_WebAPI.FunctionHandler
                                 }
                             }
                         }
-                        var lateTotal = Convert.ToInt32(userIDGroup.Sum(x => x.Late) - 15);
+                        var lateTotal = 0;
+                        if (userIDGroup.Where(x=>x.userID == "K0330").Count() > 0)
+                        {
+                            lateTotal = Convert.ToInt32(userIDGroup.Sum(x => x.Late));
+                        }
+                        else
+                        {
+                            lateTotal = Convert.ToInt32(userIDGroup.Sum(x => x.Late) - 15);
+                        }
                         worksheet.Cells[rowIndex + j, colIndex + (intcount * 6)].Value = "合計";
                         worksheet.Cells[rowIndex + j, colIndex + (intcount * 6) + 1].Value = "扣";
                         decimal Hour = 0;
@@ -1352,10 +1360,21 @@ namespace KF_WebAPI.FunctionHandler
 
                 int rowindex_ly = 2;
                 int colindex_ly = 1;
-                var userResult = modelList.Where(x => (x.absenteeism ?? "").Equals("Y") == false).GroupBy(x => x.userID).Select(g => new { UserID = g.Key, Totalval = g.Sum(x => x.Late)-15 }).OrderBy(x=>x.UserID);
+                var userResult = modelList.Where(x => (x.absenteeism ?? "").Equals("Y") == false).GroupBy(x => x.userID).Select(g => new { UserID = g.Key, Totalval = g.Sum(x => x.Late)}).Where(y=>y.Totalval > 0).OrderBy(x=>x.UserID);
                 foreach ( var user in userResult)
                 {
-                    if(user.Totalval > 0)
+                    if(user.Totalval > 15 && user.UserID != "K0330")
+                    {
+                        var name = modelList.Where(x => x.userID.Equals(user.UserID)).FirstOrDefault().user_name;
+                        rowindex_ly++;
+                        worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = user.UserID + ":" + name;
+                        worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = "合計";
+                        worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = "扣";
+                        decimal lateHour = Convert.ToInt32(user.Totalval - 15) / 60m;
+                        worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = Math.Ceiling(lateHour / 0.5m) * 0.5m + "小時";
+                        colindex_ly = 1;
+                    }
+                    else if (user.UserID == "K0330")
                     {
                         var name = modelList.Where(x => x.userID.Equals(user.UserID)).FirstOrDefault().user_name;
                         rowindex_ly++;

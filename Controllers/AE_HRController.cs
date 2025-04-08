@@ -2126,7 +2126,8 @@ namespace KF_WebAPI.Controllers
                 SELECT U.Role_num,li_2.item_sort,U.U_Na,[userID],U_name [user_name],ad.yyyymmdd attendance_date,[work_time],
                 CASE WHEN NL.U_num_NL IS NOT NULL THEN 0 WHEN ISNULL(ad.[work_time], '') = '' THEN 0 
                 WHEN ad.[work_time] >= '12:00' AND ad.[work_time] <= '13:00' THEN 180
-                WHEN ad.[work_time] > '09:00' AND ad.[work_time] < '12:00' THEN DATEDIFF(MINUTE, '09:00', ad.[work_time]) 
+                WHEN ad.[work_time] > '09:00' AND ad.[work_time] < '12:00' AND userID != 'K0330' THEN DATEDIFF(MINUTE, '09:00', ad.[work_time])
+                WHEN ad.[work_time] > '09:15' AND ad.[work_time] < '12:00' AND userID = 'K0330' THEN DATEDIFF(MINUTE, '09:00', ad.[work_time])
                 WHEN ad.[work_time] > '13:00' THEN DATEDIFF(MINUTE, '09:00', ad.[work_time]) - DATEDIFF(MINUTE, '12:00', '13:00') ELSE 0 END Late,
                 case WHEN NL.U_num_NL IS NOT NULL THEN 0 When isnull(ad.[getoffwork_time], '') = '' then 0 
                 WHEN ad.[getoffwork_time] <= '12:00' THEN DATEDIFF(MINUTE,ad.[getoffwork_time], '18:00' ) - DATEDIFF(MINUTE, '12:00', '13:00') 
@@ -2189,6 +2190,7 @@ namespace KF_WebAPI.Controllers
                             item.early = 0;
                         }
                     }
+
                     #region SQL_Holidays
                     var parameters_h = new List<SqlParameter>();
                     var T_SQL_H = @"
@@ -2202,6 +2204,7 @@ namespace KF_WebAPI.Controllers
                     parameters_h.Add(new SqlParameter("@yyyymmdd_S", model.yyyymmdd_s));
                     parameters_h.Add(new SqlParameter("@yyyymmdd_E", model.yyyymmdd_e));
                     #endregion
+
                     DataTable dtResult_h = _adoData.ExecuteQuery(T_SQL_H, parameters_h);
                     var holidayDates = dtResult_h.AsEnumerable().Select(row => new HoildayDetail
                     {
