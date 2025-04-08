@@ -4,6 +4,7 @@ using KF_WebAPI.FunctionHandler;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using OfficeOpenXml.Sorting;
 using System;
@@ -31,17 +32,30 @@ namespace KF_WebAPI.Controllers
 
                 var sqlBuilder = new StringBuilder("SELECT " +
                     " show_fund_company, show_project_title, cs_name, cs_id, get_amount, period, interest_rate_pass, FORMAT(get_amount_date,'yyyy/MM/dd') as get_amount_date, comm_amt, case_remark, case_id " +
-                    ",(select U_name FROM User_M where U_num = House_othercase.plan_num AND del_tag='0') as plan_name " +
-                    ",(SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = House_othercase.case_id and del_tag = '0') AS case_id_count "+
-                    " FROM House_othercase WHERE 1 = 1 ");
+                    "   ,(select U_name FROM User_M where U_num = ho.plan_num AND del_tag='0') as plan_name " +
+                    "   ,(SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = ho.case_id and del_tag = '0') AS case_id_count "+
+                    "   ,ub.item_D_name BC_name, ub.item_D_code BC_code " +
+                    " FROM House_othercase ho " +
+                    "   LEFT JOIN User_M M1 on ho.plan_num=M1.u_num " +
+                    "   LEFT JOIN Item_list ub ON ub.item_M_code='branch_company'  AND ub.item_D_code=M1.U_BC " +
+                    "   WHERE 1 = 1 ");
 
                 var parameters = new List<SqlParameter>();
-                
-                if(!string.IsNullOrEmpty(model.Date_S) && !string.IsNullOrEmpty(model.Date_E))
+
+                //區
+                if (!string.IsNullOrEmpty(model.BC_code))
                 {
-                    sqlBuilder.Append(" AND get_amount_date between @Date_S and @Date_E ");
-                    parameters.Add(new SqlParameter("@Date_S", FuncHandler.ConvertROCToGregorian(model.Date_S)));
-                    parameters.Add(new SqlParameter("@Date_E", FuncHandler.ConvertROCToGregorian(model.Date_E)));
+                    sqlBuilder.Append(" AND item_D_code = @BC_code ");
+                    parameters.Add(new SqlParameter("@BC_code", model.BC_code));
+                }
+
+                if (!string.IsNullOrEmpty(model.selYear_S))
+                {
+                    string y = model.selYear_S.Split('-')[0];
+                    string m = model.selYear_S.Split('-')[1];
+                    sqlBuilder.Append(" AND year(get_amount_date) = @y and month(get_amount_date) = @m ");
+                    parameters.Add(new SqlParameter("@y", y));
+                    parameters.Add(new SqlParameter("@m", m));
                 }
 
                 DataTable dtResult = _adoData.ExecuteQuery(sqlBuilder.ToString(), parameters);
@@ -103,8 +117,51 @@ namespace KF_WebAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// 車貸.撥款日期.Group年月 Manufacturer_SQuery
+        /// </summary>
+        [HttpGet("House_othercase_GYMQuery")]
+        public ActionResult<ResultClass<string>> House_othercase_GYMQuery()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
+                #region SQL
+                var T_SQL = @"SELECT  
+                    CONVERT(VARCHAR(7), get_amount_date, 126) as v,
+                    RIGHT('0'+CONVERT(VARCHAR(3), DATEPART(year,get_amount_date)-1911), 3) + '-'+
+                    RIGHT('0'+CONVERT(VARCHAR(2), month(get_amount_date), 112),2) as t
+                    FROM House_othercase
+                    where  get_amount_date is not null
+                    group by CONVERT(VARCHAR(7), get_amount_date, 126),RIGHT('0'+CONVERT(VARCHAR(3), DATEPART(year,get_amount_date)-1911), 3) + '-'+
+                    RIGHT('0'+CONVERT(VARCHAR(2), month(get_amount_date), 112),2)
+                    order by v desc";
+                
+                #endregion
+                var dtResult = _adoData.ExecuteSQuery(T_SQL);
 
-       
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
         /// <summary>
         /// 新增車貸資料 House_othercase_Ins
         /// </summary>
@@ -743,5 +800,282 @@ namespace KF_WebAPI.Controllers
 
         #endregion
 
+        #region 客訴
+        /// <summary>
+        /// 客訴資料列表查詢 House_othercase_LQuery
+        /// </summary>
+        [HttpPost("Complaint_LQuery")]
+        public ActionResult<ResultClass<string>> Complaint_LQuery(Complaint_Req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
+
+                var sqlBuilder = new StringBuilder(
+                    "SELECT Comp_Id, CS_name, M1.U_name Sales_name, ub.item_D_name BC_name, Complaint, CompDate, Remark, M2.U_name add_name " +
+                        "FROM dbo.Complaint C " +
+                        "LEFT JOIN User_M M1 on C.Sales_num = M1.u_num " +
+                        "LEFT JOIN Item_list ub ON ub.item_M_code = 'branch_company'  AND ub.item_D_code = M1.U_BC " +
+                        "LEFT JOIN User_M M2 on C.Add_num = M2.u_num " +
+                        "where 1 = 1 "
+                        );
+
+                var parameters = new List<SqlParameter>();
+
+
+
+                if (!string.IsNullOrEmpty(model.Date_S) && !string.IsNullOrEmpty(model.Date_E))
+                {
+                    sqlBuilder.Append(" AND get_amount_date between @Date_S and @Date_E ");
+                    parameters.Add(new SqlParameter("@Date_S", FuncHandler.ConvertROCToGregorian(model.Date_S)));
+                    parameters.Add(new SqlParameter("@Date_E", FuncHandler.ConvertROCToGregorian(model.Date_E)));
+                }
+
+                DataTable dtResult = _adoData.ExecuteQuery(sqlBuilder.ToString(), parameters);
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $"Response error: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+
+        /// <summary>
+        /// 客訴資料單筆查詢 Manufacturer_SQuery
+        /// </summary>
+        [HttpGet("Complaint_SQuery")]
+        public ActionResult<ResultClass<string>> Complaint_SQuery(string Id)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
+                #region SQL
+
+                var T_SQL =
+                    @"SELECT Comp_Id, CS_name, M1.U_name Sales_name, ub.item_D_name BC_name, Complaint, CompDate, Remark, M2.U_name add_name " +
+                        "FROM dbo.Complaint C " +
+                        "LEFT JOIN User_M M1 on C.Sales_num = M1.u_num " +
+                        "LEFT JOIN Item_list ub ON ub.item_M_code = 'branch_company'  AND ub.item_D_code = M1.U_BC " +
+                        "LEFT JOIN User_M M2 on C.Add_num = M2.u_num " +
+                        "where Comp_Id = @Id ";
+
+
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@ID", Id)
+                };
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+
+
+        /// <summary>
+        /// 新增客訴資料資料 House_othercase_Ins
+        /// </summary>
+        [HttpPost("Complaint_Ins")]
+        public ActionResult<ResultClass<string>> Complaint_Ins(Complaint_Ins model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+            string case_id = FuncHandler.GetCheckNum();
+            case_id = case_id.Substring(0, case_id.Length - 6);
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+
+                var T_SQL = @"INSERT INTO [Complaint]
+                       ([CS_name] ,
+                        [Sales_num] ,
+                        [Complaint] ,
+                        [CompDate] ,
+                        [CompTime] ,
+                        [Remark] ,
+                        [add_date] ,
+                        [add_num]
+                        )
+                 VALUES
+                       (
+                        @CS_name,
+                        @Sales_num,
+                        @Complaint,
+                        @CompDate,
+                        @CompTime,
+                        @Remark,
+                        @add_date,
+                        @add_num                     
+                        )";
+
+                var parameters = new List<SqlParameter>
+                  {
+                        new SqlParameter("@CS_name",  string.IsNullOrEmpty(model.CS_name) ? DBNull.Value : model.CS_name),
+                        new SqlParameter("@Sales_num",  string.IsNullOrEmpty(model.Sales_num) ? DBNull.Value : model.Sales_num),
+                        new SqlParameter("@Complaint",  string.IsNullOrEmpty(model.Complaint) ? DBNull.Value : model.Complaint),
+                        new SqlParameter("@CompDate",  string.IsNullOrEmpty(model.CompDate) ? DBNull.Value : model.CompDate),
+                        new SqlParameter("@CompTime",  string.IsNullOrEmpty(model.CompTime) ? DBNull.Value : model.CompTime),
+                        new SqlParameter("@Remark",  string.IsNullOrEmpty(model.Remark) ? DBNull.Value : model.Remark),
+                        new SqlParameter("@add_date", DateTime.Today),
+                        new SqlParameter("@add_num", model.add_num)
+                  };
+
+
+                #endregion
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "新增失敗";
+                    return BadRequest(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "新增成功";
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+
+
+        }
+
+        /// <summary>
+        /// 修改客訴資料資料 House_othercase_Upd
+        /// </summary>
+        [HttpPost("Complaint_Upd")]
+        public ActionResult<ResultClass<string>> Complaint_Upd(Complaint_Ins model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"UPDATE [dbo].[Complaint]
+                               SET 
+                                    [CS_name] = @CS_name,
+                                    [Sales_num] = @Sales_num,
+                                    [Complaint] = @Complaint,
+                                    [CompDate] = @CompDate,
+                                    [CompTime] = @CompTime,
+                                    [Remark] = @Remark,
+                                    [edit_date] = @edit_date,
+                                    [edit_num] = @edit_num,
+                                    where[Comp_Id] = @Comp_Id";
+                var parameters = new List<SqlParameter>
+                {
+                        new SqlParameter("@Comp_Id",  model.Comp_Id),
+                        new SqlParameter("@CS_name",  string.IsNullOrEmpty(model.CS_name) ? DBNull.Value : model.CS_name),
+                        new SqlParameter("@Sales_num",  string.IsNullOrEmpty(model.Sales_num) ? DBNull.Value : model.Sales_num),
+                        new SqlParameter("@Complaint",  string.IsNullOrEmpty(model.Complaint) ? DBNull.Value : model.Complaint),
+                        new SqlParameter("@CompDate",  string.IsNullOrEmpty(model.CompDate) ? DBNull.Value : model.CompDate),
+                        new SqlParameter("@CompTime",  string.IsNullOrEmpty(model.CompTime) ? DBNull.Value : model.CompTime),
+                        new SqlParameter("@Remark",  string.IsNullOrEmpty(model.Remark) ? DBNull.Value : model.Remark),
+                        new SqlParameter("@edit_date", DateTime.Today),
+                        new SqlParameter("@edit_num",  clientIp)
+                };
+                #endregion
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "修改失敗";
+                    return BadRequest(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "修改成功";
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+
+        }
+
+        /// <summary>
+        /// 刪除單筆 House_othercase_Del
+        /// </summary>
+        [HttpDelete("Complaint_Del")]
+        public ActionResult<ResultClass<string>> Complaint_Del(string Id)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"Delete Complaint where Comp_Id=@Id";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@Id",Id)
+                };
+                #endregion
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "明細刪除失敗";
+                    return BadRequest(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "明細刪除成功";
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        #endregion
     }
 }

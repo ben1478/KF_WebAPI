@@ -43,9 +43,16 @@ namespace KF_WebAPI.BaseClass.AE
 
     public class House_othercase_Req
     {
+        /// <summary>
+        /// 區
+        /// </summary>
+        public string? BC_code { get; set; }
+
+        /// <summary>
+        /// 撥款年月：(YYYY-MM)
+        /// </summary>
         
-        public string Date_S { get; set; }
-        public string Date_E { get; set; }
+        public string? selYear_S { get; set; }
     }
     
 }
