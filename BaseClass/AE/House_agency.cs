@@ -45,6 +45,7 @@ namespace KF_WebAPI.BaseClass.AE
     public class House_agency_Ins
     {
         public int? AG_id { get; set; }
+       
         public string? AG_cknum { get; set; }
         public int? HS_id { get; set; }
         public string? case_com { get; set; }
@@ -71,6 +72,7 @@ namespace KF_WebAPI.BaseClass.AE
         public string? add_num { get; set; }
         public string? edit_num { get; set; }
         public string? del_num { get; set; }
+     
 
     }
 
