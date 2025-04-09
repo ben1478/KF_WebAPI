@@ -26,12 +26,16 @@ namespace KF_WebAPI.BaseClass.AE
 
     public class Complaint_Req
     {
-        
-        public string Date_S { get; set; }
-        public string Date_E { get; set; }
-        
-        //部門
-        public string U_BC { get; set; }
+
+        /// <summary>
+        /// 業務部門
+        /// </summary>
+        public string BC_code { get; set; }
+
+        /// <summary>
+        /// 客訴時間(年月)
+        /// </summary>
+        public string selYear_S { get; set; }
 
     }
     

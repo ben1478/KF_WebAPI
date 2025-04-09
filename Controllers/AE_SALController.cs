@@ -895,14 +895,21 @@ namespace KF_WebAPI.Controllers
 
                 var parameters = new List<SqlParameter>();
 
-
-
-                if (!string.IsNullOrEmpty(model.Date_S) && !string.IsNullOrEmpty(model.Date_E))
+                //區
+                if (!string.IsNullOrEmpty(model.BC_code))
                 {
-                    sqlBuilder.Append(" AND get_amount_date between @Date_S and @Date_E ");
-                    parameters.Add(new SqlParameter("@Date_S", FuncHandler.ConvertROCToGregorian(model.Date_S)));
-                    parameters.Add(new SqlParameter("@Date_E", FuncHandler.ConvertROCToGregorian(model.Date_E)));
+                    sqlBuilder.Append(" AND M.U_BC = @BC_code ");
+                    parameters.Add(new SqlParameter("@BC_code", model.BC_code));
                 }
+
+                //客訴時間(年月)
+                if (!string.IsNullOrEmpty(model.selYear_S))
+                {
+                    sqlBuilder.Append(" AND left(C.compDate,5) = @selYear_S ");
+                    parameters.Add(new SqlParameter("@selYear_S", model.selYear_S));
+                }
+
+
 
                 DataTable dtResult = _adoData.ExecuteQuery(sqlBuilder.ToString(), parameters);
 
@@ -1138,6 +1145,66 @@ namespace KF_WebAPI.Controllers
                     resultClass.ResultCode = "000";
                     resultClass.ResultMsg = "明細刪除成功";
                     return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 客訴.日期.Group年月
+        /// </summary>
+        [HttpGet("Complaint_GYMQuery")]
+        public ActionResult<ResultClass<string>> Complaint_GYMQuery()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
+                #region SQL
+                var T_SQL = @"  select
+                    y+'-'+replace(m,'0','') as v
+                    from (  
+                        SELECT  
+                            CompDate,
+                            case 
+                                when charindex('/',CompDate) > 3 then
+                                    left(CompDate, charindex('/',CompDate)-1)
+                                else
+                                    null
+                                END as y,
+                            case 
+                                when  charindex('/',right(CompDate,len(CompDate)-charindex('/',CompDate))) > 0 then
+                                    SUBSTRING(CompDate, charindex('/',CompDate)+1, 
+                                        charindex('/',right(CompDate,len(CompDate)-charindex('/',CompDate)))-1)
+                                else
+                                    null
+                                END as m
+                            FROM Complaint
+                            where  CompDate is not null
+                    ) as ym
+                    where y is not NULL and  m is not null
+                    group by  y+'-'+replace(m,'0','')
+                    order by v desc";
+
+                #endregion
+                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
                 }
             }
             catch (Exception ex)
