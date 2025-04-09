@@ -775,7 +775,7 @@ namespace KF_WebAPI.Controllers
                 //區
                 if (!string.IsNullOrEmpty(model.BC_code))
                 {
-                    sqlBuilder.Append(" AND fund_company = @BC_code ");
+                    sqlBuilder.Append(" AND M.U_BC = @BC_code ");
                     parameters.Add(new SqlParameter("@BC_code", model.BC_code));
                 }
 
