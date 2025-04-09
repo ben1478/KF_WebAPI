@@ -173,6 +173,7 @@ namespace KF_WebAPI.Controllers
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
             string case_id =  FuncHandler.GetCheckNum();
             case_id = case_id.Substring(0, case_id.Length - 6);
+            var get_amount_date = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.get_amount_date));
 
             try
               {
@@ -216,7 +217,9 @@ namespace KF_WebAPI.Controllers
                        ,@add_num
                        ,@add_ip)";
 
-                  var parameters = new List<SqlParameter>
+                
+
+                var parameters = new List<SqlParameter>
                   {
                       
 
@@ -229,9 +232,8 @@ namespace KF_WebAPI.Controllers
                       new SqlParameter("@get_amount", string.IsNullOrEmpty(model.get_amount) ? DBNull.Value : model.get_amount),
                       new SqlParameter("@period", string.IsNullOrEmpty(model.period) ? DBNull.Value : model.period),
                       new SqlParameter("@interest_rate_pass", string.IsNullOrEmpty(model.interest_rate_pass) ? DBNull.Value : model.interest_rate_pass),
-                      
-                      // Datetime Nullable 要參考其他人的做法，
-                      new SqlParameter("@get_amount_date", string.IsNullOrEmpty(model.get_amount_date) ? DBNull.Value : model.get_amount_date),
+
+                      new SqlParameter("@get_amount_date", string.IsNullOrEmpty(model.get_amount_date) ? DBNull.Value : get_amount_date),
                       
                       new SqlParameter("@case_remark", string.IsNullOrEmpty(model.case_remark) ? DBNull.Value : model.case_remark),
                       // 數值Nullable 要參考其他人的做法，
@@ -279,7 +281,8 @@ namespace KF_WebAPI.Controllers
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
-            
+            var get_amount_date = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.get_amount_date));
+
             try
             {
                 ADOData _adoData = new ADOData();
@@ -314,7 +317,7 @@ namespace KF_WebAPI.Controllers
                       new SqlParameter("@interest_rate_pass", string.IsNullOrEmpty(model.interest_rate_pass) ? DBNull.Value : model.interest_rate_pass),
                       
                       // Datetime Nullable 要參考其他人的做法，
-                      new SqlParameter("@get_amount_date", string.IsNullOrEmpty(model.get_amount_date) ? DBNull.Value : model.get_amount_date),
+                      new SqlParameter("@get_amount_date", string.IsNullOrEmpty(model.get_amount_date) ? DBNull.Value : get_amount_date),
 
                       new SqlParameter("@case_remark", string.IsNullOrEmpty(model.case_remark) ? DBNull.Value : model.case_remark),
                       // 數值Nullable 要參考其他人的做法，
