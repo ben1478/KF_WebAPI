@@ -406,7 +406,7 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
 
-                var sqlBuilder = new StringBuilder("select AG_id, FORMAT(add_date,'yyyy/MM/dd') add_date, case_com, agency_com, check_process_type, close_type " +
+                var sqlBuilder = new StringBuilder("select AG_id, add_date, case_com, agency_com, check_process_type, close_type " +
                     ", (select U_name FROM User_M where U_num = agcy.check_leader_num AND del_tag = '0') as check_leader_name " +
                     ",(select U_name FROM User_M where U_num = agcy.add_num AND del_tag = '0') as add_name " +
                     ",(select U_name FROM User_M where U_num = agcy.check_process_num AND del_tag='0') as check_process_name " +
@@ -421,9 +421,11 @@ namespace KF_WebAPI.Controllers
 
                 if (!string.IsNullOrEmpty(model.Date_S) && !string.IsNullOrEmpty(model.Date_E))
                 {
+                    DateTime DateE = DateTime.MinValue;
+                    DateTime.TryParse(FuncHandler.ConvertROCToGregorian(model.Date_E), out DateE);
                     sqlBuilder.Append(" AND add_date between @Date_S and @Date_E ");
                     parameters.Add(new SqlParameter("@Date_S", FuncHandler.ConvertROCToGregorian(model.Date_S)));
-                    parameters.Add(new SqlParameter("@Date_E", FuncHandler.ConvertROCToGregorian(model.Date_E)));
+                    parameters.Add(new SqlParameter("@Date_E", DateE.AddDays(1)));
                 }
 
                 DataTable dtResult = _adoData.ExecuteQuery(sqlBuilder.ToString(), parameters);
@@ -545,7 +547,7 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@close_type_date",  string.IsNullOrEmpty(model.close_type_date) ? DBNull.Value : model.close_type_date),
                     new SqlParameter("@del_tag",  string.IsNullOrEmpty(model.del_tag) ? DBNull.Value : model.del_tag),
 
-                    new SqlParameter("@add_date", DateTime.Today),
+                    new SqlParameter("@add_date", DateTime.Now),
                     new SqlParameter("@add_num", model.add_num),
                     new SqlParameter("@add_ip", clientIp)
                 };
