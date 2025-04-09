@@ -118,7 +118,7 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
-        /// 車貸.撥款日期.Group年月 Manufacturer_SQuery
+        /// 車貸.撥款日期.Group年月
         /// </summary>
         [HttpGet("House_othercase_GYMQuery")]
         public ActionResult<ResultClass<string>> House_othercase_GYMQuery()
@@ -406,7 +406,9 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
 
-                var sqlBuilder = new StringBuilder("select AG_id, add_date, case_com, agency_com, check_process_type, close_type " +
+                var sqlBuilder = new StringBuilder("select AG_id" +
+                    ", FORMAT(add_date, 'yyyy/MM/dd', 'en-US') + ' ' +  CASE WHEN DATEPART(HOUR, add_date) < 12 THEN '上午' ELSE '下午' END + ' '  + FORMAT(add_date, 'hh:mm:ss', 'en-US') AS add_date" +
+                    ", case_com, agency_com, check_process_type, close_type " +
                     ", (select U_name FROM User_M where U_num = agcy.check_leader_num AND del_tag = '0') as check_leader_name " +
                     ",(select U_name FROM User_M where U_num = agcy.add_num AND del_tag = '0') as add_name " +
                     ",(select U_name FROM User_M where U_num = agcy.check_process_num AND del_tag='0') as check_process_name " +
@@ -636,7 +638,7 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@AG_note",  string.IsNullOrEmpty(model.AG_note) ? DBNull.Value : model.AG_note),
                     new SqlParameter("@check_leader_num",  string.IsNullOrEmpty(model.check_leader_num) ? DBNull.Value : model.check_leader_num),
                     new SqlParameter("@check_process_num",  string.IsNullOrEmpty(model.check_process_num) ? DBNull.Value : model.check_process_num),
-                    new SqlParameter("@set_process_date",  string.IsNullOrEmpty(model.set_process_date) ? DBNull.Value : model.set_process_date),
+                    new SqlParameter("@set_process_date",  string.IsNullOrEmpty(model.set_process_date) || string.IsNullOrEmpty(model.check_process_num) ? DBNull.Value : model.set_process_date),
                     new SqlParameter("@check_process_type",  string.IsNullOrEmpty(model.check_process_type) ? DBNull.Value : model.check_process_type),
                     new SqlParameter("@check_process_date",  string.IsNullOrEmpty(model.check_process_date) ? DBNull.Value : model.check_process_date),
                     new SqlParameter("@check_process_note",  string.IsNullOrEmpty(model.check_process_note) ? DBNull.Value : model.check_process_note),
@@ -721,7 +723,7 @@ namespace KF_WebAPI.Controllers
         [HttpPost("House_SendCase_LQuery")]
         public ActionResult<ResultClass<string>> House_SendCase_LQuery(House_sendcase_Req model)
         {
-            House_sendcase_Req cc = new KF_WebAPI.BaseClass.AE.House_sendcase_Req();
+            
             ResultClass<string> resultClass = new ResultClass<string>();
             var sqlBuilder = new StringBuilder(
                 @"SELECT 
@@ -763,17 +765,36 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
 
                 var parameters = new List<SqlParameter>();
+                //申請人
                 if (!string.IsNullOrEmpty(model.CS_name))
                 {
                     sqlBuilder.Append(" AND A.CS_name like  @CS_name ");
                     parameters.Add(new SqlParameter("@CS_name", "%" + model.CS_name + "%"));
                 }
 
-                if (!string.IsNullOrEmpty(model.Date_S) && !string.IsNullOrEmpty(model.Date_E))
+                //區
+                if (!string.IsNullOrEmpty(model.BC_code))
                 {
-                    sqlBuilder.Append(" AND get_amount_date between @Date_S and @Date_E ");
-                    parameters.Add(new SqlParameter("@Date_S", FuncHandler.ConvertROCToGregorian(model.Date_S)));
-                    parameters.Add(new SqlParameter("@Date_E", FuncHandler.ConvertROCToGregorian(model.Date_E)));
+                    sqlBuilder.Append(" AND fund_company = @BC_code ");
+                    parameters.Add(new SqlParameter("@BC_code", model.BC_code));
+                }
+
+                //撥款年月
+                if (!string.IsNullOrEmpty(model.selYear_S))
+                {
+                    string y = model.selYear_S.Split('-')[0];
+                    string m = model.selYear_S.Split('-')[1];
+                    sqlBuilder.Append(" AND year(get_amount_date) = @y and month(get_amount_date) = @m ");
+                    parameters.Add(new SqlParameter("@y", y));
+                    parameters.Add(new SqlParameter("@m", m));
+                }
+
+                //業務
+                if (!string.IsNullOrEmpty(model.plan_name))
+                {
+                    sqlBuilder.Append(" AND M.U_name = @plan_name ");
+                    parameters.Add(new SqlParameter("@plan_name", model.plan_name));
+                    
                 }
 
                 if (!string.IsNullOrEmpty(model.OrderByStr))
@@ -801,6 +822,52 @@ namespace KF_WebAPI.Controllers
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             return Ok(resultClass);
+        }
+
+
+        /// <summary>
+        /// 撥款及費用確認書.撥款日期.Group年月
+        /// </summary>
+        [HttpGet("House_SendCase_GYMQuery")]
+        public ActionResult<ResultClass<string>> House_SendCase_GYMQuery()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
+                #region SQL
+                var T_SQL = @"SELECT  
+                    CONVERT(VARCHAR(7), get_amount_date, 126) as v,
+                    RIGHT('0'+CONVERT(VARCHAR(3), DATEPART(year,get_amount_date)-1911), 3) + '-'+
+                    RIGHT('0'+CONVERT(VARCHAR(2), month(get_amount_date), 112),2) as t
+                    FROM House_SendCase
+                    where  get_amount_date is not null
+                    group by CONVERT(VARCHAR(7), get_amount_date, 126),RIGHT('0'+CONVERT(VARCHAR(3), DATEPART(year,get_amount_date)-1911), 3) + '-'+
+                    RIGHT('0'+CONVERT(VARCHAR(2), month(get_amount_date), 112),2)
+                    order by v desc";
+
+                #endregion
+                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
         }
 
         #endregion
