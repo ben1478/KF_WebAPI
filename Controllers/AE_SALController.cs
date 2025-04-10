@@ -898,14 +898,14 @@ namespace KF_WebAPI.Controllers
                 //區
                 if (!string.IsNullOrEmpty(model.BC_code))
                 {
-                    sqlBuilder.Append(" AND M.U_BC = @BC_code ");
+                    sqlBuilder.Append(" AND M1.U_BC = @BC_code ");
                     parameters.Add(new SqlParameter("@BC_code", model.BC_code));
                 }
 
                 //客訴時間(年月)
                 if (!string.IsNullOrEmpty(model.selYear_S))
                 {
-                    sqlBuilder.Append(" AND left(C.compDate,5) = @selYear_S ");
+                    sqlBuilder.Append($" AND left(C.compDate,{model.selYear_S.Length}) = @selYear_S ");
                     parameters.Add(new SqlParameter("@selYear_S", model.selYear_S));
                 }
 
@@ -939,11 +939,12 @@ namespace KF_WebAPI.Controllers
                 #region SQL
 
                 var T_SQL =
-                    @"SELECT Comp_Id, CS_name, M1.U_name Sales_name, ub.item_D_name BC_name, Complaint, CompDate, Remark, M2.U_name add_name " +
+                    @"SELECT Comp_Id, CS_name, M1.U_name Sales_name, ub.item_D_name BC_name, Complaint, CompDate, Remark, M2.U_name add_name,M3.U_name edit_name " +
                         "FROM dbo.Complaint C " +
                         "LEFT JOIN User_M M1 on C.Sales_num = M1.u_num " +
                         "LEFT JOIN Item_list ub ON ub.item_M_code = 'branch_company'  AND ub.item_D_code = M1.U_BC " +
                         "LEFT JOIN User_M M2 on C.Add_num = M2.u_num " +
+                        "LEFT JOIN User_M M3 on C.Edit_num = M3.u_num " +
                         "where Comp_Id = @Id ";
 
 
@@ -1021,7 +1022,7 @@ namespace KF_WebAPI.Controllers
                         new SqlParameter("@CS_name",  string.IsNullOrEmpty(model.CS_name) ? DBNull.Value : model.CS_name),
                         new SqlParameter("@Sales_num",  string.IsNullOrEmpty(model.Sales_num) ? DBNull.Value : model.Sales_num),
                         new SqlParameter("@Complaint",  string.IsNullOrEmpty(model.Complaint) ? DBNull.Value : model.Complaint),
-                        new SqlParameter("@CompDate",  string.IsNullOrEmpty(model.CompDate) ? DBNull.Value : model.CompDate),
+                        new SqlParameter("@CompDate",  string.IsNullOrEmpty(model.CompDate) ? DBNull.Value : model.CompDate.Replace("-0","/")),
                         new SqlParameter("@CompTime",  string.IsNullOrEmpty(model.CompTime) ? DBNull.Value : model.CompTime),
                         new SqlParameter("@Remark",  string.IsNullOrEmpty(model.Remark) ? DBNull.Value : model.Remark),
                         new SqlParameter("@add_date", DateTime.Today),
@@ -1061,9 +1062,11 @@ namespace KF_WebAPI.Controllers
         [HttpPost("Complaint_Upd")]
         public ActionResult<ResultClass<string>> Complaint_Upd(Complaint_Ins model)
         {
-            ResultClass<string> resultClass = new ResultClass<string>();
-            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
 
+            // CompDate 傳入格式 國曆：yyy-MM-dd 需轉成國曆：yyy/MM/dd 並且要去零 。例如:113-01-01 -> 113/1/1
+
+            ResultClass<string> resultClass = new ResultClass<string>();
+            
             try
             {
                 ADOData _adoData = new ADOData();
@@ -1077,7 +1080,7 @@ namespace KF_WebAPI.Controllers
                                     [CompTime] = @CompTime,
                                     [Remark] = @Remark,
                                     [edit_date] = @edit_date,
-                                    [edit_num] = @edit_num,
+                                    [edit_num] = @edit_num
                                     where[Comp_Id] = @Comp_Id";
                 var parameters = new List<SqlParameter>
                 {
@@ -1085,11 +1088,11 @@ namespace KF_WebAPI.Controllers
                         new SqlParameter("@CS_name",  string.IsNullOrEmpty(model.CS_name) ? DBNull.Value : model.CS_name),
                         new SqlParameter("@Sales_num",  string.IsNullOrEmpty(model.Sales_num) ? DBNull.Value : model.Sales_num),
                         new SqlParameter("@Complaint",  string.IsNullOrEmpty(model.Complaint) ? DBNull.Value : model.Complaint),
-                        new SqlParameter("@CompDate",  string.IsNullOrEmpty(model.CompDate) ? DBNull.Value : model.CompDate),
+                        new SqlParameter("@CompDate",  string.IsNullOrEmpty(model.CompDate) ? DBNull.Value : model.CompDate.Replace("-0","/")),
                         new SqlParameter("@CompTime",  string.IsNullOrEmpty(model.CompTime) ? DBNull.Value : model.CompTime),
                         new SqlParameter("@Remark",  string.IsNullOrEmpty(model.Remark) ? DBNull.Value : model.Remark),
                         new SqlParameter("@edit_date", DateTime.Today),
-                        new SqlParameter("@edit_num",  clientIp)
+                        new SqlParameter("@edit_num",  model.edit_num)
                 };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);

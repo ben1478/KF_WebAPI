@@ -16,8 +16,10 @@ namespace KF_WebAPI.BaseClass.AE
         public string? Remark { get; set; }
         public DateTime? add_date { get; set; }
         public string? add_num { get; set; }
+        public string? add_name { get; set; }
         public DateTime? edit_date { get; set; }
         public string? edit_num { get; set; }
+        public string? edit_name { get; set; }
         public DateTime? del_date { get; set; }
         public string? del_num { get; set; }
 
