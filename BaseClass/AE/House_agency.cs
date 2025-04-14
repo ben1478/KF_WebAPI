@@ -81,6 +81,10 @@ namespace KF_WebAPI.BaseClass.AE
         public int? AG_id { get; set; }
         public string Date_S { get; set; }
         public string Date_E { get; set; }
+
+        public string? U_num { get; set; }
+        // 分公司
+        public string? U_BC { get; set; }
     }
     
 }
