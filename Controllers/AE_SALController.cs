@@ -405,7 +405,7 @@ namespace KF_WebAPI.Controllers
         {
 
             string SC = SpecialCkeck(model.U_num);
-            string isDel = SC.Contains("7036") ? "Y" : "N";
+            string isDel = (SC.Contains("7005") || SC.Contains("7036") )? "Y" : "N";
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
@@ -447,7 +447,7 @@ namespace KF_WebAPI.Controllers
 
                 bool isCanQuery = true;
                 // 7036:業務流程區	[特定權限全區, 全時段開放] 可查詢全部人員資料且不限3個月內
-                if (!SC.Contains("7036"))
+                if (!(SC.Contains("7005") || SC.Contains("7036")))
                 {
                     // 7018:業務流程區  [委對單]可查詢全部人員資料,資料限3個月內
                     DateS = DateE.AddMonths(-3);
@@ -810,11 +810,12 @@ namespace KF_WebAPI.Controllers
         {
             // 7018:業務流程區  [委對單]可查詢全部人員資料
             // 7036:業務流程區	[特定權限全區, 全時段開放] 可查詢全部人員資料且不限3個月內
+            // 7005	開發人員區	管理者	最高權限
             // 0:本人
-                ADOData _adoData = new ADOData();
+            ADOData _adoData = new ADOData();
                 #region SQL
                 var T_SQL = @"select sp_id from [dbo].[Special_set] as ss
-                                where sp_type = 1 and SS.U_num = @U_num and SS.sp_id in  (7018,7036) ";
+                                where sp_type = 1 and SS.U_num = @U_num and SS.sp_id in  (7005,7018,7036) ";
                 var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@u_num", User)
