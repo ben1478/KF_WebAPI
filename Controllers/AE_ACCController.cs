@@ -48,8 +48,7 @@ namespace KF_WebAPI.Controllers
                     LEFT JOIN House_sendcase S ON S.HS_id = M.HS_id
                     WHERE D.del_tag = '0' AND M.del_tag='0' AND S.del_tag='0' AND H.del_tag='0'
                     AND D.RCM_id=@RCM_id AND D.bad_debt_type='N' AND D.cancel_type='N'
-                    AND isnull(RecPayAmt,0) = 0 AND RC_date <= @RC_date_E) A where RC_count not in(select max(RC_count) from Receivable_D
-                    where del_tag='0' AND RCM_id=@RCM_id AND bad_debt_type='N' AND cancel_type='N' AND isnull(RecPayAmt,0) = 0 AND RC_date <= @RC_date_E)) M";
+                    AND isnull(RecPayAmt,0) = 0 AND RC_date <= @RC_date_E) A ) M";
                 var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@RCM_id", RCM_id),
