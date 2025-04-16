@@ -8,7 +8,9 @@ using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using OfficeOpenXml.Sorting;
 using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Text;
 
 namespace KF_WebAPI.Controllers
@@ -401,35 +403,85 @@ namespace KF_WebAPI.Controllers
         [HttpPost("House_agency_LQuery")]
         public ActionResult<ResultClass<string>> House_agency_LQuery(House_agency_Req model)
         {
+
+            string SC = SpecialCkeck(model.U_num);
+            string isDel = (SC.Contains("7005") || SC.Contains("7036") )? "Y" : "N";
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
                 ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
 
-                var sqlBuilder = new StringBuilder("select AG_id" +
-                    ", FORMAT(add_date, 'yyyy/MM/dd', 'en-US') + ' ' +  CASE WHEN DATEPART(HOUR, add_date) < 12 THEN '上午' ELSE '下午' END + ' '  + FORMAT(add_date, 'hh:mm:ss', 'en-US') AS add_date" +
-                    ", case_com, agency_com, check_process_type, close_type " +
-                    ", (select U_name FROM User_M where U_num = agcy.check_leader_num AND del_tag = '0') as check_leader_name " +
+                var sqlBuilder = new StringBuilder("select AG_id " +
+                    ",FORMAT(agcy.add_date, 'yyyy/MM/dd', 'en-US') + ' ' +  CASE WHEN DATEPART(HOUR, agcy.add_date) < 12 THEN '上午' ELSE '下午' END + ' '  + FORMAT(agcy.add_date, 'hh:mm:ss', 'en-US') AS add_date " +
+                    ",case_com, agency_com, check_process_type, close_type, check_leader_num " +
+                    ",(select U_name FROM User_M where U_num = agcy.check_leader_num AND del_tag = '0') as check_leader_name " +
+                    ",addUser.U_name as add_num_name, addUser.U_BC as add_U_BC " +
                     ",(select U_name FROM User_M where U_num = agcy.add_num AND del_tag = '0') as add_name " +
                     ",(select U_name FROM User_M where U_num = agcy.check_process_num AND del_tag='0') as check_process_name " +
-                    "from House_agency agcy WHERE 1 = 1 ");
+                    ",isEdit = case when agcy.add_num = @U_num then 'Y' else 'N' end " +
+                    ",@isDel as isDel "+
+                    " from House_agency agcy " +
+                    " join User_M as addUser on addUser.U_num = agcy.add_num AND addUser.del_tag='0' " +
+                    " WHERE 1 = 1 "
+                    );
 
-                var parameters = new List<SqlParameter>();
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@U_num", model.U_num),
+                    new SqlParameter("@isDel", isDel)
+                };
+
+                // 委對單號
                 if (model.AG_id != 0)
                 {
                     sqlBuilder.Append(" AND AG_id = @AG_id ");
                     parameters.Add(new SqlParameter("@AG_id", model.AG_id));
                 }
 
-                if (!string.IsNullOrEmpty(model.Date_S) && !string.IsNullOrEmpty(model.Date_E))
-                {
-                    DateTime DateE = DateTime.MinValue;
-                    DateTime.TryParse(FuncHandler.ConvertROCToGregorian(model.Date_E), out DateE);
-                    sqlBuilder.Append(" AND add_date between @Date_S and @Date_E ");
-                    parameters.Add(new SqlParameter("@Date_S", FuncHandler.ConvertROCToGregorian(model.Date_S)));
-                    parameters.Add(new SqlParameter("@Date_E", DateE.AddDays(1)));
-                }
+                #region 依管理作業\特定權限設定判斷
+                DateTime DateS = DateTime.MinValue;
+                DateTime.TryParse(FuncHandler.ConvertROCToGregorian(model.Date_S), out DateS);
+                DateTime DateE = DateTime.MinValue;
+                DateTime.TryParse(FuncHandler.ConvertROCToGregorian(model.Date_E), out DateE);
+                
 
+                bool isCanQuery = true;
+                // 7036:業務流程區	[特定權限全區, 全時段開放] 可查詢全部人員資料且不限3個月內
+                if (!(SC.Contains("7005") || SC.Contains("7036")))
+                {
+                    // 7018:業務流程區  [委對單]可查詢全部人員資料,資料限3個月內
+                    DateS = DateE.AddMonths(-3);
+                    DateE = DateTime.Today;
+                    if (!SC.Contains("7018"))
+                    {
+                        // 角色管理:業務主管
+                        if (isDepManager(model.U_num))
+                        {
+                            sqlBuilder.Append(" AND ((check_process_num = @U_num or agcy.add_num = @U_num or check_leader_num = @U_num) or (addUser.U_BC = @U_BC))");
+                            parameters.Add(new SqlParameter("@U_BC", model.U_BC));
+                        }
+                        else
+                        {
+                            // 0:本人
+                            if (SC.Contains(model.U_num))
+                            {
+                                // 1.add_num/check_leader_num=本人
+                                sqlBuilder.Append(" AND (check_process_num = @U_num or agcy.add_num = @U_num or check_leader_num = @U_num) ");
+
+                            }
+                        }
+                    }
+                }
+                #endregion
+
+                // 申請日期
+                //if (!string.IsNullOrEmpty(model.Date_S) && !string.IsNullOrEmpty(model.Date_E))
+                //{
+                    sqlBuilder.Append(" AND agcy.add_date between @Date_S and @Date_E ");
+                    parameters.Add(new SqlParameter("@Date_S", DateS));
+                    parameters.Add(new SqlParameter("@Date_E", DateE.AddDays(1)));
+                //}
+                sqlBuilder.Append(" order by AG_id desc ");
                 DataTable dtResult = _adoData.ExecuteQuery(sqlBuilder.ToString(), parameters);
 
                 resultClass.ResultCode = "000";
@@ -443,7 +495,6 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-
 
         /// <summary>
         /// 委對單單筆查詢 Manufacturer_SQuery
@@ -488,8 +539,6 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-
-
 
         /// <summary>
         /// 新增委對單資料 House_agency_Ins
@@ -539,18 +588,18 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@get_data",  string.IsNullOrEmpty(model.get_data) ? DBNull.Value : model.get_data),
                     new SqlParameter("@process_charge",  string.IsNullOrEmpty(model.process_charge) ? DBNull.Value : model.process_charge),
                     new SqlParameter("@AG_note",  string.IsNullOrEmpty(model.AG_note) ? DBNull.Value : model.AG_note),
-                    new SqlParameter("@check_leader_num",  string.IsNullOrEmpty(model.check_leader_num) ? DBNull.Value : model.check_leader_num),
-                    new SqlParameter("@check_process_num",  string.IsNullOrEmpty(model.check_process_num) ? DBNull.Value : model.check_process_num),
+                    new SqlParameter("@check_leader_num",  string.IsNullOrEmpty(model.check_leader_num) ? DBNull.Value : model.check_leader_num.ToUpper()),
+                    new SqlParameter("@check_process_num",  string.IsNullOrEmpty(model.check_process_num) ? DBNull.Value : model.check_process_num.ToUpper()),
                     //new SqlParameter("@set_process_date",  string.IsNullOrEmpty(model.set_process_date) ? DBNull.Value : model.set_process_date),
                     new SqlParameter("@check_process_type",  string.IsNullOrEmpty(model.check_process_type) ? "N" : model.check_process_type),
                     //new SqlParameter("@check_process_date",  string.IsNullOrEmpty(model.check_process_date) ? DBNull.Value : model.check_process_date),
                     new SqlParameter("@check_process_note",  string.IsNullOrEmpty(model.check_process_note) ? DBNull.Value : model.check_process_note),
                     new SqlParameter("@close_type",  string.IsNullOrEmpty(model.close_type) ? "N" : model.close_type),
                     new SqlParameter("@close_type_date",  string.IsNullOrEmpty(model.close_type_date) ? DBNull.Value : model.close_type_date),
-                    new SqlParameter("@del_tag",  string.IsNullOrEmpty(model.del_tag) ? DBNull.Value : model.del_tag),
+                    new SqlParameter("@del_tag",  "0"),
 
                     new SqlParameter("@add_date", DateTime.Now),
-                    new SqlParameter("@add_num", model.add_num),
+                    new SqlParameter("@add_num", model.add_num.ToUpper()),
                     new SqlParameter("@add_ip", clientIp)
                 };
 
@@ -616,7 +665,6 @@ namespace KF_WebAPI.Controllers
                                     [check_process_note] = @check_process_note,
                                     [close_type] = @close_type,
                                     [close_type_date] = @close_type_date,
-                                    [del_tag] = @del_tag,
                                     [edit_date] = @edit_date,
                                     [edit_num] = @edit_num,
                                     [edit_ip] = @edit_ip
@@ -636,17 +684,17 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@get_data",  string.IsNullOrEmpty(model.get_data) ? DBNull.Value : model.get_data),
                     new SqlParameter("@process_charge",  string.IsNullOrEmpty(model.process_charge) ? DBNull.Value : model.process_charge),
                     new SqlParameter("@AG_note",  string.IsNullOrEmpty(model.AG_note) ? DBNull.Value : model.AG_note),
-                    new SqlParameter("@check_leader_num",  string.IsNullOrEmpty(model.check_leader_num) ? DBNull.Value : model.check_leader_num),
-                    new SqlParameter("@check_process_num",  string.IsNullOrEmpty(model.check_process_num) ? DBNull.Value : model.check_process_num),
+                    new SqlParameter("@check_leader_num",  string.IsNullOrEmpty(model.check_leader_num) ? DBNull.Value : model.check_leader_num.ToUpper()),
+                    new SqlParameter("@check_process_num",  string.IsNullOrEmpty(model.check_process_num) ? DBNull.Value : model.check_process_num.ToUpper()),
                     new SqlParameter("@set_process_date",  string.IsNullOrEmpty(model.set_process_date) || string.IsNullOrEmpty(model.check_process_num) ? DBNull.Value : model.set_process_date),
                     new SqlParameter("@check_process_type",  string.IsNullOrEmpty(model.check_process_type) ? DBNull.Value : model.check_process_type),
                     new SqlParameter("@check_process_date",  string.IsNullOrEmpty(model.check_process_date) ? DBNull.Value : model.check_process_date),
                     new SqlParameter("@check_process_note",  string.IsNullOrEmpty(model.check_process_note) ? DBNull.Value : model.check_process_note),
                     new SqlParameter("@close_type",  string.IsNullOrEmpty(model.close_type) ? DBNull.Value : model.close_type),
                     new SqlParameter("@close_type_date",  string.IsNullOrEmpty(model.close_type_date) ? DBNull.Value : model.close_type_date),
-                    new SqlParameter("@del_tag",  string.IsNullOrEmpty(model.del_tag) ? DBNull.Value : model.del_tag),
+                    
                     new SqlParameter("@edit_date", DateTime.Today),
-                    new SqlParameter("@edit_num", model.edit_num),
+                    new SqlParameter("@edit_num", model.edit_num.ToUpper()),
                     new SqlParameter("@edit_ip", clientIp)
                 };
                 #endregion
@@ -713,7 +761,109 @@ namespace KF_WebAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// 委對單修改權限判定 ChkEditor
+        /// </summary>
+        [HttpGet("ChkEditor")]
+        public ActionResult<ResultClass<string>> ChkEditor(string User)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
 
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"SELECT [Map_id]
+                              FROM [AE_DB_TEST].[dbo].[Menu_set]
+                              where menu_id = 1034 -- 委對單
+                                and u_num = @u_num
+                                and per_edit = 1 -- 可修改";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@u_num", User)
+                };
+                #endregion
+                var dtresult = _adoData.ExecuteQuery(T_SQL, parameters);
+                resultClass.ResultCode = "000";
+                if (dtresult.Rows.Count == 0)
+                {
+                    resultClass.objResult = "N";
+                }
+                else
+                {
+                    resultClass.objResult = "Y";
+                }
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 管理作業\特定權限設定
+        /// </summary>
+        private string SpecialCkeck(string User)
+        {
+            // 7018:業務流程區  [委對單]可查詢全部人員資料
+            // 7036:業務流程區	[特定權限全區, 全時段開放] 可查詢全部人員資料且不限3個月內
+            // 7005	開發人員區	管理者	最高權限
+            // 0:本人
+            ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"select sp_id from [dbo].[Special_set] as ss
+                                where sp_type = 1 and SS.U_num = @U_num and SS.sp_id in  (7005,7018,7036) ";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@u_num", User)
+                };
+                #endregion
+                var dtresult = _adoData.ExecuteQuery(T_SQL, parameters);
+                
+                string sResult = "";
+                foreach(DataRow dr in dtresult.Rows)
+                {
+                    sResult = dr["sp_id"].ToString() + "/"+sResult ; 
+                }
+                if(string.IsNullOrEmpty(sResult))
+                {
+                    sResult = User; //回傳本人員編
+                }
+                else
+                {
+                    sResult = sResult.Substring(0, sResult.Length - 1); //回傳:7018/7036
+                }
+                
+                return sResult;
+            
+        }
+
+        private bool isDepManager(string User)
+        {
+            //業務主管
+            ADOData _adoData = new ADOData();
+            #region SQL
+            var T_SQL = @"select u_name, u_num, u_bc, Role_num " +
+                "from user_M as u " +
+                "where u_num = @u_num ";
+
+            var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@u_num", User)
+                };
+            #endregion
+            var dtresult = _adoData.ExecuteQuery(T_SQL, parameters);
+            bool isDep = false;
+            foreach (DataRow dr in dtresult.Rows)
+            {
+                isDep = dr["Role_num"].ToString() == "1008"; // 業務主管:1008
+            }
+            return isDep;
+
+        }
         #endregion
 
         #region 撥款及費用確認書
