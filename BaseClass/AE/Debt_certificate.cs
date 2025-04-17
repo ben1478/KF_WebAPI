@@ -34,6 +34,7 @@
 
     public class Debt_Certificate_Lres
     {
+        public int Debt_ID { get; set; }
         public string cs_name { get; set; }
         public string CS_PID { get; set; }
         public string? str_loan_amount { get; set; }
@@ -60,6 +61,8 @@
         public string str_certificate_date_S { get; set; }
         public string str_certificate_date_E { get; set; }
         public string Remark { get; set; }
+
+        //public string edit_num { get; set; }
 
     }
 }
