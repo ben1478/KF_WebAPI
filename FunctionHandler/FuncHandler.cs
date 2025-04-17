@@ -2335,7 +2335,21 @@ namespace KF_WebAPI.FunctionHandler
                                 MsgNum = leaderNum;
                             break;
                         default:
-                            parameters_d.Add(new SqlParameter("@FD_Step_num", stepPersontions[i - 1]));
+                            if(stepPersontions[i - 1]== U_num) // 當申請人為審核者自動變更為代理人
+                            {
+                                var T_SQL_AGENT = @"select * from User_M where U_num = @U_num";
+                                var parameters_agent = new List<SqlParameter>
+                                {
+                                    new SqlParameter("@U_num", U_num)
+                                };
+                                var dtResultAgent = _adoData.ExecuteQuery(T_SQL_AGENT, parameters_agent);
+                                var agentNum = dtResultAgent.Rows[0]["U_agent_num"].ToString();
+                                parameters_d.Add(new SqlParameter("@FD_Step_num", agentNum));
+                            }
+                            else
+                            {
+                                parameters_d.Add(new SqlParameter("@FD_Step_num", stepPersontions[i - 1]));
+                            }
                             _adoData.ExecuteNonQuery(T_SQL_D, parameters_d);
                             if (i == 1)
                                 MsgNum = stepPersontions[i - 1];
