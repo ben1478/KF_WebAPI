@@ -2876,7 +2876,10 @@ namespace KF_WebAPI.Controllers
                     T_SQL = @"select V.diffType,AmtTypeDesc,AmtType,count(V.diffType) Count,Format(sum(amount_total),'N0') amount_total,Tot_Amt,rowspan,
                     Format(convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)),'N2') + '%' Rate
                     from view_excess_base V
-                    left join (select sum(isnull(convert(int, get_amount),0)*10000) Tot_Amt
+                    left join (select sum(isnull(case when try_convert(int, get_amount) is NULL
+                        then 0
+                        else convert(int, get_amount)
+                        end,0)*10000) Tot_Amt
                     from House_sendcase H
                     left join House_apply A ON A.HA_id = H.HA_id
                     where H.del_tag = '0' AND A.del_tag= '0'
@@ -2898,7 +2901,10 @@ namespace KF_WebAPI.Controllers
                     T_SQL = @"select V.diffType,AmtTypeDesc,AmtType,count(V.diffType) Count,Format(sum(amount_total),'N0') amount_total,Tot_Amt,rowspan,
                     Format(convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)),'N2') + '%' Rate
                     from view_excess_base V
-                    left join (select sum(isnull(convert(int, get_amount),0)*10000) Tot_Amt
+                    left join (select sum(isnull(case when try_convert(int, get_amount) is NULL
+                        then 0
+                        else convert(int, get_amount)
+                        end,0)*10000) Tot_Amt
                     from House_sendcase H
                     left join House_apply A ON A.HA_id = H.HA_id
                     where H.del_tag = '0' AND A.del_tag= '0'
@@ -3160,13 +3166,14 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"select cs_name,CS_PID,FORMAT(loan_amount,'N0') loan_amount,certificate_date_S,certificate_date_E,Remark 
+                var T_SQL = @"select Debt_ID, cs_name, CS_PID, FORMAT(loan_amount,'N0') loan_amount,certificate_date_S,certificate_date_E,Remark 
                     from Debt_certificate
                     where del_tag = '0'
                     order by certificate_date_S";
                 #endregion
                 var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new Debt_Certificate_Lres
                 {
+                    Debt_ID = row.Field<int>("Debt_ID"),
                     cs_name = row.Field<string>("cs_name"),
                     CS_PID = row.Field<string>("CS_PID"),
                     str_loan_amount = row.Field<string>("loan_amount"),
@@ -3405,8 +3412,8 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"Insert into Debt_certificate (cs_name,CS_PID,loan_amount,certificate_date_S,certificate_date_E,Remark,add_date,add_num,add_ip)
-                    Values (@cs_name,@CS_PID,@loan_amount,@certificate_date_S,@certificate_date_E,@Remark,GETDATE(),@add_num,@add_ip)";
+                var T_SQL = @"Insert into Debt_certificate (cs_name,CS_PID,loan_amount,certificate_date_S,certificate_date_E,Remark,add_date,add_num,add_ip,del_tag)
+                    Values (@cs_name,@CS_PID,@loan_amount,@certificate_date_S,@certificate_date_E,@Remark,GETDATE(),@add_num,@add_ip,@del_tag)";
                 parameters.Add(new SqlParameter("@cs_name", model.cs_name));
                 parameters.Add(new SqlParameter("@CS_PID", model.CS_PID));
                 parameters.Add(new SqlParameter("@loan_amount", model.loan_amount));
@@ -3415,6 +3422,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@Remark", model.Remark));
                 parameters.Add(new SqlParameter("@add_num", User_Num));
                 parameters.Add(new SqlParameter("@add_ip",clientIp));
+                parameters.Add(new SqlParameter("@del_tag", "0"));
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
