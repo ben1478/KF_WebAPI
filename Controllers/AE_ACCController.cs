@@ -54,6 +54,134 @@ namespace KF_WebAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// 提供分期人員清單
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("Settle_Show_LQuery")]
+        public ActionResult<ResultClass<string>> Settle_Show_LQuery(string? CS_name,string? CS_PID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var parameters = new List<SqlParameter>();
+                #region SQL
+                var T_SQL = @"select HA.CS_name,HA.CS_PID,RM.amount_total,RM.month_total,RM.amount_per_month,RM.RCM_id from Receivable_M RM
+                    INNER JOIN 
+                    (
+                      select * from 
+                      (
+                        select ROW_NUMBER() OVER (PARTITION BY RCM_id ORDER BY RC_count ASC) AS rn,* from Receivable_D
+                        where bad_debt_type='N' AND cancel_type='N' AND del_tag = '0' AND isnull(RecPayAmt,0) = 0 and check_pay_type='N'
+                      ) RD_filtered where RD_filtered.rn = 1
+                    ) RD on RM.RCM_id = RD.RCM_id 
+                    LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0'
+                    where RM.del_tag='0' AND RM.del_tag='0'";
+                if (!string.IsNullOrEmpty(CS_name))
+                {
+                    T_SQL += " and CS_name=@CS_name ";
+                    parameters.Add(new SqlParameter("@CS_name", CS_name));
+                }
+                   
+                if (!string.IsNullOrEmpty(CS_PID))
+                {
+                    T_SQL += " and CS_PID=@CS_PID ";
+                    parameters.Add(new SqlParameter("@CS_PID", CS_PID));
+                }
+                T_SQL += " ORDER BY RD.RC_date";
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 提供結清紀錄
+        /// </summary>
+        /// <param name="RCM_ID"></param>
+        [HttpGet("Settle_Show_SQuery")]
+        public ActionResult<ResultClass<string>> Settle_Show_SQuery(string RCM_ID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                var isFirst = "N";
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = "";
+                //先判定是否首期繳清
+                var T_SQL_First = @"select Case When isnull(MAX(RC_count),0) <= 1 Then 'Y' ELSE 'N' End isFirst 
+                                    from view_RC_Dtl where RCM_id = @RCM_ID";
+                var parameters_f = new List<SqlParameter>
+                {
+                    new SqlParameter("@RCM_ID",RCM_ID)
+                };
+                var dtResult_f = _adoData.ExecuteQuery(T_SQL_First, parameters_f);
+                isFirst = dtResult_f.Rows[0]["isFirst"].ToString();
+                if(isFirst == "Y")
+                {
+                    T_SQL = @"SELECT M.amount_total RP_AMT,isnull(M.Break_AMT,CEILING(M.amount_total * 0.13)) Break_AMT,
+                                     S.get_amount_date RC_date,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111)OffDate,
+                                     D1.interest,Case When DATEPART(Day,D1.RC_date) = DATEPART(Day,isnull(M.date_begin_settle, SYSDATETIME())) and DATEDIFF(MONTH, D1.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) = 1 
+                                     THEN 30 ELSE DATEDIFF(Day, D1.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) end interestDay,
+                                     isnull(M.Interest_AMT,CEILING(dbo.DivToFloat(D1.interest,30) * DATEDIFF(DAY,S.get_amount_date,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111))))interest_AMT,
+                              	     0 as Delay_AMT,'Y' as isFirst,amount_per_month,H.CS_name
+                              FROM Receivable_M M
+                              LEFT JOIN House_sendcase S ON M.HS_id=S.HS_id
+                              LEFT JOIN Receivable_D D1 ON M.RCM_id=D1.RCM_id
+                              LEFT JOIN House_apply H ON H.HA_id = M.HA_id
+                              WHERE M.RCM_id =　@RCM_id AND D1.RC_count=1";
+                }
+                else
+                {
+                    T_SQL = @"SELECT D.Ex_RemainingPrincipal RP_AMT,isnull(M.Break_AMT,CEILING(D.Ex_RemainingPrincipal * 0.13)) Break_AMT,
+                              convert(varchar(10),D.RC_date,111) RC_date,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111) OffDate,
+                              D1.interest,Case When DATEPART(Day,D.RC_date) = DATEPART(Day,isnull(M.date_begin_settle, SYSDATETIME())) and DATEDIFF(MONTH, D.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) = 1 
+                              THEN 30 ELSE DATEDIFF(Day, D.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) end interestDay,
+                              isnull(M.Interest_AMT,CEILING(dbo.DivToFloat(D1.interest,30) * DATEDIFF(DAY,D.RC_date,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111)))) interest_AMT,
+                              (select dbo.GetTotalDelay_AMT(@RCM_ID,SYSDATETIME())) Delay_AMT,'N' as isFirst,M.amount_per_month,H.CS_name
+                              FROM Receivable_D D
+                              LEFT JOIN Receivable_D D1 ON D.RCM_id=D1.RCM_id AND (D.RC_count+1) = D1.RC_count
+                              LEFT JOIN Receivable_M M ON D.RCM_id=M.RCM_id
+                              LEFT JOIN House_apply H ON H.HA_id = M.HA_id
+                              WHERE D.RCM_id = @RCM_ID
+                              AND D.RC_count IN
+                              ( SELECT MAX(RC_count ) FROM Receivable_D
+                              WHERE RCM_id = @RCM_ID
+                              AND RC_note not like '%清償%'
+                              AND check_pay_type <> 'S'
+                              AND check_pay_type='Y')";
+                }
+                
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@RCM_ID",RCM_ID)
+                };
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
         #region 通用
         /// <summary>
         /// 每日未沖銷清單 RC_D_daily_LQuery/RC_D_daily.asp
