@@ -3050,7 +3050,7 @@ namespace KF_WebAPI.Controllers
                 var T_SQL = "";
                 if(!string.IsNullOrEmpty(model.Forec) && model.Forec == "1")
                 {
-                    T_SQL = @"SELECT cs_name,DiffDay,Format(amount_total,'N0'),RC_count,month_total,court_sale,AmtTypeDesc,AmtType,DiffType
+                    T_SQL = @"SELECT cs_name,DiffDay, amount_total,RC_count,month_total,court_sale,AmtTypeDesc,AmtType,DiffType
                     ,replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(max)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'') RCM_note
                     FROM dbo.view_excess_base
                     where 1 = 1 
@@ -3059,7 +3059,7 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
-                    T_SQL = @"SELECT cs_name,DiffDay,Format(amount_total,'N0'),RC_count,month_total,court_sale,AmtTypeDesc,AmtType,DiffType
+                    T_SQL = @"SELECT cs_name,DiffDay, amount_total,RC_count,month_total,court_sale,AmtTypeDesc,AmtType,DiffType
                     ,replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(max)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'') RCM_note
                     FROM dbo.view_excess_base
                     where 1 = 1 
@@ -3260,7 +3260,7 @@ namespace KF_WebAPI.Controllers
         /// 債權憑證資料查詢 Debt_Certificate_DetQuery/Debt_certificate_list.asp
         /// </summary>
         [HttpGet("Debt_Certificate_DetQuery")]
-        public ActionResult<ResultClass<string>> Debt_Certificate_DetQuery(string PID)
+        public ActionResult<ResultClass<string>> Debt_Certificate_DetQuery(string DebtID)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -3271,9 +3271,9 @@ namespace KF_WebAPI.Controllers
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"select cs_name,CS_PID,loan_amount,certificate_date_S,certificate_date_E,Remark 
                     from Debt_certificate
-                    where del_tag = '0' and CS_PID = @CS_PID
+                    where del_tag = '0' and Debt_ID = @Debt_ID
                     order by certificate_date_S";
-                parameters.Add(new SqlParameter("@CS_PID", PID));
+                parameters.Add(new SqlParameter("@Debt_ID", DebtID));
                 #endregion
                 var result = _adoData.ExecuteQuery(T_SQL,parameters).AsEnumerable().Select(row => new Debt_Certificate_res
                 {
@@ -3323,15 +3323,16 @@ namespace KF_WebAPI.Controllers
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"Update Debt_certificate set cs_name = @cs_name,CS_PID = @CS_PID,loan_amount = @loan_amount,
                     certificate_date_S = @certificate_date_S,certificate_date_E = @certificate_date_E,Remark = @Remark, 
-                    edit_date = GETDATE(),edit_num = @edit_num,edit_ip = @edit_ip where CS_PID = @CS_PID";
+                    edit_date = GETDATE(),edit_num = @edit_num,edit_ip = @edit_ip where Debt_ID = @Debt_ID";
                 parameters.Add(new SqlParameter("@cs_name", model.cs_name));
                 parameters.Add(new SqlParameter("@CS_PID", model.CS_PID));
                 parameters.Add(new SqlParameter("@loan_amount", model.loan_amount));
                 parameters.Add(new SqlParameter("@certificate_date_S", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_certificate_date_S))));
                 parameters.Add(new SqlParameter("@certificate_date_E", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_certificate_date_E))));
                 parameters.Add(new SqlParameter("@Remark", model.Remark));
-                parameters.Add(new SqlParameter("@edit_num", User_Num));
-                parameters.Add(new SqlParameter("@edit_ip", clientIp));
+                parameters.Add(new SqlParameter("@edit_num", model.edit_num)); // User_Num
+                parameters.Add(new SqlParameter("@edit_ip", clientIp)); // 
+                parameters.Add(new SqlParameter("@Debt_ID", model.Debt_ID));
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
@@ -3358,7 +3359,7 @@ namespace KF_WebAPI.Controllers
         /// 債權憑證資料刪除 Debt_Certificate_DetDel/Debt_certificate_list.asp
         /// </summary>
         [HttpPost("Debt_Certificate_DetDel")]
-        public ActionResult<ResultClass<string>> Debt_Certificate_DetDel(string PID)
+        public ActionResult<ResultClass<string>> Debt_Certificate_DetDel(string DebtID, string del_num)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -3370,10 +3371,10 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"Update Debt_certificate set del_tag = '1',del_date = GETDATE(),del_num = @del_num,del_ip = @del_ip where CS_PID = @CS_PID";
-                parameters.Add(new SqlParameter("@del_num", User_Num));
+                var T_SQL = @"Update Debt_certificate set del_tag = '1',del_date = GETDATE(),del_num = @del_num,del_ip = @del_ip where Debt_ID = @Debt_ID";
+                parameters.Add(new SqlParameter("@del_num", del_num));
                 parameters.Add(new SqlParameter("@del_ip", clientIp));
-                parameters.Add(new SqlParameter("@CS_PID", PID));
+                parameters.Add(new SqlParameter("@Debt_ID", DebtID));
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
@@ -3420,7 +3421,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@certificate_date_S", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_certificate_date_S))));
                 parameters.Add(new SqlParameter("@certificate_date_E", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_certificate_date_E))));
                 parameters.Add(new SqlParameter("@Remark", model.Remark));
-                parameters.Add(new SqlParameter("@add_num", User_Num));
+                parameters.Add(new SqlParameter("@add_num", model.add_num));
                 parameters.Add(new SqlParameter("@add_ip",clientIp));
                 parameters.Add(new SqlParameter("@del_tag", "0"));
                 #endregion

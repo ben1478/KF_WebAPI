@@ -55,6 +55,7 @@
 
     public class Debt_Certificate_req
     {
+        public string Debt_ID { get; set; }
         public string cs_name { get; set; }
         public string CS_PID { get; set; }
         public decimal loan_amount { get; set; }
@@ -62,7 +63,8 @@
         public string str_certificate_date_E { get; set; }
         public string Remark { get; set; }
 
-        //public string edit_num { get; set; }
+        public string? add_num { get; set; }
+        public string? edit_num { get; set; }
 
     }
 }
