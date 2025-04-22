@@ -55,6 +55,7 @@
 
     public class Debt_Certificate_req
     {
+        public string Debt_ID { get; set; }
         public string cs_name { get; set; }
         public string CS_PID { get; set; }
         public decimal loan_amount { get; set; }
