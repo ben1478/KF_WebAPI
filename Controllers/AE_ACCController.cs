@@ -3330,8 +3330,8 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@certificate_date_S", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_certificate_date_S))));
                 parameters.Add(new SqlParameter("@certificate_date_E", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_certificate_date_E))));
                 parameters.Add(new SqlParameter("@Remark", model.Remark));
-                parameters.Add(new SqlParameter("@edit_num", User_Num));
-                parameters.Add(new SqlParameter("@edit_ip", clientIp));
+                parameters.Add(new SqlParameter("@edit_num", model.edit_num)); // User_Num
+                parameters.Add(new SqlParameter("@edit_ip", clientIp)); // 
                 parameters.Add(new SqlParameter("@Debt_ID", model.Debt_ID));
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
@@ -3359,7 +3359,7 @@ namespace KF_WebAPI.Controllers
         /// 債權憑證資料刪除 Debt_Certificate_DetDel/Debt_certificate_list.asp
         /// </summary>
         [HttpPost("Debt_Certificate_DetDel")]
-        public ActionResult<ResultClass<string>> Debt_Certificate_DetDel(string DebtID)
+        public ActionResult<ResultClass<string>> Debt_Certificate_DetDel(string DebtID, string del_num)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -3372,7 +3372,7 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"Update Debt_certificate set del_tag = '1',del_date = GETDATE(),del_num = @del_num,del_ip = @del_ip where Debt_ID = @Debt_ID";
-                parameters.Add(new SqlParameter("@del_num", User_Num));
+                parameters.Add(new SqlParameter("@del_num", del_num));
                 parameters.Add(new SqlParameter("@del_ip", clientIp));
                 parameters.Add(new SqlParameter("@Debt_ID", DebtID));
                 #endregion
@@ -3421,7 +3421,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@certificate_date_S", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_certificate_date_S))));
                 parameters.Add(new SqlParameter("@certificate_date_E", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_certificate_date_E))));
                 parameters.Add(new SqlParameter("@Remark", model.Remark));
-                parameters.Add(new SqlParameter("@add_num", User_Num));
+                parameters.Add(new SqlParameter("@add_num", model.add_num));
                 parameters.Add(new SqlParameter("@add_ip",clientIp));
                 parameters.Add(new SqlParameter("@del_tag", "0"));
                 #endregion

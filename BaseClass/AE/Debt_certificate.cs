@@ -63,7 +63,8 @@
         public string str_certificate_date_E { get; set; }
         public string Remark { get; set; }
 
-        //public string edit_num { get; set; }
+        public string? add_num { get; set; }
+        public string? edit_num { get; set; }
 
     }
 }
