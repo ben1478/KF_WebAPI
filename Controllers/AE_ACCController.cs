@@ -135,7 +135,7 @@ namespace KF_WebAPI.Controllers
                                      S.get_amount_date RC_date,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111)OffDate,
                                      D1.interest,Case When DATEPART(Day,D1.RC_date) = DATEPART(Day,isnull(M.date_begin_settle, SYSDATETIME())) and DATEDIFF(MONTH, D1.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) = 1 
                                      THEN 30 ELSE DATEDIFF(Day, D1.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) end interestDay,
-                                     isnull(M.Interest_AMT,CEILING(dbo.DivToFloat(D1.interest,30) * DATEDIFF(DAY,S.get_amount_date,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111))))interest_AMT,
+                                     isnull(M.Interest_AMT,0) interest_AMT,
                               	     0 as Delay_AMT,'Y' as isFirst,amount_per_month,H.CS_name
                               FROM Receivable_M M
                               LEFT JOIN House_sendcase S ON M.HS_id=S.HS_id
@@ -149,7 +149,7 @@ namespace KF_WebAPI.Controllers
                               convert(varchar(10),D.RC_date,111) RC_date,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111) OffDate,
                               D1.interest,Case When DATEPART(Day,D.RC_date) = DATEPART(Day,isnull(M.date_begin_settle, SYSDATETIME())) and DATEDIFF(MONTH, D.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) = 1 
                               THEN 30 ELSE DATEDIFF(Day, D.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) end interestDay,
-                              isnull(M.Interest_AMT,CEILING(dbo.DivToFloat(D1.interest,30) * DATEDIFF(DAY,D.RC_date,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111)))) interest_AMT,
+                              isnull(M.Interest_AMT,0) interest_AMT,
                               (select dbo.GetTotalDelay_AMT(@RCM_ID,SYSDATETIME())) Delay_AMT,'N' as isFirst,M.amount_per_month,H.CS_name
                               FROM Receivable_D D
                               LEFT JOIN Receivable_D D1 ON D.RCM_id=D1.RCM_id AND (D.RC_count+1) = D1.RC_count
