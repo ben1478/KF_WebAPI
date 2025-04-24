@@ -2289,7 +2289,7 @@ namespace KF_WebAPI.Controllers
                 var excelList = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Over_Rel_Excel
                 {
                     BC_name = row.Field<string>("BC_name"),
-                    u_name = row.Field<string>("BC_name"),
+                    u_name = row.Field<string>("u_name"),
                     ToT_Count = row.Field<int>("ToT_Count"),
                     amount_total = row.Field<decimal>("amount_total"),
                     OV_Count = row.Field<int>("OV_Count"),
