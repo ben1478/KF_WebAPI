@@ -26,7 +26,7 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("GetDelayAMT")]
-        public ActionResult<ResultClass<string>> GetDelayAMT(string RCM_id,string RC_date_E)
+        public ActionResult<ResultClass<string>> GetDelayAMT(string RCM_id, string RC_date_E)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -59,7 +59,7 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("Settle_Show_LQuery")]
-        public ActionResult<ResultClass<string>> Settle_Show_LQuery(string? CS_name,string? CS_PID)
+        public ActionResult<ResultClass<string>> Settle_Show_LQuery(string? CS_name, string? CS_PID)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -68,23 +68,26 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 var parameters = new List<SqlParameter>();
                 #region SQL
-                var T_SQL = @"select HA.CS_name,HA.CS_PID,RM.amount_total,RM.month_total,RM.amount_per_month,RM.RCM_id from Receivable_M RM
-                    INNER JOIN 
-                    (
-                      select * from 
-                      (
-                        select ROW_NUMBER() OVER (PARTITION BY RCM_id ORDER BY RC_count ASC) AS rn,* from Receivable_D
-                        where bad_debt_type='N' AND cancel_type='N' AND del_tag = '0' AND isnull(RecPayAmt,0) = 0 and check_pay_type='N'
-                      ) RD_filtered where RD_filtered.rn = 1
-                    ) RD on RM.RCM_id = RD.RCM_id 
-                    LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0'
-                    where RM.del_tag='0' AND RM.del_tag='0'";
+                var T_SQL = @"select HA.CS_name,HA.CS_PID,RM.amount_total,RM.month_total,RM.amount_per_month,RM.RCM_id,HS.HS_id  
+                              ,CASE WHEN sendcase_handle_date >='2023-04-24 00:00:00.000' THEN 'Y' ELSE 'N' END as isNewFun
+                              from Receivable_M RM
+                              INNER JOIN 
+                              (
+                                select * from 
+                                (
+                                  select ROW_NUMBER() OVER (PARTITION BY RCM_id ORDER BY RC_count ASC) AS rn,* from Receivable_D
+                                  where bad_debt_type='N' AND cancel_type='N' AND del_tag = '0' AND isnull(RecPayAmt,0) = 0 and check_pay_type='N'
+                                ) RD_filtered where RD_filtered.rn = 1
+                              ) RD on RM.RCM_id = RD.RCM_id 
+                              LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0'
+                              LEFT JOIN House_sendcase HS ON HS.HS_id = RM.HS_id
+                              where RM.del_tag='0' AND RM.del_tag='0'";
                 if (!string.IsNullOrEmpty(CS_name))
                 {
                     T_SQL += " and CS_name=@CS_name ";
                     parameters.Add(new SqlParameter("@CS_name", CS_name));
                 }
-                   
+
                 if (!string.IsNullOrEmpty(CS_PID))
                 {
                     T_SQL += " and CS_PID=@CS_PID ";
@@ -92,7 +95,7 @@ namespace KF_WebAPI.Controllers
                 }
                 T_SQL += " ORDER BY RD.RC_date";
                 #endregion
-                var dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(dtResult);
                 return Ok(resultClass);
@@ -129,10 +132,10 @@ namespace KF_WebAPI.Controllers
                 };
                 var dtResult_f = _adoData.ExecuteQuery(T_SQL_First, parameters_f);
                 isFirst = dtResult_f.Rows[0]["isFirst"].ToString();
-                if(isFirst == "Y")
+                if (isFirst == "Y")
                 {
                     T_SQL = @"SELECT M.amount_total RP_AMT,isnull(M.Break_AMT,CEILING(M.amount_total * 0.13)) Break_AMT,
-                                     S.get_amount_date RC_date,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111)OffDate,
+                                     S.get_amount_date RC_date,D1.RC_count,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111)OffDate,
                                      D1.interest,Case When DATEPART(Day,D1.RC_date) = DATEPART(Day,isnull(M.date_begin_settle, SYSDATETIME())) and DATEDIFF(MONTH, D1.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) = 1 
                                      THEN 30 ELSE DATEDIFF(Day, D1.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) end interestDay,
                                      isnull(M.Interest_AMT,0) interest_AMT,
@@ -146,7 +149,7 @@ namespace KF_WebAPI.Controllers
                 else
                 {
                     T_SQL = @"SELECT D.Ex_RemainingPrincipal RP_AMT,isnull(M.Break_AMT,CEILING(D.Ex_RemainingPrincipal * 0.13)) Break_AMT,
-                              convert(varchar(10),D.RC_date,111) RC_date,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111) OffDate,
+                              convert(varchar(10),D.RC_date,111) RC_date,D.RC_count,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111) OffDate,
                               D1.interest,Case When DATEPART(Day,D.RC_date) = DATEPART(Day,isnull(M.date_begin_settle, SYSDATETIME())) and DATEDIFF(MONTH, D.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) = 1 
                               THEN 30 ELSE DATEDIFF(Day, D.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) end interestDay,
                               isnull(M.Interest_AMT,0) interest_AMT,
@@ -163,7 +166,7 @@ namespace KF_WebAPI.Controllers
                               AND check_pay_type <> 'S'
                               AND check_pay_type='Y')";
                 }
-                
+
                 var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@RCM_ID",RCM_ID)
@@ -173,6 +176,103 @@ namespace KF_WebAPI.Controllers
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(dtResult);
                 return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 取得法院相關費用總金額
+        /// </summary>
+        [HttpGet("GetCourtAmt")]
+        public ActionResult<ResultClass<string>> GetCourtAmt (string HS_id)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"SELECT HS_ID,sum(cast(isnull(L.charge_AMT, 0) AS decimal))TotAmt FROM Item_list I
+                              LEFT JOIN(SELECT HS_ID,charge_AMT,charge_type_M,charge_type_D FROM House_sendcase_other_charge 
+                              WHERE isnull(del_tag, '0')='0' AND charge_type_M='Court_exe'
+                              AND HS_ID=@HS_id) L ON item_M_code=charge_type_M AND item_D_code=charge_type_D 
+                              WHERE item_M_code ='Court_exe' AND item_M_type='N' AND charge_AMT IS NOT NULL GROUP BY HS_ID";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@HS_id",HS_id)
+                };
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    DataTable dtDefault = new DataTable();
+                    dtDefault.Columns.Add("HS_ID", typeof(string));
+                    dtDefault.Columns.Add("TotAmt", typeof(decimal));
+
+                    DataRow dr = dtDefault.NewRow();
+                    dr["HS_ID"] = HS_id;  
+                    dr["TotAmt"] = 0;
+                    dtDefault.Rows.Add(dr);
+
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtDefault);
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 取得法院相關費用明細
+        /// </summary>
+        [HttpGet("GetCourtDetail")]
+        public ActionResult<ResultClass<string>> GetCourtDetail(string HS_id)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"SELECT Li.item_D_name as showName,FORMAT(Hs.charge_AMT,'N0') as showAmt FROM House_sendcase_other_charge Hs
+                              LEFT JOIN Item_list Li on Li.item_M_code='Court_exe' and item_D_code =Hs.charge_type_D
+                              WHERE isnull(Hs.del_tag, '0')='0'
+                              AND charge_type_M='Court_exe'
+                              AND HS_ID=@HS_id";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@HS_id",HS_id)
+                };
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
             }
             catch (Exception ex)
             {
