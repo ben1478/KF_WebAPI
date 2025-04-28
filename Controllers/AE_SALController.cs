@@ -36,7 +36,7 @@ namespace KF_WebAPI.Controllers
                     " show_fund_company, show_project_title, cs_name, cs_id, get_amount, period, interest_rate_pass, FORMAT(get_amount_date,'yyyy/MM/dd') as get_amount_date, comm_amt, case_remark, case_id " +
                     "   ,(select U_name FROM User_M where U_num = ho.plan_num AND del_tag='0') as plan_name " +
                     "   ,(SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = ho.case_id and del_tag = '0') AS case_id_count "+
-                    "   ,ub.item_D_name BC_name, ub.item_D_code BC_code " +
+                    "   ,ub.item_D_name BC_name, ub.item_D_code BC_code, confirm_num " +
                     " FROM House_othercase ho " +
                     "   LEFT JOIN User_M M1 on ho.plan_num=M1.u_num " +
                     "   LEFT JOIN Item_list ub ON ub.item_M_code='branch_company'  AND ub.item_D_code=M1.U_BC " +
