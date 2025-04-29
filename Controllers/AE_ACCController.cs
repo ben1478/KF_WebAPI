@@ -136,11 +136,12 @@ namespace KF_WebAPI.Controllers
                 if (isFirst == "Y")
                 {
                     T_SQL = @"SELECT M.amount_total RP_AMT,isnull(M.Break_AMT,CEILING(M.amount_total * 0.13)) Break_AMT,
-                                     S.get_amount_date RC_date,D1.RC_count,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111)OffDate,
-                                     D1.interest,Case When DATEPART(Day,D1.RC_date) = DATEPART(Day,isnull(M.date_begin_settle, SYSDATETIME())) and DATEDIFF(MONTH, D1.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) = 1 
-                                     THEN 30 ELSE DATEDIFF(Day, D1.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) end interestDay,
-                                     isnull(M.Interest_AMT,0) interest_AMT,
-                              	     0 as Delay_AMT,'Y' as isFirst,amount_per_month,H.CS_name
+                              S.get_amount_date RC_date,D1.RC_count,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111)OffDate,
+                              D1.interest,Case When DATEPART(Day,D1.RC_date) = DATEPART(Day,isnull(M.date_begin_settle, SYSDATETIME())) and DATEDIFF(MONTH, D1.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) = 1 
+                              THEN 30 ELSE DATEDIFF(Day, D1.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) end interestDay,
+                              isnull(M.Interest_AMT,0) interest_AMT,
+                              0 as Delay_AMT,'Y' as isFirst,amount_per_month,H.CS_name,
+                              (select SUM(ISNULL(RecPayAmt-RC_amount,0)) from Receivable_D where RCM_id=@RCM_ID and check_pay_type='Y') as OverAmt
                               FROM Receivable_M M
                               LEFT JOIN House_sendcase S ON M.HS_id=S.HS_id
                               LEFT JOIN Receivable_D D1 ON M.RCM_id=D1.RCM_id
@@ -154,7 +155,8 @@ namespace KF_WebAPI.Controllers
                               D1.interest,Case When DATEPART(Day,D.RC_date) = DATEPART(Day,isnull(M.date_begin_settle, SYSDATETIME())) and DATEDIFF(MONTH, D.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) = 1 
                               THEN 30 ELSE DATEDIFF(Day, D.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) end interestDay,
                               isnull(M.Interest_AMT,0) interest_AMT,
-                              (select dbo.GetTotalDelay_AMT(@RCM_ID,SYSDATETIME())) Delay_AMT,'N' as isFirst,M.amount_per_month,H.CS_name
+                              (select dbo.GetTotalDelay_AMT(@RCM_ID,SYSDATETIME())) Delay_AMT,'N' as isFirst,M.amount_per_month,H.CS_name,
+                              (select SUM(ISNULL(RecPayAmt-RC_amount,0)) from Receivable_D where RCM_id=@RCM_ID and check_pay_type='Y') as OverAmt
                               FROM Receivable_D D
                               LEFT JOIN Receivable_D D1 ON D.RCM_id=D1.RCM_id AND (D.RC_count+1) = D1.RC_count
                               LEFT JOIN Receivable_M M ON D.RCM_id=M.RCM_id
