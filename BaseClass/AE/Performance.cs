@@ -1,0 +1,72 @@
+﻿using System;
+
+namespace KF_WebAPI.BaseClass.AE
+{
+    public class Performance_req
+    {
+        /// <summary>
+        /// 區
+        /// </summary>
+        public string? u_bc_title { get; set; }
+        /// <summary>
+        /// 起訖年月 start
+        /// </summary>
+        public string? selYear_S { get; set; }
+        /// <summary>
+        /// 起訖年月 end
+        /// </summary>
+        public string? selYear_E { get; set; } // 
+
+        /// <summary>
+        /// 到職日基準日
+        /// </summary>
+        public string? start_date { get; set; }
+        /// <summary>
+        /// 在職狀態
+        /// </summary>
+        public string? Enable { get; set; }
+
+        /// <summary>
+        /// 折數後業績
+        /// </summary>
+        public string? isACT { get; set; }
+
+        /// <summary>
+        /// 排序
+        /// </summary>
+        public string? OrderBy { get; set; }
+    }
+
+    public class Performance_res
+    {
+        public string? U_num { get; set; }
+        public string? Cal_Arrive { get; set; }
+        public string? U_BC { get; set; }
+        public string? U_name { get; set; }
+        public string? U_arrive_date { get; set; }
+        public string? U_leave_date { get; set; }
+        public string? enable { get; set; }
+        public string? U_BC_name { get; set; }
+        public string? title { get; set; }
+        public string? U_PFT { get; set; }
+        public string? plan_num { get; set; }
+        public string? yyyy { get; set; }
+        public string? Jan { get; set; }
+        public string? Feb { get; set; }
+        public string? Mar { get; set; }
+        public string? Apr { get; set; }
+        public string? May { get; set; }
+        public string? Jun { get; set; }
+        public string? Jul { get; set; }
+        public string? Aug { get; set; }
+        public string? Sep { get; set; }
+        public string? Oct { get; set; }
+        public string? Nov { get; set; }
+        public string? Dec { get; set; }
+        public string? Totle { get; set; }
+        public string? MonAVG { get; set; }
+        public string? YearAVG { get; set; }
+        public string? cal_yearAvg { get; set; }
+    }
+}
+

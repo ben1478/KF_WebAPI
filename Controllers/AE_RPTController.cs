@@ -15,6 +15,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Mvc.Routing;
 using System.Linq;
 using System.Diagnostics.Eventing.Reader;
+using KF_WebAPI.BaseClass.Max104;
 
 namespace KF_WebAPI.Controllers
 {
@@ -5096,5 +5097,1040 @@ namespace KF_WebAPI.Controllers
             }
         }
         #endregion
+
+        #region 全區業績表
+        [HttpPost("Performance_LQuery")]
+        /// <summary>
+        /// 全區業績表查詢 Performance_LQuery/Performance.asp
+        /// </summary>
+        public ActionResult<ResultClass<string>> Performance_LQuery(Performance_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var roleNum = HttpContext.Session.GetString("Role_num");
+            var User_U_BC = HttpContext.Session.GetString("User_U_BC");
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                        SELECT
+                              *
+                             ,CASE
+                                WHEN DATEDIFF(MONTH, Cal_Arrive, @selYear_S) < 0 THEN /*判斷到職日-起始日*/      	
+                                /*小於0代表到職日比較晚,所以要除12-(到職日-起始日的月份)*/ 
+                                    ROUND(totle / (12 + DATEDIFF(MONTH, Cal_Arrive, @selYear_S)), 0)
+                                ELSE ROUND(REPLACE(YearAvg, ',', ''), 0)
+                              END cal_yearAvg/*計算過後的年平均*/
+                            FROM (SELECT
+                                U_num
+                               ,DATEADD(MONTH, 1, U_arrive_date) Cal_Arrive
+                               ,/*計算年平均要以到職日加1個月來算*/U_BC
+                               ,U_name
+                               ,CONVERT(VARCHAR(10), U_arrive_date, 126) U_arrive_date
+                               ,CONVERT(VARCHAR(10), [U_leave_date], 126) [U_leave_date]
+                               ,CASE
+                                  WHEN [U_leave_date] IS NULL THEN 'Y'
+                                  ELSE 'N'
+                                END [enable]
+                               ,ub.item_D_name U_BC_name
+                               ,pft.item_D_name title
+                               ,U_PFT
+                              FROM User_M u
+                              LEFT JOIN Item_list ub
+                                ON ub.item_M_code = 'branch_company'
+                                AND ub.item_D_type = 'Y'
+                                AND ub.item_D_code = u.U_BC
+                                AND ub.del_tag = '0'
+                              LEFT JOIN Item_list pft
+                                ON pft.item_M_code = 'professional_title'
+                                AND pft.item_D_type = 'Y'
+                                AND pft.item_D_code = u.U_PFT
+                                AND pft.del_tag = '0'
+                              WHERE (u_bc BETWEEN 'BC0100' AND 'BC0600'
+                              OR (U_BC IN ('BC0900')
+                              AND pft.item_sort BETWEEN '120' AND '170'
+                              OR U_PFT IN ('PFE830', 'PFE820')))/*只計算這六個部門及數位行銷*/) User_M
+                            LEFT JOIN [dbo].[fun_PerformanceByMonth](@selYear_S, CONVERT(VARCHAR(10), DATEADD(DAY, -1, DATEADD(MONTH, 1, @selYear_E)), 126), DATEDIFF(MONTH, @selYear_S, DATEADD(DAY, -1, DATEADD(MONTH, 1, @selYear_E)) + 1), '') M
+                              ON User_M.U_num = M.plan_num
+                            WHERE U_PFT <> 'PFT100'
+                            AND U_PFT <> 'PFE831' /*職等=助理or 副總不計算*/
+                    ";
+                parameters.Add(new SqlParameter("@selYear_S", model.selYear_S));
+                parameters.Add(new SqlParameter("@selYear_E", model.selYear_E));
+                
+
+                if (model.u_bc_title != null && model.u_bc_title != "" && model.u_bc_title != "all")
+                {
+                    // 6區
+                    if (model.u_bc_title == "six_area")
+                    {
+                        T_SQL += " and U_BC between 'BC0100' and 'BC0600' ";
+                    }
+                    else
+                    {
+                        T_SQL += " and U_BC = @u_bc_title ";
+                        parameters.Add(new SqlParameter("@u_bc_title", model.u_bc_title));
+                    }
+                }
+                if(model.start_date != null && model.start_date != "")
+                {
+                    T_SQL += " and convert(datetime, U_arrive_date) >= convert(datetime, @start_date) ";
+                    parameters.Add(new SqlParameter("@start_date", model.start_date));
+                }
+                if (model.start_date != null && model.start_date != "")
+                {
+                    T_SQL += " and Enable = @Enable "; // null:全部 / Y:在職 / N:離職
+                    parameters.Add(new SqlParameter("@Enable", model.Enable));
+                }
+                if (model.OrderBy == "1")
+                {
+                    // 1:業績
+                    T_SQL += " ORDER BY totle DESC";
+                }
+                else
+                {
+                    // 2:地區職稱
+                    T_SQL += " order by U_BC , U_PFT ,U_arrive_date ";
+                }
+                
+
+                #endregion
+
+               DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    var PerformanceList = dtResult.AsEnumerable().Select(row => new Performance_res
+                    {
+                        U_num = row.Field<string>("U_num"),
+                        U_BC = row.Field<string>("U_BC"),
+                        Cal_Arrive = row.IsNull("Cal_Arrive") ? "" : row.Field<DateTime>("Cal_Arrive").ToShortDateString(),
+                        Jan = row.IsNull("Jan") ? "0 萬" : row.Field<string>("Jan") + " 萬",
+                        Feb = row.IsNull("Feb") ? "0 萬" : row.Field<string>("Feb") + " 萬",
+                        Mar = row.IsNull("Mar") ? "0 萬" : row.Field<string>("Mar") + " 萬",
+                        Apr = row.IsNull("Apr") ? "0 萬" : row.Field<string>("Apr") + " 萬",
+                        May = row.IsNull("May") ? "0 萬" : row.Field<string>("May") + " 萬",
+                        Jun = row.IsNull("Jun") ? "0 萬" : row.Field<string>("Jun") + " 萬",
+                        Jul = row.IsNull("Jul") ? "0 萬" : row.Field<string>("Jul") + " 萬",
+                        Aug = row.IsNull("Aug") ? "0 萬" : row.Field<string>("Aug") + " 萬",
+                        Sep = row.IsNull("Sep") ? "0 萬" : row.Field<string>("Sep") + " 萬",
+                        Oct = row.IsNull("Oct") ? "0 萬" : row.Field<string>("Oct") + " 萬",
+                        Nov = row.IsNull("Nov") ? "0 萬" : row.Field<string>("Nov") + " 萬",
+                        Dec = row.IsNull("Dec") ? "0 萬" : row.Field<string>("Dec") + " 萬",
+                        Totle = row.IsNull("Totle") ? "0 萬" : row.Field<Double>("Totle").ToString() + " 萬",
+                        MonAVG = row.IsNull("MonAVG") ? "0 萬" : row.Field<string>("MonAVG") + " 萬",
+                        YearAVG = row.IsNull("YearAVG") ? "0 萬" : row.Field<string>("YearAVG") + " 萬",
+                        cal_yearAvg = row.IsNull("cal_yearAvg") ? "0 萬" : row.Field<Double>("cal_yearAvg").ToString() + " 萬"
+
+                    }).ToList();
+
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(PerformanceList);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+
+        }
+
+        /// <summary>
+        /// 提供全區業績表查詢年月 GetSendcaseYYYMM/Performance.asp
+        /// </summary>
+        [HttpGet("GetSendcaseYYYMM")]
+        public ActionResult<ResultClass<string>> GetSendcaseYYYMM()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"select distinct convert(varchar(4),(convert(varchar(4),get_amount_date,126)-1911))+'-'+convert(varchar(2),month(get_amount_date)) yyyMM
+                    ,convert(varchar(7),get_amount_date, 126) yyyymm from House_sendcase
+                    where year(get_amount_date) > year(DATEADD(year,-3,SYSDATETIME()))
+                    order by convert(varchar(7),get_amount_date, 126) desc";
+                #endregion
+                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+
+        /// <summary>
+        /// 提供全區業績表查詢區(含6區) GetSendcaseYYYMM/Performance.asp
+        /// </summary>
+        [HttpGet("Get6UB")]
+        public ActionResult<ResultClass<string>> Get6UB()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"select item_D_code, item_D_name from Item_list ub
+                                where ub.item_M_code = 'branch_company'
+                                AND ub.item_D_type = 'Y'
+                                AND ub.del_tag = '0'
+                                and (ub.item_D_code BETWEEN 'BC0100' AND 'BC0600' OR item_D_code IN ('BC0900'))
+                                order by item_sort";
+                #endregion
+                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
+                dtResult.Rows.InsertAt(dtResult.NewRow(), 0);
+                dtResult.Rows[0][dtResult.Columns.IndexOf("item_D_code")] = "all";
+                dtResult.Rows[0][dtResult.Columns.IndexOf("item_D_name")] = "全部";
+                dtResult.Rows.InsertAt(dtResult.NewRow(), 1);
+                dtResult.Rows[1][dtResult.Columns.IndexOf("item_D_code")] = "six_area";
+                dtResult.Rows[1][dtResult.Columns.IndexOf("item_D_name")] = "6區";
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
+
+        #region 介紹人佣金管理
+        [HttpPost("Introducer_Comm_LQuery")]
+        /// <summary>
+        /// 介紹人佣金查詢 Performance_LQuery/Performance.asp
+        /// </summary>
+        public ActionResult<ResultClass<string>> Introducer_Comm_LQuery(Introducer_Comm_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var roleNum = HttpContext.Session.GetString("Role_num");
+            var User_U_BC = HttpContext.Session.GetString("User_U_BC");
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                        SELECT [U_ID]
+                          ,[ID]
+                          ,[Introducer_name]
+                          ,[Introducer_name1]
+                          ,[Introducer_HBD]
+                          ,[Introducer_PID]
+                          ,[Bank_account]
+                          ,[Bank_head]
+                          ,[Bank_branches]
+                          ,[Bank_name]
+                          ,[Introducer_addr]
+                          ,[Remark]
+                          ,[Introducer_tel]
+                          ,[isCompany]
+                          ,[PW_Line]
+                          ,[LINE_Num]
+                          ,[CompanyKey]
+                          ,[Contract_Date]
+                          ,[add_date]
+                          ,[add_num]
+                          ,[add_ip]
+                          ,[edit_date]
+                          ,[edit_num]
+                          ,[edit_ip]
+                          ,[del_tag]
+                          ,[del_date]
+                          ,[del_num]
+                          ,[del_ip]
+                      FROM [Introducer_Comm]
+                        where 
+                            del_tag = 0
+                            and (isCompany = ISNULL(@isCompany, isCompany) or @isCompany='')
+                            and (Introducer_name like '%'+@Introducer_name+'%' or @Introducer_name = '' or @Introducer_name is null)
+                    ";
+                parameters.Add(new SqlParameter("@isCompany", model.isCompany));
+                parameters.Add(new SqlParameter("@Introducer_name", model.Introducer));
+
+
+                #endregion
+
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    var PerformanceList = dtResult.AsEnumerable().Select(row => new Introducer_Comm_res
+                    {
+                        U_ID = row.Field<decimal>("U_ID").ToString(),
+                        //ID = row.Field<decimal>("ID").ToString(),
+                        Introducer_name = row.Field<string>("Introducer_name"),
+                        Introducer_name1 = row.Field<string>("Introducer_name1"),
+                        Introducer_HBD = row.IsNull("Introducer_HBD")? "" : 
+                                         FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("Introducer_HBD").ToString("yyyy/MM/dd")),
+                        Introducer_PID = row.Field<string>("Introducer_PID"),
+                        Bank_account = row.Field<string>("Bank_account"),
+                        Bank_head = row.Field<string>("Bank_head"),
+                        Bank_branches = row.Field<string>("Bank_branches"),
+                        Bank_name = row.Field<string>("Bank_name"),
+                        Introducer_addr = row.Field<string>("Introducer_addr"),
+                        Remark = row.IsNull("Remark") ? "" : row.Field<string>("Remark"),
+                        Introducer_tel = row.Field<string>("Introducer_tel"),
+                        isCompany = row.Field<string>("isCompany")
+                    }).ToList();
+
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(PerformanceList);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+
+        }
+
+        /// <summary>
+        /// 介紹人佣金資料明細查詢 Introducer_Comm_list_DetQuery/Introducer_Comm_list.asp
+        /// </summary>
+        /// <param name="U_ID"></param>
+        /// <returns></returns>
+        [HttpGet("Introducer_Comm_DetQuery")]
+        public ActionResult<ResultClass<string>> Introducer_Comm_DetQuery(string U_ID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                                SELECT [U_ID]
+                                      ,[Introducer_name]
+                                      ,[Introducer_name1]
+                                      ,[Introducer_HBD]
+                                      ,[Introducer_PID]
+                                      ,[Bank_account]
+                                      ,[Bank_head]
+                                      ,[Bank_branches]
+                                      ,[Bank_name]
+                                      ,[Introducer_addr]
+                                      ,[Remark]
+                                      ,[Introducer_tel]
+                                      ,[isCompany]
+                                  FROM [Introducer_Comm]
+                                    where 
+                                        (U_ID = ISNULL(@U_ID, U_ID) or @U_ID=0)
+                    ";
+                parameters.Add(new SqlParameter("@U_ID", U_ID));
+                #endregion
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Introducer_Comm_res
+                {
+                    U_ID = row.Field<decimal>("U_ID").ToString(),
+                    Introducer_name = row.Field<string>("Introducer_name"),
+                    Introducer_name1 = row.Field<string>("Introducer_name1"),
+                    Introducer_HBD = row.IsNull("Introducer_HBD") ? "" :
+                                         FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("Introducer_HBD").ToString("yyyy/MM/dd")),
+                    Introducer_PID = row.Field<string>("Introducer_PID"),
+                    Bank_account = row.Field<string>("Bank_account"),
+                    Bank_head = row.Field<string>("Bank_head"),
+                    Bank_branches = row.Field<string>("Bank_branches"),
+                    Bank_name = row.Field<string>("Bank_name"),
+                    Introducer_addr = row.Field<string>("Introducer_addr"),
+                    Remark = row.IsNull("Remark") ? "" : row.Field<string>("Remark"),
+                    Introducer_tel = row.Field<string>("Introducer_tel"),
+                    isCompany = row.Field<string>("isCompany")
+                }).ToList();
+
+                if (result != null && result.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(result);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 介紹人佣金資料匯出Excel Introducer_Comm_list_Exccel/Introducer_Comm_list.asp
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost("Introducer_Comm_Exccel")]
+        public IActionResult Introducer_Comm_Exccel(string? Introducer, string? isCompany)
+        {
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                        SELECT
+                          [isCompany]
+                          ,[Introducer_name]
+                          ,[Introducer_name1]
+                          ,[Introducer_HBD]
+                          ,[Introducer_PID]
+                          ,[Bank_account]
+                          ,[Bank_head]
+                          ,[Bank_branches]
+                          ,[Bank_name]
+                          ,[Introducer_addr]
+                      FROM [Introducer_Comm]
+                        where del_tag = 0
+                            and (isCompany = ISNULL(@isCompany, isCompany) or @isCompany='')
+                            and (@Introducer_name is null or @Introducer_name='' or (Introducer_name like '%'+@Introducer_name+'%'))
+                    ";
+                parameters.Add(new SqlParameter("@isCompany", isCompany==null? DBNull.Value : isCompany));
+                parameters.Add(new SqlParameter("@Introducer_name", Introducer==null? DBNull.Value : Introducer));
+
+                #endregion
+                List<Introducer_Comm_Excel> excelList = new List<Introducer_Comm_Excel>();
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+
+                if (dtResult.Rows.Count > 0)
+                {
+                    excelList = dtResult.AsEnumerable().Select(row => new Introducer_Comm_Excel
+                    {
+                        Introducer_name = row.Field<string>("Introducer_name"),
+                        //Introducer_name1 = row.Field<string>("Introducer_name1"),
+                        Introducer_HBD = row.IsNull("Introducer_HBD") ? "" :
+                                         FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("Introducer_HBD").ToString("yyyy/MM/dd")),
+                        Introducer_PID = row.Field<string>("Introducer_PID"),
+                        Bank_account = row.Field<string>("Bank_account"),
+                        Bank_head = row.Field<string>("Bank_head"),
+                        Bank_branches = row.Field<string>("Bank_branches"),
+                        Bank_name = row.Field<string>("Bank_name"),
+                        Introducer_addr = row.Field<string>("Introducer_addr")
+                    }).ToList();
+                }
+
+                var Excel_Headers = new Dictionary<string, string>
+                {
+                    { "Introducer_name","介紹人" },
+                    { "Introducer_HBD", "生日" },
+                    { "Introducer_PID", "身分證字號" },
+                    { "Bank_account", "收款帳號" },
+                    { "Bank_head", "收款總行" },
+                    { "Bank_branches", "收款分行" },
+                    { "Bank_name", "收款銀行" },
+                    { "Introducer_addr", "地址" }
+                };
+
+                var fileBytes = FuncHandler.ExportToExcel(excelList, Excel_Headers);
+                var fileName = "介紹人佣金表-" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 介紹人佣金資料修改 Introducer_Comm_list_DetUpd/Introducer_Comm_list.asp
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost("Introducer_Comm_DetUpd")]
+        public ActionResult<ResultClass<string>> Introducer_Comm_DetUpd(Introducer_Comm_res model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"
+                    UPDATE [dbo].[Introducer_Comm]
+                       SET 
+                            Introducer_name = @Introducer_name,
+                            Introducer_name1 = @Introducer_name1,
+                            Introducer_HBD = @Introducer_HBD,
+                            Introducer_PID = @Introducer_PID,
+                            Bank_account = @Bank_account,
+                            Bank_head = @Bank_head,
+                            Bank_branches = @Bank_branches,
+                            Bank_name = @Bank_name,
+                            Introducer_addr = @Introducer_addr,
+                            Remark = @Remark,
+                            isCompany = @isCompany,
+                            edit_date = GETDATE(),
+                            edit_num = @edit_num,
+                            edit_ip = @edit_ip
+                     WHERE U_ID = @U_ID
+                    ";
+
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@U_ID", model.U_ID),
+                    new SqlParameter("@Introducer_name", string.IsNullOrEmpty(model.Introducer_name)? DBNull.Value : model.Introducer_name),
+                    new SqlParameter("@Introducer_name1",string.IsNullOrEmpty(model.Introducer_name1)? DBNull.Value : model.Introducer_name1),
+                    new SqlParameter("@Introducer_HBD", String.IsNullOrEmpty(model.Introducer_HBD) ? null : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.Introducer_HBD))),
+                    new SqlParameter("@Introducer_PID", string.IsNullOrEmpty(model.Introducer_PID) ? DBNull.Value : model.Introducer_PID),
+                    new SqlParameter("@Bank_account", string.IsNullOrEmpty(model.Bank_account) ? DBNull.Value : model.Bank_account),
+                    new SqlParameter("@Bank_head", string.IsNullOrEmpty(model.Bank_head) ? DBNull.Value : model.Bank_head),
+                    new SqlParameter("@Bank_branches", string.IsNullOrEmpty(model.Bank_branches) ? DBNull.Value : model.Bank_branches),
+                    new SqlParameter("@Bank_name", string.IsNullOrEmpty(model.Bank_name) ? DBNull.Value : model.Bank_name),
+                    new SqlParameter("@Introducer_addr", string.IsNullOrEmpty(model.Introducer_addr) ? DBNull.Value : model.Introducer_addr),
+                    new SqlParameter("@Remark", string.IsNullOrEmpty(model.Remark) ? DBNull.Value : model.Remark),
+                    new SqlParameter("@isCompany", string.IsNullOrEmpty(model.isCompany) ? DBNull.Value : model.isCompany),
+                    new SqlParameter("@edit_num", model.edit_num),
+                    new SqlParameter("@edit_ip", string.IsNullOrEmpty(model.edit_ip) ? clientIp : model.edit_ip)
+                };
+
+                #endregion
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "異動失敗";
+                    return BadRequest(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "異動成功";
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 介紹人佣金資料刪除 Introducer_Comm_list_DetDel/Introducer_Comm_list.asp
+        /// </summary>
+        [HttpPost("Introducer_Comm_DetDel")]
+        public ActionResult<ResultClass<string>> Introducer_Comm_DetDel(Introducer_Comm_Del model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"Update Introducer_Comm set del_tag = '1',del_date = GETDATE(),del_num = @del_num,del_ip = @del_ip where U_ID = @U_ID";
+                parameters.Add(new SqlParameter("@del_num", model.del_num));
+                parameters.Add(new SqlParameter("@del_ip", string.IsNullOrEmpty(model.del_ip) ? clientIp : model.del_ip));
+                parameters.Add(new SqlParameter("@U_ID", model.U_ID));
+                #endregion
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "異動失敗";
+                    return BadRequest(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "異動成功";
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 新增介紹人佣金資料 Introducer_Comm_list_DetIns/Introducer_Comm_list.asp
+        /// </summary>
+        [HttpPost("Introducer_Comm_DetIns")]
+        public ActionResult<ResultClass<string>> Introducer_Comm_DetIns(Introducer_Comm_res model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                
+                var T_SQL = @"
+                    INSERT INTO [dbo].[Introducer_Comm]
+                               ([Introducer_name]
+                               ,[Introducer_name1]
+                               ,[Introducer_HBD]
+                               ,[Introducer_PID]
+                               ,[Bank_account]
+                               ,[Bank_head]
+                               ,[Bank_branches]
+                               ,[Bank_name]
+                               ,[Introducer_addr]
+                               ,[Remark]
+                               ,[add_date]
+                               ,[add_num]
+                               ,[add_ip]
+                               ,del_tag )
+                         VALUES
+                               (@Introducer_name
+                               ,@Introducer_name1
+                               ,@Introducer_HBD
+                               ,@Introducer_PID
+                               ,@Bank_account
+                               ,@Bank_head
+                               ,@Bank_branches
+                               ,@Bank_name
+                               ,@Introducer_addr
+                               ,@Remark
+                                ,GETDATE()
+                                ,@add_num
+                                ,@add_ip
+                                ,@del_tag)
+                    ";
+                // SELECT @@IDENTITY as ID
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@Introducer_name", string.IsNullOrEmpty(model.Introducer_name) ? DBNull.Value : model.Introducer_name),
+                    new SqlParameter("@Introducer_name1", model.Introducer_name1==null? DBNull.Value: model.Introducer_name1),
+                    new SqlParameter("@Introducer_HBD", String.IsNullOrEmpty(model.Introducer_HBD) ? null : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.Introducer_HBD))),
+                    new SqlParameter("@Introducer_PID", string.IsNullOrEmpty(model.Introducer_PID) ? DBNull.Value : model.Introducer_PID),
+                    new SqlParameter("@Bank_account", string.IsNullOrEmpty(model.Bank_account) ? DBNull.Value : model.Bank_account),
+                    new SqlParameter("@Bank_head", string.IsNullOrEmpty(model.Bank_head) ? DBNull.Value : model.Bank_head),
+                    new SqlParameter("@Bank_branches", string.IsNullOrEmpty(model.Bank_branches) ? DBNull.Value : model.Bank_branches),
+                    new SqlParameter("@Bank_name", string.IsNullOrEmpty(model.Bank_name) ? DBNull.Value : model.Bank_name),
+                    new SqlParameter("@Introducer_addr", string.IsNullOrEmpty(model.Introducer_addr) ? DBNull.Value : model.Introducer_addr),
+                    new SqlParameter("@Remark", string.IsNullOrEmpty(model.Remark) ? DBNull.Value : model.Remark),
+                    new SqlParameter("@add_num", model.add_num),
+                    new SqlParameter("@add_ip", string.IsNullOrEmpty(model.add_ip)? clientIp : model.add_ip),
+                    new SqlParameter("@del_tag", "0")
+                };
+
+                
+                #endregion
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "異動失敗";
+                    return BadRequest(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "異動成功";
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
+
+        #region 新鑫已撥款明細表
+        [HttpPost("NewXinCaseStatus_LQuery")]
+        /// <summary>
+        /// 新鑫已撥款明細表查詢 NewXinCaseStatus_LQuery/NewXinCaseStatus.asp
+        /// </summary>
+        public ActionResult<ResultClass<string>> NewXinCaseStatus_LQuery(NewXinCaseStatus_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var roleNum = HttpContext.Session.GetString("Role_num");
+            var User_U_BC = HttpContext.Session.GetString("User_U_BC");
+            var sdate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.start_date));
+            var edate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.end_date));
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                        SELECT
+                          ISNULL(CS_PID, '') CS_ID
+                         ,ISNULL(CS_register_address, '') addr
+                         ,ISNULL(Loan_rate, '') Loan_rate
+                         ,REPLACE(REPLACE(CONVERT(VARCHAR(10), Send_amount_date, 126), '-', '/'), YEAR(Send_amount_date), YEAR(Send_amount_date) - 1911) Send_amount_date
+                         ,REPLACE(REPLACE(CONVERT(VARCHAR(10), get_amount_date, 126), '-', '/'), YEAR(get_amount_date), YEAR(get_amount_date) - 1911) get_amount_date
+                         ,H.HS_id
+                         ,H.pass_amount
+                         ,H.Send_amount
+                         ,H.get_amount
+                         ,House_pre_project.project_title
+                         ,House_apply.CS_name
+                         ,House_apply.CS_MTEL1
+                         ,House_apply.CS_MTEL2
+                         ,House_apply.CS_introducer
+                         ,User_M.U_name plan_name
+                         ,User_M.U_BC_name
+                         ,ISNULL((SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'Send_result_type'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = H.Send_result_type
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          , '--') AS show_Send_result_type
+                         ,ISNULL((SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'check_amount_type'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = H.check_amount_type
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          , '--') AS show_check_amount_type
+                         ,ISNULL((SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'get_amount_type'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = H.get_amount_type
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          , '--') AS show_get_amount_type
+                         ,(SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'appraise_company'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = H.appraise_company
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          AS show_appraise_company
+                         ,(SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'fund_company'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = H.fund_company
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          AS show_fund_company
+                         ,(SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'project_title'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = House_pre_project.project_title
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          AS show_project_title
+                         ,Users.U_name AS fin_name
+                         ,CONVERT(VARCHAR, house_pre_project.fin_date, 111) AS fin_date
+                        FROM House_sendcase H
+                        LEFT JOIN House_apply
+                          ON House_apply.HA_id = H.HA_id
+                            AND House_apply.del_tag = '0'
+                        LEFT JOIN House_pre_project
+                          ON House_pre_project.HP_project_id = H.HP_project_id
+                            AND House_pre_project.del_tag = '0'
+                        LEFT JOIN view_User_sales User_M
+                          ON User_M.U_num = House_apply.plan_num
+                        LEFT JOIN view_user_sales Users
+                          ON house_pre_project.fin_user = Users.U_num
+                        WHERE H.del_tag = '0'
+                        AND H.sendcase_handle_type = 'Y'
+                        AND ISNULL(H.Send_amount, '') <> ''
+                        AND (Send_amount_date >= @start_date
+                        AND Send_amount_date <= @end_date)
+                        AND fund_Company = 'FDCOM001'
+                        AND CONVERT(VARCHAR(7), get_amount_date, 126) = @selYear_S
+                        AND get_amount_type = 'GTAT002'
+                        ORDER BY Send_amount_date, H.HS_id DESC
+                    ";
+                parameters.Add(new SqlParameter("@start_date", sdate));
+                parameters.Add(new SqlParameter("@end_date", edate));
+                parameters.Add(new SqlParameter("@selYear_S", model.selYear_S));
+
+                #endregion
+
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    var PerformanceList = dtResult.AsEnumerable().Select(row => new NewXinCaseStatus_res
+                    {
+                        Send_amount_date = row.IsNull("Send_amount_date") ? "" :
+                                         row.Field<string>("Send_amount_date"),
+                        get_amount_date = row.IsNull("get_amount_date") ? "" :
+                                         row.Field<string>("get_amount_date"),
+                        CS_name = row.Field<string>("CS_name"),
+                        CS_ID = row.Field<string>("CS_ID"),
+                        show_project_title = row.Field<string>("show_project_title"),
+                        get_amount = row.Field<string>("get_amount")
+                        /*
+                        addr = row.Field<string>("addr"),
+                        Loan_rate = row.Field<string>("Loan_rate"),
+                        HS_id = row.Field<string>("HS_id"),
+                        pass_amount = row.Field<string>("pass_amount"),
+                        Send_amount = row.Field<string>("Send_amount"),
+                        project_title = row.Field<string>("project_title"),
+                        CS_MTEL1 = row.Field<string>("CS_MTEL1"),
+                        CS_MTEL2 = row.Field<string>("CS_MTEL2"),
+                        CS_introducer = row.Field<string>("CS_introducer"),
+                        plan_name = row.Field<string>("plan_name"),
+                        U_BC_name = row.Field<string>("U_BC_name"),
+                        show_Send_result_type = row.Field<string>("show_Send_result_type"),
+                        show_check_amount_type = row.Field<string>("show_check_amount_type"),
+                        show_get_amount_type = row.Field<string>("show_get_amount_type"),
+                        show_appraise_company = row.Field<string>("show_appraise_company"),
+                        show_fund_company = row.Field<string>("show_fund_company"),
+                        fin_name = row.Field<string>("fin_name"),
+                        fin_date = row.Field<DateTime>("fin_date")
+                        */
+                    }).ToList();
+
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(PerformanceList);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+
+        }
+
+        /// <summary>
+        /// 新鑫已撥款明細表資料匯出Excel NewXinCaseStatus_Exccel/NewXinCaseStatus.asp
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost("NewXinCaseStatus_Exccel")]
+        public IActionResult NewXinCaseStatus_Exccel(string DateS, string DateE, string selYear_S)
+        {
+            var sdate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(DateS));
+            var edate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(DateE));
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                        SELECT
+                          ISNULL(CS_PID, '') CS_ID
+                         ,ISNULL(CS_register_address, '') addr
+                         ,ISNULL(Loan_rate, '') Loan_rate
+                         ,REPLACE(REPLACE(CONVERT(VARCHAR(10), Send_amount_date, 126), '-', '/'), YEAR(Send_amount_date), YEAR(Send_amount_date) - 1911) Send_amount_date
+                         ,REPLACE(REPLACE(CONVERT(VARCHAR(10), get_amount_date, 126), '-', '/'), YEAR(get_amount_date), YEAR(get_amount_date) - 1911) get_amount_date
+                         ,H.HS_id
+                         ,H.pass_amount
+                         ,H.Send_amount
+                         ,H.get_amount
+                         ,House_pre_project.project_title
+                         ,House_apply.CS_name
+                         ,House_apply.CS_MTEL1
+                         ,House_apply.CS_MTEL2
+                         ,House_apply.CS_introducer
+                         ,User_M.U_name plan_name
+                         ,User_M.U_BC_name
+                         ,ISNULL((SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'Send_result_type'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = H.Send_result_type
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          , '--') AS show_Send_result_type
+                         ,ISNULL((SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'check_amount_type'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = H.check_amount_type
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          , '--') AS show_check_amount_type
+                         ,ISNULL((SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'get_amount_type'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = H.get_amount_type
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          , '--') AS show_get_amount_type
+                         ,(SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'appraise_company'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = H.appraise_company
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          AS show_appraise_company
+                         ,(SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'fund_company'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = H.fund_company
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          AS show_fund_company
+                         ,(SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'project_title'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = House_pre_project.project_title
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          AS show_project_title
+                         ,Users.U_name AS fin_name
+                         ,CONVERT(VARCHAR, house_pre_project.fin_date, 111) AS fin_date
+                        FROM House_sendcase H
+                        LEFT JOIN House_apply
+                          ON House_apply.HA_id = H.HA_id
+                            AND House_apply.del_tag = '0'
+                        LEFT JOIN House_pre_project
+                          ON House_pre_project.HP_project_id = H.HP_project_id
+                            AND House_pre_project.del_tag = '0'
+                        LEFT JOIN view_User_sales User_M
+                          ON User_M.U_num = House_apply.plan_num
+                        LEFT JOIN view_user_sales Users
+                          ON house_pre_project.fin_user = Users.U_num
+                        WHERE H.del_tag = '0'
+                        AND H.sendcase_handle_type = 'Y'
+                        AND ISNULL(H.Send_amount, '') <> ''
+                        AND (Send_amount_date >= @start_date
+                        AND Send_amount_date <= @end_date)
+                        AND fund_Company = 'FDCOM001'
+                        AND CONVERT(VARCHAR(7), get_amount_date, 126) = @selYear_S
+                        AND get_amount_type = 'GTAT002'
+                        ORDER BY Send_amount_date, H.HS_id DESC
+                    ";
+                parameters.Add(new SqlParameter("@start_date", sdate));
+                parameters.Add(new SqlParameter("@end_date", edate));
+                parameters.Add(new SqlParameter("@selYear_S", selYear_S));
+
+                #endregion
+                List<NewXinCaseStatus_Excel> excelList=new List<NewXinCaseStatus_Excel>();
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    excelList = dtResult.AsEnumerable().Select(row => new NewXinCaseStatus_Excel
+                    {
+                        Send_amount_date = row.IsNull("Send_amount_date") ? "" :
+                                         row.Field<string>("Send_amount_date"),
+                        get_amount_date = row.IsNull("get_amount_date") ? "" :
+                                         row.Field<string>("get_amount_date"),
+                        CS_name = row.Field<string>("CS_name"),
+                        CS_ID = row.Field<string>("CS_ID"),
+                        show_project_title = row.Field<string>("show_project_title"),
+                        get_amount = row.Field<string>("get_amount")
+                    }).ToList();
+
+
+
+                }
+                var Excel_Headers = new Dictionary<string, string>
+                {
+                    { "Send_amount_date","出件日期" },
+                    { "get_amount_date", "撥款日期" },
+                    { "CS_name", "申請人" },
+                    { "CS_ID", "申請人ID" },
+                    { "show_project_title", "出件方案" },
+                    { "get_amount", "撥款金額(萬)" }
+                };
+
+                var fileBytes = FuncHandler.ExportToExcel(excelList, Excel_Headers);
+                var fileName = "新鑫已撥款明細表-" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        // 提供撥款查詢年月 AE.GetSendcaseYYYMM 
+        #endregion
+
     }
 }
