@@ -1098,7 +1098,7 @@ namespace KF_WebAPI.FunctionHandler
             using (var package = new ExcelPackage())
             {
                 #region 各公司打卡資料
-                var bcOrder = new List<string> { "BC0800", "BC0900", "BC0100", "BC0200", "BC0600", "BC0300", "BC0500", "BC0400", "BC0700" };
+                var bcOrder = new List<string> { "BC0800", "BC0801", "BC0802", "BC0803", "BC0900", "BC0100", "BC0200", "BC0600", "BC0300", "BC0500", "BC0400", "BC0700" };
                 var bcGroups = modelList.GroupBy(x => x.U_BC).OrderBy(g => bcOrder.IndexOf(g.Key)).ToList();
                 string[] headers = { "名稱", "日期", "上班", "下班", "遲到", "外出時間" };
              
@@ -1109,6 +1109,15 @@ namespace KF_WebAPI.FunctionHandler
                     {
                         case "BC0800":
                             worksheet = package.Workbook.Worksheets.Add("總公司");
+                            break;
+                        case "BC0801":
+                            worksheet = package.Workbook.Worksheets.Add("資訊部");
+                            break;
+                        case "BC0802":
+                            worksheet = package.Workbook.Worksheets.Add("審查部");
+                            break;
+                        case "BC0803":
+                            worksheet = package.Workbook.Worksheets.Add("財會部");
                             break;
                         case "BC0900":
                             worksheet = package.Workbook.Worksheets.Add("行銷部");
