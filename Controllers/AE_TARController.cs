@@ -334,7 +334,7 @@ namespace KF_WebAPI.Controllers
         /// 業務責任額列表
         /// </summary>
         [HttpGet("Per_Target_LQuery")]
-        public ActionResult<ResultClass<string>> Per_Target_LQuery()
+        public ActionResult<ResultClass<string>> Per_Target_LQuery(string? c_name,string? PE_DATE_S)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -342,11 +342,25 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"select PE_ID,Li.item_D_name as PE_title,PE_num,PE_target,PE_Date_S,PE_Date_E
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"select PE_ID,Li.item_D_name as titleName,Um.U_name,PE_num,PE_target,PE_Date_S,PE_Date_E
                               from Person_target Pe
-                              left join Item_list Li on Li.item_M_code='professional_title' and Li.item_D_code=Pe.PE_title";
+                              left join Item_list Li on Li.item_M_code='professional_title' and Li.item_D_code=Pe.PE_title
+                              left join User_M Um on Um.U_num=Pe.PE_num
+                              where 1=1";
+                if (!string.IsNullOrEmpty(c_name))
+                {
+                    T_SQL += " and Um.U_name = @c_name";
+                    parameters.Add(new SqlParameter("@c_name", c_name));
+                }
+                if (!string.IsNullOrEmpty(PE_DATE_S))
+                {
+                    T_SQL += " and PE_DATE_S = @PE_DATE_S";
+                    parameters.Add(new SqlParameter("@PE_DATE_S", PE_DATE_S));
+                }
+                T_SQL += " order by PE_Date_S desc,Li.item_sort";
                 #endregion
-                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(dtResult);
                 return Ok(resultClass);
