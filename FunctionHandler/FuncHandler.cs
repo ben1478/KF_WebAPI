@@ -2224,6 +2224,124 @@ namespace KF_WebAPI.FunctionHandler
             }
         }
 
+        public static byte[] PerformanceExcel(List<Performance_Excel> items, Dictionary<string, string> headers)
+        {
+            if (items == null || items.Count == 0)
+            {
+                throw new ArgumentException("The list cannot be null or empty.", nameof(items));
+            }
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Sheet0");
+                
+
+                // 添加表頭
+                worksheet.Cells[1, 1].Value = "排名";
+                worksheet.Cells[1, 1].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                worksheet.Cells[1, 1].Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                int headerIndex = 2;
+                foreach (var header in headers)
+                {
+                    var cell = worksheet.Cells[1, headerIndex++];
+                    cell.Value = header.Value;
+                    // 設置儲存格底色為淺藍色
+                    cell.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    cell.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                }
+
+
+                // 添加表身
+                int rowIndex = 2;
+                foreach (var item in items)
+                {
+                    worksheet.Cells[rowIndex, 1].Value = rowIndex - 1;
+                    worksheet.Cells[rowIndex, 2].Value = item.U_BC_name;
+                    worksheet.Cells[rowIndex, 3].Value = item.title;
+                    worksheet.Cells[rowIndex, 4].Value = item.U_name;
+                    worksheet.Cells[rowIndex, 5].Value = item.U_arrive_date;
+                    worksheet.Cells[rowIndex, 6].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, 6].Value = item.Jan;
+                    worksheet.Cells[rowIndex, 7].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, 7].Value = item.Feb;
+                    worksheet.Cells[rowIndex, 8].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, 8].Value = item.Mar;
+                    worksheet.Cells[rowIndex, 9].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, 9].Value = item.Apr;
+                    worksheet.Cells[rowIndex, 10].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, 10].Value = item.Mar;
+                    worksheet.Cells[rowIndex, 11].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, 11].Value = item.Jun;
+                    worksheet.Cells[rowIndex, 12].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, 12].Value = item.Jul;
+                    worksheet.Cells[rowIndex, 13].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, 13].Value = item.Aug;
+                    worksheet.Cells[rowIndex, 14].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, 14].Value = item.Sep;
+                    worksheet.Cells[rowIndex, 15].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, 15].Value = item.Oct;
+                    worksheet.Cells[rowIndex, 16].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, 16].Value = item.Nov;
+                    worksheet.Cells[rowIndex, 17].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, 17].Value = item.Dec;
+                    worksheet.Cells[rowIndex, 18].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, 18].Value = item.Totle;
+                    worksheet.Cells[rowIndex, 19].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, 19].Value = item.MonAVG;
+                    worksheet.Cells[rowIndex, 20].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, 20].Value = item.YearAVG;
+                    rowIndex++;
+                }
+
+
+                //合併儲存格
+                worksheet.Cells[rowIndex, 1].Value = $"筆數：{items.Count}";
+                worksheet.Cells[rowIndex, 1, rowIndex, 4].Merge = true;
+                worksheet.Cells[rowIndex, 1, rowIndex, 4].Style.Font.Bold = true;
+                worksheet.Cells[rowIndex, 5].Value = "合計:";
+                worksheet.Cells[rowIndex, 6].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 6].Value = items.Sum(x => x.Jan);
+                worksheet.Cells[rowIndex, 7].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 7].Value = items.Sum(x => x.Feb);
+                worksheet.Cells[rowIndex, 8].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 8].Value = items.Sum(x => x.Mar);
+                worksheet.Cells[rowIndex, 9].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 9].Value = items.Sum(x => x.Apr);
+                worksheet.Cells[rowIndex, 10].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 10].Value = items.Sum(x => x.May);
+                worksheet.Cells[rowIndex, 11].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 11].Value = items.Sum(x => x.Jun);
+                worksheet.Cells[rowIndex, 12].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 12].Value = items.Sum(x => x.Jul);
+                worksheet.Cells[rowIndex, 13].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 13].Value = items.Sum(x => x.Aug);
+                worksheet.Cells[rowIndex, 14].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 14].Value = items.Sum(x => x.Sep);
+                worksheet.Cells[rowIndex, 15].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 15].Value = items.Sum(x => x.Oct);
+                worksheet.Cells[rowIndex, 16].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 16].Value = items.Sum(x => x.Nov);
+                worksheet.Cells[rowIndex, 17].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 17].Value = items.Sum(x => x.Dec);
+                worksheet.Cells[rowIndex, 18].Style.Numberformat.Format = "#,##0";
+                worksheet.Cells[rowIndex, 18].Value = items.Sum(x => x.Totle);
+
+                // 添加表身邊框
+                using (var range = worksheet.Cells[1, 1, rowIndex, headers.Count + 1])
+                {
+                    range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                }
+
+                // 列寬自動調整
+                worksheet.Cells.AutoFitColumns();
+
+                return package.GetAsByteArray();
+            }
+        }
+
         public static ArrayList ConvertJsonToArrayList(string json)
         {
             ArrayList result = new ArrayList();
