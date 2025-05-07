@@ -6,6 +6,11 @@
         public string startMonth { get; set; }
         public string endMonth { get; set; }
         public int amount { get; set; }
-        public string user { get; set; }
+        public string? user { get; set; }
+    }
+
+    public class Pro_Target : Pro_Target_Ins
+    {
+        public string PR_ID { get; set; }
     }
 }
