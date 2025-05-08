@@ -82,9 +82,9 @@ namespace KF_WebAPI.Controllers
                               edit_num=@edit_num,edit_ip=@edit_ip where PR_ID=@PR_ID";
                 var parameters = new List<SqlParameter>()
                 {
-                    new SqlParameter("@PR_target", model.amount),
-                    new SqlParameter("@PR_Date_S",model.startMonth),
-                    new SqlParameter("@PR_Date_E",model.endMonth),
+                    new SqlParameter("@PR_target", model.PR_target),
+                    new SqlParameter("@PR_Date_S",model.PR_Date_S),
+                    new SqlParameter("@PR_Date_E",model.PR_Date_E),
                     new SqlParameter("@edit_num",model.user),
                     new SqlParameter("@edit_ip",clientIp),
                     new SqlParameter("@PR_ID",model.PR_ID)
@@ -104,12 +104,12 @@ namespace KF_WebAPI.Controllers
                                     ,edit_ip=@edit_ip where PE_title=@PE_title and PE_Date_S=@PE_Date_S";
                     var parameters_u = new List<SqlParameter>()
                     {
-                        new SqlParameter("@PE_target",model.amount),
-                        new SqlParameter("@PE_Date_E",model.endMonth),
+                        new SqlParameter("@PE_target",model.PR_target),
+                        new SqlParameter("@PE_Date_E",model.PR_Date_E),
                         new SqlParameter("@edit_num",model.user),
                         new SqlParameter("@edit_ip",clientIp),
-                        new SqlParameter("@PE_title",model.title),
-                        new SqlParameter("@PE_Date_S",model.startMonth)
+                        new SqlParameter("@PE_title",model.PR_title),
+                        new SqlParameter("@PE_Date_S",model.PR_Date_S)
                     };
                     int result_u = _adoData.ExecuteNonQuery(T_SQL_U, parameters_u);
                     if (result_u == 0) 
@@ -185,7 +185,7 @@ namespace KF_WebAPI.Controllers
                                 between CONVERT(date, PR_Date_S + '/01') AND CONVERT(date, PR_Date_E + '/01')";
                 var parameters_c = new List<SqlParameter>()
                 {
-                    new SqlParameter("@Date",list[0].startMonth)
+                    new SqlParameter("@Date",list[0].PR_Date_S)
                 };
                 var dtReult_c = _adoData.ExecuteQuery(T_SQL_C, parameters_c);
                 if (dtReult_c.Rows.Count > 0)
@@ -202,10 +202,10 @@ namespace KF_WebAPI.Controllers
                 {
                     var parameters = new List<SqlParameter>
                     {
-                        new SqlParameter("@PR_title", item.title),
-                        new SqlParameter("@PR_target", item.amount),
-                        new SqlParameter("@PR_Date_S", item.startMonth),
-                        new SqlParameter("@PR_Date_E", item.endMonth),
+                        new SqlParameter("@PR_title", item.PR_title),
+                        new SqlParameter("@PR_target", item.PR_target),
+                        new SqlParameter("@PR_Date_S", item.PR_Date_S),
+                        new SqlParameter("@PR_Date_E", item.PR_Date_E),
                         new SqlParameter("@add_num", item.user),
                         new SqlParameter("@add_ip", clientIp)
                     };
@@ -223,7 +223,7 @@ namespace KF_WebAPI.Controllers
                 var T_SQL_SP = "exec UpdatePersonTargets @PR_Date_S";
                 var parameters_sp = new List<SqlParameter>()
                 {
-                    new SqlParameter("@PR_Date_S",list[0].startMonth)
+                    new SqlParameter("@PR_Date_S",list[0].PR_Date_S)
                 };
                 _adoData.ExecuteQuery(T_SQL_SP, parameters_sp);
 
@@ -273,10 +273,10 @@ namespace KF_WebAPI.Controllers
                 {
                     var TargetList = dtResult_c.AsEnumerable().Select(row => new Pro_Target_Ins
                     {
-                        title = row.Field<string>("PR_title"),
-                        amount = row.Field<int>("PR_target"),
-                        startMonth = row.Field<string>("PR_Date_S"),
-                        endMonth = row.Field<string>("PR_Date_E"),
+                        PR_title = row.Field<string>("PR_title"),
+                        PR_target = row.Field<int>("PR_target"),
+                        PR_Date_S = row.Field<string>("PR_Date_S"),
+                        PR_Date_E = row.Field<string>("PR_Date_E"),
                     }).ToList();
 
                     var T_SQL = @"Insert into Professional_target(PR_title,PR_target,PR_Date_S,PR_Date_E,add_date,add_num,add_ip)
@@ -286,8 +286,8 @@ namespace KF_WebAPI.Controllers
                     {
                         var parameters = new List<SqlParameter>
                         {
-                            new SqlParameter("@PR_title", item.title),
-                            new SqlParameter("@PR_target", item.amount),
+                            new SqlParameter("@PR_title", item.PR_title),
+                            new SqlParameter("@PR_target", item.PR_target),
                             new SqlParameter("@PR_Date_S", PR_DATE_S),
                             new SqlParameter("@PR_Date_E", PR_DATE_E),
                             new SqlParameter("@add_num", User),
@@ -343,15 +343,17 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"select PE_ID,Li.item_D_name as titleName,Um.U_name,PE_num,PE_target,PE_Date_S,PE_Date_E
+                var T_SQL = @"select PE_ID,Li.item_D_name as titleName,Case When ISNULL(Lis.item_D_name,'') <> '' THEN Lis.item_D_name ELSE Um.U_name END as U_name,
+                              PE_num,PE_target,PE_Date_S,PE_Date_E
                               from Person_target Pe
                               left join Item_list Li on Li.item_M_code='professional_title' and Li.item_D_code=Pe.PE_title
                               left join User_M Um on Um.U_num=Pe.PE_num
+                              left join Item_list Lis on Lis.item_M_code = 'SpecName' AND Lis.item_D_type = 'Y' and Lis.item_D_txt_A = Um.U_num
                               where 1=1";
                 if (!string.IsNullOrEmpty(c_name))
                 {
-                    T_SQL += " and Um.U_name = @c_name";
-                    parameters.Add(new SqlParameter("@c_name", c_name));
+                    T_SQL += " and U_name like @c_name";
+                    parameters.Add(new SqlParameter("@c_name", "%" + c_name + "%"));
                 }
                 if (!string.IsNullOrEmpty(PE_DATE_S))
                 {
@@ -364,6 +366,52 @@ namespace KF_WebAPI.Controllers
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(dtResult);
                 return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 修改業務業績額
+        /// </summary>
+        [HttpPost("Per_Target_Upd")]
+        public ActionResult<ResultClass<string>> Per_Target_Upd(Per_Target model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"Update Person_target set PE_target=@PE_target,PE_Date_E=@PE_Date_E,edit_date=getdate(),
+                             edit_num=@edit_num,edit_ip=@edit_ip where PE_ID=@PE_ID";
+                var parameters = new List<SqlParameter>()
+                {
+                    new SqlParameter("@PE_target",model.PE_target),
+                    new SqlParameter("@PE_Date_E",model.PE_Date_E),
+                    new SqlParameter("@edit_num",model.user),
+                    new SqlParameter("@edit_ip",clientIp),
+                    new SqlParameter("@PE_ID",model.PE_ID)
+                };
+                #endregion
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "修改失敗";
+                    return BadRequest(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "修改成功";
+                    return BadRequest(resultClass);
+                }
             }
             catch (Exception ex)
             {
