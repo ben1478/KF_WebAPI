@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Mvc.Routing;
 using System.Linq;
 using System.Diagnostics.Eventing.Reader;
 using KF_WebAPI.BaseClass.Max104;
+using Microsoft.VisualBasic;
 
 namespace KF_WebAPI.Controllers
 {
@@ -5153,76 +5154,68 @@ namespace KF_WebAPI.Controllers
                               OR (U_BC IN ('BC0900')
                               AND pft.item_sort BETWEEN '120' AND '170'
                               OR U_PFT IN ('PFE830', 'PFE820')))/*只計算這六個部門及數位行銷*/) User_M
-                            LEFT JOIN [dbo].[fun_PerformanceByMonth](@selYear_S, CONVERT(VARCHAR(10), DATEADD(DAY, -1, DATEADD(MONTH, 1, @selYear_E)), 126), DATEDIFF(MONTH, @selYear_S, DATEADD(DAY, -1, DATEADD(MONTH, 1, @selYear_E)) + 1), '') M
+                            LEFT JOIN [dbo].[fun_PerformanceByMonth](@selYear_S, CONVERT(VARCHAR(10), DATEADD(DAY, -1, DATEADD(MONTH, 1, @selYear_E)), 126), DATEDIFF(MONTH, @selYear_S, DATEADD(DAY, -1, DATEADD(MONTH, 1, @selYear_E)) + 1), @isACT) M
                               ON User_M.U_num = M.plan_num
                             WHERE U_PFT <> 'PFT100'
                             AND U_PFT <> 'PFE831' /*職等=助理or 副總不計算*/
+                            and (   -- 區
+                                        (@u_bc_title = null or @u_bc_title = '' or @u_bc_title = 'all') 
+                                        or (@u_bc_title='six_area' and U_BC between 'BC0100' and 'BC0600') 
+                                        or (U_BC = @u_bc_title)
+                                 )
+                            and (   -- 到職日基準日
+                                    (@start_date = null or @start_date = '')
+                                    or (convert(datetime, U_arrive_date) >= convert(datetime, @start_date) )
+                                )
+                            and (   -- 在職狀態
+                                    (@Enable = null or @Enable = '')
+                                    or (Enable = @Enable)
+                                )
+                            ORDER BY 
+                                case when @OrderBy = 1 then totle  END DESC,
+                                case when @OrderBy = 2 then U_BC end ASC,  U_PFT ,U_arrive_date 
                     ";
-                parameters.Add(new SqlParameter("@selYear_S", model.selYear_S));
-                parameters.Add(new SqlParameter("@selYear_E", model.selYear_E));
-                
+                parameters.Add(new SqlParameter("@u_bc_title", model.u_bc_title));
+                parameters.Add(new SqlParameter("@selYear_S", model.selYear_S + "-01"));
+                parameters.Add(new SqlParameter("@selYear_E", model.selYear_E + "-01"));
+                parameters.Add(new SqlParameter("@start_date", model.start_date));
+                parameters.Add(new SqlParameter("@Enable", model.Enable));
+                parameters.Add(new SqlParameter("@isACT", model.isACT));
+                parameters.Add(new SqlParameter("@OrderBy", model.OrderBy));
 
-                if (model.u_bc_title != null && model.u_bc_title != "" && model.u_bc_title != "all")
-                {
-                    // 6區
-                    if (model.u_bc_title == "six_area")
-                    {
-                        T_SQL += " and U_BC between 'BC0100' and 'BC0600' ";
-                    }
-                    else
-                    {
-                        T_SQL += " and U_BC = @u_bc_title ";
-                        parameters.Add(new SqlParameter("@u_bc_title", model.u_bc_title));
-                    }
-                }
-                if(model.start_date != null && model.start_date != "")
-                {
-                    T_SQL += " and convert(datetime, U_arrive_date) >= convert(datetime, @start_date) ";
-                    parameters.Add(new SqlParameter("@start_date", model.start_date));
-                }
-                if (model.start_date != null && model.start_date != "")
-                {
-                    T_SQL += " and Enable = @Enable "; // null:全部 / Y:在職 / N:離職
-                    parameters.Add(new SqlParameter("@Enable", model.Enable));
-                }
-                if (model.OrderBy == "1")
-                {
-                    // 1:業績
-                    T_SQL += " ORDER BY totle DESC";
-                }
-                else
-                {
-                    // 2:地區職稱
-                    T_SQL += " order by U_BC , U_PFT ,U_arrive_date ";
-                }
-                
 
                 #endregion
 
-               DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
                     var PerformanceList = dtResult.AsEnumerable().Select(row => new Performance_res
                     {
+                        U_arrive_date = row.Field<string>("U_arrive_date"),
+                        yyyy = row.IsNull("yyyy")? string.Empty : row.Field<string>("yyyy"),
+                        U_leave_date = row.Field<string>("U_leave_date"),
+                        U_BC_name = row.Field<string>("U_BC_name"),
+                        title = row.Field<string>("title"),
+                        U_name = row.Field<string>("U_name"),
                         U_num = row.Field<string>("U_num"),
                         U_BC = row.Field<string>("U_BC"),
                         Cal_Arrive = row.IsNull("Cal_Arrive") ? "" : row.Field<DateTime>("Cal_Arrive").ToShortDateString(),
-                        Jan = row.IsNull("Jan") ? "0 萬" : row.Field<string>("Jan") + " 萬",
-                        Feb = row.IsNull("Feb") ? "0 萬" : row.Field<string>("Feb") + " 萬",
-                        Mar = row.IsNull("Mar") ? "0 萬" : row.Field<string>("Mar") + " 萬",
-                        Apr = row.IsNull("Apr") ? "0 萬" : row.Field<string>("Apr") + " 萬",
-                        May = row.IsNull("May") ? "0 萬" : row.Field<string>("May") + " 萬",
-                        Jun = row.IsNull("Jun") ? "0 萬" : row.Field<string>("Jun") + " 萬",
-                        Jul = row.IsNull("Jul") ? "0 萬" : row.Field<string>("Jul") + " 萬",
-                        Aug = row.IsNull("Aug") ? "0 萬" : row.Field<string>("Aug") + " 萬",
-                        Sep = row.IsNull("Sep") ? "0 萬" : row.Field<string>("Sep") + " 萬",
-                        Oct = row.IsNull("Oct") ? "0 萬" : row.Field<string>("Oct") + " 萬",
-                        Nov = row.IsNull("Nov") ? "0 萬" : row.Field<string>("Nov") + " 萬",
-                        Dec = row.IsNull("Dec") ? "0 萬" : row.Field<string>("Dec") + " 萬",
-                        Totle = row.IsNull("Totle") ? "0 萬" : row.Field<Double>("Totle").ToString() + " 萬",
-                        MonAVG = row.IsNull("MonAVG") ? "0 萬" : row.Field<string>("MonAVG") + " 萬",
-                        YearAVG = row.IsNull("YearAVG") ? "0 萬" : row.Field<string>("YearAVG") + " 萬",
-                        cal_yearAvg = row.IsNull("cal_yearAvg") ? "0 萬" : row.Field<Double>("cal_yearAvg").ToString() + " 萬"
+                        Jan = row.IsNull("Jan") ? "0" : row.Field<string>("Jan"),
+                        Feb = row.IsNull("Feb") ? "0" : row.Field<string>("Feb"),
+                        Mar = row.IsNull("Mar") ? "0" : row.Field<string>("Mar"),
+                        Apr = row.IsNull("Apr") ? "0" : row.Field<string>("Apr"),
+                        May = row.IsNull("May") ? "0" : row.Field<string>("May"),
+                        Jun = row.IsNull("Jun") ? "0" : row.Field<string>("Jun"),
+                        Jul = row.IsNull("Jul") ? "0" : row.Field<string>("Jul"),
+                        Aug = row.IsNull("Aug") ? "0" : row.Field<string>("Aug"),
+                        Sep = row.IsNull("Sep") ? "0" : row.Field<string>("Sep"),
+                        Oct = row.IsNull("Oct") ? "0" : row.Field<string>("Oct"),
+                        Nov = row.IsNull("Nov") ? "0" : row.Field<string>("Nov"),
+                        Dec = row.IsNull("Dec") ? "0" : row.Field<string>("Dec"),
+                        Totle = row.IsNull("Totle") ? "0" : row.Field<Double>("Totle").ToString(),
+                        MonAVG = row.IsNull("MonAVG") ? "0" : row.Field<string>("MonAVG"),
+                        YearAVG = row.IsNull("YearAVG") ? "0" : row.Field<string>("YearAVG"),
+                        cal_yearAvg = row.IsNull("cal_yearAvg") ? "0" : row.Field<Double>("cal_yearAvg").ToString()
 
                     }).ToList();
 
@@ -5286,7 +5279,6 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-
         /// <summary>
         /// 提供全區業績表查詢區(含6區) GetSendcaseYYYMM/Performance.asp
         /// </summary>
@@ -5333,6 +5325,327 @@ namespace KF_WebAPI.Controllers
                 resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
+        }
+
+        /// <summary>
+        /// 全區業績表匯出Excel NewXinCaseStatus_Exccel/Performance.asp
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost("Performance_Exccel")]
+        public IActionResult Performance_Exccel(Performance_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var roleNum = HttpContext.Session.GetString("Role_num");
+            var User_U_BC = HttpContext.Session.GetString("User_U_BC");
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                        SELECT
+                              *
+                             ,CASE
+                                WHEN DATEDIFF(MONTH, Cal_Arrive, @selYear_S) < 0 THEN /*判斷到職日-起始日*/      	
+                                /*小於0代表到職日比較晚,所以要除12-(到職日-起始日的月份)*/ 
+                                    ROUND(totle / (12 + DATEDIFF(MONTH, Cal_Arrive, @selYear_S)), 0)
+                                ELSE ROUND(REPLACE(YearAvg, ',', ''), 0)
+                              END cal_yearAvg/*計算過後的年平均*/
+                            FROM (SELECT
+                                U_num
+                               ,DATEADD(MONTH, 1, U_arrive_date) Cal_Arrive
+                               ,/*計算年平均要以到職日加1個月來算*/U_BC
+                               ,U_name
+                               ,CONVERT(VARCHAR(10), U_arrive_date, 126) U_arrive_date
+                               ,CONVERT(VARCHAR(10), [U_leave_date], 126) [U_leave_date]
+                               ,CASE
+                                  WHEN [U_leave_date] IS NULL THEN 'Y'
+                                  ELSE 'N'
+                                END [enable]
+                               ,ub.item_D_name U_BC_name
+                               ,pft.item_D_name title
+                               ,U_PFT
+                              FROM User_M u
+                              LEFT JOIN Item_list ub
+                                ON ub.item_M_code = 'branch_company'
+                                AND ub.item_D_type = 'Y'
+                                AND ub.item_D_code = u.U_BC
+                                AND ub.del_tag = '0'
+                              LEFT JOIN Item_list pft
+                                ON pft.item_M_code = 'professional_title'
+                                AND pft.item_D_type = 'Y'
+                                AND pft.item_D_code = u.U_PFT
+                                AND pft.del_tag = '0'
+                              WHERE (u_bc BETWEEN 'BC0100' AND 'BC0600'
+                              OR (U_BC IN ('BC0900')
+                              AND pft.item_sort BETWEEN '120' AND '170'
+                              OR U_PFT IN ('PFE830', 'PFE820')))/*只計算這六個部門及數位行銷*/) User_M
+                            LEFT JOIN [dbo].[fun_PerformanceByMonth](@selYear_S, CONVERT(VARCHAR(10), DATEADD(DAY, -1, DATEADD(MONTH, 1, @selYear_E)), 126), DATEDIFF(MONTH, @selYear_S, DATEADD(DAY, -1, DATEADD(MONTH, 1, @selYear_E)) + 1), @isACT) M
+                              ON User_M.U_num = M.plan_num
+                            WHERE U_PFT <> 'PFT100'
+                            AND U_PFT <> 'PFE831' /*職等=助理or 副總不計算*/
+                            and (   -- 區
+                                        (@u_bc_title = null or @u_bc_title = '' or @u_bc_title = 'all') 
+                                        or (@u_bc_title='six_area' and U_BC between 'BC0100' and 'BC0600') 
+                                        or (U_BC = @u_bc_title)
+                                 )
+                            and (   -- 到職日基準日
+                                    (@start_date = null or @start_date = '')
+                                    or (convert(datetime, U_arrive_date) >= convert(datetime, @start_date) )
+                                )
+                            and (   -- 在職狀態
+                                    (@Enable = null or @Enable = '')
+                                    or (Enable = @Enable)
+                                )
+                            ORDER BY 
+                                case when @OrderBy = 1 then totle  END DESC,
+                                case when @OrderBy = 2 then U_BC end ASC,  U_PFT ,U_arrive_date 
+                    ";
+                parameters.Add(new SqlParameter("@u_bc_title", model.u_bc_title));
+                parameters.Add(new SqlParameter("@selYear_S", model.selYear_S + "-01"));
+                parameters.Add(new SqlParameter("@selYear_E", model.selYear_E + "-01"));
+                parameters.Add(new SqlParameter("@start_date", model.start_date));
+                parameters.Add(new SqlParameter("@Enable", model.Enable));
+                parameters.Add(new SqlParameter("@isACT", model.isACT));
+                parameters.Add(new SqlParameter("@OrderBy", model.OrderBy));
+
+                #endregion
+                List<Performance_Excel> excelList = new List<Performance_Excel>();
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    excelList = dtResult.AsEnumerable().Select(row => new Performance_Excel
+                    {
+
+                        //U_arrive_date = row.IsNull("U_arrive_date") ? "" : row.Field<string>("U_arrive_date"),
+                        //U_BC_name = row.IsNull("U_BC_name") ? "" : row.Field<string>("U_BC_name"),
+                        //title = row.IsNull("title") ? "" : row.Field<string>("title"),
+                        //U_name = row.IsNull("U_name") ? "": row.Field<string>("U_name"),
+                        U_arrive_date =  row.Field<string>("U_arrive_date"),
+                        U_BC_name =  row.Field<string>("U_BC_name"),
+                        title =  row.Field<string>("title"),
+                        U_name =  row.Field<string>("U_name"),
+                        Jan = row.IsNull("Jan") ? 0 : int.TryParse(row.Field<string>("Jan").Replace(",", ""), out int jan) ? jan : 0,
+                        Feb = row.IsNull("Feb") ? 0 : int.TryParse(row.Field<string>("Feb").Replace(",", ""), out int feb) ? feb : 0,
+                        Mar = row.IsNull("Mar") ? 0 : int.TryParse(row.Field<string>("Mar").Replace(",", ""), out int mar) ? mar : 0,
+                        Apr = row.IsNull("Apr") ? 0 : int.TryParse(row.Field<string>("Apr").Replace(",", ""), out int apr) ? apr : 0,
+                        May = row.IsNull("May") ? 0 : int.TryParse(row.Field<string>("May").Replace(",", ""), out int may) ? may : 0,
+                        Jun = row.IsNull("Jun") ? 0 : int.TryParse(row.Field<string>("Jun").Replace(",", ""), out int jun) ? jun : 0,
+                        Jul = row.IsNull("Jul") ? 0 : int.TryParse(row.Field<string>("Jul").Replace(",", ""), out int jul) ? jul : 0,
+                        Aug = row.IsNull("Aug") ? 0 : int.TryParse(row.Field<string>("Aug").Replace(",", ""), out int aug) ? aug : 0,
+                        Sep = row.IsNull("Sep") ? 0 : int.TryParse(row.Field<string>("Sep").Replace(",", ""), out int sep) ? sep : 0,
+                        Oct = row.IsNull("Oct") ? 0 : int.TryParse(row.Field<string>("Oct").Replace(",", ""), out int oct) ? oct : 0,
+                        Nov = row.IsNull("Nov") ? 0 : int.TryParse(row.Field<string>("Nov").Replace(",", ""), out int nov) ? nov : 0,
+                        Dec = row.IsNull("Dec") ? 0 : int.TryParse(row.Field<string>("Dec").Replace(",", ""), out int dec) ? dec : 0,
+                        Totle = row.IsNull("Totle") ? 0 : row.Field<double>("Totle"),
+                        MonAVG = row.IsNull("MonAVG") ? 0 : int.TryParse(row.Field<string>("MonAVG").Replace(",", ""), out int MonAVG) ? MonAVG : 0,
+                        YearAVG = row.IsNull("YearAVG") ? 0 : int.TryParse(row.Field<string>("YearAVG").Replace(",", ""), out int YearAVG) ? YearAVG :0
+
+                    }).ToList();
+                }
+                var Excel_Headers = new Dictionary<string, string>
+                {
+                    { "U_BC_name", "區" },
+                    { "title", "職稱" },
+                    { "U_name", "姓名" },
+                    { "U_arrive_date", "到職日" },
+                    { "Jan", "1月" },
+                    { "Feb","2月" },
+                    { "Mar", "3月" },
+                    { "Apr", "4月" },
+                    { "May", "5月" },
+                    { "Jun", "6月" },
+                    { "Jul", "7月" },
+                    { "Aug","8月" },
+                    { "Sep", "9月" },
+                    { "Oct", "10月" },
+                    { "Nov", "11月" },
+                    { "Dec", "12月" },
+                    { "Totle", "總計" },
+                    { "MonAVG", "月平均" },
+                    { "YearAVG", "年平均" }
+                };
+
+                var fileBytes = FuncHandler.PerformanceExcel(excelList, Excel_Headers);
+                var fileName = "全區業績表業績-" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 全區業績表-撤件資訊查詢 Performance_Cens/Performance.asp
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost("Performance_Cens")]
+        public ActionResult<ResultClass<string>> Performance_Cens(Performance_Cens_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var roleNum = HttpContext.Session.GetString("Role_num");
+            var User_U_BC = HttpContext.Session.GetString("User_U_BC");
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                        SELECT distinct plan_num+yyyymm as [Key] , plan_num+yyyymm as [Val]  
+                            from [dbo].[fun_CancelInfo](@isACT,@Date_S,@Date_E) 
+                            where  CancelDate is not null
+                    ";
+                parameters.Add(new SqlParameter("@Date_S", model.Date_S));
+                parameters.Add(new SqlParameter("@Date_E", model.Date_E));
+                parameters.Add(new SqlParameter("@isACT", model.isACT));
+                #endregion
+
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key">'K01552024-01'</param>
+        /// <param name="isACT"></param>
+        /// <returns></returns>
+        [HttpGet("Performance_Cens_Detail")]
+        public ActionResult<ResultClass<string>> Performance_Cens_Detail(string key, string isACT)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var roleNum = HttpContext.Session.GetString("Role_num");
+            var User_U_BC = HttpContext.Session.GetString("User_U_BC");
+            
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                        select 
+                            Cen,    M.U_BC, plan_num, M.U_name,  
+                            case when  Cen	='Y' then null else  M2.U_name end  as Cancel_Na, 
+                            convert(varchar(10), get_amount_date, 126) yyyymmdd,convert(varchar(7),
+                            case when CancelDate is null then get_amount_date else 
+                                    case when  Cen	='N' then
+                                    case when  @isACT ='Y' then 
+                                        CancelDate
+                                    else
+                                        get_amount_date
+                                    end
+                                    else
+                                    get_amount_date
+                                end
+                            end, 126) yyyymm,
+                            case when  CancelDate is not null and convert(varchar(7),CancelDate, 126)<>convert(varchar(7),get_amount_date, 126)  then 
+                                    case when  Cen	='Y' then   CAST(convert(float, House_sendcase.get_amount) AS DECIMAL) else 0 end
+                                else  
+                                        CAST(isnull(convert(float, House_sendcase.get_amount),0) AS DECIMAL)
+                            end get_amount  ,
+                                case when  CancelDate is null then 
+                                    0
+                                else  
+                                        case when  Cen	='N' then
+                                            CAST(convert(float, House_sendcase.get_amount) AS DECIMAL)* 1
+                                            else
+                                            0
+                                        end 
+                                end Cancel_amount, case when  Cen	='Y' then null else convert(varchar(10), CancelDate, 126)end  CancelDate,  case when  Cen	='Y' then null else Cancel_num end Cancel_num
+                            FROM (select 'N' Cen, * from House_sendcase union all select 'Y' Cen, * from House_sendcase where CancelDate is not null and convert(varchar(7), CancelDate, 126)<> convert(varchar(7), get_amount_date, 126)    ) House_sendcase
+                            LEFT JOIN House_apply as House_apply ON House_apply.HA_id = House_sendcase.HA_id
+                            LEFT JOIN
+                            (SELECT CASE
+                                        WHEN U_BC ='BC0900' THEN U_BC
+                                        ELSE 'general'
+                                    END U_BC_rule/*BC0900的業績折扣*/,
+                                    u.U_BC,
+                                    U_num,
+                                    U_name,
+                                    ub.item_D_name U_BC_name,
+                                    pt.item_sort,
+                                    U_arrive_date
+                            FROM User_M u
+                            LEFT JOIN Item_list ub ON ub.item_M_code='branch_company'
+                            AND ub.item_D_type='Y'
+                            AND ub.item_D_code=u.U_BC
+                            LEFT JOIN Item_list pt ON pt.item_M_code='professional_title'
+                            AND pt.item_D_type='Y'
+                            AND pt.item_D_code=u.U_PFT) M ON M.U_num = House_apply.plan_num
+                            LEFT JOIN User_M M2 on Cancel_num=M2.U_num
+                            where
+                                House_sendcase.del_tag = '0' AND House_apply.del_tag='0'  AND isnull(exc_flag,'N')='N'
+                                AND convert(float, isnull(House_sendcase.get_amount, 0))<>'0'
+                                AND (convert(varchar(7), get_amount_date, 126) BETWEEN @Date_S AND @Date_E or convert(varchar(7), CancelDate, 126) BETWEEN @Date_S AND @Date_E )    
+                                and plan_num = @plan_num
+                            order by yyyymmdd
+                    ";
+                parameters.Add(new SqlParameter("@Date_S", key.Substring(5, 7)));
+                parameters.Add(new SqlParameter("@Date_E", key.Substring(5, 7)));
+                parameters.Add(new SqlParameter("@isACT", isACT));
+                parameters.Add(new SqlParameter("@plan_num", key.Substring(0,5) ));
+                #endregion
+
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                List<Performance_Cen_res> Performance_Cen_resList = new List<Performance_Cen_res>();
+                if (dtResult.Rows.Count > 0)
+                {
+
+                    Performance_Cen_resList = dtResult.AsEnumerable().Select(row => new Performance_Cen_res
+                    {
+                        yyyymmdd = row.Field<string>("yyyymmdd"),
+                        get_amount = row.IsNull("get_amount") ? 0 : row.Field<decimal>("get_amount"),
+                        Cancel_amount = row.IsNull("Cancel_amount") ? 0 : row.Field<decimal>("Cancel_amount"),
+                        CancelDate = row.Field<string>("CancelDate"),
+                        Cancel_Na = row.IsNull("Cancel_Na") ? string.Empty :  row.Field<string>("Cancel_Na")
+                    }).ToList();
+
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(Performance_Cen_resList);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+
         }
         #endregion
 
@@ -5386,10 +5699,12 @@ namespace KF_WebAPI.Controllers
                         where 
                             del_tag = 0
                             and (isCompany = ISNULL(@isCompany, isCompany) or @isCompany='')
-                            and (Introducer_name like '%'+@Introducer_name+'%' or @Introducer_name = '' or @Introducer_name is null)
+                            and ((Introducer_name like @Introducer_name) or (Introducer_name1 like @Introducer_name)  or (@Introducer_name = '' or @Introducer_name is null))
                     ";
                 parameters.Add(new SqlParameter("@isCompany", model.isCompany));
-                parameters.Add(new SqlParameter("@Introducer_name", model.Introducer));
+                SqlParameter sp = new SqlParameter("@Introducer_name", SqlDbType.NVarChar, 10);
+                sp.Value = string.IsNullOrEmpty(model.Introducer) ? "" : "%" + model.Introducer + "%";
+                parameters.Add(sp);
 
 
                 #endregion
@@ -5923,6 +6238,7 @@ namespace KF_WebAPI.Controllers
                 {
                     var PerformanceList = dtResult.AsEnumerable().Select(row => new NewXinCaseStatus_res
                     {
+                        HS_id = row.Field<decimal>("HS_id").ToString(),
                         Send_amount_date = row.IsNull("Send_amount_date") ? "" :
                                          row.Field<string>("Send_amount_date"),
                         get_amount_date = row.IsNull("get_amount_date") ? "" :
@@ -5934,7 +6250,7 @@ namespace KF_WebAPI.Controllers
                         /*
                         addr = row.Field<string>("addr"),
                         Loan_rate = row.Field<string>("Loan_rate"),
-                        HS_id = row.Field<string>("HS_id"),
+                        
                         pass_amount = row.Field<string>("pass_amount"),
                         Send_amount = row.Field<string>("Send_amount"),
                         project_title = row.Field<string>("project_title"),
@@ -6129,7 +6445,58 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-        // 提供撥款查詢年月 AE.GetSendcaseYYYMM 
+        // 提供撥款查詢年月 AE.GetSendcaseYYYMM
+
+        [HttpPost("Amount_DateSave")]
+        public IActionResult Amount_DateSave(string HS_ID, string Amount_Date)
+        {
+            var sdate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(Amount_Date.Replace('/','-')));
+
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            var User_Num = HttpContext.Session.GetString("UserID");
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"
+                                update House_sendcase
+                                    set Send_amount_date = @amount_date
+                                    from House_sendcase
+                                    where HS_id = @hs_id
+                    ";
+
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@amount_date", sdate),
+                    new SqlParameter("@hs_id", HS_ID)
+                };
+
+                #endregion
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "異動失敗";
+                    return BadRequest(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "異動成功";
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
         #endregion
 
     }

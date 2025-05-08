@@ -37,6 +37,29 @@ namespace KF_WebAPI.BaseClass.AE
         public string? OrderBy { get; set; }
     }
 
+    public class Performance_Cens_req
+    {
+        /// <summary>
+        /// 起訖年月 start
+        /// </summary>
+        public string? Date_S { get; set; }
+        /// <summary>
+        /// 起訖年月 end
+        /// </summary>
+        public string? Date_E { get; set; } // 
+
+        /// <summary>
+        /// 折數後業績
+        /// </summary>
+        public string? isACT { get; set; }
+
+        /// <summary>
+        /// 業務員編號
+        /// </summary>
+        public string? plan_num { get; set; }
+
+    }
+
     public class Performance_res
     {
         public string? U_num { get; set; }
@@ -67,6 +90,53 @@ namespace KF_WebAPI.BaseClass.AE
         public string? MonAVG { get; set; }
         public string? YearAVG { get; set; }
         public string? cal_yearAvg { get; set; }
+    }
+
+    public class Performance_Excel
+    {
+        public string U_name { get; set; }
+        public string U_arrive_date { get; set; }
+        public string U_BC_name { get; set; }
+        public string title { get; set; }
+        public int Jan { get; set; }
+        public int Feb { get; set; }
+        public int Mar { get; set; }
+        public int Apr { get; set; }
+        public int May { get; set; }
+        public int Jun { get; set; }
+        public int Jul { get; set; }
+        public int Aug { get; set; }
+        public int Sep { get; set; }
+        public int Oct { get; set; }
+        public int Nov { get; set; }
+        public int Dec { get; set; }
+        public double Totle { get; set; }
+        public int MonAVG { get; set; }
+        public int YearAVG { get; set; }
+    }
+
+    public class Performance_Cen_res
+    {
+        /// <summary>
+        /// 撥款日
+        /// </summary>
+        public string? yyyymmdd { get; set; }
+        /// <summary>
+        /// 業績
+        /// </summary>
+        public decimal? get_amount { get; set; }
+        /// <summary>
+        /// 撤件金額
+        /// </summary>
+        public decimal? Cancel_amount { get; set; }
+        /// <summary>
+        /// 撤件基準日
+        /// </summary>
+        public string? CancelDate { get; set; }
+        /// <summary>
+        /// 撤件人
+        /// </summary>
+        public string? Cancel_Na { get; set; }
     }
 }
 
