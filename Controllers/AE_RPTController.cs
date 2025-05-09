@@ -5866,8 +5866,7 @@ namespace KF_WebAPI.Controllers
                 {
                     excelList = dtResult.AsEnumerable().Select(row => new Introducer_Comm_Excel
                     {
-                        Introducer_name = row.Field<string>("Introducer_name"),
-                        //Introducer_name1 = row.Field<string>("Introducer_name1"),
+                        Introducer_name = row.IsNull("Introducer_name1") ? row.Field<string>("Introducer_name") : row.Field<string>("Introducer_name1"),
                         Introducer_HBD = row.IsNull("Introducer_HBD") ? "" :
                                          FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("Introducer_HBD").ToString("yyyy/MM/dd")),
                         Introducer_PID = row.Field<string>("Introducer_PID"),
@@ -5945,7 +5944,7 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@U_ID", model.U_ID),
                     new SqlParameter("@Introducer_name", string.IsNullOrEmpty(model.Introducer_name)? DBNull.Value : model.Introducer_name),
                     new SqlParameter("@Introducer_name1",string.IsNullOrEmpty(model.Introducer_name1)? DBNull.Value : model.Introducer_name1),
-                    new SqlParameter("@Introducer_HBD", String.IsNullOrEmpty(model.Introducer_HBD) ? null : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.Introducer_HBD))),
+                    new SqlParameter("@Introducer_HBD", string.IsNullOrEmpty(model.Introducer_HBD) ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.Introducer_HBD))),
                     new SqlParameter("@Introducer_PID", string.IsNullOrEmpty(model.Introducer_PID) ? DBNull.Value : model.Introducer_PID),
                     new SqlParameter("@Bank_account", string.IsNullOrEmpty(model.Bank_account) ? DBNull.Value : model.Bank_account),
                     new SqlParameter("@Bank_head", string.IsNullOrEmpty(model.Bank_head) ? DBNull.Value : model.Bank_head),
@@ -6041,7 +6040,6 @@ namespace KF_WebAPI.Controllers
                 var T_SQL = @"
                     INSERT INTO [dbo].[Introducer_Comm]
                                ([Introducer_name]
-                               ,[Introducer_name1]
                                ,[Introducer_HBD]
                                ,[Introducer_PID]
                                ,[Bank_account]
@@ -6050,13 +6048,13 @@ namespace KF_WebAPI.Controllers
                                ,[Bank_name]
                                ,[Introducer_addr]
                                ,[Remark]
+                               ,isCompany
                                ,[add_date]
                                ,[add_num]
                                ,[add_ip]
                                ,del_tag )
                          VALUES
                                (@Introducer_name
-                               ,@Introducer_name1
                                ,@Introducer_HBD
                                ,@Introducer_PID
                                ,@Bank_account
@@ -6065,6 +6063,7 @@ namespace KF_WebAPI.Controllers
                                ,@Bank_name
                                ,@Introducer_addr
                                ,@Remark
+                                ,@isCompany
                                 ,GETDATE()
                                 ,@add_num
                                 ,@add_ip
@@ -6074,8 +6073,7 @@ namespace KF_WebAPI.Controllers
                 var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@Introducer_name", string.IsNullOrEmpty(model.Introducer_name) ? DBNull.Value : model.Introducer_name),
-                    new SqlParameter("@Introducer_name1", model.Introducer_name1==null? DBNull.Value: model.Introducer_name1),
-                    new SqlParameter("@Introducer_HBD", String.IsNullOrEmpty(model.Introducer_HBD) ? null : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.Introducer_HBD))),
+                    new SqlParameter("@Introducer_HBD",  string.IsNullOrEmpty(model.Introducer_HBD) ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.Introducer_HBD))),
                     new SqlParameter("@Introducer_PID", string.IsNullOrEmpty(model.Introducer_PID) ? DBNull.Value : model.Introducer_PID),
                     new SqlParameter("@Bank_account", string.IsNullOrEmpty(model.Bank_account) ? DBNull.Value : model.Bank_account),
                     new SqlParameter("@Bank_head", string.IsNullOrEmpty(model.Bank_head) ? DBNull.Value : model.Bank_head),
@@ -6083,6 +6081,7 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@Bank_name", string.IsNullOrEmpty(model.Bank_name) ? DBNull.Value : model.Bank_name),
                     new SqlParameter("@Introducer_addr", string.IsNullOrEmpty(model.Introducer_addr) ? DBNull.Value : model.Introducer_addr),
                     new SqlParameter("@Remark", string.IsNullOrEmpty(model.Remark) ? DBNull.Value : model.Remark),
+                    new SqlParameter("@isCompany", string.IsNullOrEmpty(model.isCompany) ? DBNull.Value : model.isCompany),
                     new SqlParameter("@add_num", model.add_num),
                     new SqlParameter("@add_ip", string.IsNullOrEmpty(model.add_ip)? clientIp : model.add_ip),
                     new SqlParameter("@del_tag", "0")
