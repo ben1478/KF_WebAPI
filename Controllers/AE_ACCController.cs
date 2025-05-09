@@ -125,8 +125,8 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var T_SQL = "";
                 //先判定是否首期繳清
-                var T_SQL_First = @"select Case When isnull(MAX(RC_count),0) <= 1 Then 'Y' ELSE 'N' End isFirst 
-                                    from view_RC_Dtl where RCM_id = @RCM_ID";
+                var T_SQL_First = @"select Case When isnull(MIN(RC_count),0) <= 1 Then 'Y' ELSE 'N' End isFirst 
+                                    from Receivable_D where check_pay_type IN ('N','S') and RCM_id = @RCM_ID";
                 var parameters_f = new List<SqlParameter>
                 {
                     new SqlParameter("@RCM_ID",RCM_ID)
