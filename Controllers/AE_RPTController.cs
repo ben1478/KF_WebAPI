@@ -17,6 +17,7 @@ using System.Linq;
 using System.Diagnostics.Eventing.Reader;
 using KF_WebAPI.BaseClass.Max104;
 using Microsoft.VisualBasic;
+using System.Text;
 
 namespace KF_WebAPI.Controllers
 {
@@ -5425,9 +5426,9 @@ namespace KF_WebAPI.Controllers
                         //title = row.IsNull("title") ? "" : row.Field<string>("title"),
                         //U_name = row.IsNull("U_name") ? "": row.Field<string>("U_name"),
                         U_arrive_date =  row.Field<string>("U_arrive_date"),
-                        U_BC_name =  row.Field<string>("U_BC_name"),
+                        U_BC_name = row.IsNull("U_BC_name") ? "" : row.Field<string>("U_BC_name"),
                         title =  row.Field<string>("title"),
-                        U_name =  row.Field<string>("U_name"),
+                        U_name = fromNCR(row.Field<string>("U_name")),
                         Jan = row.IsNull("Jan") ? 0 : int.TryParse(row.Field<string>("Jan").Replace(",", ""), out int jan) ? jan : 0,
                         Feb = row.IsNull("Feb") ? 0 : int.TryParse(row.Field<string>("Feb").Replace(",", ""), out int feb) ? feb : 0,
                         Mar = row.IsNull("Mar") ? 0 : int.TryParse(row.Field<string>("Mar").Replace(",", ""), out int mar) ? mar : 0,
@@ -6498,5 +6499,13 @@ namespace KF_WebAPI.Controllers
 
         #endregion
 
+        string fromNCR(string value)
+        {
+            return System.Text.RegularExpressions.Regex.Replace(
+                value,
+                @"&#(\d+)",
+                m => char.ConvertFromUtf32(int.Parse(m.Groups[1].Value))
+            );
+        }
     }
 }
