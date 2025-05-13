@@ -420,5 +420,52 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+        /// <summary>
+        /// 新增業務責任額
+        /// </summary>
+        [HttpPost("Per_Target_Ins")]
+        public ActionResult<ResultClass<string>> Per_Target_Ins(List<Per_Target_Ins> list)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+
+                var T_SQL = @"Insert into Person_target(PE_title,PE_num,PE_target,PE_Date_S,PE_Date_E,add_date,add_num,add_ip) Values 
+                              ((select U_PFT from User_M where U_num=@PE_num),@PE_num,@PE_target,@PE_Date_S,@PE_Date_E,GETDATE(),@add_num,@add_ip)";
+                foreach (Per_Target_Ins item in list)
+                {
+                    var parameters = new List<SqlParameter>
+                    {
+                        new SqlParameter("@PE_num", item.PE_num),
+                        new SqlParameter("@PE_target", item.PE_target),
+                        new SqlParameter("@PE_Date_S", item.PE_Date_S),
+                        new SqlParameter("@PE_Date_E", item.PE_Date_E),
+                        new SqlParameter("@add_num", item.user),
+                        new SqlParameter("@add_ip", clientIp)
+                    };
+                    int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                    if (result == 0)
+                    {
+                        resultClass.ResultCode = "400";
+                        resultClass.ResultMsg = "新增失敗";
+                        return BadRequest(resultClass);
+                    }
+                }
+
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "新增成功";
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
     }
 }

@@ -16,7 +16,7 @@
 
     public class Per_Target_Ins
     {
-        public string PE_title { get;set; }
+        public string? PE_title { get;set; }
         public string PE_num { get; set; }
         public int PE_target { get; set; }
         public string PE_Date_S { get; set; } 
