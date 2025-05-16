@@ -407,10 +407,12 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"
-                    SELECT bc.item_D_name AS U_BC_name,um.U_num,um.U_name,pft.item_D_name AS U_PFT_name
+                    SELECT bc.item_D_name AS U_BC_name,um.U_num,Case When ISNULL(Lis.item_D_name,'') <> '' THEN Lis.item_D_name ELSE um.U_name END as U_name,
+                    pft.item_D_name AS U_PFT_name
                     FROM User_M um
                     LEFT JOIN Item_list bc ON bc.item_M_code = 'branch_company'  AND bc.item_D_code = um.U_BC AND bc.item_D_type = 'Y' AND bc.show_tag = '0' AND bc.del_tag = '0'
                     LEFT JOIN Item_list pft ON pft.item_M_code = 'professional_title' AND pft.item_D_code = um.U_PFT AND pft.item_D_type = 'Y' AND pft.show_tag = '0' AND pft.del_tag = '0'
+                    left join Item_list Lis on Lis.item_M_code = 'SpecName' AND Lis.item_D_type = 'Y' and Lis.item_D_txt_A = um.U_num                    
                     WHERE um.del_tag = '0' AND bc.item_D_name is not null AND U_num <> 'AA999'
                     AND ( U_leave_date is null OR U_leave_date >= GETDATE())";
                 if (!string.IsNullOrEmpty(U_BC))
