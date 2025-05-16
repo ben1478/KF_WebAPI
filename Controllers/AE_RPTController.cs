@@ -18,6 +18,9 @@ using System.Diagnostics.Eventing.Reader;
 using KF_WebAPI.BaseClass.Max104;
 using Microsoft.VisualBasic;
 using System.Text;
+using Microsoft.AspNetCore.Hosting.Server;
+using OfficeOpenXml;
+using System.Threading.Tasks;
 
 namespace KF_WebAPI.Controllers
 {
@@ -5336,6 +5339,7 @@ namespace KF_WebAPI.Controllers
         [HttpPost("Performance_Exccel")]
         public IActionResult Performance_Exccel(Performance_req model)
         {
+            FuncHandler _fun = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
             var roleNum = HttpContext.Session.GetString("Role_num");
@@ -5428,7 +5432,7 @@ namespace KF_WebAPI.Controllers
                         U_arrive_date =  row.Field<string>("U_arrive_date"),
                         U_BC_name = row.IsNull("U_BC_name") ? "" : row.Field<string>("U_BC_name"),
                         title =  row.Field<string>("title"),
-                        U_name = fromNCR(row.Field<string>("U_name")),
+                        U_name = _fun.fromNCR(row.Field<string>("U_name")),
                         Jan = row.IsNull("Jan") ? 0 : int.TryParse(row.Field<string>("Jan").Replace(",", ""), out int jan) ? jan : 0,
                         Feb = row.IsNull("Feb") ? 0 : int.TryParse(row.Field<string>("Feb").Replace(",", ""), out int feb) ? feb : 0,
                         Mar = row.IsNull("Mar") ? 0 : int.TryParse(row.Field<string>("Mar").Replace(",", ""), out int mar) ? mar : 0,
@@ -6499,13 +6503,81 @@ namespace KF_WebAPI.Controllers
 
         #endregion
 
-        string fromNCR(string value)
+
+        #region 新鑫案件核對表 Report_M/NewXinUpload.asp
+        [HttpPost("NewXinUpload_LQuery")]
+        public async Task<JsonResult> UploadUserList_LQuery(IFormFile file)
         {
-            return System.Text.RegularExpressions.Regex.Replace(
-                value,
-                @"&#(\d+)",
-                m => char.ConvertFromUtf32(int.Parse(m.Groups[1].Value))
-            );
+            if (file.Length > 0)
+            {
+                try
+                {
+                    var filePath = Path.GetTempFileName();
+                    using(var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+
+                        //載入Excel檔案
+                        using (ExcelPackage ep = new ExcelPackage(stream))
+                        {
+                            ExcelWorksheet sheet = ep.Workbook.Worksheets[1];//取得Sheet1
+                            List<NewXinUpload> RowData = new List<NewXinUpload>();
+
+                            bool isLastRow = false;
+                            int RowId = 2;   // 因為有標題列，所以從第2列開始讀起
+
+                            do  // 讀取資料，直到讀到空白列為止
+                            {
+                                string cellValue = sheet.Cells[RowId, 1].Text; // 申購人
+                                if (string.IsNullOrEmpty(cellValue))
+                                {
+                                    isLastRow = true;
+                                }
+                                else
+                                {
+                                    // 將資料放入NewXinUpload中
+                                    RowData.Add(new NewXinUpload()
+                                    {
+                                        A = sheet.Cells[RowId, 1].Text,
+                                        B = sheet.Cells[RowId, 2].Text,
+                                        C = sheet.Cells[RowId, 3].Text,
+                                        D = sheet.Cells[RowId, 4].Text,
+                                        E = sheet.Cells[RowId, 5].Text,
+                                        F = sheet.Cells[RowId, 6].Text,
+                                        G = sheet.Cells[RowId, 7].Text,
+                                        H = sheet.Cells[RowId, 8].Text,
+                                        I = sheet.Cells[RowId, 9].Text,
+                                        J = sheet.Cells[RowId, 10].Text,
+                                        K = sheet.Cells[RowId, 11].Text,
+                                        L = sheet.Cells[RowId, 12].Text,
+                                        M = sheet.Cells[RowId, 13].Text,
+                                        N = sheet.Cells[RowId, 14].Text,
+                                        O = sheet.Cells[RowId, 15].Text,
+                                        P = sheet.Cells[RowId, 16].Text,
+                                        Q = sheet.Cells[RowId, 17].Text,
+                                        R = sheet.Cells[RowId, 18].Text,
+                                        S = sheet.Cells[RowId, 19].Text,
+                                        T = sheet.Cells[RowId, 20].Text,
+                                        U = sheet.Cells[RowId, 21].Text
+                                    });
+                                    RowId += 1;
+                                }
+                            } while (!isLastRow);
+                        }
+                    }
+                        
+                    return Json("File Uploaded Successfully!");
+                }
+                catch (Exception ex)
+                {
+                    return Json("Error occurred. Error details: " + ex.Message);
+                }
+            }
+            else
+            {
+                return Json("No files selected.");
+            }
         }
+        #endregion
     }
 }
