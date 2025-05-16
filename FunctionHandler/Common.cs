@@ -12,6 +12,13 @@ using Azure.Core;
 using KF_WebAPI.BaseClass.Max104;
 using KF_WebAPI.DataLogic;
 using Microsoft.AspNetCore.Http;
+using LoanSky.Model;
+using LoanSky;
+using System.Threading.Channels;
+using Grpc.Net.Client;
+using ProtoBuf.Grpc.Client;
+using LoanSky.Model;
+using KF_WebAPI.BaseClass.LoadSky;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -37,16 +44,16 @@ namespace KF_WebAPI.FunctionHandler
         {
             string m_104API_URL = "";
 
-       
+
             m_104API_URL = "http://192.168.1.239:3001/api/";
-          
+
             return m_104API_URL;
         }
 
-       
 
 
-        public async Task<ResultClass<string>> Call_104API(string p_USER, string p_APIName, string p_JSON,  string SESSION_KEY, HttpClient p_HttpClient,string ACCESS_TOKEN = "")
+
+        public async Task<ResultClass<string>> Call_104API(string p_USER, string p_APIName, string p_JSON, string SESSION_KEY, HttpClient p_HttpClient, string ACCESS_TOKEN = "")
         {
             ResultClass<string> resultClass = new();
 
@@ -58,7 +65,7 @@ namespace KF_WebAPI.FunctionHandler
                     var uri = new Uri(Get104API_URL() + p_APIName);
                     var request = new HttpRequestMessage(HttpMethod.Post, uri);
                     var content = new StringContent(p_JSON, Encoding.UTF8, "application/json");
-                   
+
                     if (ACCESS_TOKEN != "")
                     {
                         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("*/*"));
@@ -100,7 +107,7 @@ namespace KF_WebAPI.FunctionHandler
                 {
                     resultClass.ResultCode = resultClass_log.code;
                     resultClass.ResultMsg = resultClass_log.msg;
-                   
+
                 }
                 else
                 {
@@ -125,8 +132,9 @@ namespace KF_WebAPI.FunctionHandler
                 }
 
             }
-            catch { 
-            
+            catch
+            {
+
             }
 
             return resultClass;
@@ -244,7 +252,7 @@ namespace KF_WebAPI.FunctionHandler
         /// <param name="m_RequeJSON"></param>
         /// <param name="ResultJSON"></param>
         /// <param name="StatusCode"></param>
-        public void NotifyLog(string API_Name, string TransactionId, string IP, string Form_No, string m_RequeJSON,  string ResultJSON, string StatusCode)
+        public void NotifyLog(string API_Name, string TransactionId, string IP, string Form_No, string m_RequeJSON, string ResultJSON, string StatusCode)
         {
             var m_CallTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
             var m_APILog = new APILog
@@ -268,12 +276,12 @@ namespace KF_WebAPI.FunctionHandler
             /// <summary>
             /// 1.表單號碼
             /// </summary>
-            public String from_no { get; set; } 
+            public String from_no { get; set; }
 
             /// <summary>
             /// 2.解密後的JSON 
             /// </summary>
-            public String DecJSON { get; set; } 
+            public String DecJSON { get; set; }
 
 
         }
@@ -327,7 +335,7 @@ namespace KF_WebAPI.FunctionHandler
                     {
                         m_Error += "source 錯誤!!";
                     }
-                    
+
                     if (CheckString(ReqClass.branchNo) == "")
                     {
                         m_Error += "參數 branchNo  錯誤!!";
@@ -377,10 +385,10 @@ namespace KF_WebAPI.FunctionHandler
                 }
             }
 
-            return resultClass; 
+            return resultClass;
         }
 
-              
+
 
 
         public Boolean CheckClass<T>(T[] p_compareNews, T[] p_compareOlds)
@@ -435,7 +443,7 @@ namespace KF_WebAPI.FunctionHandler
 
             return isSame;
         }
-       
+
 
 
         /// <summary>
@@ -528,7 +536,7 @@ namespace KF_WebAPI.FunctionHandler
                 API_Name = p_API_Name,
                 TransactionId = p_TransactionId,
                 Form_No = p_Form_No,
-              // ParamJSON = p_ParamJSON,
+                // ParamJSON = p_ParamJSON,
                 ResultJSON = p_ResultClass.objResult.ToString(),
                 CallTime = p_CallTime,
                 CallUser = p_CallUser,
@@ -616,7 +624,7 @@ namespace KF_WebAPI.FunctionHandler
             return resultClass;
         }
 
-        public ResultClass<int> UpdateDataByClass<T>(string p_tbName,string Key, T p_BaseClass)
+        public ResultClass<int> UpdateDataByClass<T>(string p_tbName, string Key, T p_BaseClass)
         {
             ResultClass<int> resultClass = new();
             int m_Execut = 0;
@@ -636,11 +644,11 @@ namespace KF_WebAPI.FunctionHandler
                         {
                             if (m_SQL == "")
                             {
-                                m_SQL = " Update " + p_tbName + " set "+ prop.Name + "=@" + prop.Name;
+                                m_SQL = " Update " + p_tbName + " set " + prop.Name + "=@" + prop.Name;
                             }
                             else
                             {
-                                m_SQL +=", "+ prop.Name + "=@" + prop.Name;
+                                m_SQL += ", " + prop.Name + "=@" + prop.Name;
                             }
                         }
                     }
@@ -708,7 +716,7 @@ namespace KF_WebAPI.FunctionHandler
                         {
                             var AsyncResult = await response.Content.ReadAsStringAsync();
                             resultClass.ResultCode = "000";
-                            resultClass.objResult= (AsyncResult) ;
+                            resultClass.objResult = (AsyncResult);
                             resultClass.transactionId = p_TransactionId;
                         }
                         else
@@ -803,7 +811,7 @@ namespace KF_WebAPI.FunctionHandler
                             }
                             break;
                     }
-                   
+
                 }
             }
             return resultClass;
@@ -813,7 +821,7 @@ namespace KF_WebAPI.FunctionHandler
         public ResultClass<bool> CheckStatusCode(HttpResponseMessage p_response)
         {
             ResultClass<bool> resultClass = new() { ResultCode = "000", ResultMsg = "", objResult = false };
-            
+
             if (!p_response.IsSuccessStatusCode)
             {
                 resultClass.objResult = true;
@@ -895,7 +903,69 @@ namespace KF_WebAPI.FunctionHandler
             return base64String;
         }
 
+        #region LoanSky 宏邦API
+        //private string account = "testCGU"; // 測試用帳號:testCGU
+        private GrpcChannel channel = GrpcChannel.ForAddress("https://land.loansky.net:5055");
+        private OrderRealEstateAdapterRequest ORErequest = new OrderRealEstateAdapterRequest
+        {
+            ApiKey = "1AA86E9C37F24767ACA1087DEBA6D322"
+        };
 
+        
+        public async Task<ResultClass<string>> Call_LoanSkyAPI(string p_USER, string p_APIName, OrderRealEstateRequest request, LoanSky_Req req)
+        {
+            // 
+            ResultClass<string> resultClass = new ResultClass<string>();
+            ORErequest.OrderRealEstates.Add(request);
+            try
+            {
+                var company = channel.CreateGrpcService<ICompany>();
+                var reply = await company.CreateOrderRealEstateAsync(ORErequest);
+
+                resultClass.ResultCode = reply.Result ? "000" : "001";
+                resultClass.ResultMsg = JsonConvert.SerializeObject(reply);
+                resultClass.objResult = JsonConvert.SerializeObject(ORErequest);
+
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+            }
+            finally
+            {
+                await channel.ShutdownAsync();
+            }
+
+            //寫入 api_error_log
+            try
+            {
+                //todo: API_KEY 組成log唯一值()
+                External_API_Log _External_API_Log = new External_API_Log();
+                _External_API_Log.API_CODE = "LoanSky";
+                _External_API_Log.API_NAME = p_APIName;
+                _External_API_Log.API_KEY = JsonConvert.SerializeObject(req);
+                _External_API_Log.ACCESS_TOKEN = ORErequest.ApiKey;
+                _External_API_Log.PARAM_JSON = resultClass.objResult;
+                _External_API_Log.RESULT_CODE = resultClass.ResultCode;
+                _External_API_Log.RESULT_MSG = resultClass.ResultMsg;
+                _External_API_Log.Add_User = p_USER;
+
+
+                AE_LoanSky m_AE_HR = new AE_LoanSky();
+                m_AE_HR.InsertExternal_API_Log(_External_API_Log);
+
+
+            }
+            catch
+            {
+
+            }
+
+            return resultClass;
+        }
+
+        #endregion
 
     }
 }

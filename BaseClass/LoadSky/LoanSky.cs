@@ -7,5 +7,7 @@
         public string HP_cknum { get; set; } //
         public string seq { get; set; } //
 
+        public string p_USER { get; set; } //client 用戶員編
+
     }
 }

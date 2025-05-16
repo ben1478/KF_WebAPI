@@ -2546,5 +2546,19 @@ namespace KF_WebAPI.FunctionHandler
                 throw;
             }
         }
+
+        /// <summary>
+        /// 將NCR轉換為字串
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public string fromNCR(string value)
+        {
+            return System.Text.RegularExpressions.Regex.Replace(
+                value,
+                @"&#(\d+)",
+                m => char.ConvertFromUtf32(int.Parse(m.Groups[1].Value))
+            );
+        }
     }
 }
