@@ -1,7 +1,7 @@
 ﻿using KF_WebAPI.FunctionHandler;
 using Microsoft.Extensions.Primitives;
 
-namespace KF_WebAPI.BaseClass.LoadSky
+namespace KF_WebAPI.BaseClass.LoanSky
 {
     public class SectionCode
     {
