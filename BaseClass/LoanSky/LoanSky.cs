@@ -1,4 +1,4 @@
-﻿namespace KF_WebAPI.BaseClass.LoadSky
+﻿namespace KF_WebAPI.BaseClass.LoanSky
 {
     public class LoanSky_Req
     {

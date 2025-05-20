@@ -1,10 +1,11 @@
 ﻿using Azure;
 using KF_WebAPI.BaseClass;
-using KF_WebAPI.BaseClass.LoadSky;
+using KF_WebAPI.BaseClass.LoanSky;
 using KF_WebAPI.FunctionHandler;
 using LoanSky.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using System.Collections.Generic;
 using System.Data;
 using System.ServiceModel.Security;
 using System.Text;
@@ -155,30 +156,56 @@ namespace KF_WebAPI.DataLogic
             return ReqClass;
         }
 
-
-        public string AE2MoiCityCode(string pre_city)
+        public string GetJsonFileContent(string filePath)
         {
-            var jsonData = System.IO.File.ReadAllText(@"C:\Users\user\source\repos\KF_WebAPI\BaseClass\LoadSky\SectionCode.json");
-            var jsonObject = JsonSerializer.Deserialize<List<SectionCode>>(jsonData);
+            string jsonData = string.Empty;
             
-            var resultcode = jsonObject.Where(x => x.city_name.Equals(pre_city)).FirstOrDefault();
-            return resultcode.city_num;
+            try
+            {
+                if (!System.IO.File.Exists(filePath))
+                {
+                    throw new FileNotFoundException("SectionCode.json file not found.");
+                }
+                jsonData = System.IO.File.ReadAllText(filePath);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("AE_LoanSky.GetJsonFileContent", ex);
+            }
+            return jsonData;
         }
-        public string AE2MoiTownCode(string pre_city, string pre_area)
+
+        public List<CityCode> AE2MoiCityCode(string pre_city)
         {
-            var jsonData = System.IO.File.ReadAllText(@"C:\Users\user\source\repos\KF_WebAPI\BaseClass\LoadSky\SectionCode.json");
-            var jsonObject = JsonSerializer.Deserialize<List<SectionCode>>(jsonData);
-            
-            var resultcode = jsonObject.Where(x => x.city_name.Equals(pre_city) && x.area_name.Equals(pre_area)).FirstOrDefault();
-            return resultcode.area_num;
+            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "BaseClass", "LoanSky", "CityCode.json");
+            string jsonData = GetJsonFileContent(filePath);
+            var jsonObject = JsonSerializer.Deserialize<List<CityCode>>(jsonData);
+
+            var resultcode = jsonObject.Where(x => string.IsNullOrEmpty(pre_city) || x.city_name.Contains(pre_city.Replace("台", "臺"))).ToList();
+            return resultcode;
         }
-        public string GetMoiSectionCode(string city_name, string area_name, string road_name)
+        public List<AreaCode> AE2MoiTownCode(string pre_city, string pre_area)
         {
-            var jsonData = System.IO.File.ReadAllText(@"C:\Users\user\source\repos\KF_WebAPI\BaseClass\LoadSky\SectionCode.json");
+            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "BaseClass", "LoanSky", "AreaCode.json");
+            string jsonData = GetJsonFileContent(filePath);
+            var jsonObject = JsonSerializer.Deserialize<List<AreaCode>>(jsonData);
+
+            var resultcode = jsonObject.Where(x => x.city_num.Equals(pre_city) && (string.IsNullOrEmpty(pre_area) ||  x.area_name.Contains(pre_area))).ToList();
+            return resultcode;
+        }
+
+
+        public List<SectionCode> GetMoiSectionCode(string city_num, string area_num, string road_name)
+        {
+            FuncHandler _fun = new FuncHandler();
+            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "BaseClass", "LoanSky", "SectionCode.json");
+            string jsonData = GetJsonFileContent(filePath);
             var jsonObject = JsonSerializer.Deserialize<List<SectionCode>>(jsonData);
 
-            var resultcode = jsonObject.Where(x => x.city_name.Equals(city_name) && x.area_name.Equals(area_name) && x.road_name.Contains(road_name)).FirstOrDefault();
-            return resultcode.road_num;
+            var resultcode = jsonObject.Where(x => x.city_num.Equals(city_num) 
+                && x.area_num.Equals(area_num.TrimStart(new char[] { '0' })) 
+                && (string.IsNullOrEmpty(road_name) || x.road_name.Contains(road_name))).ToList();
+            return resultcode;
         }
 
         /// <summary>
@@ -194,14 +221,8 @@ namespace KF_WebAPI.DataLogic
                 return sectionCode;
             }
             #endregion
-            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "BaseClass", "LoadSky", "SectionCode.json");
-            // Directory.GetCurrentDirectory() C:\Users\user\source\repos\KF_WebAPI
-            
-            if(!System.IO.File.Exists(filePath))
-            {
-                throw new FileNotFoundException("SectionCode.json file not found.");
-            }
-            var jsonData = System.IO.File.ReadAllText(filePath);
+            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "BaseClass", "LoanSky", "SectionCode.json");
+            string jsonData = GetJsonFileContent(filePath);
             var jsonObject = JsonSerializer.Deserialize<List<SectionCode>>(jsonData);
 
 
@@ -219,9 +240,9 @@ namespace KF_WebAPI.DataLogic
                 .Select(x => new SectionCode { 
                     city_num = x.city_num,
                     city_name = x.city_name,
-                    area_num = x.area_num,
+                    area_num = x.area_num.PadLeft(2,'0'),
                     area_name = x.area_name,
-                    road_num = x.road_num,
+                    road_num = x.road_num.PadLeft(4,'0'),
                     road_name = x.road_name
             }).FirstOrDefault();
 
