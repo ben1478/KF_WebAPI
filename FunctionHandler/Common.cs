@@ -18,7 +18,7 @@ using System.Threading.Channels;
 using Grpc.Net.Client;
 using ProtoBuf.Grpc.Client;
 using LoanSky.Model;
-using KF_WebAPI.BaseClass.LoadSky;
+using KF_WebAPI.BaseClass.LoanSky;
 
 namespace KF_WebAPI.FunctionHandler
 {
