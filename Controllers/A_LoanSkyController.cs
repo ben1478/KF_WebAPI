@@ -4,6 +4,7 @@ using KF_WebAPI.BaseClass.LoanSky;
 using KF_WebAPI.DataLogic;
 using KF_WebAPI.FunctionHandler;
 using LoanSky.Model;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
@@ -40,23 +41,11 @@ namespace KF_WebAPI.Controllers
             {
                 runOrderRealEstateRequest ReqClass = _AE_LoanSky.GetOrderRealEstateRequest(req);
 
-                // todo:基本資料轉值-參照對照表:建物類型/使用現況/車位型態/縣市代碼/鄉鎮市區代碼
                 if (ReqClass.oreRequest != null)
                 {
-                    // 取得AE要拋轉LoanSky案件資料-pdf附件
-                    List<OrderRealEstateAttachmentRequest> attachments = _AE_LoanSky.GetOrderRealEstateNoRequest(req.HA_cknum);
-                    if (attachments != null)
-                    {
-                        foreach (var item in attachments)
-                        {
-                            ReqClass.oreRequest.Attachments.Add(item);
-                        }
-                    }
-                    
-
                     ResultClass<string> APIResult = new();
                     APIResult = await _Comm.Call_LoanSkyAPI(req.p_USER, "CreateOrderRealEstateAsync", ReqClass.oreRequest, req);
-
+                    _AE_LoanSky.House_pre_Update(ReqClass); // 更新House_pre裡LoanSky.相關欄位
                     return Ok(resultClass);
                 }
                 else
@@ -80,6 +69,31 @@ namespace KF_WebAPI.Controllers
         }
 
 
+        [HttpPost("IsLoanSkyFieldsNull")]
+        public ActionResult<ResultClass<string>> IsLoanSkyFieldsNull(LoanSky_Req req)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            AE_LoanSky _AE_LoanSky = new AE_LoanSky();
+            // 取得待轉-基本資料
+            try
+            {
+                runOrderRealEstateRequest ReqClass = _AE_LoanSky.IsLoanSkyFieldsNull(req);
+
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = ReqClass.message; // 將LoanSky的錯誤訊息回傳;若message為空值代表問題
+                resultClass.objResult = JsonConvert.SerializeObject(ReqClass);
+                return Ok(resultClass);
+
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+
+        }
+
         /// <summary>
         /// 取得 縣市代碼
         /// </summary>
@@ -92,8 +106,8 @@ namespace KF_WebAPI.Controllers
             try
             {
                 List<CityCode> cities = ae_LoanSky.AE2MoiCityCode(string.Empty);
-                
-                if (cities != null &&  cities.Count > 0)
+
+                if (cities != null && cities.Count > 0)
                 {
                     cities.Insert(0, new CityCode { city_num = "all", city_name = "全部" });
 

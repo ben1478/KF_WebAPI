@@ -1,5 +1,6 @@
 ﻿using Azure;
 using KF_WebAPI.BaseClass;
+using KF_WebAPI.BaseClass.AE;
 using KF_WebAPI.BaseClass.LoanSky;
 using KF_WebAPI.FunctionHandler;
 using LoanSky.Model;
@@ -28,7 +29,7 @@ namespace KF_WebAPI.DataLogic
         public runOrderRealEstateRequest GetOrderRealEstateRequest(LoanSky_Req req)
         {
             runOrderRealEstateRequest runReq = new runOrderRealEstateRequest();
-            
+
             try
             {
                 #region SQL
@@ -54,16 +55,16 @@ namespace KF_WebAPI.DataLogic
                 DataTable dtResult = _ADO.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
-                    // 取得段代碼(狀態:current)：縣市代碼+區代碼+段名稱
+                    #region 取得段代碼(狀態:current)：縣市代碼+區代碼+段名稱
                     SectionCode reqCode = dtResult.AsEnumerable().Select(row => new SectionCode
                     {
                         city_name = row.IsNull("pre_city") ? string.Empty : row.Field<string>("pre_city"),
                         area_name = row.IsNull("pre_area") ? string.Empty : row.Field<string>("pre_area"),
-                        road_name = row.IsNull("pre_road") ? string.Empty : row.Field<string>("pre_road") +
-                                    (row.IsNull("pre_road_s") ? string.Empty: row.Field<string>("pre_road_s"))
+                        road_name = row.IsNull("pre_road") ? string.Empty : row.Field<string>("pre_road"),
+                        road_name_s = (row.IsNull("pre_road_s") ? string.Empty : row.Field<string>("pre_road_s"))
                     }).SingleOrDefault();
 
-                    if( reqCode.isRight()== false)
+                    if (reqCode.isRight() == false)
                     {
                         runReq.message = reqCode.message;
                         runReq.isNeedPopupWindow = true;
@@ -79,8 +80,8 @@ namespace KF_WebAPI.DataLogic
                         runReq.isNeedPopupWindow = true;
                         return runReq;
                     }
-
-                    // to 案件資料
+                    #endregion
+                    #region 案件資料
                     runReq.oreRequest = dtResult.AsEnumerable().Select(row => new OrderRealEstateRequest
                     {
                         Account = account, // 承辦人員帳號:測試用帳號:testCGU
@@ -105,6 +106,17 @@ namespace KF_WebAPI.DataLogic
                         LandNos = row.IsNull("pre_land_num") ? "" : row.Field<string>("pre_land_num") // 地號 pre_land_num 多筆用逗號分隔
                     }).SingleOrDefault();
                     runReq.oreRequest.Nos.Add(no);
+                    #endregion
+                    #region 取得AE要拋轉LoanSky案件資料-pdf附件
+                    List<OrderRealEstateAttachmentRequest> attachments = GetOrderRealEstateNoRequest(req.HA_cknum);
+                    if (attachments != null)
+                    {
+                        foreach (var item in attachments)
+                        {
+                            runReq.oreRequest.Attachments.Add(item);
+                        }
+                    }
+                    #endregion
                 }
             }
             catch (Exception ex)
@@ -113,7 +125,6 @@ namespace KF_WebAPI.DataLogic
             }
             return runReq;
         }
-
         /// <summary>
         /// 取得AE要拋轉LoanSky案件資料-附件
         /// </summary>
@@ -155,11 +166,10 @@ namespace KF_WebAPI.DataLogic
             }
             return ReqClass;
         }
-
         public string GetJsonFileContent(string filePath)
         {
             string jsonData = string.Empty;
-            
+
             try
             {
                 if (!System.IO.File.Exists(filePath))
@@ -174,7 +184,6 @@ namespace KF_WebAPI.DataLogic
             }
             return jsonData;
         }
-
         public List<CityCode> AE2MoiCityCode(string pre_city)
         {
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), "BaseClass", "LoanSky", "CityCode.json");
@@ -190,11 +199,9 @@ namespace KF_WebAPI.DataLogic
             string jsonData = GetJsonFileContent(filePath);
             var jsonObject = JsonSerializer.Deserialize<List<AreaCode>>(jsonData);
 
-            var resultcode = jsonObject.Where(x => x.city_num.Equals(pre_city) && (string.IsNullOrEmpty(pre_area) ||  x.area_name.Contains(pre_area))).ToList();
+            var resultcode = jsonObject.Where(x => x.city_num.Equals(pre_city) && (string.IsNullOrEmpty(pre_area) || x.area_name.Contains(pre_area))).ToList();
             return resultcode;
         }
-
-
         public List<SectionCode> GetMoiSectionCode(string city_num, string area_num, string road_name)
         {
             FuncHandler _fun = new FuncHandler();
@@ -202,12 +209,11 @@ namespace KF_WebAPI.DataLogic
             string jsonData = GetJsonFileContent(filePath);
             var jsonObject = JsonSerializer.Deserialize<List<SectionCode>>(jsonData);
 
-            var resultcode = jsonObject.Where(x => x.city_num.Equals(city_num) 
-                && x.area_num.Equals(area_num.TrimStart(new char[] { '0' })) 
+            var resultcode = jsonObject.Where(x => x.city_num.Equals(city_num)
+                && x.area_num.Equals(area_num.TrimStart(new char[] { '0' }))
                 && (string.IsNullOrEmpty(road_name) || x.road_name.Contains(road_name))).ToList();
             return resultcode;
         }
-
         /// <summary>
         /// KF2LoanSky:縣市代碼+區代碼+段名稱+段代碼
         /// </summary>
@@ -233,23 +239,23 @@ namespace KF_WebAPI.DataLogic
             }
             string roadNameS = sectionCode.road_name_s?.Replace("0", ""); // 0代表沒有“小段”
             sectionCode.road_name = sectionCode.road_name + roadNameS;
-            var resultcode = jsonObject.Where(x => 
+            var resultcode = jsonObject.Where(x =>
                         x.city_name.Contains(sectionCode.city_name.Replace("台", "臺"))
-                    &&  x.area_name.Contains(sectionCode.area_name) 
+                    && x.area_name.Contains(sectionCode.area_name)
                     && x.road_name.Contains(sectionCode.road_name))
-                .Select(x => new SectionCode { 
+                .Select(x => new SectionCode
+                {
                     city_num = x.city_num,
                     city_name = x.city_name,
-                    area_num = x.area_num.PadLeft(2,'0'),
+                    area_num = x.area_num.PadLeft(2, '0'),
                     area_name = x.area_name,
-                    road_num = x.road_num.PadLeft(4,'0'),
+                    road_num = x.road_num.PadLeft(4, '0'),
                     road_name = x.road_name
-            }).FirstOrDefault();
+                }).FirstOrDefault();
 
 
-            return resultcode == null? sectionCode : resultcode;
+            return resultcode == null ? sectionCode : resultcode;
         }
-
         /// <summary>
         /// KF2LoanSky:建物類型
         /// </summary>
@@ -257,7 +263,7 @@ namespace KF_WebAPI.DataLogic
         /// <returns></returns>
         public string AE2BuildingState(string show_pre_building_kind)
         {
-            
+
             List<(string, string)> lsBuildingState = new List<(string, string)>{
                 ("透天", "透天厝"),
                 ("假透天", "透天厝"),
@@ -276,7 +282,6 @@ namespace KF_WebAPI.DataLogic
 
             return BuildingState;
         }
-
         /// <summary>
         /// KF2LoanSky:車位型態
         /// </summary>
@@ -298,7 +303,6 @@ namespace KF_WebAPI.DataLogic
 
             return ParkCategory;
         }
-
         public void InsertExternal_API_Log(External_API_Log p_External_API_Log)
         {
 
@@ -316,12 +320,153 @@ namespace KF_WebAPI.DataLogic
             }
 
         }
+        public runOrderRealEstateRequest IsLoanSkyFieldsNull(LoanSky_Req req)
+        {
+            runOrderRealEstateRequest runReq = new runOrderRealEstateRequest();
+
+            try
+            {
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                     select
+                         HP_id, HP_cknum
+                         ,[pre_city],[pre_area],[pre_road],[pre_road_s],pre_apply_name
+                         ,(select U_name FROM User_M where U_num = House_pre.add_num AND del_tag='0') as add_name
+                         ,(select item_D_name from Item_list where item_M_code = 'building_kind' AND item_D_type='Y' AND item_D_code = House_pre.pre_building_kind  AND show_tag='0' AND del_tag='0') as show_pre_building_kind
+                         ,(select item_D_name from Item_list where item_M_code = 'parking_kind' AND item_D_type='Y' AND item_D_code = House_pre.pre_parking_kind  AND show_tag='0' AND del_tag='0') as show_pre_parking_kind
+                         ,[BuildingState],[ParkCategory],[MoiCityCode],[MoiTownCode],[MoiSectionCode]
+                     from House_pre 
+                     where del_tag = '0' AND HP_id = @HP_id  AND HP_cknum = @HP_cknum
+                    ";
+                parameters.Add(new SqlParameter("@HP_id", req.HP_id));
+                parameters.Add(new SqlParameter("@HP_cknum", req.HP_cknum));
+
+                #endregion
+                DataTable dtResult = _ADO.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    // 來源資料
+                    runReq.housePre_res = dtResult.AsEnumerable().Select(row => new HousePre_res
+                    {
+                        HP_id = row.IsNull("HP_id") ? 0 : row.Field<decimal>("HP_id"), // 房屋預估資料ID
+                        HP_cknum = row.IsNull("HP_cknum") ? "" : row.Field<string>("HP_cknum"), // 房屋預估資料流水號
+                        add_name = row.IsNull("add_name") ? "" : row.Field<string>("add_name"),  //經辦人名稱
+                        pre_apply_name = row.IsNull("pre_apply_name") ? "" : row.Field<string>("pre_apply_name"),    // 申請人
+                        show_pre_building_kind = row.IsNull("show_pre_building_kind") ? "" : row.Field<string>("show_pre_building_kind"),  // 建物類型(請參照對照表)
+                        pre_city = row.IsNull("pre_city") ? "" : row.Field<string>("pre_city"),// 縣市代碼(請參照對照表)
+                        pre_area = row.IsNull("pre_area") ? "" : row.Field<string>("pre_area"),// 鄉鎮市區代碼(請參照對照表)
+                        pre_road = row.IsNull("pre_road") ? "" : row.Field<string>("pre_road"),// 段(請參照對照表)
+                        pre_road_s = row.IsNull("pre_road_s") ? "" : row.Field<string>("pre_road_s")// 小段(請參照對照表)
+                    }).FirstOrDefault();
+
+
+                    // 取得段代碼(狀態:current)：縣市代碼+區代碼+段名稱
+                    SectionCode reqCode = dtResult.AsEnumerable().Select(row => new SectionCode
+                    {
+                        city_name = row.IsNull("pre_city") ? string.Empty : row.Field<string>("pre_city"),
+                        area_name = row.IsNull("pre_area") ? string.Empty : row.Field<string>("pre_area"),
+                        road_name = row.IsNull("pre_road") ? string.Empty : row.Field<string>("pre_road"),
+                        road_name_s = (row.IsNull("pre_road_s") ? string.Empty : row.Field<string>("pre_road_s"))
+                    }).SingleOrDefault();
+
+                    if (reqCode.isRight() == false)
+                    {
+                        runReq.message = reqCode.message;
+                        runReq.isNeedPopupWindow = true;
+                        return runReq;
+                    }
+                    reqCode = GetMoiSectionCode(reqCode);
+
+                    // 串接LoanSky
+                    runReq.oreRequest = dtResult.AsEnumerable().Select(row => new OrderRealEstateRequest
+                    {
+                        BusinessUserName = row.IsNull("add_name") ? "" : row.Field<string>("add_name"),  //經辦人名稱
+                        Applicant = row.IsNull("pre_apply_name") ? "" : row.Field<string>("pre_apply_name"),    // 申請人
+                        BuildingState = row.IsNull("BuildingState") ? AE2BuildingState(row.Field<string>("show_pre_building_kind")) : row.Field<string>("BuildingState"),  // 建物類型(請參照對照表)
+                        ParkCategory = row.IsNull("ParkCategory") ? AE2ParkCategory(row.Field<string>("show_pre_parking_kind")) : row.Field<string>("ParkCategory"),  // 車位型態(請參照對照表)
+                        MoiCityCode = row.IsNull("MoiCityCode") ? reqCode.city_num : row.Field<string>("MoiCityCode"), // 縣市代碼(請參照對照表)
+                        MoiTownCode = row.IsNull("MoiTownCode") ? reqCode.area_num : row.Field<string>("MoiTownCode") // 鄉鎮市區代碼(請參照對照表)
+                    }).FirstOrDefault();
+                    var no = dtResult.AsEnumerable().Select(row => new OrderRealEstateNoRequest
+                    {
+                        MoiSectionCode = row.IsNull("MoiSectionCode") ? reqCode.road_num : row.Field<string>("MoiSectionCode")  // 段代碼
+                    }).SingleOrDefault();
+                    runReq.oreRequest.Nos.Add(no);
+                    runReq.isNeedPopupWindow = runReq.oreRequest.IsLoanSkyFieldsNull;
+                    if (runReq.isNeedPopupWindow)
+                    {
+                        runReq.message = "LoanSky欄位為空值";
+                        return runReq;
+                    }
+                    return runReq;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("AE_LoanSky.GetOrderRealEstateRequest", ex);
+            }
+            return runReq;
+        }
+        public ResultClass<string> House_pre_Update(runOrderRealEstateRequest model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+
+                var T_SQL = @"
+                        update  House_pre
+                          set BuildingState = @BuildingState,
+                            ParkCategory = @ParkCategory,
+                            MoiCityCode = @MoiCityCode,
+                            MoiTownCode = @MoiTownCode,
+                            MoiSectionCode = @MoiSectionCode
+                         FROM House_pre
+                         where HP_cknum = @hp_cknum
+                ";
+                var parameters = new List<SqlParameter>
+                  {
+                      new SqlParameter("@BuildingState", string.IsNullOrEmpty(model.oreRequest.BuildingState)? DBNull.Value :model.oreRequest.BuildingState ),
+                      new SqlParameter("@ParkCategory", string.IsNullOrEmpty(model.oreRequest.ParkCategory)? DBNull.Value : model.oreRequest.ParkCategory),
+                      new SqlParameter("@MoiCityCode", string.IsNullOrEmpty(model.oreRequest.MoiCityCode) ? DBNull.Value : model.oreRequest.MoiCityCode),
+                      new SqlParameter("@MoiTownCode", string.IsNullOrEmpty(model.oreRequest.MoiTownCode) ? DBNull.Value : model.oreRequest.MoiTownCode),
+                      new SqlParameter("@MoiSectionCode", string.IsNullOrEmpty(model.oreRequest.Nos.FirstOrDefault()?.MoiSectionCode)? DBNull.Value : model.oreRequest.Nos.FirstOrDefault().MoiSectionCode),
+                      new SqlParameter("@hp_cknum", model.housePre_res.HP_cknum)
+                  };
+                #endregion
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "更新失敗";
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "更新成功";
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+            }
+
+            return resultClass;
+
+        }
     }
+
+
 
     public class runOrderRealEstateRequest
     {
-        public OrderRealEstateRequest oreRequest;
-
+        public OrderRealEstateRequest oreRequest;   // LoanSky串接資料
+        public HousePre_res housePre_res;           // 來源資料
         public string message { get; set; }
         /// <summary>
         /// 是否需要彈跳視窗讓使用者確認LoanSky參數

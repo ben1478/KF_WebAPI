@@ -1,5 +1,6 @@
 ﻿using ProtoBuf;
 using System.ComponentModel;
+using System.Text;
 
 namespace LoanSky.Model
 {
@@ -70,5 +71,24 @@ namespace LoanSky.Model
         [ProtoMember(15, Name = @"nos")]
         public System.Collections.Generic.List<OrderRealEstateNoRequest> Nos { get; } = new System.Collections.Generic.List<OrderRealEstateNoRequest>();
 
+        public bool IsLoanSkyFieldsNull
+        {
+            get
+            {
+                if (
+                    string.IsNullOrEmpty(BusinessUserName) ||// 經辦人名稱
+                    string.IsNullOrEmpty(Applicant) ||      // 申請人
+                    string.IsNullOrEmpty(BuildingState) || // 建物類型(請參照對照表)
+                    //string.IsNullOrEmpty(ParkCategory) || //  車位型態(請參照對照表)
+                    string.IsNullOrEmpty(MoiCityCode) || // 縣市代碼(請參照對照表)
+                    string.IsNullOrEmpty(MoiTownCode) ||    // 鄉鎮市區代碼(請參照對照表)
+                    string.IsNullOrEmpty(Nos.FirstOrDefault().MoiSectionCode)) // 段代碼(請參照對照表)
+                {
+                    return true;
+                }
+                return false;
+            }
+        }
+            
     }
 }
