@@ -55,6 +55,21 @@ namespace KF_WebAPI.DataLogic
                 DataTable dtResult = _ADO.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
+                    // 來源資料
+                    runReq.housePre_res = dtResult.AsEnumerable().Select(row => new HousePre_res
+                    {
+                        HP_id = row.IsNull("HP_id") ? 0 : row.Field<decimal>("HP_id"), // 房屋預估資料ID
+                        HP_cknum = row.IsNull("HP_cknum") ? "" : row.Field<string>("HP_cknum"), // 房屋預估資料流水號
+                        add_name = row.IsNull("add_name") ? "" : row.Field<string>("add_name"),  //經辦人名稱
+                        pre_apply_name = row.IsNull("pre_apply_name") ? "" : row.Field<string>("pre_apply_name"),    // 申請人
+                        show_pre_building_kind = row.IsNull("show_pre_building_kind") ? "" : row.Field<string>("show_pre_building_kind"),  // 建物類型(請參照對照表)
+                        pre_city = row.IsNull("pre_city") ? "" : row.Field<string>("pre_city"),// 縣市代碼(請參照對照表)
+                        pre_area = row.IsNull("pre_area") ? "" : row.Field<string>("pre_area"),// 鄉鎮市區代碼(請參照對照表)
+                        pre_road = row.IsNull("pre_road") ? "" : row.Field<string>("pre_road"),// 段(請參照對照表)
+                        pre_road_s = row.IsNull("pre_road_s") ? "" : row.Field<string>("pre_road_s")// 小段(請參照對照表)
+                    }).FirstOrDefault();
+
+
                     #region 取得段代碼(狀態:current)：縣市代碼+區代碼+段名稱
                     SectionCode reqCode = dtResult.AsEnumerable().Select(row => new SectionCode
                     {
@@ -70,7 +85,7 @@ namespace KF_WebAPI.DataLogic
                         runReq.isNeedPopupWindow = true;
                         return runReq;
                     }
-                    reqCode = GetMoiSectionCode(reqCode);
+                    reqCode = GetMoiSectionCode(reqCode); // 回傳值nulll:段代碼不存在
 
                     // 判斷段代碼(狀態:before) 與 段代碼(狀態:current) 不同時，預設為:段代碼(狀態:current)
                     // 段代碼為空值時
@@ -86,24 +101,27 @@ namespace KF_WebAPI.DataLogic
                     {
                         Account = account, // 承辦人員帳號:測試用帳號:testCGU
                         BusinessUserName = row.IsNull("add_name") ? "" : row.Field<string>("add_name"),  //經辦人名稱
-                        BusinessTel = "82096100",  // 經辦人電話
-                        BusinessFax = "123",   // 經辦人傳真
+                        //BusinessTel = "82096100",  // 經辦人電話
+                        //BusinessFax = "123",   // 經辦人傳真
                         Applicant = row.IsNull("pre_apply_name") ? "" : row.Field<string>("pre_apply_name"),    // 申請人
                         IdNo = row.IsNull("CS_PID") ? "" : row.Field<string>("CS_PID"),         // 公司統編/身分證號
                         Condominium = row.IsNull("pre_community_name") ? "" : row.Field<string>("pre_community_name"),   // 社區(大樓)名稱
                         BuildingState = row.IsNull("show_pre_building_kind") ? "" : AE2BuildingState(row.Field<string>("show_pre_building_kind")),  // 建物類型(請參照對照表)
                         Situation = row.IsNull("pre_use_kind") ? "" : row.Field<string>("pre_use_kind"),   //使用現況
-                        ParkCategory = row.IsNull("show_pre_parking_kind") ? "" : AE2ParkCategory(row.Field<string>("show_pre_parking_kind")),  // 車位型態(請參照對照表)
-                        Note = "123",  // 備註:建物類型備註pre_note+主要建築材料備註pre_building_material_note+委託人備註pre_principal_note+其他備註pre_other_note
+                        ParkCategory = (row.IsNull("show_pre_parking_kind") || string.IsNullOrEmpty(row.Field<string>("show_pre_parking_kind")) ) ? "" : AE2ParkCategory(row.Field<string>("show_pre_parking_kind")),  // 車位型態(請參照對照表)
+                        Note =  ((row.IsNull("pre_note") || string.IsNullOrEmpty(row.Field<string>("pre_note")))?"": $"[建物類型備註]{row.Field<string>("pre_note")}{Environment.NewLine}") +  
+                                ((row.IsNull("pre_building_material_note") || string.IsNullOrEmpty(row.Field<string>("pre_building_material_note"))) ?"":$"[主要建築材料備註]{row.Field<string>("pre_building_material_note")}{Environment.NewLine}") +
+                                ((row.IsNull("pre_principal_note") || string.IsNullOrEmpty(row.Field<string>("pre_principal_note"))) ? "" : $"[委託人備註]{row.Field<string>("pre_principal_note")}{Environment.NewLine}") +
+                                ((row.IsNull("pre_other_note") || string.IsNullOrEmpty(row.Field<string>("pre_other_note"))) ? "" : $"[其他備註]{row.Field<string>("pre_other_note")}"), // 備註
                         MoiCityCode = reqCode.city_num, // 縣市代碼(請參照對照表)
-                        MoiTownCode = reqCode.area_num // 鄉鎮市區代碼(請參照對照表)
+                        MoiTownCode = reqCode.area_num // 鄉鎮市區代碼(請參照對照表)s
                     }).FirstOrDefault();
 
                     var no = dtResult.AsEnumerable().Select(row => new OrderRealEstateNoRequest
                     {
                         MoiSectionCode = reqCode.road_num,  // 段代碼:查詢條件：縣市代碼+區代碼+段名稱
-                        BuildNos = row.IsNull("pre_build_num") ? "" : row.Field<string>("pre_build_num"),   // 建號 pre_build_num 多筆用逗號分隔
-                        LandNos = row.IsNull("pre_land_num") ? "" : row.Field<string>("pre_land_num") // 地號 pre_land_num 多筆用逗號分隔
+                        BuildNos = row.IsNull("pre_build_num") ? "" : row.Field<string>("pre_build_num").Replace('－', '-').Replace('、', ',').Replace('；', ','),   // 建號 pre_build_num 多筆用逗號分隔
+                        LandNos = row.IsNull("pre_land_num") ? "" : row.Field<string>("pre_land_num").Replace('－', '-').Replace('、', ',').Replace('；', ',') // 地號 pre_land_num 多筆用逗號分隔
                     }).SingleOrDefault();
                     runReq.oreRequest.Nos.Add(no);
                     #endregion
@@ -224,7 +242,7 @@ namespace KF_WebAPI.DataLogic
             #region 驗證傳入參數:縣市代碼+鄉鎮市區代碼+段代碼必需要有值才能判斷
             if (sectionCode.isRight() == false)
             {
-                return sectionCode;
+                return null;
             }
             #endregion
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), "BaseClass", "LoanSky", "SectionCode.json");
@@ -251,11 +269,12 @@ namespace KF_WebAPI.DataLogic
                     area_name = x.area_name,
                     road_num = x.road_num.PadLeft(4, '0'),
                     road_name = x.road_name
-                }).FirstOrDefault();
+                });
 
 
-            return resultcode == null ? sectionCode : resultcode;
+            return (resultcode == null || resultcode.Count() > 1) ? null : resultcode.SingleOrDefault();
         }
+        
         /// <summary>
         /// KF2LoanSky:建物類型
         /// </summary>
@@ -265,6 +284,10 @@ namespace KF_WebAPI.DataLogic
         {
 
             List<(string, string)> lsBuildingState = new List<(string, string)>{
+                ("公寓", "公寓(5樓含以下無電梯)"),
+                ("華廈", "華廈(10層含以下有電梯)"),
+                ("電梯大樓", "住宅大樓(11層含以上有電梯)"),
+                ("集合住宅", "住宅大樓(11層含以上有電梯)"),
                 ("透天", "透天厝"),
                 ("假透天", "透天厝"),
                 ("商業辦公大樓", "辦公商業大樓"),
@@ -273,7 +296,8 @@ namespace KF_WebAPI.DataLogic
                 ("工廠", "工廠"),
                 ("套房", "套房(1房1廳1衛)"),
                 ("廠辦", "廠辦"),
-                ("農舍", "農舍")
+                ("農舍", "農舍"),
+                ("倉庫", "倉庫")
                 //("其他", "");
                 //("", "土地")
             };
@@ -359,7 +383,19 @@ namespace KF_WebAPI.DataLogic
                         pre_road = row.IsNull("pre_road") ? "" : row.Field<string>("pre_road"),// 段(請參照對照表)
                         pre_road_s = row.IsNull("pre_road_s") ? "" : row.Field<string>("pre_road_s")// 小段(請參照對照表)
                     }).FirstOrDefault();
+                    if (string.IsNullOrEmpty(runReq.housePre_res.show_pre_building_kind))
+                    {
+                        runReq.message = "建物類型為必填欄位";
+                        runReq.isNeedPopupWindow = true;
+                        return runReq;
+                    }
 
+                    if (string.IsNullOrEmpty(runReq.housePre_res.show_pre_building_kind))
+                    {
+                        runReq.message = "建物類型為其他，請選擇合適";
+                        runReq.isNeedPopupWindow = true;
+                        return runReq;
+                    }
 
                     // 取得段代碼(狀態:current)：縣市代碼+區代碼+段名稱
                     SectionCode reqCode = dtResult.AsEnumerable().Select(row => new SectionCode
@@ -369,7 +405,7 @@ namespace KF_WebAPI.DataLogic
                         road_name = row.IsNull("pre_road") ? string.Empty : row.Field<string>("pre_road"),
                         road_name_s = (row.IsNull("pre_road_s") ? string.Empty : row.Field<string>("pre_road_s"))
                     }).SingleOrDefault();
-
+                    // 判斷縣市代碼+區代碼+段名稱是否有缺
                     if (reqCode.isRight() == false)
                     {
                         runReq.message = reqCode.message;
@@ -377,6 +413,14 @@ namespace KF_WebAPI.DataLogic
                         return runReq;
                     }
                     reqCode = GetMoiSectionCode(reqCode);
+                    // 判斷段代碼(狀態:before) 與 段代碼(狀態:current) 不同時，預設為:段代碼(狀態:current)
+                    // 段代碼為空值時
+                    if ((reqCode == null) || (reqCode?.road_num == null))
+                    {
+                        runReq.message = "找不到段代碼，檢查對照表";
+                        runReq.isNeedPopupWindow = true;
+                        return runReq;
+                    }
 
                     // 串接LoanSky
                     runReq.oreRequest = dtResult.AsEnumerable().Select(row => new OrderRealEstateRequest
