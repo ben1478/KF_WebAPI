@@ -505,7 +505,7 @@ namespace KF_WebAPI.DataLogic
             }
             return runReq;
         }
-        public ResultClass<string> House_pre_Update(runOrderRealEstateRequest model)
+        public ResultClass<string> House_pre_Update(HousePre_res model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -522,19 +522,31 @@ namespace KF_WebAPI.DataLogic
                               ParkCategory = isnull(@ParkCategory, ParkCategory),
                               MoiCityCode = isnull(@MoiCityCode,MoiCityCode),
                               MoiTownCode = isnull(@MoiTownCode,MoiTownCode),
-                              MoiSectionCode = isnull(@MoiSectionCode,MoiSectionCode)
+                              MoiSectionCode = isnull(@MoiSectionCode,MoiSectionCode),
+                              pre_city = isnull(@pre_city,pre_city),
+                              pre_area = isnull(@pre_area,pre_area),
+                              pre_road = isnull(@pre_road,pre_road),
+                              pre_road_s = isnull(@pre_road_s,pre_road_s),
+                              edit_date = @edit_date,
+                              edit_num = @edit_num
                          FROM House_pre
                          where HP_cknum = @hp_cknum
                 ";
                 var parameters = new List<SqlParameter>
                   {
-                      new SqlParameter("@pre_building_kind", string.IsNullOrEmpty(model.housePre_res.pre_building_kind)? DBNull.Value :model.housePre_res.pre_building_kind ),
-                      new SqlParameter("@BuildingState", string.IsNullOrEmpty(model.oreRequest.BuildingState)? DBNull.Value :model.oreRequest.BuildingState ),
-                      new SqlParameter("@ParkCategory", string.IsNullOrEmpty(model.oreRequest.ParkCategory)? DBNull.Value : model.oreRequest.ParkCategory),
-                      new SqlParameter("@MoiCityCode", string.IsNullOrEmpty(model.oreRequest.MoiCityCode) ? DBNull.Value : model.oreRequest.MoiCityCode),
-                      new SqlParameter("@MoiTownCode", string.IsNullOrEmpty(model.oreRequest.MoiTownCode) ? DBNull.Value : model.oreRequest.MoiTownCode),
-                      new SqlParameter("@MoiSectionCode", string.IsNullOrEmpty(model.oreRequest.Nos.FirstOrDefault()?.MoiSectionCode)? DBNull.Value : model.oreRequest.Nos.FirstOrDefault().MoiSectionCode),
-                      new SqlParameter("@hp_cknum", model.housePre_res.HP_cknum)
+                      new SqlParameter("@pre_building_kind", string.IsNullOrEmpty(model.pre_building_kind)? DBNull.Value :model.pre_building_kind ),
+                      new SqlParameter("@BuildingState", string.IsNullOrEmpty(model.BuildingState)? DBNull.Value :model.BuildingState ),
+                      new SqlParameter("@ParkCategory", string.IsNullOrEmpty(model.ParkCategory)? DBNull.Value : model.ParkCategory),
+                      new SqlParameter("@MoiCityCode", string.IsNullOrEmpty(model.MoiCityCode) ? DBNull.Value : model.MoiCityCode),
+                      new SqlParameter("@MoiTownCode", string.IsNullOrEmpty(model.MoiTownCode) ? DBNull.Value : model.MoiTownCode),
+                      new SqlParameter("@MoiSectionCode", string.IsNullOrEmpty(model.MoiSectionCode)? DBNull.Value : model.MoiSectionCode),
+                      new SqlParameter("@pre_city", string.IsNullOrEmpty(model.pre_city)? DBNull.Value : model.pre_city),
+                      new SqlParameter("@pre_area", string.IsNullOrEmpty(model.pre_area)? DBNull.Value : model.pre_area),
+                      new SqlParameter("@pre_road", string.IsNullOrEmpty(model.pre_road)? DBNull.Value : model.pre_road),
+                      new SqlParameter("@pre_road_s", string.IsNullOrEmpty(model.pre_road_s)? DBNull.Value : model.pre_road_s),
+                      new SqlParameter("@hp_cknum", model.HP_cknum),
+                      new SqlParameter("@edit_date", DateTime.Today),
+                      new SqlParameter("@edit_num", model.edit_num)
                   };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);

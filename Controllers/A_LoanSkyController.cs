@@ -1,5 +1,6 @@
 ﻿using Grpc.Net.Client;
 using KF_WebAPI.BaseClass;
+using KF_WebAPI.BaseClass.AE;
 using KF_WebAPI.BaseClass.LoanSky;
 using KF_WebAPI.DataLogic;
 using KF_WebAPI.FunctionHandler;
@@ -45,7 +46,16 @@ namespace KF_WebAPI.Controllers
                 {
                     ResultClass<string> APIResult = new();
                     APIResult = await _Comm.Call_LoanSkyAPI(req.p_USER, "CreateOrderRealEstateAsync", ReqClass.oreRequest, req);
-                    _AE_LoanSky.House_pre_Update(ReqClass); // 更新House_pre裡LoanSky.相關欄位
+                    #region 更新House_pre裡LoanSky.相關欄位
+                    ReqClass.housePre_res.MoiCityCode = ReqClass.oreRequest.MoiCityCode;
+                    ReqClass.housePre_res.MoiTownCode = ReqClass.oreRequest.MoiTownCode;
+                    ReqClass.housePre_res.MoiSectionCode = ReqClass.oreRequest.Nos.FirstOrDefault().MoiSectionCode;
+                    ReqClass.housePre_res.BuildingState = ReqClass.oreRequest.BuildingState;
+                    ReqClass.housePre_res.ParkCategory = ReqClass.oreRequest.ParkCategory;
+                    ReqClass.housePre_res.edit_num = req.p_USER;
+
+                    _AE_LoanSky.House_pre_Update(ReqClass.housePre_res); // 更新House_pre裡LoanSky.相關欄位
+                    #endregion
                     return Ok(resultClass);
                 }
                 else
@@ -95,7 +105,7 @@ namespace KF_WebAPI.Controllers
         }
 
         [HttpPost("House_pre_Update")]
-        public ActionResult<ResultClass<string>> House_pre_Update(runOrderRealEstateRequest req)
+        public ActionResult<ResultClass<string>> House_pre_Update(HousePre_res housePre)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             AE_LoanSky _AE_LoanSky = new AE_LoanSky();
@@ -103,7 +113,7 @@ namespace KF_WebAPI.Controllers
             // 取得待轉-基本資料
             try
             {
-                resultClass = _AE_LoanSky.House_pre_Update(req);
+                resultClass = _AE_LoanSky.House_pre_Update(housePre);
                 return Ok(resultClass);
 
             }
