@@ -274,7 +274,58 @@ namespace KF_WebAPI.DataLogic
 
             return (resultcode == null || resultcode.Count() > 1) ? null : resultcode.SingleOrDefault();
         }
-        
+
+        public List<(string, string)> GetPre_building_kind()
+        {
+            List<(string, string)> lsPBK = new List<(string, string)> ();
+            try
+            {
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                     select item_D_code, item_D_name 
+                        from Item_list 
+                        where item_M_code = 'building_kind' AND item_D_type='Y' 
+                            AND show_tag='0' AND del_tag='0'
+                    ";
+                #endregion
+                DataTable dtResult = _ADO.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    // 來源資料
+                    lsPBK = dtResult.AsEnumerable().Select(row => 
+                    (
+                        row.IsNull("item_D_code") ? "" : row.Field<string>("item_D_code"), // 房屋預估資料ID
+                        row.IsNull("item_D_name") ? "" : row.Field<string>("item_D_name") // 房屋預估資料流水號
+                    )).ToList();
+                }
+                lsPBK.Insert(0, ("0", "請選擇"));
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("AE_LoanSky.GetOrderRealEstateRequest", ex);
+            }
+            return lsPBK;
+        }
+
+        public List<(int, string)> GetBuildingState()
+        {
+            List<(int, string)> lsBuildingState = new List<(int, string)>{
+                (1,"公寓(5樓含以下無電梯)"),
+                (2,"透天厝"),
+                (3,"店面(店鋪)"),
+                (4,"辦公商業大樓"),
+                (5,"住宅大樓(11層含以上有電梯)"),
+                (6,"華廈(10層含以下有電梯)"),
+                (7,"套房(1房1廳1衛)"),
+                (8,"工廠"),
+                (9,"農舍"),
+                (10,"廠辦"),
+                (11,"倉庫"),
+                (12,"土地")
+            };
+            return lsBuildingState;
+        }
         /// <summary>
         /// KF2LoanSky:建物類型
         /// </summary>
@@ -356,6 +407,7 @@ namespace KF_WebAPI.DataLogic
                      select
                          HP_id, HP_cknum
                          ,[pre_city],[pre_area],[pre_road],[pre_road_s],pre_apply_name
+                         ,pre_building_kind, pre_build_num,pre_land_num
                          ,(select U_name FROM User_M where U_num = House_pre.add_num AND del_tag='0') as add_name
                          ,(select item_D_name from Item_list where item_M_code = 'building_kind' AND item_D_type='Y' AND item_D_code = House_pre.pre_building_kind  AND show_tag='0' AND del_tag='0') as show_pre_building_kind
                          ,(select item_D_name from Item_list where item_M_code = 'parking_kind' AND item_D_type='Y' AND item_D_code = House_pre.pre_parking_kind  AND show_tag='0' AND del_tag='0') as show_pre_parking_kind
@@ -377,6 +429,7 @@ namespace KF_WebAPI.DataLogic
                         HP_cknum = row.IsNull("HP_cknum") ? "" : row.Field<string>("HP_cknum"), // 房屋預估資料流水號
                         add_name = row.IsNull("add_name") ? "" : row.Field<string>("add_name"),  //經辦人名稱
                         pre_apply_name = row.IsNull("pre_apply_name") ? "" : row.Field<string>("pre_apply_name"),    // 申請人
+                        pre_building_kind = row.IsNull("pre_building_kind") ? "" : row.Field<string>("pre_building_kind"), // 建物類型
                         show_pre_building_kind = row.IsNull("show_pre_building_kind") ? "" : row.Field<string>("show_pre_building_kind"),  // 建物類型(請參照對照表)
                         pre_city = row.IsNull("pre_city") ? "" : row.Field<string>("pre_city"),// 縣市代碼(請參照對照表)
                         pre_area = row.IsNull("pre_area") ? "" : row.Field<string>("pre_area"),// 鄉鎮市區代碼(請參照對照表)
@@ -463,16 +516,19 @@ namespace KF_WebAPI.DataLogic
 
                 var T_SQL = @"
                         update  House_pre
-                          set BuildingState = @BuildingState,
-                            ParkCategory = @ParkCategory,
-                            MoiCityCode = @MoiCityCode,
-                            MoiTownCode = @MoiTownCode,
-                            MoiSectionCode = @MoiSectionCode
+                          set 
+                              pre_building_kind = ISNULL(@pre_building_kind, pre_building_kind),
+                              BuildingState = isnull(@BuildingState, BuildingState),
+                              ParkCategory = isnull(@ParkCategory, ParkCategory),
+                              MoiCityCode = isnull(@MoiCityCode,MoiCityCode),
+                              MoiTownCode = isnull(@MoiTownCode,MoiTownCode),
+                              MoiSectionCode = isnull(@MoiSectionCode,MoiSectionCode)
                          FROM House_pre
                          where HP_cknum = @hp_cknum
                 ";
                 var parameters = new List<SqlParameter>
                   {
+                      new SqlParameter("@pre_building_kind", string.IsNullOrEmpty(model.housePre_res.pre_building_kind)? DBNull.Value :model.housePre_res.pre_building_kind ),
                       new SqlParameter("@BuildingState", string.IsNullOrEmpty(model.oreRequest.BuildingState)? DBNull.Value :model.oreRequest.BuildingState ),
                       new SqlParameter("@ParkCategory", string.IsNullOrEmpty(model.oreRequest.ParkCategory)? DBNull.Value : model.oreRequest.ParkCategory),
                       new SqlParameter("@MoiCityCode", string.IsNullOrEmpty(model.oreRequest.MoiCityCode) ? DBNull.Value : model.oreRequest.MoiCityCode),
@@ -509,8 +565,8 @@ namespace KF_WebAPI.DataLogic
 
     public class runOrderRealEstateRequest
     {
-        public OrderRealEstateRequest oreRequest;   // LoanSky串接資料
-        public HousePre_res housePre_res;           // 來源資料
+        public OrderRealEstateRequest oreRequest { get; set; }   // LoanSky串接資料
+        public HousePre_res housePre_res { get; set; }           // 來源資料
         public string message { get; set; }
         /// <summary>
         /// 是否需要彈跳視窗讓使用者確認LoanSky參數

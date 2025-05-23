@@ -94,6 +94,27 @@ namespace KF_WebAPI.Controllers
 
         }
 
+        [HttpPost("House_pre_Update")]
+        public ActionResult<ResultClass<string>> House_pre_Update(runOrderRealEstateRequest req)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            AE_LoanSky _AE_LoanSky = new AE_LoanSky();
+
+            // 取得待轉-基本資料
+            try
+            {
+                resultClass = _AE_LoanSky.House_pre_Update(req);
+                return Ok(resultClass);
+
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
         /// <summary>
         /// 取得 縣市代碼
         /// </summary>
@@ -186,6 +207,65 @@ namespace KF_WebAPI.Controllers
 
                     resultClass.ResultCode = "000";
                     resultClass.objResult = JsonConvert.SerializeObject(road);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        [HttpGet("GetPre_building_kind")]
+        public ActionResult<ResultClass<string>> GetPre_building_kind()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            AE_LoanSky ae_LoanSky = new AE_LoanSky();
+            try
+            {
+                var res = ae_LoanSky.GetPre_building_kind();
+
+                if (res != null)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(res);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        [HttpGet("GetBuildingState")]
+        public ActionResult<ResultClass<string>> GetBuildingState()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            AE_LoanSky ae_LoanSky = new AE_LoanSky();
+            try
+            {
+                var res = ae_LoanSky.GetBuildingState();
+
+                if (res != null)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(res);
                     return Ok(resultClass);
                 }
                 else
