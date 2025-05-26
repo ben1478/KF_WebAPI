@@ -222,7 +222,8 @@ namespace KF_WebAPI.Controllers
                 else
                 {
                     resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "查無資料";
+                    resultClass.ResultMsg = area_num.Equals("all")? "區/市/鄉/鎮:資料有錯請檢查" :
+                        $"縣市代碼:{city_num} 或區/市/鄉/鎮代碼:{area_num}在對照表查無資料";
                     return BadRequest(resultClass);
                 }
             }

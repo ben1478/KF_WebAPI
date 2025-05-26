@@ -6,6 +6,7 @@ using KF_WebAPI.FunctionHandler;
 using LoanSky.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.ServiceModel.Security;
@@ -16,7 +17,8 @@ namespace KF_WebAPI.DataLogic
 {
     public class AE_LoanSky
     {
-        private string account = "testCGU"; // 測試用帳號:testCGU
+        private string account = "testCGU"; // [測試區]使用測試用帳號:testCGU;當空值時，為[正式區]用u_num對應分公司的帳號
+        
         private readonly string _storagePath = @"C:\UploadedFiles";
         ADOData _ADO = new();
 
@@ -60,6 +62,7 @@ namespace KF_WebAPI.DataLogic
                     {
                         HP_id = row.IsNull("HP_id") ? 0 : row.Field<decimal>("HP_id"), // 房屋預估資料ID
                         HP_cknum = row.IsNull("HP_cknum") ? "" : row.Field<string>("HP_cknum"), // 房屋預估資料流水號
+                        add_num = row.IsNull("add_num") ? "" : row.Field<string>("add_num"), // 承辦人員帳號:測試用帳號:testCGU
                         add_name = row.IsNull("add_name") ? "" : row.Field<string>("add_name"),  //經辦人名稱
                         pre_apply_name = row.IsNull("pre_apply_name") ? "" : row.Field<string>("pre_apply_name"),    // 申請人
                         show_pre_building_kind = row.IsNull("show_pre_building_kind") ? "" : row.Field<string>("show_pre_building_kind"),  // 建物類型(請參照對照表)
@@ -99,7 +102,7 @@ namespace KF_WebAPI.DataLogic
                     #region 案件資料
                     runReq.oreRequest = dtResult.AsEnumerable().Select(row => new OrderRealEstateRequest
                     {
-                        Account = account, // 承辦人員帳號:測試用帳號:testCGU
+                        Account = string.IsNullOrEmpty(account)? GetLoanSkyAccount(row.Field<string>("add_num")).Account : account, // 承辦人員帳號:測試用帳號:testCGU
                         BusinessUserName = row.IsNull("add_name") ? "" : row.Field<string>("add_name"),  //經辦人名稱
                         //BusinessTel = "82096100",  // 經辦人電話
                         //BusinessFax = "123",   // 經辦人傳真
@@ -143,6 +146,19 @@ namespace KF_WebAPI.DataLogic
             }
             return runReq;
         }
+
+        /// <summary>
+        /// 取得LoanSky帳號
+        /// </summary>
+        /// <param name="U_num"></param>
+        /// <returns></returns>
+        public BusinessUerName GetLoanSkyAccount(string U_num)
+        {             // 取得LoanSky帳號
+            User_M user = GetUser(U_num);
+            BusinessUerName result = GetBusinessUserName(user.U_BC);
+            return  result;
+        }
+
         /// <summary>
         /// 取得AE要拋轉LoanSky案件資料-附件
         /// </summary>
@@ -273,6 +289,55 @@ namespace KF_WebAPI.DataLogic
 
 
             return (resultcode == null || resultcode.Count() > 1) ? null : resultcode.SingleOrDefault();
+        }
+        /// <summary>
+        /// 取得各分公司LoanSky Account
+        /// </summary>
+        /// <param name="pre_city"></param>
+        /// <param name="pre_area"></param>
+        /// <returns></returns>
+        public BusinessUerName GetBusinessUserName(string item_D_code)
+        {
+            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "BaseClass", "LoanSky", "BusinessUserName.json");
+            string jsonData = GetJsonFileContent(filePath);
+            var jsonObject = JsonSerializer.Deserialize<List<BusinessUerName>>(jsonData);
+
+            var resultcode = jsonObject.Where(x => x.item_D_code.Equals(item_D_code)).SingleOrDefault();
+            return resultcode;
+        }
+
+        public User_M GetUser(string U_num)
+        {
+            string U_BC = string.Empty;
+            User_M user = new User_M();
+            try
+            {
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                     select *  
+                        FROM User_M 
+                        where U_num = @U_num
+                    ";
+                parameters.Add(new SqlParameter("@U_num", U_num));
+                #endregion
+                DataTable dtResult = _ADO.ExecuteQuery(T_SQL, parameters);
+                
+                if (dtResult.Rows.Count > 0)
+                {
+                    user = dtResult.AsEnumerable().Select(row => new User_M {
+                        U_num = row.IsNull("U_num") ? "" : row.Field<string>("U_num"), // 
+                        U_BC = row.IsNull("U_BC") ? "" : row.Field<string>("U_BC"),     // 分公司
+                        U_name = row.IsNull("U_name") ? "" : row.Field<string>("U_name") // 分公司
+                    }).SingleOrDefault();
+                    
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("AE_LoanSky.GetU_BC", ex);
+            }
+            return user;
         }
 
         public List<(string, string)> GetPre_building_kind()
