@@ -102,8 +102,8 @@ namespace KF_WebAPI.DataLogic
                     #region 案件資料
                     runReq.oreRequest = dtResult.AsEnumerable().Select(row => new OrderRealEstateRequest
                     {
-                        Account = string.IsNullOrEmpty(account)? GetLoanSkyAccount(row.Field<string>("add_num")).Account : account, // 承辦人員帳號:測試用帳號:testCGU
-                        BusinessUserName = row.IsNull("add_name") ? "" : row.Field<string>("add_name"),  //經辦人名稱
+                        Account = string.IsNullOrEmpty(account)? GetLoanSkyAccountByUser(row.Field<string>("add_num")).Account : account, // 承辦人員帳號:測試用帳號:testCGU
+                        BusinessUserName = GetLoanSkyAccountByUser(row.Field<string>("add_num")).branch_company,  //經辦人名稱:各分公司名稱
                         //BusinessTel = "82096100",  // 經辦人電話
                         //BusinessFax = "123",   // 經辦人傳真
                         Applicant = row.IsNull("pre_apply_name") ? "" : row.Field<string>("pre_apply_name"),    // 申請人
@@ -152,10 +152,10 @@ namespace KF_WebAPI.DataLogic
         /// </summary>
         /// <param name="U_num"></param>
         /// <returns></returns>
-        public BusinessUerName GetLoanSkyAccount(string U_num)
+        public LoanSkyAccount GetLoanSkyAccountByUser(string U_num)
         {             // 取得LoanSky帳號
-            User_M user = GetUser(U_num);
-            BusinessUerName result = GetBusinessUserName(user.U_BC);
+            User_M user = GetUser(U_num: U_num);
+            LoanSkyAccount result = GetAllLoanSkyAccount(user.U_BC);
             return  result;
         }
 
@@ -296,17 +296,17 @@ namespace KF_WebAPI.DataLogic
         /// <param name="pre_city"></param>
         /// <param name="pre_area"></param>
         /// <returns></returns>
-        public BusinessUerName GetBusinessUserName(string item_D_code)
+        public LoanSkyAccount GetAllLoanSkyAccount(string item_D_code)
         {
-            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "BaseClass", "LoanSky", "BusinessUserName.json");
+            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "BaseClass", "LoanSky", "LoanSkyAccount.json");
             string jsonData = GetJsonFileContent(filePath);
-            var jsonObject = JsonSerializer.Deserialize<List<BusinessUerName>>(jsonData);
+            var jsonObject = JsonSerializer.Deserialize<List<LoanSkyAccount>>(jsonData);
 
             var resultcode = jsonObject.Where(x => x.item_D_code.Equals(item_D_code)).SingleOrDefault();
             return resultcode;
         }
 
-        public User_M GetUser(string U_num)
+        public User_M GetUser(string? U_num="", string? U_name="")
         {
             string U_BC = string.Empty;
             User_M user = new User_M();
@@ -315,11 +315,14 @@ namespace KF_WebAPI.DataLogic
                 #region SQL
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"
-                     select *  
-                        FROM User_M 
-                        where U_num = @U_num
+                    select *  
+                       FROM User_M 
+                       where 
+                           (@U_num ='' or U_num=@U_num)
+                           AND (@U_name ='' or U_name=@U_name)
                     ";
                 parameters.Add(new SqlParameter("@U_num", U_num));
+                parameters.Add(new SqlParameter("@U_name", U_name));
                 #endregion
                 DataTable dtResult = _ADO.ExecuteQuery(T_SQL, parameters);
                 
