@@ -15,6 +15,7 @@ using System.Collections;
 using KF_WebAPI.Controllers;
 using System.Net.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -2560,5 +2561,24 @@ namespace KF_WebAPI.FunctionHandler
                 m => char.ConvertFromUtf32(int.Parse(m.Groups[1].Value))
             );
         }
+
+        public string toNCR(string rawString)
+        {
+            StringBuilder sb = new StringBuilder();
+            Encoding big5 = CodePagesEncodingProvider.Instance.GetEncoding(name: "big5");
+            //Encoding big5 = Encoding.GetEncoding("big5");
+            foreach (char c in rawString)
+            {
+                //強迫轉碼成Big5，看會不會變成問號
+                string cInBig5 = big5.GetString(big5.GetBytes(new char[] { c }));
+                //原來不是問號，轉碼後變問號，判定為難字
+                if (c != '?' && cInBig5 == "?")
+                    sb.AppendFormat("&#{0};", Convert.ToInt32(c));
+                else
+                    sb.Append(c);
+            }
+            return sb.ToString();
+        }
+
     }
 }

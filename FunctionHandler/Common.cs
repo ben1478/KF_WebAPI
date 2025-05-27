@@ -914,7 +914,7 @@ namespace KF_WebAPI.FunctionHandler
         
         public async Task<ResultClass<string>> Call_LoanSkyAPI(string p_USER, string p_APIName, OrderRealEstateRequest request, LoanSky_Req req)
         {
-            // 
+            FuncHandler _fun = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
             ORErequest.OrderRealEstates.Add(request);
             try
@@ -924,6 +924,7 @@ namespace KF_WebAPI.FunctionHandler
 
                 resultClass.ResultCode = reply.Result ? "000" : "001";
                 resultClass.ResultMsg = JsonConvert.SerializeObject(reply);
+                ORErequest.OrderRealEstates[0].BusinessUserName = _fun.toNCR(request.BusinessUserName); // 處理中文亂碼: LoanSky(UTF8) -> API.Log(NCR)
                 resultClass.objResult = JsonConvert.SerializeObject(ORErequest);
 
             }
