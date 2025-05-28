@@ -1,4 +1,7 @@
-﻿namespace KF_WebAPI.BaseClass.AE
+﻿using Microsoft.Extensions.Primitives;
+using System.Text;
+
+namespace KF_WebAPI.BaseClass.AE
 {
     public class HousePre_res
     {
@@ -59,8 +62,29 @@
         public string? MoiSectionCode { get; set; }
         public string? add_name { get; set; }
         public string? show_pre_building_kind { get; set; }
-        
+        public string? Account { get; set; }
+        public string? BusinessUserName { get; set; }
 
+        public string? HA_cknum { get; set; }
+        public string? show_pre_parking_kind { get; set; }
+        public string? CS_PID { get; set; }
+        public string? U_BC { get; set; }
+        /// <summary>
+        /// 檢查資料是否正確
+        /// </summary>
+        /// <returns>null 正常;錯誤訊息</returns>
+        public List<string> isRight()
+        {
+            List<string> errors = new List<string>();
+            if(string.IsNullOrEmpty(pre_building_kind))
+                errors.Add("建物類型不能為空");
+            if (string.IsNullOrEmpty(pre_city))
+                errors.Add("縣市代碼不能為空");
+            if (string.IsNullOrEmpty(pre_area))
+                errors.Add("鄉鎮市區不能為空");
+            if (string.IsNullOrEmpty(pre_road))
+                errors.Add("段不能為空");
+            return errors;
+        }
     }
-
 }

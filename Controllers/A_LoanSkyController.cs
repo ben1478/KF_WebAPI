@@ -28,72 +28,38 @@ namespace KF_WebAPI.Controllers
             ApiKey = "1AA86E9C37F24767ACA1087DEBA6D322"     //測試用帳號 ApiKey:1AA86E9C37F24767ACA1087DEBA6D322
         };
         #region LoanSky 宏邦API
-        /// <summary>
-        /// <summary>
-        /// Grpc多筆匯入 CreateOrderRealEstatesAsync
-        /// </summary>
-        [HttpPost("CreateOrderRealEstatesAsync")]
-        public async Task<ActionResult<ResultClass<string>>> CreateOrderRealEstatesAsync(LoanSky_Req req)
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
-            AE_LoanSky _AE_LoanSky = new AE_LoanSky();
-            // 取得待轉-基本資料
-            try
-            {
-                runOrderRealEstateRequest ReqClass = _AE_LoanSky.GetOrderRealEstateRequest(req);
-
-                if (ReqClass.oreRequest != null)
-                {
-                    ResultClass<string> APIResult = new();
-                    APIResult = await _Comm.Call_LoanSkyAPI(req.p_USER, "CreateOrderRealEstateAsync", ReqClass.oreRequest, req);
-                    #region 更新House_pre裡LoanSky.相關欄位
-                    ReqClass.housePre_res.MoiCityCode = ReqClass.oreRequest.MoiCityCode;
-                    ReqClass.housePre_res.MoiTownCode = ReqClass.oreRequest.MoiTownCode;
-                    ReqClass.housePre_res.MoiSectionCode = ReqClass.oreRequest.Nos.FirstOrDefault().MoiSectionCode;
-                    ReqClass.housePre_res.BuildingState = ReqClass.oreRequest.BuildingState;
-                    ReqClass.housePre_res.ParkCategory = ReqClass.oreRequest.ParkCategory;
-                    ReqClass.housePre_res.edit_num = req.p_USER;
-
-                    _AE_LoanSky.House_pre_Update(ReqClass.housePre_res); // 更新House_pre裡LoanSky.相關欄位
-                    #endregion
-                    return Ok(resultClass);
-                }
-                else
-                {
-                    resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "查無資料";
-                    return BadRequest(resultClass);
-                }
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
-            }
-            finally
-            {
-                await channel.ShutdownAsync();
-            }
-
-        }
-
-
         [HttpPost("IsLoanSkyFieldsNull")]
-        public ActionResult<ResultClass<string>> IsLoanSkyFieldsNull(LoanSky_Req req)
+        public async Task<ActionResult<ResultClass<string>>> IsLoanSkyFieldsNull(LoanSky_Req req)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             AE_LoanSky _AE_LoanSky = new AE_LoanSky();
-            // 取得待轉-基本資料
-            try
+            runOrderRealEstateRequest ReqClass = _AE_LoanSky.IsLoanSkyFieldsNull(req);
+            // 若有錯誤則返回傳端
+            if(ReqClass.isNeedPopupWindow == true)
             {
-                runOrderRealEstateRequest ReqClass = _AE_LoanSky.IsLoanSkyFieldsNull(req);
-
-                resultClass.ResultCode = "000";
+                resultClass.ResultCode = "400";
                 resultClass.ResultMsg = ReqClass.message; // 將LoanSky的錯誤訊息回傳;若message為空值代表問題
                 resultClass.objResult = JsonConvert.SerializeObject(ReqClass);
                 return Ok(resultClass);
+            }
+            
+            try
+            {
+                ResultClass<string> APIResult = new();
+                APIResult = await _Comm.Call_LoanSkyAPI(req.p_USER, "CreateOrderRealEstateAsync", ReqClass.oreRequest, req);
+                #region 更新House_pre裡LoanSky.相關欄位
+                ReqClass.housePre_res.MoiCityCode = ReqClass.oreRequest.MoiCityCode;
+                ReqClass.housePre_res.MoiTownCode = ReqClass.oreRequest.MoiTownCode;
+                ReqClass.housePre_res.MoiSectionCode = ReqClass.oreRequest.Nos.FirstOrDefault().MoiSectionCode;
+                ReqClass.housePre_res.BuildingState = ReqClass.oreRequest.BuildingState;
+                ReqClass.housePre_res.ParkCategory = ReqClass.oreRequest.ParkCategory;
+                ReqClass.housePre_res.edit_num = req.p_USER;
 
+                _AE_LoanSky.House_pre_Update(ReqClass.housePre_res); // 更新House_pre裡LoanSky.相關欄位
+                #endregion
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "已成功轉入宏邦api";
+                return Ok(resultClass);
             }
             catch (Exception ex)
             {
@@ -101,7 +67,6 @@ namespace KF_WebAPI.Controllers
                 resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
-
         }
 
         [HttpPost("House_pre_Update")]

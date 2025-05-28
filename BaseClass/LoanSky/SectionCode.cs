@@ -83,15 +83,22 @@ namespace KF_WebAPI.BaseClass.LoanSky
         /// <summary>
         /// 判斷參數是否正確。true:正確; false:錯誤
         /// </summary>
-        public bool isRight()
+        public List<string> isRight()
         {
-            bool isRight = !(string.IsNullOrEmpty(city_name) || string.IsNullOrEmpty(area_name) || string.IsNullOrEmpty(road_name));
-            if (isRight==false) {
-                _message = "縣市名稱 or 區名稱 or 段名稱 其中為Null";
+            List<string> errors = new List<string>();
+            if (string.IsNullOrEmpty(city_num))
+            {
+                errors.Add("縣市代碼為Null");
             }
-            return isRight;
+            if (string.IsNullOrEmpty(area_num))
+            {
+                errors.Add("鄉鎮市區為Null");
+            }
+            if (string.IsNullOrEmpty(road_num))
+            {
+                errors.Add("段代碼為Null");
+            }
+            return errors;
         }
-
-        
     }
 }

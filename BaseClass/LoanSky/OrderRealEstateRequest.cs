@@ -89,6 +89,24 @@ namespace LoanSky.Model
                 return false;
             }
         }
-            
+        public List<string> IsRight()
+        {
+            List<string> errors = new List<string>();
+            if (string.IsNullOrEmpty(BusinessUserName))
+                errors.Add("經辦人名稱不能為空");
+            if (string.IsNullOrEmpty(Applicant))
+                errors.Add("申請人不能為空");
+            if (string.IsNullOrEmpty(BuildingState))
+                errors.Add("建物類型不能為空");
+            if (string.IsNullOrEmpty(MoiCityCode))
+                errors.Add("縣市代碼不能為空");
+            if (string.IsNullOrEmpty(MoiTownCode))
+                errors.Add("鄉鎮市區不能為空");
+
+            if (string.IsNullOrEmpty(Nos.FirstOrDefault().MoiSectionCode))
+                errors.Add("段代碼不能為空");
+            return errors;
+        }
+
     }
 }
