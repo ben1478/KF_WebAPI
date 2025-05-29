@@ -7,14 +7,13 @@ using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace KF_WebAPI.DataLogic
 {
     public class AE_LoanSky
     {
         private string account = "testCGU"; // [測試區]使用測試用帳號:testCGU;當空值時，為[正式區]用u_num對應分公司的帳號
-        
-        private readonly string _storagePath = @"C:\UploadedFiles";
         ADOData _ADO = new();
 
         /// <summary>
@@ -29,47 +28,6 @@ namespace KF_WebAPI.DataLogic
             return  result;
         }
 
-        /// <summary>
-        /// 取得AE要拋轉LoanSky案件資料-附件
-        /// </summary>
-        /// <param name="HA_cknum"></param>
-        /// <returns></returns>
-        public List<OrderRealEstateAttachmentRequest> GetOrderRealEstateNoRequest(string HA_cknum)
-        {
-            List<OrderRealEstateAttachmentRequest> ReqClass = new List<OrderRealEstateAttachmentRequest>();
-            var parameters = new List<SqlParameter>();
-            var t_sqlAttachment = @"
-                         select * 
-                            from ASP_UpLoad
-                            where del_tag = '0' AND cknum = @HA_cknum
-                                and upload_name_code like '%.pdf'
-                                order by add_date desc
-                    ";
-            parameters.Add(new SqlParameter("@HA_cknum", HA_cknum));
-            DataTable dtResult = _ADO.ExecuteQuery(t_sqlAttachment, parameters);
-            if (dtResult.Rows.Count > 0)
-            {
-                foreach (DataRow row in dtResult.Rows)
-                {
-                    OrderRealEstateAttachmentRequest attachmentRequest = new OrderRealEstateAttachmentRequest();
-                    attachmentRequest.OrginalFileName = row.IsNull("upload_name_show") ? "" : row.Field<string>("upload_name_show"); // 原始檔案名稱(需包含副檔名且是PDF檔) 
-
-                    var upload_name_code = (row["upload_name_code"]).ToString();
-                    var upload_name_show = (row["upload_name_show"]).ToString();
-
-                    string _filePath = Path.Combine(_storagePath, upload_name_code.Substring(0, 6), upload_name_code.Substring(0, 8), upload_name_code);
-                    if (!System.IO.File.Exists(_filePath))
-                    {
-                        //throw new Exception("AE_LoanSky.GetOrderRealEstateNoRequest:file is not fund");
-                        continue; // 檔案不存在時返回 null
-                    }
-                    attachmentRequest.File = System.IO.File.ReadAllBytes(_filePath); // 附件檔案內容
-
-                    ReqClass.Add(attachmentRequest);
-                }
-            }
-            return ReqClass;
-        }
         public string GetJsonFileContent(string filePath)
         {
             string jsonData = string.Empty;
@@ -169,7 +127,6 @@ namespace KF_WebAPI.DataLogic
             var resultcode = jsonObject.Where(x => x.item_D_code.Equals(item_D_code)).SingleOrDefault();
             return resultcode;
         }
-
         public User_M GetUser(string? U_num="", string? U_name="")
         {
             string U_BC = string.Empty;
@@ -206,7 +163,6 @@ namespace KF_WebAPI.DataLogic
             }
             return user;
         }
-
         public List<(string, string)> GetPre_building_kind()
         {
             List<(string, string)> lsPBK = new List<(string, string)> ();
@@ -239,7 +195,6 @@ namespace KF_WebAPI.DataLogic
             }
             return lsPBK;
         }
-
         public List<(int, string)> GetBuildingState()
         {
             List<(int, string)> lsBuildingState = new List<(int, string)>{
@@ -327,7 +282,7 @@ namespace KF_WebAPI.DataLogic
             }
 
         }
-        public runOrderRealEstateRequest IsLoanSkyFieldsNull(LoanSky_Req req)
+        public async Task<runOrderRealEstateRequest> IsLoanSkyFieldsNull(LoanSky_Req req)
         {
             runOrderRealEstateRequest runReq = new runOrderRealEstateRequest();
             runReq.housePre_res = runReq.GetHouse_Pre(req);
@@ -349,7 +304,7 @@ namespace KF_WebAPI.DataLogic
             runReq.housePre_res.ParkCategory = AE2ParkCategory(runReq.housePre_res.show_pre_parking_kind);  // 車位型態(請參照對照表)
             runReq.housePre_res.HA_cknum = req.HA_cknum; // 房屋預估資料流水號
             // KF2LoanSky
-            runReq.KF2LoanSky();
+            await runReq.KF2LoanSky();
             return runReq;
         }
         public ResultClass<string> House_pre_Update(HousePre_res model)
@@ -454,7 +409,6 @@ namespace KF_WebAPI.DataLogic
         /// 是否需要彈跳視窗讓使用者確認LoanSky參數
         /// </summary>
         public bool isNeedPopupWindow { get; set; }
-
         public HousePre_res GetHouse_Pre(LoanSky_Req req)
         {
             try
@@ -516,7 +470,7 @@ namespace KF_WebAPI.DataLogic
             }
             return null;
         }
-        public void KF2LoanSky()
+        public async Task KF2LoanSky()
         {
             #region 案件資料
             oreRequest = new OrderRealEstateRequest
@@ -546,7 +500,8 @@ namespace KF_WebAPI.DataLogic
             oreRequest.Nos.Add(no);
             #endregion
             #region 取得AE要拋轉LoanSky案件資料-pdf附件
-            List<OrderRealEstateAttachmentRequest> attachments = GetOrderRealEstateNoRequest(housePre_res.HA_cknum);
+            //List<OrderRealEstateAttachmentRequest> attachments = GetOrderRealEstateNoRequest(housePre_res.HA_cknum);
+            List<OrderRealEstateAttachmentRequest> attachments = await GetAttchPDF(housePre_res.HA_cknum);
             if (attachments != null)
             {
                 foreach (var item in attachments)
@@ -556,10 +511,15 @@ namespace KF_WebAPI.DataLogic
             }
             #endregion
         }
-        public List<OrderRealEstateAttachmentRequest> GetOrderRealEstateNoRequest(string HA_cknum)
+        
+        public async Task<List<OrderRealEstateAttachmentRequest>> GetAttchPDF(string HA_cknum)
         {
-            string _storagePath = @"C:\UploadedFiles";
+            var httpClient = new HttpClient();
+            var downloader = new PdfDownloader(httpClient);
+            
+            
             List<OrderRealEstateAttachmentRequest> ReqClass = new List<OrderRealEstateAttachmentRequest>();
+            
             var parameters = new List<SqlParameter>();
             var t_sqlAttachment = @"
                          select * 
@@ -575,23 +535,92 @@ namespace KF_WebAPI.DataLogic
                 foreach (DataRow row in dtResult.Rows)
                 {
                     OrderRealEstateAttachmentRequest attachmentRequest = new OrderRealEstateAttachmentRequest();
-                    attachmentRequest.OrginalFileName = row.IsNull("upload_name_show") ? "" : row.Field<string>("upload_name_show"); // 原始檔案名稱(需包含副檔名且是PDF檔) 
-
                     var upload_name_code = (row["upload_name_code"]).ToString();
                     var upload_name_show = (row["upload_name_show"]).ToString();
 
-                    string _filePath = Path.Combine(_storagePath, upload_name_code.Substring(0, 6), upload_name_code.Substring(0, 8), upload_name_code);
-                    if (!System.IO.File.Exists(_filePath))
-                    {
-                        //throw new Exception("AE_LoanSky.GetOrderRealEstateNoRequest:file is not fund");
-                        continue; // 檔案不存在時返回 null
-                    }
-                    attachmentRequest.File = System.IO.File.ReadAllBytes(_filePath); // 附件檔案內容
+                    attachmentRequest.OrginalFileName = upload_name_show; // 原始檔案名稱(需包含副檔名且是PDF檔)
 
+                    // todo:正式環境: http://192.168.1.240 ; 測試環境: http://192.168.1.240:8081
+                    string url = $"http://192.168.1.240:8081/AE_Web_UpLoad/{upload_name_code.Substring(0, 6)}/{upload_name_code.Substring(0, 8)}/{upload_name_code}";
+                    //byte[] pdfBytes = await downloader.DownloadPdfAsBytesAsync(url, upload_name_code); // 開發環境-測試用
+                    byte[] pdfBytes = await downloader.DownloadPdfAsBytesAsync(url);
+
+                    if (pdfBytes != null)
+                    {
+                        attachmentRequest.File = pdfBytes;
+                        //Console.WriteLine($"PDF 下載成功，共 {pdfBytes.Length} bytes");
+                    }
+                    else
+                    {
+                        //Console.WriteLine("下載失敗");
+                    }
+                    
                     ReqClass.Add(attachmentRequest);
                 }
             }
+            
             return ReqClass;
+        }
+    }
+
+    public class PdfDownloader
+    {
+        private readonly HttpClient _httpClient;
+
+        public PdfDownloader(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
+        }
+        public async Task<byte[]> DownloadPdfAsBytesAsync(string url)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync(url);
+                response.EnsureSuccessStatusCode(); // 如果 status code 非 200 會 throw exception
+                byte[] pdfBytes = await response.Content.ReadAsByteArrayAsync();
+                return pdfBytes;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"下載或轉換 PDF 發生錯誤: {ex.Message}");
+                return null;
+            }
+        }
+        public async Task<byte[]> DownloadPdfAsBytesAsync(string url, string fileName)
+        {
+            
+            try
+            {
+                byte[] pdfBytes = await DownloadPdfAsBytesAsync(url);
+                #region 驗證是否真的與原pdf相同，** vs2022需用管理者身份執行 **
+                string savePath = $"C:\\UploadedFiles\\{fileName}";
+                string dir = Path.GetDirectoryName(savePath);
+                if (!Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+                await File.WriteAllBytesAsync(savePath, pdfBytes);
+                #endregion
+                return pdfBytes;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"下載或轉換 PDF 發生錯誤: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task SavePdfAsync(byte[] pdfBytes, string filePath)
+        {
+            try
+            {
+                await File.WriteAllBytesAsync(filePath, pdfBytes);
+                Console.WriteLine($"PDF 已儲存至：{filePath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"儲存 PDF 發生錯誤: {ex.Message}");
+            }
         }
     }
 }

@@ -33,7 +33,7 @@ namespace KF_WebAPI.Controllers
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             AE_LoanSky _AE_LoanSky = new AE_LoanSky();
-            runOrderRealEstateRequest ReqClass = _AE_LoanSky.IsLoanSkyFieldsNull(req);
+            runOrderRealEstateRequest ReqClass = await _AE_LoanSky.IsLoanSkyFieldsNull(req);
             // 若有錯誤則返回傳端
             if(ReqClass.isNeedPopupWindow == true)
             {
