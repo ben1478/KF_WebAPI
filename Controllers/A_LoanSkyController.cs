@@ -16,6 +16,8 @@ namespace KF_WebAPI.Controllers
         string apiCode = "LoanSky";
         private Common _Comm = new();
         FuncHandler _fun = new();
+        AE_LoanSky _AE_LoanSky = new();
+        ResultClass<string> resultClass = new();
 
         private OrderRealEstateAdapterRequest request = new OrderRealEstateAdapterRequest
         {
@@ -27,8 +29,8 @@ namespace KF_WebAPI.Controllers
         {
             string apiName = "CreateOrderRealEstateAsync";
             string apikey = JsonConvert.SerializeObject(req);
-            ResultClass<string> resultClass = new ResultClass<string>();
-            AE_LoanSky _AE_LoanSky = new AE_LoanSky();
+            
+            
             runOrderRealEstateRequest ReqClass = await _AE_LoanSky.IsLoanSkyFieldsNull(req);
             // 若有錯誤則返回傳端
             if(ReqClass.isNeedPopupWindow == true)
@@ -41,9 +43,8 @@ namespace KF_WebAPI.Controllers
             
             try
             {
-                ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_LoanSkyAPI(req.p_USER, apiName, ReqClass.oreRequest, req);
-                if (APIResult.ResultCode == "200")
+                resultClass = await _Comm.Call_LoanSkyAPI(req.p_USER, apiName, ReqClass.oreRequest, req);
+                if (resultClass.ResultCode == "200")
                 {
                     #region 更新House_pre裡LoanSky.相關欄位
                     ReqClass.housePre_res.MoiCityCode = ReqClass.oreRequest.MoiCityCode;
@@ -57,7 +58,7 @@ namespace KF_WebAPI.Controllers
                     #endregion
                     resultClass.ResultCode = "000";
                     resultClass.ResultMsg = "已成功轉入宏邦api";
-                    return Ok(resultClass);
+                    return base.Ok(resultClass);
                 }
                 else
                 {
@@ -75,8 +76,6 @@ namespace KF_WebAPI.Controllers
         [HttpPost("House_pre_Update")]
         public ActionResult<ResultClass<string>> House_pre_Update(HousePre_res housePre)
         {
-            ResultClass<string> resultClass = new ResultClass<string>();
-            AE_LoanSky _AE_LoanSky = new AE_LoanSky();
 
             resultClass = _AE_LoanSky.House_pre_Update(housePre);
             return Ok(resultClass);
@@ -89,11 +88,9 @@ namespace KF_WebAPI.Controllers
         [HttpGet("GetAllCity")]
         public ActionResult<ResultClass<string>> GetAllCity()
         {
-            ResultClass<string> resultClass = new ResultClass<string>();
-            AE_LoanSky ae_LoanSky = new AE_LoanSky();
             try
             {
-                List<CityCode> cities = ae_LoanSky.AE2MoiCityCode(string.Empty);
+                List<CityCode> cities = _AE_LoanSky.AE2MoiCityCode(string.Empty);
 
                 if (cities != null && cities.Count > 0)
                 {
@@ -125,11 +122,9 @@ namespace KF_WebAPI.Controllers
         [HttpGet("GetAllAreaByCity")]
         public ActionResult<ResultClass<string>> GetAllAreaByCity(string city_num)
         {
-            ResultClass<string> resultClass = new ResultClass<string>();
-            AE_LoanSky ae_LoanSky = new AE_LoanSky();
             try
             {
-                List<AreaCode> areas = ae_LoanSky.AE2MoiTownCode(city_num, string.Empty);
+                List<AreaCode> areas = _AE_LoanSky.AE2MoiTownCode(city_num, string.Empty);
 
                 if (areas != null && areas.Count > 0)
                 {
@@ -161,11 +156,9 @@ namespace KF_WebAPI.Controllers
         [HttpGet("GetAllRoadByAreaCity")]
         public ActionResult<ResultClass<string>> GetAllRoadByAreaCity(string city_num, string area_num)
         {
-            ResultClass<string> resultClass = new ResultClass<string>();
-            AE_LoanSky ae_LoanSky = new AE_LoanSky();
             try
             {
-                List<SectionCode> road = ae_LoanSky.GetMoiSectionCode(city_num, area_num, string.Empty);
+                List<SectionCode> road = _AE_LoanSky.GetMoiSectionCode(city_num, area_num, string.Empty);
 
                 if (road != null && road.Count > 0)
                 {
@@ -194,11 +187,9 @@ namespace KF_WebAPI.Controllers
         [HttpGet("GetPre_building_kind")]
         public ActionResult<ResultClass<string>> GetPre_building_kind()
         {
-            ResultClass<string> resultClass = new ResultClass<string>();
-            AE_LoanSky ae_LoanSky = new AE_LoanSky();
             try
             {
-                var res = ae_LoanSky.GetPre_building_kind();
+                var res = _AE_LoanSky.GetPre_building_kind();
 
                 if (res != null)
                 {
@@ -223,11 +214,9 @@ namespace KF_WebAPI.Controllers
         [HttpGet("GetBuildingState")]
         public ActionResult<ResultClass<string>> GetBuildingState()
         {
-            ResultClass<string> resultClass = new ResultClass<string>();
-            AE_LoanSky ae_LoanSky = new AE_LoanSky();
             try
             {
-                var res = ae_LoanSky.GetBuildingState();
+                var res = _AE_LoanSky.GetBuildingState();
 
                 if (res != null)
                 {

@@ -25,7 +25,6 @@ namespace KF_WebAPI.DataLogic
             LoanSkyAccount result = GetAllLoanSkyAccount(user.U_BC);
             return  result;
         }
-
         public string GetJsonFileContent(string filePath)
         {
             string jsonData = string.Empty;
@@ -40,25 +39,40 @@ namespace KF_WebAPI.DataLogic
             }
             catch (Exception ex)
             {
-                throw new Exception("AE_LoanSky.GetJsonFileContent", ex);
+                throw new Exception($"無法取得LoanSky Jason檔:{filePath}", ex);
             }
             return jsonData;
         }
         public List<CityCode> AE2MoiCityCode(string pre_city)
         {
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), "BaseClass", "LoanSky", "CityCode.json");
-            string jsonData = GetJsonFileContent(filePath);
+            string jsonData;
+            try
+            {
+                jsonData = GetJsonFileContent(filePath);
+            }
+            catch(Exception ex)
+            {
+                throw;
+            }
             var jsonObject = JsonSerializer.Deserialize<List<CityCode>>(jsonData);
-
             var resultcode = jsonObject.Where(x => string.IsNullOrEmpty(pre_city) || x.city_name.Contains(pre_city.Replace("台", "臺"))).ToList();
             return resultcode;
+
         }
         public List<AreaCode> AE2MoiTownCode(string pre_city, string pre_area)
         {
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), "BaseClass", "LoanSky", "AreaCode.json");
-            string jsonData = GetJsonFileContent(filePath);
+            string jsonData;
+            try
+            {
+                jsonData = GetJsonFileContent(filePath);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
             var jsonObject = JsonSerializer.Deserialize<List<AreaCode>>(jsonData);
-
             var resultcode = jsonObject.Where(x => x.city_num.Equals(pre_city) && (string.IsNullOrEmpty(pre_area) || x.area_name.Contains(pre_area))).ToList();
             return resultcode;
         }
@@ -66,9 +80,16 @@ namespace KF_WebAPI.DataLogic
         {
             FuncHandler _fun = new FuncHandler();
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), "BaseClass", "LoanSky", "SectionCode.json");
-            string jsonData = GetJsonFileContent(filePath);
+            string jsonData;
+            try
+            {
+                jsonData = GetJsonFileContent(filePath);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
             var jsonObject = JsonSerializer.Deserialize<List<SectionCode>>(jsonData);
-
             var resultcode = jsonObject.Where(x => x.city_num.Equals(city_num)
                 && x.area_num.Equals(area_num.TrimStart(new char[] { '0' }))
                 && (string.IsNullOrEmpty(road_name) || x.road_name.Contains(road_name))).ToList();
@@ -82,10 +103,16 @@ namespace KF_WebAPI.DataLogic
         public SectionCode GetMoiSectionCode(SectionCode sectionCode)
         {
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), "BaseClass", "LoanSky", "SectionCode.json");
-            string jsonData = GetJsonFileContent(filePath);
+            string jsonData;
+            try
+            {
+                jsonData = GetJsonFileContent(filePath);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
             var jsonObject = JsonSerializer.Deserialize<List<SectionCode>>(jsonData);
-
-
             bool isHaveEndWord = sectionCode.road_name.Substring(sectionCode.road_name.Length - 1).Equals("段");
             if (!isHaveEndWord)
             {
@@ -119,9 +146,17 @@ namespace KF_WebAPI.DataLogic
         public LoanSkyAccount GetAllLoanSkyAccount(string item_D_code)
         {
             string filePath = Path.Combine(Directory.GetCurrentDirectory(), "BaseClass", "LoanSky", "LoanSkyAccount.json");
-            string jsonData = GetJsonFileContent(filePath);
+            string jsonData;
+            try
+            {
+                jsonData = GetJsonFileContent(filePath);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+            
             var jsonObject = JsonSerializer.Deserialize<List<LoanSkyAccount>>(jsonData);
-
             var resultcode = jsonObject.Where(x => x.item_D_code.Equals(item_D_code)).SingleOrDefault();
             return resultcode;
         }
@@ -262,23 +297,6 @@ namespace KF_WebAPI.DataLogic
             string ParkCategory = lsParkCategory.Where(i => i.Item1.Equals(show_pre_parking_kind)).Select(i => i.Item2).FirstOrDefault();
 
             return ParkCategory;
-        }
-        public void InsertExternal_API_Log(External_API_Log p_External_API_Log)
-        {
-
-            try
-            {
-                string TableName = "External_API_Log";
-                External_API_Log[] arrExternal_API_Log = new External_API_Log[1];
-                arrExternal_API_Log[0] = p_External_API_Log;
-
-                _ADO.DataTableToSQL(TableName, arrExternal_API_Log, _ADO.ConnStr);
-            }
-            catch
-            {
-                throw;
-            }
-
         }
         public async Task<runOrderRealEstateRequest> IsLoanSkyFieldsNull(LoanSky_Req req)
         {

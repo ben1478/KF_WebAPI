@@ -1,11 +1,14 @@
 ﻿using KF_WebAPI.BaseClass;
 using KF_WebAPI.BaseClass.AE;
 using KF_WebAPI.FunctionHandler;
+using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
+using OfficeOpenXml;
 using System.Data;
 using System.Text;
+
 
 namespace KF_WebAPI.Controllers
 {
@@ -1363,5 +1366,34 @@ namespace KF_WebAPI.Controllers
         }
 
         #endregion
+        #region 新鑫案件核對表
+        [HttpPost]
+        public async Task<IActionResult> uploadFile (List<IFormFile> files)
+        {
+            string _storagePath = @"C:\UploadedFiles"; // todo: 要改成測試區上傳路徑
+            var size = files.Sum(f => f.Length);
+
+            foreach (var formFile in files)
+            {
+                if (formFile.Length > 0)
+                {
+                    // 要存放的位置
+                    var savePath = $"{_storagePath}\\{formFile.FileName}";
+                    using (var stream = new FileStream(savePath, FileMode.Create))
+                    {
+                        await formFile.CopyToAsync(stream);
+                    }
+                }
+            }
+
+            return Ok(new { count = files.Count, size });
+        }
+        #endregion
+    }
+
+    public class UserListRowData
+    {
+        public string AccountID { get; set; }
+        public string UserName { get; set; }
     }
 }
