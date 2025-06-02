@@ -19,6 +19,7 @@ using Grpc.Net.Client;
 using ProtoBuf.Grpc.Client;
 using LoanSky.Model;
 using KF_WebAPI.BaseClass.LoanSky;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -914,6 +915,8 @@ namespace KF_WebAPI.FunctionHandler
         
         public async Task<ResultClass<string>> Call_LoanSkyAPI(string p_USER, string p_APIName, OrderRealEstateRequest request, LoanSky_Req req)
         {
+            string apiCode = "LoanSky";
+            string apikey = JsonConvert.SerializeObject(req);
             FuncHandler _fun = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
             ORErequest.OrderRealEstates.Add(request);
@@ -922,22 +925,36 @@ namespace KF_WebAPI.FunctionHandler
                 var company = channel.CreateGrpcService<ICompany>();
                 var reply = await company.CreateOrderRealEstateAsync(ORErequest);
 
-                resultClass.ResultCode = reply.Result ? "000" : "001";
                 resultClass.ResultMsg = JsonConvert.SerializeObject(reply);
                 ORErequest.OrderRealEstates[0].BusinessUserName = _fun.toNCR(request.BusinessUserName); // 處理中文亂碼: LoanSky(UTF8) -> API.Log(NCR)
                 resultClass.objResult = JsonConvert.SerializeObject(ORErequest);
+                if(reply.Result)
+                {
+                    resultClass.ResultCode = "200";
+                    _fun.ExtAPILogIns(apiCode, p_APIName, apikey, ORErequest.ApiKey,
+                        resultClass.objResult, resultClass.ResultCode, resultClass.ResultMsg);
+                }
+                else
+                {
+                    resultClass.ResultCode = "500";
+                    _fun.ExtAPILogIns(apiCode, p_APIName, apikey, ORErequest.ApiKey,
+                        resultClass.objResult, resultClass.ResultCode, resultClass.ResultMsg);
+                }
 
             }
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
+                _fun.ExtAPILogIns(apiCode, p_APIName, apikey, ORErequest.ApiKey, 
+                        "", "500", $" response: {ex.Message}");
+                
             }
             finally
             {
                 await channel.ShutdownAsync();
             }
-
+            /*
             //寫入 api_error_log
             try
             {
@@ -962,7 +979,7 @@ namespace KF_WebAPI.FunctionHandler
             {
 
             }
-
+            */
             return resultClass;
         }
 

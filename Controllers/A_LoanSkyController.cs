@@ -15,14 +15,12 @@ namespace KF_WebAPI.Controllers
     [Route("[controller]")]
     public class A_LoanSkyController : ControllerBase
     {
-        /// <summary>
-        /// 是否呼叫測試API,true:用資料庫模擬API,false:呼叫裕富API;
-        /// </summary>
+        private GrpcChannel channel = GrpcChannel.ForAddress("https://land.loansky.net:5055");
+        private string account = "testCGU"; // 測試用帳號:testCGU
         private readonly HttpClient _httpClient;
         private Common _Comm = new();
+        FuncHandler _fun = new();
 
-        private string account = "testCGU"; // 測試用帳號:testCGU
-        private GrpcChannel channel = GrpcChannel.ForAddress("https://land.loansky.net:5055");
         private OrderRealEstateAdapterRequest request = new OrderRealEstateAdapterRequest
         {
             ApiKey = "1AA86E9C37F24767ACA1087DEBA6D322"     //測試用帳號 ApiKey:1AA86E9C37F24767ACA1087DEBA6D322
@@ -31,6 +29,9 @@ namespace KF_WebAPI.Controllers
         [HttpPost("IsLoanSkyFieldsNull")]
         public async Task<ActionResult<ResultClass<string>>> IsLoanSkyFieldsNull(LoanSky_Req req)
         {
+            string apiCode = "LoanSky";
+            string apiName = "CreateOrderRealEstateAsync";
+            string apikey = JsonConvert.SerializeObject(req);
             ResultClass<string> resultClass = new ResultClass<string>();
             AE_LoanSky _AE_LoanSky = new AE_LoanSky();
             runOrderRealEstateRequest ReqClass = await _AE_LoanSky.IsLoanSkyFieldsNull(req);
@@ -46,26 +47,33 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_LoanSkyAPI(req.p_USER, "CreateOrderRealEstateAsync", ReqClass.oreRequest, req);
-                #region 更新House_pre裡LoanSky.相關欄位
-                ReqClass.housePre_res.MoiCityCode = ReqClass.oreRequest.MoiCityCode;
-                ReqClass.housePre_res.MoiTownCode = ReqClass.oreRequest.MoiTownCode;
-                ReqClass.housePre_res.MoiSectionCode = ReqClass.oreRequest.Nos.FirstOrDefault().MoiSectionCode;
-                ReqClass.housePre_res.BuildingState = ReqClass.oreRequest.BuildingState;
-                ReqClass.housePre_res.ParkCategory = ReqClass.oreRequest.ParkCategory;
-                ReqClass.housePre_res.edit_num = req.p_USER;
+                APIResult = await _Comm.Call_LoanSkyAPI(req.p_USER, apiName, ReqClass.oreRequest, req);
+                if (APIResult.ResultCode == "200")
+                {
+                    #region 更新House_pre裡LoanSky.相關欄位
+                    ReqClass.housePre_res.MoiCityCode = ReqClass.oreRequest.MoiCityCode;
+                    ReqClass.housePre_res.MoiTownCode = ReqClass.oreRequest.MoiTownCode;
+                    ReqClass.housePre_res.MoiSectionCode = ReqClass.oreRequest.Nos.FirstOrDefault().MoiSectionCode;
+                    ReqClass.housePre_res.BuildingState = ReqClass.oreRequest.BuildingState;
+                    ReqClass.housePre_res.ParkCategory = ReqClass.oreRequest.ParkCategory;
+                    ReqClass.housePre_res.edit_num = req.p_USER;
 
-                _AE_LoanSky.House_pre_Update(ReqClass.housePre_res); // 更新House_pre裡LoanSky.相關欄位
-                #endregion
-                resultClass.ResultCode = "000";
-                resultClass.ResultMsg = "已成功轉入宏邦api";
-                return Ok(resultClass);
+                    _AE_LoanSky.House_pre_Update(ReqClass.housePre_res); // 更新House_pre裡LoanSky.相關欄位
+                    #endregion
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "已成功轉入宏邦api";
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    return BadRequest();
+                }
             }
             catch (Exception ex)
             {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
+                _fun.ExtAPILogIns(apiCode, apiName, apikey, request.ApiKey,
+                    "", "500", $" response: {ex.Message}");
+                return BadRequest();
             }
         }
 
