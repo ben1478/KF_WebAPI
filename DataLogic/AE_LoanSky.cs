@@ -5,9 +5,7 @@ using KF_WebAPI.FunctionHandler;
 using LoanSky.Model;
 using Microsoft.Data.SqlClient;
 using System.Data;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace KF_WebAPI.DataLogic
 {
@@ -303,8 +301,13 @@ namespace KF_WebAPI.DataLogic
             runReq.housePre_res.BuildingState = AE2BuildingState(runReq.housePre_res.show_pre_building_kind);  // 建物類型(請參照對照表)
             runReq.housePre_res.ParkCategory = AE2ParkCategory(runReq.housePre_res.show_pre_parking_kind);  // 車位型態(請參照對照表)
             runReq.housePre_res.HA_cknum = req.HA_cknum; // 房屋預估資料流水號
-            // KF2LoanSky
-            await runReq.KF2LoanSky();
+            errors = await runReq.KF2LoanSky(); // 取得附件PDF
+            if (errors.Count > 0)
+            {
+                runReq.isNeedPopupWindow = true;
+                runReq.message = string.Join(Environment.NewLine, errors);
+                return runReq;
+            }
             return runReq;
         }
         public ResultClass<string> House_pre_Update(HousePre_res model)
@@ -355,7 +358,7 @@ namespace KF_WebAPI.DataLogic
 
                 if (result == 0)
                 {
-                    resultClass.ResultCode = "400";
+                    resultClass.ResultCode = "500";
                     resultClass.ResultMsg = "更新失敗";
                 }
                 else
@@ -401,6 +404,9 @@ namespace KF_WebAPI.DataLogic
 
     public class runOrderRealEstateRequest
     {
+        // baseUrl:正式環境: http://192.168.1.240 ; 測試環境: http://192.168.1.240:8081
+        private string baseUrl = "http://192.168.1.240:8081";
+
         ADOData _ADO = new();
         public OrderRealEstateRequest oreRequest { get; set; }   // LoanSky串接資料
         public HousePre_res housePre_res { get; set; }           // 來源資料
@@ -470,8 +476,9 @@ namespace KF_WebAPI.DataLogic
             }
             return null;
         }
-        public async Task KF2LoanSky()
+        public async Task<List<string>> KF2LoanSky()
         {
+            List<string> errors = new List<string>();
             #region 案件資料
             oreRequest = new OrderRealEstateRequest
             {
@@ -500,23 +507,27 @@ namespace KF_WebAPI.DataLogic
             oreRequest.Nos.Add(no);
             #endregion
             #region 取得AE要拋轉LoanSky案件資料-pdf附件
-            //List<OrderRealEstateAttachmentRequest> attachments = GetOrderRealEstateNoRequest(housePre_res.HA_cknum);
             List<OrderRealEstateAttachmentRequest> attachments = await GetAttchPDF(housePre_res.HA_cknum);
             if (attachments != null)
             {
                 foreach (var item in attachments)
                 {
+                    if(item.File == null || item.File.Length == 0)
+                    {
+                        errors.Add($"附件 {item.OrginalFileName} 下載失敗");
+                        continue;
+                    }
                     oreRequest.Attachments.Add(item);
                 }
             }
             #endregion
+            return errors;
         }
         
         public async Task<List<OrderRealEstateAttachmentRequest>> GetAttchPDF(string HA_cknum)
         {
             var httpClient = new HttpClient();
             var downloader = new PdfDownloader(httpClient);
-            
             
             List<OrderRealEstateAttachmentRequest> ReqClass = new List<OrderRealEstateAttachmentRequest>();
             
@@ -539,20 +550,17 @@ namespace KF_WebAPI.DataLogic
                     var upload_name_show = (row["upload_name_show"]).ToString();
 
                     attachmentRequest.OrginalFileName = upload_name_show; // 原始檔案名稱(需包含副檔名且是PDF檔)
-
-                    // todo:正式環境: http://192.168.1.240 ; 測試環境: http://192.168.1.240:8081
-                    string url = $"http://192.168.1.240:8081/AE_Web_UpLoad/{upload_name_code.Substring(0, 6)}/{upload_name_code.Substring(0, 8)}/{upload_name_code}";
-                    //byte[] pdfBytes = await downloader.DownloadPdfAsBytesAsync(url, upload_name_code); // 開發環境-測試用
-                    byte[] pdfBytes = await downloader.DownloadPdfAsBytesAsync(url);
-
-                    if (pdfBytes != null)
+                    string url = $"{baseUrl}/AE_Web_UpLoad/{upload_name_code.Substring(0, 6)}/{upload_name_code.Substring(0, 8)}/{upload_name_code}";
+                    //byte[] pdfBytes = await downloader.DownloadPdfAsBytesAsync(url, upload_name_code); // 開發環境-測試用:會將下載PDF至開發環境 C:\\UploadedFiles
+                    try
                     {
+                        byte[] pdfBytes = await downloader.DownloadPdfAsBytesAsync(url);
                         attachmentRequest.File = pdfBytes;
-                        //Console.WriteLine($"PDF 下載成功，共 {pdfBytes.Length} bytes");
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        //Console.WriteLine("下載失敗");
+                        Console.WriteLine($"下載PDF失敗: {ex.Message}");
+                        continue; // 跳過這個附件
                     }
                     
                     ReqClass.Add(attachmentRequest);
@@ -582,8 +590,8 @@ namespace KF_WebAPI.DataLogic
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"下載或轉換 PDF 發生錯誤: {ex.Message}");
-                return null;
+                //Console.WriteLine($"下載PDF失敗: {ex.Message}");
+                throw;
             }
         }
         public async Task<byte[]> DownloadPdfAsBytesAsync(string url, string fileName)
@@ -605,7 +613,7 @@ namespace KF_WebAPI.DataLogic
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"下載或轉換 PDF 發生錯誤: {ex.Message}");
+                Console.WriteLine($"下載PDF失敗: {ex.Message}");
                 return null;
             }
         }

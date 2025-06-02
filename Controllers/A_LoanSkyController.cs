@@ -1,11 +1,9 @@
-﻿using Grpc.Net.Client;
-using KF_WebAPI.BaseClass;
+﻿using KF_WebAPI.BaseClass;
 using KF_WebAPI.BaseClass.AE;
 using KF_WebAPI.BaseClass.LoanSky;
 using KF_WebAPI.DataLogic;
 using KF_WebAPI.FunctionHandler;
 using LoanSky.Model;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
@@ -15,9 +13,7 @@ namespace KF_WebAPI.Controllers
     [Route("[controller]")]
     public class A_LoanSkyController : ControllerBase
     {
-        private GrpcChannel channel = GrpcChannel.ForAddress("https://land.loansky.net:5055");
-        private string account = "testCGU"; // 測試用帳號:testCGU
-        private readonly HttpClient _httpClient;
+        string apiCode = "LoanSky";
         private Common _Comm = new();
         FuncHandler _fun = new();
 
@@ -29,7 +25,6 @@ namespace KF_WebAPI.Controllers
         [HttpPost("IsLoanSkyFieldsNull")]
         public async Task<ActionResult<ResultClass<string>>> IsLoanSkyFieldsNull(LoanSky_Req req)
         {
-            string apiCode = "LoanSky";
             string apiName = "CreateOrderRealEstateAsync";
             string apikey = JsonConvert.SerializeObject(req);
             ResultClass<string> resultClass = new ResultClass<string>();
@@ -38,7 +33,7 @@ namespace KF_WebAPI.Controllers
             // 若有錯誤則返回傳端
             if(ReqClass.isNeedPopupWindow == true)
             {
-                resultClass.ResultCode = "400";
+                resultClass.ResultCode = "500";
                 resultClass.ResultMsg = ReqClass.message; // 將LoanSky的錯誤訊息回傳;若message為空值代表問題
                 resultClass.objResult = JsonConvert.SerializeObject(ReqClass);
                 return Ok(resultClass);
@@ -83,19 +78,8 @@ namespace KF_WebAPI.Controllers
             ResultClass<string> resultClass = new ResultClass<string>();
             AE_LoanSky _AE_LoanSky = new AE_LoanSky();
 
-            // 取得待轉-基本資料
-            try
-            {
-                resultClass = _AE_LoanSky.House_pre_Update(housePre);
-                return Ok(resultClass);
-
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
-            }
+            resultClass = _AE_LoanSky.House_pre_Update(housePre);
+            return Ok(resultClass);
         }
 
         /// <summary>
@@ -121,7 +105,7 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
-                    resultClass.ResultCode = "400";
+                    resultClass.ResultCode = "500";
                     resultClass.ResultMsg = "查無資料";
                     return BadRequest(resultClass);
                 }
@@ -133,7 +117,6 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-
 
         /// <summary>
         /// 取得「縣市」下所有「區」
@@ -158,7 +141,7 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
-                    resultClass.ResultCode = "400";
+                    resultClass.ResultCode = "500";
                     resultClass.ResultMsg = "查無資料";
                     return BadRequest(resultClass);
                 }
@@ -194,7 +177,7 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
-                    resultClass.ResultCode = "400";
+                    resultClass.ResultCode = "500";
                     resultClass.ResultMsg = area_num.Equals("all")? "區/市/鄉/鎮:資料有錯請檢查" :
                         $"縣市代碼:{city_num} 或區/市/鄉/鎮代碼:{area_num}在對照表查無資料";
                     return BadRequest(resultClass);
@@ -225,7 +208,7 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
-                    resultClass.ResultCode = "400";
+                    resultClass.ResultCode = "500";
                     resultClass.ResultMsg = "查無資料";
                     return BadRequest(resultClass);
                 }
@@ -254,7 +237,7 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
-                    resultClass.ResultCode = "400";
+                    resultClass.ResultCode = "500";
                     resultClass.ResultMsg = "查無資料";
                     return BadRequest(resultClass);
                 }
