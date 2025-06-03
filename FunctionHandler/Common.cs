@@ -927,6 +927,15 @@ namespace KF_WebAPI.FunctionHandler
 
                 resultClass.ResultMsg = JsonConvert.SerializeObject(reply);
                 ORErequest.OrderRealEstates[0].BusinessUserName = _fun.toNCR(request.BusinessUserName); // 處理中文亂碼: LoanSky(UTF8) -> API.Log(NCR)
+                #region 附件內容“不在”API回傳中
+                //ORErequest.OrderRealEstates[0].Attachments.Clear(); // 清除附件內容
+                ORErequest.OrderRealEstates[0].Attachments.ForEach(attachment =>
+                {
+                    attachment.File = new byte[0]; // 清除附件內容
+                    attachment.OrginalFileName = _fun.toNCR(attachment.OrginalFileName); // 處理中文亂碼: LoanSky(UTF8) -> API.Log(NCR)
+                });
+                #endregion
+
                 resultClass.objResult = JsonConvert.SerializeObject(ORErequest);
                 if(reply.Result)
                 {
