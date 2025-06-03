@@ -284,11 +284,12 @@ namespace KF_WebAPI.DataLogic
         /// <returns></returns>
         public string AE2ParkCategory(string show_pre_parking_kind)
         {
-
+            // List<(KF, LoanSky)> 
             List<(string, string)> lsParkCategory = new List<(string, string)>{
                 ("坡道平面", "坡道平面"),
                 ("坡道機械", "坡道機械"),
-                ("機械平面", "機械機械")
+                ("機械平面", "升降平面"),
+                ("機械機械", "升降機械")
                 //("", "一樓平面"),
                 //("", "塔式車位"),
                 //("", "其他"),
