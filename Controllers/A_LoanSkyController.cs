@@ -32,8 +32,8 @@ namespace KF_WebAPI.Controllers
             
             
             runOrderRealEstateRequest ReqClass = await _AE_LoanSky.IsLoanSkyFieldsNull(req);
-            // 若有錯誤則返回傳端
-            if(ReqClass.isNeedPopupWindow == true)
+            // 若有錯誤訊息則返回前端
+            if(string.IsNullOrEmpty(ReqClass.message)==false)
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = ReqClass.message; // 將LoanSky的錯誤訊息回傳;若message為空值代表問題
@@ -56,8 +56,7 @@ namespace KF_WebAPI.Controllers
 
                     _AE_LoanSky.House_pre_Update(ReqClass.housePre_res); // 更新House_pre裡LoanSky.相關欄位
                     #endregion
-                    resultClass.ResultCode = "000";
-                    resultClass.ResultMsg = "已成功轉入宏邦api";
+                    resultClass.ResultMsg = "轉宏邦(已傳)";
                     return base.Ok(resultClass);
                 }
                 else

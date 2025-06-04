@@ -955,43 +955,18 @@ namespace KF_WebAPI.FunctionHandler
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                _fun.ExtAPILogIns(apiCode, p_APIName, apikey, ORErequest.ApiKey, 
-                        "", "500", $" response: {ex.Message}");
+                _fun.ExtAPILogIns(apiCode, p_APIName, apikey, ORErequest.ApiKey,
+                       JsonConvert.SerializeObject(req), "500", $" response: {ex.Message}");
                 
             }
             finally
             {
                 await channel.ShutdownAsync();
             }
-            /*
-            //寫入 api_error_log
-            try
-            {
-                //todo: API_KEY 組成log唯一值()
-                External_API_Log _External_API_Log = new External_API_Log();
-                _External_API_Log.API_CODE = "LoanSky";
-                _External_API_Log.API_NAME = p_APIName;
-                _External_API_Log.API_KEY = JsonConvert.SerializeObject(req);
-                _External_API_Log.ACCESS_TOKEN = ORErequest.ApiKey;
-                _External_API_Log.PARAM_JSON = resultClass.objResult;
-                _External_API_Log.RESULT_CODE = resultClass.ResultCode;
-                _External_API_Log.RESULT_MSG = resultClass.ResultMsg;
-                _External_API_Log.Add_User = p_USER;
-
-
-                AE_LoanSky m_AE_HR = new AE_LoanSky();
-                m_AE_HR.InsertExternal_API_Log(_External_API_Log);
-
-
-            }
-            catch
-            {
-
-            }
-            */
             return resultClass;
         }
 
+        
         #endregion
 
     }
