@@ -84,6 +84,10 @@ namespace KF_WebAPI.BaseClass.AE
                 errors.Add("鄉鎮市區不能為空");
             if (string.IsNullOrEmpty(pre_road))
                 errors.Add("段不能為空");
+            if(string.IsNullOrEmpty(pre_apply_name))
+                errors.Add("申請人不能為空");
+            if (string.IsNullOrEmpty(pre_build_num) && string.IsNullOrEmpty(pre_land_num))
+                errors.Add("需建號/地號其中之一");
             return errors;
         }
     }

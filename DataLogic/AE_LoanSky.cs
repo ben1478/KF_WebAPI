@@ -300,51 +300,57 @@ namespace KF_WebAPI.DataLogic
         }
         public async Task<runOrderRealEstateRequest> IsLoanSkyFieldsNull(LoanSky_Req req)
         {
+            List<string> errors = new List<string>();
             runOrderRealEstateRequest runReq = new runOrderRealEstateRequest();
             runReq.housePre_res = runReq.GetHouse_Pre(req);
-            SectionCode sectionCode; // 段代碼
-            var errors = isRight(runReq.housePre_res, out sectionCode);
-            if (errors.Count > 0) 
+            runReq.isNeedPopupWindow = false;
+            #region 分公司LoanSky帳號:Add_num有可能無法對應到分公司LoanSky帳號
+            LoanSkyAccount bc = null;
+            try
+            {
+                bc = GetAllLoanSkyAccount(runReq.housePre_res.U_BC);
+            }
+            catch (Exception ex)
+            {
+                errors.Add(ex.Message);
+            }
+
+            if (bc == null || string.IsNullOrEmpty(bc.Account))
+            {
+                errors.Add($"{runReq.housePre_res.add_name}的部門代碼{runReq.housePre_res.U_BC}，請檢查分公司帳號對照表");
+            }
+            else
+            {
+                runReq.housePre_res.Account = string.IsNullOrEmpty(account) ? bc.Account : account; // 承辦人員帳號:測試用帳號:testCGU
+                runReq.housePre_res.BusinessUserName = bc.branch_company;  //經辦人名稱:各分公司名稱
+            }
+            #endregion
+            #region 段代碼
+            SectionCode sectionCode; 
+            var errSectionCode = isRight(runReq.housePre_res, out sectionCode);
+            if (errSectionCode.Count > 0)
             {
                 runReq.isNeedPopupWindow = true;
-                runReq.message = string.Join(Environment.NewLine, errors);
-                return runReq;
+                errors.AddRange(errSectionCode);
             }
             // 準備給LoanSky的資料
             runReq.housePre_res.MoiCityCode = sectionCode.city_num; // 縣市代碼(請參照對照表)
             runReq.housePre_res.MoiTownCode = sectionCode.area_num; // 鄉鎮市區代碼(請參照對照表)
             runReq.housePre_res.MoiSectionCode = sectionCode.road_num; // 段代碼
-            #region 分公司LoanSky帳號:Add_num有可能無法對應到分公司LoanSky帳號
-            LoanSkyAccount bc;
-            try
-            {
-                bc = GetAllLoanSkyAccount(runReq.housePre_res.U_BC);
-            }
-            catch(Exception ex)
-            {
-                runReq.isNeedPopupWindow = false;
-                runReq.message = ex.Message;
-                return runReq;
-            }
-
-            if (bc == null || string.IsNullOrEmpty(bc.Account))
-            {
-                runReq.isNeedPopupWindow = false;
-                runReq.message = $"{runReq.housePre_res.add_name}的部門代碼{runReq.housePre_res.U_BC}，請檢查分公司帳號對照表";
-                return runReq;
-            }
-            runReq.housePre_res.Account = string.IsNullOrEmpty(account) ? bc.Account : account; // 承辦人員帳號:測試用帳號:testCGU
-            runReq.housePre_res.BusinessUserName = bc.branch_company;  //經辦人名稱:各分公司名稱
             #endregion
             runReq.housePre_res.BuildingState = AE2BuildingState(runReq.housePre_res.show_pre_building_kind);  // 建物類型(請參照對照表)
             runReq.housePre_res.ParkCategory = AE2ParkCategory(runReq.housePre_res.show_pre_parking_kind);  // 車位型態(請參照對照表)
             runReq.housePre_res.HA_cknum = req.HA_cknum; // 房屋預估資料流水號
-            errors = await runReq.KF2LoanSky(); // house_pre2LoanSky (包含取得附件PDF)
-            if (errors.Count > 0)
+            var errKF2LoanSky = await runReq.KF2LoanSky(); // house_pre2LoanSky (包含取得附件PDF)
+            if (errKF2LoanSky.Count > 0)
             {
                 runReq.isNeedPopupWindow = false;
-                runReq.message = string.Join(Environment.NewLine, errors);
-                return runReq;
+                errors.AddRange(errKF2LoanSky);
+            }
+                      
+            if (errors.Count > 0)
+            {
+                runReq.message = string.Join(",", errors);
             }
             return runReq;
         }
@@ -535,17 +541,14 @@ namespace KF_WebAPI.DataLogic
                 MoiCityCode = housePre_res.MoiCityCode, // 縣市代碼(請參照對照表)
                 MoiTownCode = housePre_res.MoiTownCode // 鄉鎮市區代碼(請參照對照表)s
             };
-
+            
             var no = new OrderRealEstateNoRequest
             {
                 MoiSectionCode = housePre_res.MoiSectionCode,  // 段代碼:縣市代碼+區代碼+段名稱
                 BuildNos = housePre_res.pre_build_num.Replace('－', '-').Replace('、', ',').Replace('；', ','),   // 建號 pre_build_num 多筆用逗號分隔
                 LandNos = housePre_res.pre_land_num.Replace('－', '-').Replace('、', ',').Replace('；', ',') // 地號 pre_land_num 多筆用逗號分隔
             };
-            if(string.IsNullOrEmpty(no.BuildNos) && string.IsNullOrEmpty(no.LandNos))
-            {
-                errors.Add($"需建號/地號其中之一");
-            }
+
             oreRequest.Nos.Add(no);
             #endregion
             #region 取得AE要拋轉LoanSky案件資料-pdf附件
