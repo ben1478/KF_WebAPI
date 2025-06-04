@@ -315,8 +315,28 @@ namespace KF_WebAPI.DataLogic
             runReq.housePre_res.MoiCityCode = sectionCode.city_num; // 縣市代碼(請參照對照表)
             runReq.housePre_res.MoiTownCode = sectionCode.area_num; // 鄉鎮市區代碼(請參照對照表)
             runReq.housePre_res.MoiSectionCode = sectionCode.road_num; // 段代碼
-            runReq.housePre_res.Account = string.IsNullOrEmpty(account)? GetAllLoanSkyAccount(runReq.housePre_res.U_BC).Account : account; // 承辦人員帳號:測試用帳號:testCGU
-            runReq.housePre_res.BusinessUserName = GetAllLoanSkyAccount(runReq.housePre_res.U_BC).branch_company;  //經辦人名稱:各分公司名稱
+            #region 分公司LoanSky帳號:Add_num有可能無法對應到分公司LoanSky帳號
+            LoanSkyAccount bc;
+            try
+            {
+                bc = GetAllLoanSkyAccount(runReq.housePre_res.U_BC);
+            }
+            catch(Exception ex)
+            {
+                runReq.isNeedPopupWindow = false;
+                runReq.message = ex.Message;
+                return runReq;
+            }
+
+            if (bc == null || string.IsNullOrEmpty(bc.Account))
+            {
+                runReq.isNeedPopupWindow = false;
+                runReq.message = $"{runReq.housePre_res.add_name}的部門代碼{runReq.housePre_res.U_BC}，請檢查分公司帳號對照表";
+                return runReq;
+            }
+            runReq.housePre_res.Account = string.IsNullOrEmpty(account) ? GetAllLoanSkyAccount(runReq.housePre_res.U_BC).Account : account; // 承辦人員帳號:測試用帳號:testCGU
+            runReq.housePre_res.BusinessUserName = bc.branch_company;  //經辦人名稱:各分公司名稱
+            #endregion
             runReq.housePre_res.BuildingState = AE2BuildingState(runReq.housePre_res.show_pre_building_kind);  // 建物類型(請參照對照表)
             runReq.housePre_res.ParkCategory = AE2ParkCategory(runReq.housePre_res.show_pre_parking_kind);  // 車位型態(請參照對照表)
             runReq.housePre_res.HA_cknum = req.HA_cknum; // 房屋預估資料流水號
