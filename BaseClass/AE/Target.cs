@@ -3,8 +3,7 @@
     public class Pro_Target_Ins
     {
         public string PR_title { get; set; }
-        public string PR_Date_S { get; set; }
-        public string PR_Date_E { get; set; }
+        public string PR_Date { get; set; }
         public int PR_target { get; set; }
         public string? user { get; set; }
     }
@@ -19,8 +18,7 @@
         public string? PE_title { get;set; }
         public string PE_num { get; set; }
         public int PE_target { get; set; }
-        public string PE_Date_S { get; set; } 
-        public string PE_Date_E { get; set; }
+        public string PE_Date { get; set; } 
         public string? user { get; set; }
     }
 

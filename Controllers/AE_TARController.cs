@@ -28,7 +28,7 @@ namespace KF_WebAPI.Controllers
         /// 職務責任額列表
         /// </summary>
         [HttpGet("Pro_Target_LQuery")]
-        public ActionResult<ResultClass<string>> Pro_Target_LQuery(string? Title_name, string? PR_DATE_S)
+        public ActionResult<ResultClass<string>> Pro_Target_LQuery(string? Title_name, string? PR_DATE)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -37,7 +37,9 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"select PR_ID,PR_title,Li.item_D_name as PR_title_Name,PR_target,PR_Date_S,PR_Date_E
+                var T_SQL = @"select PR_ID,PR_title,Li.item_D_name as PR_title_Name,PR_target,PR_Date,
+                              RIGHT('000' + CAST(YEAR(CAST(PR_Date + '-01' AS DATE)) - 1911 AS VARCHAR), 3) + '-' +
+                              RIGHT('00' + CAST(MONTH(CAST(PR_Date + '-01' AS DATE)) AS VARCHAR), 2) AS PR_Date_Minguo
                               from Professional_target Pr
                               left join Item_list Li on Li.item_M_code='professional_title' and Li.item_D_code=Pr.PR_title
                               where 1 = 1";
@@ -46,12 +48,12 @@ namespace KF_WebAPI.Controllers
                     T_SQL += " and Li.item_D_name = @Title_name";
                     parameters.Add(new SqlParameter("@Title_name", Title_name));
                 }
-                if (!string.IsNullOrEmpty(PR_DATE_S))
+                if (!string.IsNullOrEmpty(PR_DATE))
                 {
-                    T_SQL += " and PR_DATE_S = @PR_DATE_S";
-                    parameters.Add(new SqlParameter("@PR_DATE_S", PR_DATE_S));
+                    T_SQL += " and PR_DATE = @PR_DATE";
+                    parameters.Add(new SqlParameter("@PR_DATE", PR_DATE));
                 }
-                T_SQL += " order by PR_Date_S desc,Li.item_sort";
+                T_SQL += " order by PR_Date desc,Li.item_sort";
                 #endregion
                 var dtResult=_adoData.ExecuteQuery(T_SQL,parameters);
                 resultClass.ResultCode = "000";
@@ -78,13 +80,12 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"Update Professional_target set PR_target=@PR_target,PR_Date_S=@PR_Date_S,PR_Date_E=@PR_Date_E,edit_date=getdate(),
+                var T_SQL = @"Update Professional_target set PR_target=@PR_target,PR_Date=@PR_Date,edit_date=getdate(),
                               edit_num=@edit_num,edit_ip=@edit_ip where PR_ID=@PR_ID";
                 var parameters = new List<SqlParameter>()
                 {
                     new SqlParameter("@PR_target", model.PR_target),
-                    new SqlParameter("@PR_Date_S",model.PR_Date_S),
-                    new SqlParameter("@PR_Date_E",model.PR_Date_E),
+                    new SqlParameter("@PR_Date",model.PR_Date),
                     new SqlParameter("@edit_num",model.user),
                     new SqlParameter("@edit_ip",clientIp),
                     new SqlParameter("@PR_ID",model.PR_ID)
@@ -100,16 +101,15 @@ namespace KF_WebAPI.Controllers
                 else
                 {
                     //同步修改其他同職稱業務責任額
-                    var T_SQL_U = @"Update Person_target set PE_target=@PE_target,PE_Date_E=@PE_Date_E,edit_date=getdate(),edit_num=@edit_num 
-                                    ,edit_ip=@edit_ip where PE_title=@PE_title and PE_Date_S=@PE_Date_S";
+                    var T_SQL_U = @"Update Person_target set PE_target=@PE_target,edit_date=getdate(),edit_num=@edit_num 
+                                    ,edit_ip=@edit_ip where PE_title=@PE_title and PE_Date=@PE_Date";
                     var parameters_u = new List<SqlParameter>()
                     {
                         new SqlParameter("@PE_target",model.PR_target),
-                        new SqlParameter("@PE_Date_E",model.PR_Date_E),
                         new SqlParameter("@edit_num",model.user),
                         new SqlParameter("@edit_ip",clientIp),
                         new SqlParameter("@PE_title",model.PR_title),
-                        new SqlParameter("@PE_Date_S",model.PR_Date_S)
+                        new SqlParameter("@PE_Date",model.PR_Date)
                     };
                     int result_u = _adoData.ExecuteNonQuery(T_SQL_U, parameters_u);
                     if (result_u == 0) 
@@ -147,9 +147,11 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"select item_D_code,item_D_name from Item_list where item_M_code='professional_title' 
+                var T_SQL = @"select item_D_code,item_D_name,Case item_D_code When 'PFT030' Then 650 When 'PFT050' Then 550
+                              When 'PFT060' Then 450 When 'PFT300' Then 350 Else 0 END as targetInt
+                              from Item_list where item_M_code='professional_title' 
                               and item_D_code IN 
-                              (select U_PFT from User_M where Role_num in ('1008','1009') 
+                              (select U_PFT from User_M where Role_num in ('1009') 
                               and U_leave_date is null and U_num <> 'K9999')
                               order by item_sort";
                 #endregion
@@ -181,31 +183,29 @@ namespace KF_WebAPI.Controllers
                 #region SQL
 
                 #region 先檢查有無資料
-                var T_SQL_C = @"select * from Professional_target where CONVERT(date, @Date + '/01')
-                                between CONVERT(date, PR_Date_S + '/01') AND CONVERT(date, PR_Date_E + '/01')";
+                var T_SQL_C = @"select * from Professional_target where PR_Date=@PR_Date";
                 var parameters_c = new List<SqlParameter>()
                 {
-                    new SqlParameter("@Date",list[0].PR_Date_S)
+                    new SqlParameter("@PR_Date",list[0].PR_Date)
                 };
                 var dtReult_c = _adoData.ExecuteQuery(T_SQL_C, parameters_c);
                 if (dtReult_c.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "時間內已有資料";
+                    resultClass.ResultMsg = "已有資料";
                     return BadRequest(resultClass);
                 }
                 #endregion
 
-                var T_SQL = @"Insert into Professional_target(PR_title,PR_target,PR_Date_S,PR_Date_E,add_date,add_num,add_ip)
-                              Values (@PR_title,@PR_target,@PR_Date_S,@PR_Date_E,GETDATE(),@add_num,@add_ip)";
+                var T_SQL = @"Insert into Professional_target(PR_title,PR_target,PR_Date,add_date,add_num,add_ip)
+                              Values (@PR_title,@PR_target,@PR_Date,GETDATE(),@add_num,@add_ip)";
                 foreach (Pro_Target_Ins item in list)
                 {
                     var parameters = new List<SqlParameter>
                     {
                         new SqlParameter("@PR_title", item.PR_title),
                         new SqlParameter("@PR_target", item.PR_target),
-                        new SqlParameter("@PR_Date_S", item.PR_Date_S),
-                        new SqlParameter("@PR_Date_E", item.PR_Date_E),
+                        new SqlParameter("@PR_Date", item.PR_Date),
                         new SqlParameter("@add_num", item.user),
                         new SqlParameter("@add_ip", clientIp)
                     };
@@ -220,10 +220,10 @@ namespace KF_WebAPI.Controllers
                 #endregion
 
                 //呼叫SP=>業務個人責任額新增
-                var T_SQL_SP = "exec UpdatePersonTargets @PR_Date_S";
+                var T_SQL_SP = "exec UpdatePersonTargets @PR_Date";
                 var parameters_sp = new List<SqlParameter>()
                 {
-                    new SqlParameter("@PR_Date_S",list[0].PR_Date_S)
+                    new SqlParameter("@PR_Date",list[0].PR_Date)
                 };
                 _adoData.ExecuteQuery(T_SQL_SP, parameters_sp);
 
@@ -243,7 +243,7 @@ namespace KF_WebAPI.Controllers
         /// 複製上期責任額
         /// </summary>
         [HttpGet("Pro_Target_Clone")]
-        public ActionResult<ResultClass<string>> Pro_Target_Clone(string PR_DATE_S,string PR_DATE_E,string User)
+        public ActionResult<ResultClass<string>> Pro_Target_Clone(string PR_DATE,string User)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
@@ -252,19 +252,19 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
 
                 #region 檢查有無上期資料
-                var parts = PR_DATE_S.Split('/');
+                var parts = PR_DATE.Split('-');
                 int year = int.Parse(parts[0]);
                 int month = int.Parse(parts[1]);
 
                 DateTime current = new DateTime(year, month, 1);
                 DateTime previous = current.AddMonths(-1);
 
-                var old_PR_DATE_E = $"{previous.Year}/{previous.Month.ToString("D2")}";
+                var old_PR_DATE = $"{previous.Year}/{previous.Month.ToString("D2")}";
 
-                var T_SQL_C = @"select * from Professional_target where PR_DATE_E=@PR_DATE_E";
+                var T_SQL_C = @"select * from Professional_target where PR_DATE_E=@PR_DATE";
                 var parameters_c = new List<SqlParameter>()
                 {
-                    new SqlParameter("@PR_DATE_E",old_PR_DATE_E)
+                    new SqlParameter("@PR_DATE",old_PR_DATE)
                 };
                 #endregion
 
@@ -275,12 +275,11 @@ namespace KF_WebAPI.Controllers
                     {
                         PR_title = row.Field<string>("PR_title"),
                         PR_target = row.Field<int>("PR_target"),
-                        PR_Date_S = row.Field<string>("PR_Date_S"),
-                        PR_Date_E = row.Field<string>("PR_Date_E"),
+                        PR_Date = row.Field<string>("PR_Date"),
                     }).ToList();
 
-                    var T_SQL = @"Insert into Professional_target(PR_title,PR_target,PR_Date_S,PR_Date_E,add_date,add_num,add_ip)
-                              Values (@PR_title,@PR_target,@PR_Date_S,@PR_Date_E,GETDATE(),@add_num,@add_ip)";
+                    var T_SQL = @"Insert into Professional_target(PR_title,PR_target,PR_Date,add_date,add_num,add_ip)
+                              Values (@PR_title,@PR_target,@PR_Date,GETDATE(),@add_num,@add_ip)";
 
                     foreach (Pro_Target_Ins item in TargetList)
                     {
@@ -288,8 +287,7 @@ namespace KF_WebAPI.Controllers
                         {
                             new SqlParameter("@PR_title", item.PR_title),
                             new SqlParameter("@PR_target", item.PR_target),
-                            new SqlParameter("@PR_Date_S", PR_DATE_S),
-                            new SqlParameter("@PR_Date_E", PR_DATE_E),
+                            new SqlParameter("@PR_Date", PR_DATE),
                             new SqlParameter("@add_num", User),
                             new SqlParameter("@add_ip", clientIp)
                         };
@@ -303,10 +301,10 @@ namespace KF_WebAPI.Controllers
                     }
 
                     //呼叫SP=>業務個人責任額新增
-                    var T_SQL_SP = "exec UpdatePersonTargets @PR_Date_S";
+                    var T_SQL_SP = "exec UpdatePersonTargets @PR_Date";
                     var parameters_sp = new List<SqlParameter>() 
                     {
-                        new SqlParameter("@PR_Date_S",PR_DATE_S)
+                        new SqlParameter("@PR_Date",PR_DATE)
                     };
                     _adoData.ExecuteQuery(T_SQL_SP, parameters_sp);
 
@@ -388,12 +386,11 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"Update Person_target set PE_target=@PE_target,PE_Date_E=@PE_Date_E,edit_date=getdate(),
+                var T_SQL = @"Update Person_target set PE_target=@PE_target,edit_date=getdate(),
                              edit_num=@edit_num,edit_ip=@edit_ip where PE_ID=@PE_ID";
                 var parameters = new List<SqlParameter>()
                 {
                     new SqlParameter("@PE_target",model.PE_target),
-                    new SqlParameter("@PE_Date_E",model.PE_Date_E),
                     new SqlParameter("@edit_num",model.user),
                     new SqlParameter("@edit_ip",clientIp),
                     new SqlParameter("@PE_ID",model.PE_ID)
@@ -434,16 +431,15 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
 
-                var T_SQL = @"Insert into Person_target(PE_title,PE_num,PE_target,PE_Date_S,PE_Date_E,add_date,add_num,add_ip) Values 
-                              ((select U_PFT from User_M where U_num=@PE_num),@PE_num,@PE_target,@PE_Date_S,@PE_Date_E,GETDATE(),@add_num,@add_ip)";
+                var T_SQL = @"Insert into Person_target(PE_title,PE_num,PE_target,PE_Date_S,add_date,add_num,add_ip) Values 
+                              ((select U_PFT from User_M where U_num=@PE_num),@PE_num,@PE_target,@PE_Date,GETDATE(),@add_num,@add_ip)";
                 foreach (Per_Target_Ins item in list)
                 {
                     var parameters = new List<SqlParameter>
                     {
                         new SqlParameter("@PE_num", item.PE_num),
                         new SqlParameter("@PE_target", item.PE_target),
-                        new SqlParameter("@PE_Date_S", item.PE_Date_S),
-                        new SqlParameter("@PE_Date_E", item.PE_Date_E),
+                        new SqlParameter("@PE_Date", item.PE_Date),
                         new SqlParameter("@add_num", item.user),
                         new SqlParameter("@add_ip", clientIp)
                     };
