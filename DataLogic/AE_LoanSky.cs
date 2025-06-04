@@ -216,8 +216,8 @@ namespace KF_WebAPI.DataLogic
                     // 來源資料
                     lsPBK = dtResult.AsEnumerable().Select(row => 
                     (
-                        row.IsNull("item_D_code") ? "" : row.Field<string>("item_D_code"), // 房屋預估資料ID
-                        row.IsNull("item_D_name") ? "" : row.Field<string>("item_D_name") // 房屋預估資料流水號
+                        row.IsNull("item_D_code") ? "" : row.Field<string>("item_D_code"), // 
+                        row.IsNull("item_D_name") ? "" : row.Field<string>("item_D_name") // 
                     )).ToList();
                 }
                 lsPBK.Insert(0, ("0", "請選擇"));
@@ -466,7 +466,7 @@ namespace KF_WebAPI.DataLogic
                         ,pre_building_kind, pre_build_num,pre_land_num
                         ,pre_note,pre_building_material_note,pre_principal_note,pre_other_note
                         ,(select CS_PID from House_apply where HA_cknum =@HA_cknum) as CS_PID
-                        ,(select  case when U_num in (SELECT item_D_code FROM dbo.Item_list where item_M_code ='newloan' and item_M_type='N') then 'BC0800' else U_BC  end U_BC FROM User_M where U_num = House_pre.add_num AND del_tag='0') as U_BC
+                        ,(select U_BC FROM User_M where U_num = House_pre.add_num and U_leave_date is null AND del_tag='0' ) as U_BC
                         ,(select U_name FROM User_M where U_num = House_pre.add_num AND del_tag='0') as add_name
                         ,(select U_num  FROM User_M where U_num = House_pre.add_num AND del_tag='0') as user_num
                         ,(select item_D_name from Item_list where item_M_code = 'building_kind' AND item_D_type='Y' AND item_D_code = House_pre.pre_building_kind  AND show_tag='0' AND del_tag='0') as show_pre_building_kind

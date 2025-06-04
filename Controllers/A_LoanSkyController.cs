@@ -68,9 +68,11 @@ namespace KF_WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = ex.Message;
                 _fun.ExtAPILogIns(apiCode, apiName, apikey, request.ApiKey,
                     "", "500", $" response: {ex.Message}");
-                return BadRequest();
+                return BadRequest(resultClass);
             }
         }
 
@@ -146,7 +148,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
+                return BadRequest(resultClass);
             }
         }
 
@@ -181,7 +183,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
+                return BadRequest(resultClass);
             }
         }
 
