@@ -334,7 +334,7 @@ namespace KF_WebAPI.DataLogic
                 runReq.message = $"{runReq.housePre_res.add_name}的部門代碼{runReq.housePre_res.U_BC}，請檢查分公司帳號對照表";
                 return runReq;
             }
-            runReq.housePre_res.Account = string.IsNullOrEmpty(account) ? GetAllLoanSkyAccount(runReq.housePre_res.U_BC).Account : account; // 承辦人員帳號:測試用帳號:testCGU
+            runReq.housePre_res.Account = string.IsNullOrEmpty(account) ? bc.Account : account; // 承辦人員帳號:測試用帳號:testCGU
             runReq.housePre_res.BusinessUserName = bc.branch_company;  //經辦人名稱:各分公司名稱
             #endregion
             runReq.housePre_res.BuildingState = AE2BuildingState(runReq.housePre_res.show_pre_building_kind);  // 建物類型(請參照對照表)
