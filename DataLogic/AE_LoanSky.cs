@@ -268,9 +268,8 @@ namespace KF_WebAPI.DataLogic
                 ("套房", "套房(1房1廳1衛)"),
                 ("廠辦", "廠辦"),
                 ("農舍", "農舍"),
-                ("倉庫", "倉庫")
-                //("其他", "");
-                //("", "土地")
+                ("倉庫", "倉庫"),
+                ("其他", "土地")
             };
 
             string BuildingState = lsBuildingState.Where(i => i.Item1.Equals(show_pre_building_kind)).Select(i => i.Item2).FirstOrDefault();
@@ -340,10 +339,10 @@ namespace KF_WebAPI.DataLogic
             runReq.housePre_res.BuildingState = AE2BuildingState(runReq.housePre_res.show_pre_building_kind);  // 建物類型(請參照對照表)
             runReq.housePre_res.ParkCategory = AE2ParkCategory(runReq.housePre_res.show_pre_parking_kind);  // 車位型態(請參照對照表)
             runReq.housePre_res.HA_cknum = req.HA_cknum; // 房屋預估資料流水號
-            errors = await runReq.KF2LoanSky(); // 取得附件PDF
+            errors = await runReq.KF2LoanSky(); // house_pre2LoanSky (包含取得附件PDF)
             if (errors.Count > 0)
             {
-                runReq.isNeedPopupWindow = true;
+                runReq.isNeedPopupWindow = false;
                 runReq.message = string.Join(Environment.NewLine, errors);
                 return runReq;
             }
@@ -539,10 +538,14 @@ namespace KF_WebAPI.DataLogic
 
             var no = new OrderRealEstateNoRequest
             {
-                MoiSectionCode = housePre_res.MoiSectionCode,  // 段代碼:查詢條件：縣市代碼+區代碼+段名稱
+                MoiSectionCode = housePre_res.MoiSectionCode,  // 段代碼:縣市代碼+區代碼+段名稱
                 BuildNos = housePre_res.pre_build_num.Replace('－', '-').Replace('、', ',').Replace('；', ','),   // 建號 pre_build_num 多筆用逗號分隔
                 LandNos = housePre_res.pre_land_num.Replace('－', '-').Replace('、', ',').Replace('；', ',') // 地號 pre_land_num 多筆用逗號分隔
             };
+            if(string.IsNullOrEmpty(no.BuildNos) && string.IsNullOrEmpty(no.LandNos))
+            {
+                errors.Add($"需建號/地號其中之一");
+            }
             oreRequest.Nos.Add(no);
             #endregion
             #region 取得AE要拋轉LoanSky案件資料-pdf附件

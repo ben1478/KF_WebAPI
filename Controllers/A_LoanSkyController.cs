@@ -38,7 +38,7 @@ namespace KF_WebAPI.Controllers
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = ReqClass.message; // 將LoanSky的錯誤訊息回傳;若message為空值代表問題
                 resultClass.objResult = JsonConvert.SerializeObject(ReqClass);
-                return Ok(resultClass);
+                return BadRequest(resultClass);
             }
             
             try
@@ -57,11 +57,13 @@ namespace KF_WebAPI.Controllers
                     _AE_LoanSky.House_pre_Update(ReqClass.housePre_res); // 更新House_pre裡LoanSky.相關欄位
                     #endregion
                     resultClass.ResultMsg = "轉宏邦(已傳)";
-                    return base.Ok(resultClass);
+                    return Ok(resultClass);
                 }
                 else
                 {
-                    return BadRequest();
+                    resultClass.ResultCode = "500";
+                    resultClass.ResultMsg = resultClass.ResultMsg;
+                    return BadRequest(resultClass);
                 }
             }
             catch (Exception ex)
