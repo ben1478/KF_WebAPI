@@ -334,9 +334,9 @@ namespace KF_WebAPI.DataLogic
                 errors.AddRange(errSectionCode);
             }
             // 準備給LoanSky的資料
-            runReq.housePre_res.MoiCityCode = sectionCode.city_num; // 縣市代碼(請參照對照表)
-            runReq.housePre_res.MoiTownCode = sectionCode.area_num; // 鄉鎮市區代碼(請參照對照表)
-            runReq.housePre_res.MoiSectionCode = sectionCode.road_num; // 段代碼
+            runReq.housePre_res.MoiCityCode = sectionCode?.city_num; // 縣市代碼(請參照對照表)
+            runReq.housePre_res.MoiTownCode = sectionCode?.area_num; // 鄉鎮市區代碼(請參照對照表)
+            runReq.housePre_res.MoiSectionCode = sectionCode?.road_num; // 段代碼
             #endregion
             runReq.housePre_res.BuildingState = AE2BuildingState(runReq.housePre_res.show_pre_building_kind);  // 建物類型(請參照對照表)
             runReq.housePre_res.ParkCategory = AE2ParkCategory(runReq.housePre_res.show_pre_parking_kind);  // 車位型態(請參照對照表)
@@ -356,6 +356,7 @@ namespace KF_WebAPI.DataLogic
         }
         public ResultClass<string> House_pre_Update(HousePre_res model)
         {
+            FuncHandler _fun = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
 
             try
@@ -376,6 +377,8 @@ namespace KF_WebAPI.DataLogic
                               pre_area = isnull(@pre_area,pre_area),
                               pre_road = isnull(@pre_road,pre_road),
                               pre_road_s = isnull(@pre_road_s,pre_road_s),
+                              pre_land_num = isnull(@pre_land_num,pre_land_num),
+                              pre_build_num = isnull(@pre_build_num,pre_build_num),
                               edit_date = @edit_date,
                               edit_num = @edit_num
                          FROM House_pre
@@ -384,7 +387,7 @@ namespace KF_WebAPI.DataLogic
                 var parameters = new List<SqlParameter>
                   {
                       new SqlParameter("@pre_building_kind", string.IsNullOrEmpty(model.pre_building_kind)? DBNull.Value :model.pre_building_kind ),
-                      new SqlParameter("@BuildingState", string.IsNullOrEmpty(model.BuildingState)? DBNull.Value :model.BuildingState ),
+                      new SqlParameter("@BuildingState", string.IsNullOrEmpty(model.BuildingState)? DBNull.Value :_fun.fromNCR(model.BuildingState)),
                       new SqlParameter("@ParkCategory", string.IsNullOrEmpty(model.ParkCategory)? DBNull.Value : model.ParkCategory),
                       new SqlParameter("@MoiCityCode", string.IsNullOrEmpty(model.MoiCityCode) ? DBNull.Value : model.MoiCityCode),
                       new SqlParameter("@MoiTownCode", string.IsNullOrEmpty(model.MoiTownCode) ? DBNull.Value : model.MoiTownCode),
@@ -393,6 +396,8 @@ namespace KF_WebAPI.DataLogic
                       new SqlParameter("@pre_area", string.IsNullOrEmpty(model.pre_area)? DBNull.Value : model.pre_area),
                       new SqlParameter("@pre_road", string.IsNullOrEmpty(model.pre_road)? DBNull.Value : model.pre_road),
                       new SqlParameter("@pre_road_s", string.IsNullOrEmpty(model.pre_road_s)? DBNull.Value : model.pre_road_s),
+                      new SqlParameter("@pre_land_num", string.IsNullOrEmpty(model.pre_land_num)? DBNull.Value : _fun.fromNCR(model.pre_land_num)),
+                      new SqlParameter("@pre_build_num", string.IsNullOrEmpty(model.pre_build_num)? DBNull.Value : _fun.fromNCR(model.pre_build_num)),
                       new SqlParameter("@hp_cknum", model.HP_cknum),
                       new SqlParameter("@edit_date", DateTime.Today),
                       new SqlParameter("@edit_num", model.edit_num)
@@ -430,7 +435,7 @@ namespace KF_WebAPI.DataLogic
                 road_name = housePre_res.pre_road,
                 road_name_s = housePre_res.pre_road_s
             };
-            errors = housePre_res.isRight();
+            errors = housePre_res.isRight(); // 檢查LoanSky相關必填欄位是否有值
             if (errors.Count > 0)
             {
                 return errors;
@@ -438,7 +443,7 @@ namespace KF_WebAPI.DataLogic
             sectionCode = GetMoiSectionCode(sectionCode); //取得段代碼
             if(sectionCode == null || string.IsNullOrEmpty(sectionCode.road_num))
             {
-                errors.Add("找不到段代碼，請檢查對照表");
+                errors.Add("段不能為空");
                 return errors;
             }
             errors.AddRange(sectionCode.isRight()); 
