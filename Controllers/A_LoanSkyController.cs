@@ -19,13 +19,21 @@ namespace KF_WebAPI.Controllers
         AE_LoanSky _AE_LoanSky = new();
         ResultClass<string> resultClass = new();
 
+
+
         #region LoanSky 宏邦API
         [HttpPost("IsLoanSkyFieldsNull")]
         public async Task<ActionResult<ResultClass<string>>> IsLoanSkyFieldsNull(LoanSky_Req req)
         {
-            req.LoanSkyApiKey = string.IsNullOrEmpty(req.LoanSkyApiKey)? "7677949CB3B34E6CA75B8D81E2975478" : req.LoanSkyApiKey; //正式區："7677949CB3B34E6CA75B8D81E2975478", 測試區:"1AA86E9C37F24767ACA1087DEBA6D322"
-            req.LoanSkyAccount = string.Empty;// "testCGU"; // 測試用帳號:testCGU; 正式用帳號:LoanSkyAccount=string.empty
-            req.LoanSkyUrl = string.IsNullOrEmpty(req.LoanSkyUrl) ? "https://land.loansky.net:5075" : req.LoanSkyUrl; //正式區： https://land.loansky.net:5075; 測試區:https://land.loansky.net:5055
+            // LoanSky.測試區與正式區參數
+            //         req.LoanSkyApiKey=正:7677949CB3B34E6CA75B8D81E2975478/測:1AA86E9C37F24767ACA1087DEBA6D322
+            //         req.LoanSkyUrl=正:https://land.loansky.net:5075/ / 測:https://land.loansky.net:5055
+            //         req.LoanSkyAccount=正:string.empty / 測:"testCGU"
+            #region LoanSky.測試區與正式區參數(url, api, account)設定，以下是預設值:正式區 
+            req.LoanSkyApiKey = string.IsNullOrEmpty(req.LoanSkyApiKey)? "7677949CB3B34E6CA75B8D81E2975478" : req.LoanSkyApiKey;
+            req.LoanSkyAccount = string.IsNullOrEmpty(req.LoanSkyAccount) ? string.Empty : "testCGU";
+            req.LoanSkyUrl = string.IsNullOrEmpty(req.LoanSkyUrl) ? "https://land.loansky.net:5075" : req.LoanSkyUrl;
+            #endregion
             string apiName = "CreateOrderRealEstateAsync";
             string apikey = JsonConvert.SerializeObject(req);
             
