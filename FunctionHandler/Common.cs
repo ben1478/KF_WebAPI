@@ -906,28 +906,29 @@ namespace KF_WebAPI.FunctionHandler
 
         #region LoanSky 宏邦API
         //private string account = "testCGU"; // 測試用帳號:testCGU
-        private GrpcChannel channel = GrpcChannel.ForAddress("https://land.loansky.net:5055");
-        private OrderRealEstateAdapterRequest ORErequest = new OrderRealEstateAdapterRequest
-        {
-            ApiKey = "1AA86E9C37F24767ACA1087DEBA6D322"
-        };
-
+        private OrderRealEstateAdapterRequest ORErequest = new OrderRealEstateAdapterRequest();
         
+
+
         public async Task<ResultClass<string>> Call_LoanSkyAPI(string p_USER, string p_APIName, OrderRealEstateRequest request, LoanSky_Req req)
         {
             string apiCode = "LoanSky";
             string apikey = JsonConvert.SerializeObject(req);
             FuncHandler _fun = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
+            ORErequest.ApiKey = req.LoanSkyApiKey;
+            
             ORErequest.OrderRealEstates.Add(request);
+            GrpcChannel channel = GrpcChannel.ForAddress(req.LoanSkyUrl);
             try
             {
+                
                 var company = channel.CreateGrpcService<ICompany>();
                 var reply = await company.CreateOrderRealEstateAsync(ORErequest);
 
                 resultClass.ResultMsg = JsonConvert.SerializeObject(reply);
                 ORErequest.OrderRealEstates[0].BusinessUserName = _fun.toNCR(request.BusinessUserName); // 處理中文亂碼: LoanSky(UTF8) -> API.Log(NCR)
-                #region 附件內容“不在”API回傳中
+                #region 附件內容“不在”API Log
                 //ORErequest.OrderRealEstates[0].Attachments.Clear(); // 清除附件內容
                 ORErequest.OrderRealEstates[0].Attachments.ForEach(attachment =>
                 {

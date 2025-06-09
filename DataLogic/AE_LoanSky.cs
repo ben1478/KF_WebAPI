@@ -11,7 +11,7 @@ namespace KF_WebAPI.DataLogic
 {
     public class AE_LoanSky
     {
-        private string account = "testCGU"; // [測試區]使用測試用帳號:testCGU;當空值時，為[正式區]用u_num對應分公司的帳號
+        //private string account = "testCGU"; // [測試區]使用測試用帳號:testCGU;當空值時，為[正式區]用u_num對應分公司的帳號
         ADOData _ADO = new();
 
         /// <summary>
@@ -321,7 +321,7 @@ namespace KF_WebAPI.DataLogic
             }
             else
             {
-                runReq.housePre_res.Account = string.IsNullOrEmpty(account) ? bc.Account : account; // 承辦人員帳號:測試用帳號:testCGU
+                runReq.housePre_res.Account = string.IsNullOrEmpty(req.LoanSkyAccount) ? bc.Account : req.LoanSkyAccount; // 承辦人員帳號:測試用帳號:testCGU
                 runReq.housePre_res.BusinessUserName = bc.branch_company;  //經辦人名稱:各分公司名稱
             }
             #endregion
@@ -453,8 +453,9 @@ namespace KF_WebAPI.DataLogic
 
     public class runOrderRealEstateRequest
     {
-        // baseUrl:正式環境: http://192.168.1.240 ; 測試環境: http://192.168.1.240:8081
-        private string baseUrl = "http://192.168.1.240:8081";
+        // baseUrl:正式環境: http://192.168.1.240 ;
+        //         測試環境: http://192.168.1.240:8081
+        private string baseUrl = "http://192.168.1.240";
 
         ADOData _ADO = new();
         public OrderRealEstateRequest oreRequest { get; set; }   // LoanSky串接資料

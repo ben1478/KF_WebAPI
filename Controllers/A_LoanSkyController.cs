@@ -19,14 +19,13 @@ namespace KF_WebAPI.Controllers
         AE_LoanSky _AE_LoanSky = new();
         ResultClass<string> resultClass = new();
 
-        private OrderRealEstateAdapterRequest request = new OrderRealEstateAdapterRequest
-        {
-            ApiKey = "1AA86E9C37F24767ACA1087DEBA6D322"     //測試用帳號 ApiKey:1AA86E9C37F24767ACA1087DEBA6D322
-        };
         #region LoanSky 宏邦API
         [HttpPost("IsLoanSkyFieldsNull")]
         public async Task<ActionResult<ResultClass<string>>> IsLoanSkyFieldsNull(LoanSky_Req req)
         {
+            req.LoanSkyApiKey = string.IsNullOrEmpty(req.LoanSkyApiKey)? "7677949CB3B34E6CA75B8D81E2975478" : req.LoanSkyApiKey; //正式區："7677949CB3B34E6CA75B8D81E2975478", 測試區:"1AA86E9C37F24767ACA1087DEBA6D322"
+            req.LoanSkyAccount = string.Empty;// "testCGU"; // 測試用帳號:testCGU; 正式用帳號:LoanSkyAccount=string.empty
+            req.LoanSkyUrl = string.IsNullOrEmpty(req.LoanSkyUrl) ? "https://land.loansky.net:5075" : req.LoanSkyUrl; //正式區： https://land.loansky.net:5075; 測試區:https://land.loansky.net:5055
             string apiName = "CreateOrderRealEstateAsync";
             string apikey = JsonConvert.SerializeObject(req);
             
@@ -70,7 +69,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = ex.Message;
-                _fun.ExtAPILogIns(apiCode, apiName, apikey, request.ApiKey,
+                _fun.ExtAPILogIns(apiCode, apiName, apikey, req.LoanSkyApiKey,
                     "", "500", $" response: {ex.Message}");
                 return BadRequest(resultClass);
             }
