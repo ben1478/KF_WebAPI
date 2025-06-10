@@ -259,9 +259,9 @@ namespace KF_WebAPI.Controllers
                 DateTime current = new DateTime(year, month, 1);
                 DateTime previous = current.AddMonths(-1);
 
-                var old_PR_DATE = $"{previous.Year}/{previous.Month.ToString("D2")}";
+                var old_PR_DATE = $"{previous.Year}-{previous.Month.ToString("D2")}";
 
-                var T_SQL_C = @"select * from Professional_target where PR_DATE_E=@PR_DATE";
+                var T_SQL_C = @"select * from Professional_target where PR_DATE=@PR_DATE";
                 var parameters_c = new List<SqlParameter>()
                 {
                     new SqlParameter("@PR_DATE",old_PR_DATE)
@@ -277,6 +277,21 @@ namespace KF_WebAPI.Controllers
                         PR_target = row.Field<int>("PR_target"),
                         PR_Date = row.Field<string>("PR_Date"),
                     }).ToList();
+
+                    #region 檢查是否已有資料
+                    var T_SQL_R = @"select * from Professional_target where PR_Date=@PR_Date";
+                    var parameters_r = new List<SqlParameter>()
+                    {
+                        new SqlParameter("@PR_Date",PR_DATE)
+                    };
+                    var dtReult_r = _adoData.ExecuteQuery(T_SQL_R, parameters_r);
+                    if (dtReult_r.Rows.Count > 0)
+                    {
+                        resultClass.ResultCode = "400";
+                        resultClass.ResultMsg = "已有資料";
+                        return BadRequest(resultClass);
+                    }
+                    #endregion
 
                     var T_SQL = @"Insert into Professional_target(PR_title,PR_target,PR_Date,add_date,add_num,add_ip)
                               Values (@PR_title,@PR_target,@PR_Date,GETDATE(),@add_num,@add_ip)";
@@ -332,7 +347,7 @@ namespace KF_WebAPI.Controllers
         /// 業務責任額列表
         /// </summary>
         [HttpGet("Per_Target_LQuery")]
-        public ActionResult<ResultClass<string>> Per_Target_LQuery(string? c_name,string? PE_DATE_S)
+        public ActionResult<ResultClass<string>> Per_Target_LQuery(string? c_name,string? PE_DATE)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -342,7 +357,9 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"select PE_ID,Li.item_D_name as titleName,Case When ISNULL(Lis.item_D_name,'') <> '' THEN Lis.item_D_name ELSE Um.U_name END as U_name,
-                              PE_num,PE_target,PE_Date_S,PE_Date_E
+                              PE_num,PE_target,PE_Date,
+                              RIGHT('000' + CAST(YEAR(CAST(PE_Date + '-01' AS DATE)) - 1911 AS VARCHAR), 3) + '-' +
+                              RIGHT('00' + CAST(MONTH(CAST(PE_Date + '-01' AS DATE)) AS VARCHAR), 2) AS PE_Date_Minguo
                               from Person_target Pe
                               left join Item_list Li on Li.item_M_code='professional_title' and Li.item_D_code=Pe.PE_title
                               left join User_M Um on Um.U_num=Pe.PE_num
@@ -353,12 +370,12 @@ namespace KF_WebAPI.Controllers
                     T_SQL += " and U_name like @c_name";
                     parameters.Add(new SqlParameter("@c_name", "%" + c_name + "%"));
                 }
-                if (!string.IsNullOrEmpty(PE_DATE_S))
+                if (!string.IsNullOrEmpty(PE_DATE))
                 {
-                    T_SQL += " and PE_DATE_S = @PE_DATE_S";
-                    parameters.Add(new SqlParameter("@PE_DATE_S", PE_DATE_S));
+                    T_SQL += " and PE_DATE = @PE_DATE";
+                    parameters.Add(new SqlParameter("@PE_DATE", PE_DATE));
                 }
-                T_SQL += " order by PE_Date_S desc,Li.item_sort";
+                T_SQL += " order by PE_Date desc,Li.item_sort";
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 resultClass.ResultCode = "000";
@@ -431,7 +448,7 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
 
-                var T_SQL = @"Insert into Person_target(PE_title,PE_num,PE_target,PE_Date_S,add_date,add_num,add_ip) Values 
+                var T_SQL = @"Insert into Person_target(PE_title,PE_num,PE_target,PE_Date,add_date,add_num,add_ip) Values 
                               ((select U_PFT from User_M where U_num=@PE_num),@PE_num,@PE_target,@PE_Date,GETDATE(),@add_num,@add_ip)";
                 foreach (Per_Target_Ins item in list)
                 {
@@ -454,6 +471,36 @@ namespace KF_WebAPI.Controllers
 
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "新增成功";
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 取得現有資料的年月份
+        /// </summary>
+        [HttpGet("GetTargetYM")]
+        public ActionResult<ResultClass<string>> GetTargetYM()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"select distinct PR_Date,
+                              RIGHT('000' + CAST(YEAR(CAST(PR_Date + '-01' AS DATE)) - 1911 AS VARCHAR), 3) + '-' +
+                              RIGHT('00' + CAST(MONTH(CAST(PR_Date + '-01' AS DATE)) AS VARCHAR), 2) AS PR_Date_Minguo
+                              from Professional_target order by PR_Date desc";
+                #endregion
+                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
                 return Ok(resultClass);
             }
             catch (Exception ex)
