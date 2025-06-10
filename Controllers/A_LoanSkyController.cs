@@ -35,7 +35,7 @@ namespace KF_WebAPI.Controllers
             req.LoanSkyUrl = string.IsNullOrEmpty(req.LoanSkyUrl) ? "https://land.loansky.net:5075" : req.LoanSkyUrl;
             #endregion
             string apiName = "CreateOrderRealEstateAsync";
-            string apikey = JsonConvert.SerializeObject(req);
+            string apikey = $"HP_id:{req.HP_id}"; //JsonConvert.SerializeObject(req);
             
             
             runOrderRealEstateRequest ReqClass = await _AE_LoanSky.IsLoanSkyFieldsNull(req);
@@ -78,7 +78,7 @@ namespace KF_WebAPI.Controllers
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = ex.Message;
                 _fun.ExtAPILogIns(apiCode, apiName, apikey, req.LoanSkyApiKey,
-                    "", "500", $" response: {ex.Message}");
+                    "", "500", $" response: {ex.Message}", req.p_USER);
                 return BadRequest(resultClass);
             }
         }

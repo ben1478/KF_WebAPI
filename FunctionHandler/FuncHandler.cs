@@ -2525,11 +2525,16 @@ namespace KF_WebAPI.FunctionHandler
 
         public void ExtAPILogIns(string API_CODE,string API_NAME,string API_KEY,string ACCESS_TOKEN,string PARAM_JSON,string RESULT_CODE,string RESULT_MSG)
         {
+            ExtAPILogIns(API_CODE, API_NAME, API_KEY, ACCESS_TOKEN, PARAM_JSON, RESULT_CODE, RESULT_MSG, "sys");
+        }
+
+        public void ExtAPILogIns(string API_CODE, string API_NAME, string API_KEY, string ACCESS_TOKEN, string PARAM_JSON, string RESULT_CODE, string RESULT_MSG, string Add_User)
+        {
             ADOData _adoData = new ADOData();
             var parameters = new List<SqlParameter>();
             var T_SQL = @"Insert into External_API_Log (API_CODE,API_NAME,API_KEY,ACCESS_TOKEN,PARAM_JSON,RESULT_CODE,RESULT_MSG,
                 Add_date,Add_User) values (@API_CODE,@API_NAME,@API_KEY,@ACCESS_TOKEN,@PARAM_JSON,@RESULT_CODE,
-                @RESULT_MSG,GETDATE(),'sys')";
+                @RESULT_MSG,GETDATE(),@Add_User)";
             parameters.Add(new SqlParameter("@API_CODE", API_CODE));
             parameters.Add(new SqlParameter("@API_NAME", API_NAME));
             parameters.Add(new SqlParameter("@API_KEY", API_KEY));
@@ -2537,7 +2542,7 @@ namespace KF_WebAPI.FunctionHandler
             parameters.Add(new SqlParameter("@PARAM_JSON", PARAM_JSON));
             parameters.Add(new SqlParameter("@RESULT_CODE", RESULT_CODE));
             parameters.Add(new SqlParameter("@RESULT_MSG", RESULT_MSG));
-
+            parameters.Add(new SqlParameter("@Add_User", Add_User));
             try
             {
                 _adoData.ExecuteNonQuery(T_SQL, parameters);
@@ -2547,7 +2552,6 @@ namespace KF_WebAPI.FunctionHandler
                 throw;
             }
         }
-
         /// <summary>
         /// 將NCR轉換為字串
         /// </summary>

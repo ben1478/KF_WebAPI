@@ -913,7 +913,7 @@ namespace KF_WebAPI.FunctionHandler
         public async Task<ResultClass<string>> Call_LoanSkyAPI(string p_USER, string p_APIName, OrderRealEstateRequest request, LoanSky_Req req)
         {
             string apiCode = "LoanSky";
-            string apikey = JsonConvert.SerializeObject(req);
+            string apikey = $"HP_id:{req.HP_id}"; // JsonConvert.SerializeObject(req);
             FuncHandler _fun = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
             ORErequest.ApiKey = req.LoanSkyApiKey;
@@ -942,13 +942,13 @@ namespace KF_WebAPI.FunctionHandler
                 {
                     resultClass.ResultCode = "200";
                     _fun.ExtAPILogIns(apiCode, p_APIName, apikey, ORErequest.ApiKey,
-                        resultClass.objResult, resultClass.ResultCode, resultClass.ResultMsg);
+                        resultClass.objResult, resultClass.ResultCode, resultClass.ResultMsg, p_USER);
                 }
                 else
                 {
                     resultClass.ResultCode = "500";
                     _fun.ExtAPILogIns(apiCode, p_APIName, apikey, ORErequest.ApiKey,
-                        resultClass.objResult, resultClass.ResultCode, resultClass.ResultMsg);
+                        resultClass.objResult, resultClass.ResultCode, resultClass.ResultMsg, p_USER);
                 }
 
             }
@@ -957,7 +957,7 @@ namespace KF_WebAPI.FunctionHandler
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
                 _fun.ExtAPILogIns(apiCode, p_APIName, apikey, ORErequest.ApiKey,
-                       JsonConvert.SerializeObject(req), "500", $" response: {ex.Message}");
+                       JsonConvert.SerializeObject(req), "500", $" response: {ex.Message}", p_USER);
                 
             }
             finally
