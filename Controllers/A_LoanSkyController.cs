@@ -35,7 +35,7 @@ namespace KF_WebAPI.Controllers
             req.LoanSkyUrl = string.IsNullOrEmpty(req.LoanSkyUrl) ? "https://land.loansky.net:5075" : req.LoanSkyUrl;
             #endregion
             string apiName = "CreateOrderRealEstateAsync";
-            string apikey = $"HP_id:{req.HP_id}"; //JsonConvert.SerializeObject(req);
+            string apikey = req.HP_id;
             
             
             runOrderRealEstateRequest ReqClass = await _AE_LoanSky.IsLoanSkyFieldsNull(req);

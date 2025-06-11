@@ -913,7 +913,7 @@ namespace KF_WebAPI.FunctionHandler
         public async Task<ResultClass<string>> Call_LoanSkyAPI(string p_USER, string p_APIName, OrderRealEstateRequest request, LoanSky_Req req)
         {
             string apiCode = "LoanSky";
-            string apikey = $"HP_id:{req.HP_id}"; // JsonConvert.SerializeObject(req);
+            string apikey = req.HP_id; // JsonConvert.SerializeObject(req);
             FuncHandler _fun = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
             ORErequest.ApiKey = req.LoanSkyApiKey;
