@@ -1273,14 +1273,14 @@ namespace KF_WebAPI.FunctionHandler
                                 //早退
                                 if (!isRest)
                                 {
-                                    #region 因為消毒所以12/20 5F人員提早下班不算曠職
-                                    //if (bcGroup.Key == "BC0800" || bcGroup.Key == "BC0900" || bcGroup.Key == "BC0100")
-                                    //{
-                                    //    if (items[j].attendance_week == "12/20 (五)")
-                                    //    {
-                                    //        items[j].early = 0;
-                                    //    }
-                                    //}
+                                    #region 因為消毒所以06/13 5F人員提早下班不算曠職
+                                    if (bcGroup.Key == "BC0800" || bcGroup.Key == "BC0100")
+                                    {
+                                        if (items[j].attendance_week == "06/13 (五)")
+                                        {
+                                            items[j].early = 0;
+                                        }
+                                    }
                                     #endregion
 
                                     if (items[j].early > 0)

@@ -510,5 +510,38 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+        #region 業績平均表
+        /// <summary>
+        /// 取得現有資料的年
+        /// </summary>
+        [HttpGet("GetTargetYYYY")]
+        public ActionResult<ResultClass<string>> GetTargetYYYY()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"select distinct LEFT(PR_Date,4) as yyyy,
+                              LEFT(PR_Date,4)-1911 as yyy_Minguo
+                              from Professional_target order by LEFT(PR_Date,4) desc";
+                #endregion
+                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+
+        #endregion
     }
 }
