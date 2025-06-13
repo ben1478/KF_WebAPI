@@ -1274,7 +1274,8 @@ namespace KF_WebAPI.FunctionHandler
                                 if (!isRest)
                                 {
                                     #region 因為消毒所以06/13 5F人員提早下班不算曠職
-                                    if (bcGroup.Key == "BC0800" || bcGroup.Key == "BC0100")
+                                    if (bcGroup.Key == "BC0800" || bcGroup.Key == "BC0801" || bcGroup.Key == "BC0802" || bcGroup.Key == "BC0803"
+                                        || bcGroup.Key == "BC0100")
                                     {
                                         if (items[j].attendance_week == "06/13 (五)")
                                         {
