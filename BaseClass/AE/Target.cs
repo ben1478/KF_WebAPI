@@ -27,4 +27,16 @@
         public int PE_ID { get; set; }
     }
 
+    public class Per_Achieve
+    {
+        public string month { get;set; }
+        public string U_BC_NEW { get; set; }
+        public Double total_target { get; set; }   
+        public Double total_perf { get; set; }
+        public Double total_perf_after_discount { get; set; }
+        public string achieve_rate { get; set; }
+        public string achieve_rate_after_discount { get; set; }
+        public int Subord { get; set; }
+        public int Leader { get; set; } 
+    }
 }
