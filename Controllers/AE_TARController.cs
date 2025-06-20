@@ -550,10 +550,19 @@ namespace KF_WebAPI.Controllers
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var Fun = new FuncHandler();
-            var result = Fun.GetTargetAchieveList(YYYY, U_BC);
-            resultClass.ResultCode = "000";
-            resultClass.objResult = JsonConvert.SerializeObject(result);
-            return Ok(resultClass);
+            try
+            {
+                var result = Fun.GetTargetAchieveList(YYYY, U_BC);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
         }
 
         /// <summary>

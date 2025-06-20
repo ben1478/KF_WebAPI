@@ -2590,44 +2590,98 @@ namespace KF_WebAPI.FunctionHandler
         {
             ADOData _adoData = new ADOData();
 
-            List<Per_Achieve> achievesList = new List<Per_Achieve>();
-            for (int i = 1; i <= 12; i++)
+            try
             {
-                string month = i.ToString("D2");
-                string dateYM = $"{YYYY}-{month}";
-                var T_SQL = $"EXEC sp_GetTargetAchieveByMonth '{dateYM}'";
-                var dtResult = _adoData.ExecuteSQuery(T_SQL);
-
-                var achieves = dtResult.AsEnumerable().Select(row => new Per_Achieve
+                List<Per_Achieve> achievesList = new List<Per_Achieve>();
+                for (int i = 1; i <= 12; i++)
                 {
-                    month = row.Field<string>("month"),
-                    U_BC_NEW = row.Field<string>("U_BC_NEW"),
-                    total_target = row.Field<double?>("total_target") ?? 0,
-                    total_perf = row.Field<double?>("total_perf") ?? 0,
-                    total_perf_after_discount = row.Field<double?>("total_perf_after_discount") ?? 0,
-                    achieve_rate = row.Field<string>("achieve_rate"),
-                    achieve_rate_after_discount = row.Field<string>("achieve_rate_after_discount"),
-                    Subord = row.Field<int>("Subord"),
-                    Leader = row.Field<int>("Leader")
-                }).ToList();
+                    string month = i.ToString("D2");
+                    string dateYM = $"{YYYY}-{month}";
+                    var T_SQL = $"EXEC sp_GetTargetPerfByMonth '{dateYM}'";
+                    var dtResult = _adoData.ExecuteSQuery(T_SQL);
 
-                achievesList.AddRange(achieves);
+                    var achieves = dtResult.AsEnumerable().Select(row => new Per_Achieve
+                    {
+                        month = row.Field<string>("month"),
+                        U_BC_NEW = row.Field<string>("U_BC_NEW"),
+                        total_target = row.Field<double?>("total_target") ?? 0,
+                        total_perf = row.Field<double?>("total_perf") ?? 0,
+                        total_perf_after_discount = row.Field<double?>("total_perf_after_discount") ?? 0,
+                        Subord = row.Field<int>("Subord"),
+                        Leader = row.Field<int>("Leader")
+                    }).ToList();
+
+                    achievesList.AddRange(achieves);
+                }
+
+                if (!string.IsNullOrEmpty(U_BC))
+                {
+                    if (U_BC == "BC0100")
+                    {
+                        string[] strBc = new string[] { "BC0100-1", "BC0100-2" };
+                        achievesList = achievesList.Where(q => strBc.Contains(q.U_BC_NEW)).GroupBy(q => q.month)
+                            .Select(g =>
+                            {
+                                double totalPerf = g.Sum(x => x.total_perf);
+                                double totalTarget = g.Sum(x => x.total_target);
+                                double totalPerfAfterDiscount = g.Sum(x => x.total_perf_after_discount);
+
+                                string achieveRate = totalPerf != 0
+                                    ? (totalPerf / totalTarget * 100).ToString("F2") + "%"
+                                    : "0.00%";
+
+                                string achieveRateAfterDiscount = totalPerfAfterDiscount != 0
+                                    ? (totalPerfAfterDiscount / totalTarget * 100).ToString("F2") + "%"
+                                    : "0.00%";
+
+                                return new Per_Achieve
+                                {
+                                    month = g.Key,
+                                    U_BC_NEW = "BC0100",
+                                    total_target = totalTarget,
+                                    total_perf = totalPerf,
+                                    total_perf_after_discount = totalPerfAfterDiscount,
+                                    achieve_rate = achieveRate,
+                                    achieve_rate_after_discount = achieveRateAfterDiscount,
+                                    Subord = g.Sum(x => x.Subord),
+                                    Leader = g.Sum(x => x.Leader)
+                                };
+                            }).ToList();
+                    }
+                    else
+                    {
+                        achievesList = achievesList.Where(q => q.U_BC_NEW.Equals(U_BC)).OrderBy(q => q.month).Select(g =>
+                        {
+                            string achieveRate = g.total_perf != 0
+                                    ? (g.total_perf / g.total_target * 100).ToString("F2") + "%"
+                                    : "0.00%";
+
+                            string achieveRateAfterDiscount = g.total_perf_after_discount != 0
+                                ? (g.total_perf_after_discount / g.total_target * 100).ToString("F2") + "%"
+                                : "0.00%";
+
+                            return new Per_Achieve
+                            {
+                                month = g.month,
+                                U_BC_NEW = g.U_BC_NEW,
+                                total_target = g.total_target,
+                                total_perf = g.total_perf,
+                                total_perf_after_discount = g.total_perf_after_discount,
+                                achieve_rate = achieveRate,
+                                achieve_rate_after_discount = achieveRateAfterDiscount,
+                                Subord = g.Subord,
+                                Leader = g.Leader
+                            };
+                        }).ToList();
+                    }
+                }
+
+                return achievesList;
             }
-
-            if (!string.IsNullOrEmpty(U_BC))
+            catch (Exception ex)
             {
-                if (U_BC == "BC0100")
-                {
-                    string[] strBc = new string[] { "BC0100-1", "BC0100-2" };
-                    achievesList = achievesList.Where(q => strBc.Contains(q.U_BC_NEW)).OrderBy(q => q.month).ToList();
-                }
-                else
-                {
-                    achievesList = achievesList.Where(q => q.U_BC_NEW.Equals(U_BC)).OrderBy(q => q.month).ToList();
-                }
+                throw ex;
             }
-
-            return achievesList;
         }
     }
 }
