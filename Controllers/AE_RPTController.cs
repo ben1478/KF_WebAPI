@@ -21,6 +21,7 @@ using System.Text;
 using Microsoft.AspNetCore.Hosting.Server;
 using OfficeOpenXml;
 using System.Threading.Tasks;
+using KF_WebAPI.DataLogic;
 
 namespace KF_WebAPI.Controllers
 {
@@ -6506,77 +6507,30 @@ namespace KF_WebAPI.Controllers
 
         #region 新鑫案件核對表 Report_M/NewXinUpload.asp
         [HttpPost("NewXinUpload_LQuery")]
-        public async Task<JsonResult> UploadUserList_LQuery(IFormFile file)
+        public async Task<IActionResult> NewXinUpload_LQuery([FromForm] NewXinChecklistRequest req)
         {
-            if (file.Length > 0)
+            NewXinChecklistM _NewXinChecklistM = new NewXinChecklistM();
+            ResultClass<string> result = await _NewXinChecklistM.GetNewXinChecklistDs(req);
+            if (result.ResultCode != "000")
             {
-                try
-                {
-                    var filePath = Path.GetTempFileName();
-                    using(var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await file.CopyToAsync(stream);
-
-                        //載入Excel檔案
-                        using (ExcelPackage ep = new ExcelPackage(stream))
-                        {
-                            ExcelWorksheet sheet = ep.Workbook.Worksheets[1];//取得Sheet1
-                            List<NewXinUpload> RowData = new List<NewXinUpload>();
-
-                            bool isLastRow = false;
-                            int RowId = 2;   // 因為有標題列，所以從第2列開始讀起
-
-                            do  // 讀取資料，直到讀到空白列為止
-                            {
-                                string cellValue = sheet.Cells[RowId, 1].Text; // 申購人
-                                if (string.IsNullOrEmpty(cellValue))
-                                {
-                                    isLastRow = true;
-                                }
-                                else
-                                {
-                                    // 將資料放入NewXinUpload中
-                                    RowData.Add(new NewXinUpload()
-                                    {
-                                        A = sheet.Cells[RowId, 1].Text,
-                                        B = sheet.Cells[RowId, 2].Text,
-                                        C = sheet.Cells[RowId, 3].Text,
-                                        D = sheet.Cells[RowId, 4].Text,
-                                        E = sheet.Cells[RowId, 5].Text,
-                                        F = sheet.Cells[RowId, 6].Text,
-                                        G = sheet.Cells[RowId, 7].Text,
-                                        H = sheet.Cells[RowId, 8].Text,
-                                        I = sheet.Cells[RowId, 9].Text,
-                                        J = sheet.Cells[RowId, 10].Text,
-                                        K = sheet.Cells[RowId, 11].Text,
-                                        L = sheet.Cells[RowId, 12].Text,
-                                        M = sheet.Cells[RowId, 13].Text,
-                                        N = sheet.Cells[RowId, 14].Text,
-                                        O = sheet.Cells[RowId, 15].Text,
-                                        P = sheet.Cells[RowId, 16].Text,
-                                        Q = sheet.Cells[RowId, 17].Text,
-                                        R = sheet.Cells[RowId, 18].Text,
-                                        S = sheet.Cells[RowId, 19].Text,
-                                        T = sheet.Cells[RowId, 20].Text,
-                                        U = sheet.Cells[RowId, 21].Text
-                                    });
-                                    RowId += 1;
-                                }
-                            } while (!isLastRow);
-                        }
-                    }
-                        
-                    return Json("File Uploaded Successfully!");
-                }
-                catch (Exception ex)
-                {
-                    return Json("Error occurred. Error details: " + ex.Message);
-                }
+                return BadRequest(result);
             }
-            else
+
+            result.ResultCode = "000";
+            result.objResult = JsonConvert.SerializeObject(_NewXinChecklistM.newXinChecklistDs);
+            return Ok(result);
+        }
+
+        [HttpGet("NewXinUpload_loadYYYMMDown")]
+        public IActionResult NewXinUpload_loadYYYMMDown()
+        {
+            NewXinChecklistM _NewXinChecklistM = new NewXinChecklistM();
+            ResultClass<string> result = _NewXinChecklistM.GetNewXinChecklistDsYearMonth();
+            if (result.ResultCode != "000")
             {
-                return Json("No files selected.");
+                return BadRequest(result);
             }
+            return Ok(result);
         }
         #endregion
     }
