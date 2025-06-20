@@ -16,6 +16,7 @@ using KF_WebAPI.Controllers;
 using System.Net.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
+using System.Linq;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -1273,14 +1274,15 @@ namespace KF_WebAPI.FunctionHandler
                                 //早退
                                 if (!isRest)
                                 {
-                                    #region 因為消毒所以12/20 5F人員提早下班不算曠職
-                                    //if (bcGroup.Key == "BC0800" || bcGroup.Key == "BC0900" || bcGroup.Key == "BC0100")
-                                    //{
-                                    //    if (items[j].attendance_week == "12/20 (五)")
-                                    //    {
-                                    //        items[j].early = 0;
-                                    //    }
-                                    //}
+                                    #region 因為消毒所以06/13 5F人員提早下班不算曠職
+                                    if (bcGroup.Key == "BC0800" || bcGroup.Key == "BC0801" || bcGroup.Key == "BC0802" || bcGroup.Key == "BC0803"
+                                        || bcGroup.Key == "BC0100")
+                                    {
+                                        if (items[j].attendance_week == "06/13 (五)")
+                                        {
+                                            items[j].early = 0;
+                                        }
+                                    }
                                     #endregion
 
                                     if (items[j].early > 0)
@@ -2584,5 +2586,48 @@ namespace KF_WebAPI.FunctionHandler
             return sb.ToString();
         }
 
+        public List<Per_Achieve> GetTargetAchieveList(string YYYY,string? U_BC)
+        {
+            ADOData _adoData = new ADOData();
+
+            List<Per_Achieve> achievesList = new List<Per_Achieve>();
+            for (int i = 1; i <= 12; i++)
+            {
+                string month = i.ToString("D2");
+                string dateYM = $"{YYYY}-{month}";
+                var T_SQL = $"EXEC sp_GetTargetAchieveByMonth '{dateYM}'";
+                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+
+                var achieves = dtResult.AsEnumerable().Select(row => new Per_Achieve
+                {
+                    month = row.Field<string>("month"),
+                    U_BC_NEW = row.Field<string>("U_BC_NEW"),
+                    total_target = row.Field<double?>("total_target") ?? 0,
+                    total_perf = row.Field<double?>("total_perf") ?? 0,
+                    total_perf_after_discount = row.Field<double?>("total_perf_after_discount") ?? 0,
+                    achieve_rate = row.Field<string>("achieve_rate"),
+                    achieve_rate_after_discount = row.Field<string>("achieve_rate_after_discount"),
+                    Subord = row.Field<int>("Subord"),
+                    Leader = row.Field<int>("Leader")
+                }).ToList();
+
+                achievesList.AddRange(achieves);
+            }
+
+            if (!string.IsNullOrEmpty(U_BC))
+            {
+                if (U_BC == "BC0100")
+                {
+                    string[] strBc = new string[] { "BC0100-1", "BC0100-2" };
+                    achievesList = achievesList.Where(q => strBc.Contains(q.U_BC_NEW)).OrderBy(q => q.month).ToList();
+                }
+                else
+                {
+                    achievesList = achievesList.Where(q => q.U_BC_NEW.Equals(U_BC)).OrderBy(q => q.month).ToList();
+                }
+            }
+
+            return achievesList;
+        }
     }
 }

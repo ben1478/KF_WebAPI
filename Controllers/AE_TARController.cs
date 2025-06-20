@@ -364,7 +364,7 @@ namespace KF_WebAPI.Controllers
                               left join Item_list Li on Li.item_M_code='professional_title' and Li.item_D_code=Pe.PE_title
                               left join User_M Um on Um.U_num=Pe.PE_num
                               left join Item_list Lis on Lis.item_M_code = 'SpecName' AND Lis.item_D_type = 'Y' and Lis.item_D_txt_A = Um.U_num
-                              where 1=1";
+                              where PE_title IN ('PFT060','PFT030','PFT050','PFT300') ";
                 if (!string.IsNullOrEmpty(c_name))
                 {
                     T_SQL += " and U_name like @c_name";
@@ -403,11 +403,12 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"Update Person_target set PE_target=@PE_target,edit_date=getdate(),
+                var T_SQL = @"Update Person_target set PE_target=@PE_target,PE_title=@PE_title,edit_date=getdate(),
                              edit_num=@edit_num,edit_ip=@edit_ip where PE_ID=@PE_ID";
                 var parameters = new List<SqlParameter>()
                 {
                     new SqlParameter("@PE_target",model.PE_target),
+                    new SqlParameter("@PE_title",model.PE_title),
                     new SqlParameter("@edit_num",model.user),
                     new SqlParameter("@edit_ip",clientIp),
                     new SqlParameter("@PE_ID",model.PE_ID)
@@ -510,5 +511,63 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+        #region 業績平均表
+        /// <summary>
+        /// 取得現有資料的年
+        /// </summary>
+        [HttpGet("GetTargetYYYY")]
+        public ActionResult<ResultClass<string>> GetTargetYYYY()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"select distinct LEFT(PR_Date,4) as yyyy,
+                              LEFT(PR_Date,4)-1911 as yyy_Minguo
+                              from Professional_target order by LEFT(PR_Date,4) desc";
+                #endregion
+                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 取得各區業績平均表
+        /// </summary>
+        [HttpGet("GetTargetAchieve")]
+        public ActionResult<ResultClass<string>> GetTargetAchieve(string YYYY,string U_BC)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var Fun = new FuncHandler();
+            var result = Fun.GetTargetAchieveList(YYYY, U_BC);
+            resultClass.ResultCode = "000";
+            resultClass.objResult = JsonConvert.SerializeObject(result);
+            return Ok(resultClass);
+        }
+
+        /// <summary>
+        /// 取得各區業績平均表報表
+        /// </summary>
+        [HttpGet("GetTargetAchieve_Excel")]
+        public ActionResult<ResultClass<string>> GetTargetAchieve_Excel(string YYYY)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var Fun = new FuncHandler();
+            var result = Fun.GetTargetAchieveList(YYYY, null);
+
+            return Ok(resultClass);
+        }
+        #endregion
     }
 }

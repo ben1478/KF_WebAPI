@@ -2134,7 +2134,7 @@ namespace KF_WebAPI.Controllers
                 case WHEN NL.U_num_NL IS NOT NULL THEN 0 When isnull(ad.[getoffwork_time], '') = '' then 0 
                 WHEN ad.[getoffwork_time] <= '12:00' THEN DATEDIFF(MINUTE,ad.[getoffwork_time], '18:00' ) - DATEDIFF(MINUTE, '12:00', '13:00') 
                 WHEN ad.[getoffwork_time] > '12:00' AND ad.[getoffwork_time] <= '13:00' THEN DATEDIFF(MINUTE, '13:00', '18:00')
-                WHEN ad.[getoffwork_time] > '13:00' AND ad.[getoffwork_time] <= '18:00' THEN DATEDIFF(MINUTE, ad.[getoffwork_time], '18:00') else 0 end early,
+                WHEN ad.[getoffwork_time] > '13:00' AND ad.[getoffwork_time] <= '18:00' THEN  dbo.[ExceLeaveEarly](U_BC,yyyymmdd,ad.[getoffwork_time]) else 0 end early,
                 U_arrive_date,U_leave_date,[getoffwork_time],U_BC
                 FROM (select *,substring(yyyymm,1,4)+'/'+[attendance_date] yyyymmdd from attendance ) ad
                 inner join ( SELECT Role_num,U_PFT,U_BC,U_num,Case WHEN ISNULL(li_p.item_D_code,'') <> '' THEN li_p.item_D_name else U.U_name END as U_name
