@@ -6126,164 +6126,56 @@ namespace KF_WebAPI.Controllers
         public ActionResult<ResultClass<string>> NewXinCaseStatus_LQuery(NewXinCaseStatus_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
-            var User_Num = HttpContext.Session.GetString("UserID");
-            var roleNum = HttpContext.Session.GetString("Role_num");
-            var User_U_BC = HttpContext.Session.GetString("User_U_BC");
-            var sdate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.start_date));
-            var edate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.end_date));
-
+            NewXinCaseStatusM newXinCaseStatusM = new NewXinCaseStatusM();
             try
             {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var parameters = new List<SqlParameter>();
-                var T_SQL = @"
-                        SELECT
-                          ISNULL(CS_PID, '') CS_ID
-                         ,ISNULL(CS_register_address, '') addr
-                         ,ISNULL(Loan_rate, '') Loan_rate
-                         ,REPLACE(REPLACE(CONVERT(VARCHAR(10), Send_amount_date, 126), '-', '/'), YEAR(Send_amount_date), YEAR(Send_amount_date) - 1911) Send_amount_date
-                         ,REPLACE(REPLACE(CONVERT(VARCHAR(10), get_amount_date, 126), '-', '/'), YEAR(get_amount_date), YEAR(get_amount_date) - 1911) get_amount_date
-                         ,H.HS_id
-                         ,H.pass_amount
-                         ,H.Send_amount
-                         ,H.get_amount
-                         ,House_pre_project.project_title
-                         ,House_apply.CS_name
-                         ,House_apply.CS_MTEL1
-                         ,House_apply.CS_MTEL2
-                         ,House_apply.CS_introducer
-                         ,User_M.U_name plan_name
-                         ,User_M.U_BC_name
-                         ,ISNULL((SELECT
-                              item_D_name
-                            FROM Item_list
-                            WHERE item_M_code = 'Send_result_type'
-                            AND item_D_type = 'Y'
-                            AND item_D_code = H.Send_result_type
-                            AND show_tag = '0'
-                            AND del_tag = '0')
-                          , '--') AS show_Send_result_type
-                         ,ISNULL((SELECT
-                              item_D_name
-                            FROM Item_list
-                            WHERE item_M_code = 'check_amount_type'
-                            AND item_D_type = 'Y'
-                            AND item_D_code = H.check_amount_type
-                            AND show_tag = '0'
-                            AND del_tag = '0')
-                          , '--') AS show_check_amount_type
-                         ,ISNULL((SELECT
-                              item_D_name
-                            FROM Item_list
-                            WHERE item_M_code = 'get_amount_type'
-                            AND item_D_type = 'Y'
-                            AND item_D_code = H.get_amount_type
-                            AND show_tag = '0'
-                            AND del_tag = '0')
-                          , '--') AS show_get_amount_type
-                         ,(SELECT
-                              item_D_name
-                            FROM Item_list
-                            WHERE item_M_code = 'appraise_company'
-                            AND item_D_type = 'Y'
-                            AND item_D_code = H.appraise_company
-                            AND show_tag = '0'
-                            AND del_tag = '0')
-                          AS show_appraise_company
-                         ,(SELECT
-                              item_D_name
-                            FROM Item_list
-                            WHERE item_M_code = 'fund_company'
-                            AND item_D_type = 'Y'
-                            AND item_D_code = H.fund_company
-                            AND show_tag = '0'
-                            AND del_tag = '0')
-                          AS show_fund_company
-                         ,(SELECT
-                              item_D_name
-                            FROM Item_list
-                            WHERE item_M_code = 'project_title'
-                            AND item_D_type = 'Y'
-                            AND item_D_code = House_pre_project.project_title
-                            AND show_tag = '0'
-                            AND del_tag = '0')
-                          AS show_project_title
-                         ,Users.U_name AS fin_name
-                         ,CONVERT(VARCHAR, house_pre_project.fin_date, 111) AS fin_date
-                        FROM House_sendcase H
-                        LEFT JOIN House_apply
-                          ON House_apply.HA_id = H.HA_id
-                            AND House_apply.del_tag = '0'
-                        LEFT JOIN House_pre_project
-                          ON House_pre_project.HP_project_id = H.HP_project_id
-                            AND House_pre_project.del_tag = '0'
-                        LEFT JOIN view_User_sales User_M
-                          ON User_M.U_num = House_apply.plan_num
-                        LEFT JOIN view_user_sales Users
-                          ON house_pre_project.fin_user = Users.U_num
-                        WHERE H.del_tag = '0'
-                        AND H.sendcase_handle_type = 'Y'
-                        AND ISNULL(H.Send_amount, '') <> ''
-                        AND (Send_amount_date >= @start_date
-                        AND Send_amount_date <= @end_date)
-                        AND fund_Company = 'FDCOM001'
-                        AND CONVERT(VARCHAR(7), get_amount_date, 126) = @selYear_S
-                        AND get_amount_type = 'GTAT002'
-                        ORDER BY Send_amount_date, H.HS_id DESC
-                    ";
-                parameters.Add(new SqlParameter("@start_date", sdate));
-                parameters.Add(new SqlParameter("@end_date", edate));
-                parameters.Add(new SqlParameter("@selYear_S", model.selYear_S));
-
-                #endregion
-
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
-                if (dtResult.Rows.Count > 0)
+                List<NewXinCaseStatus_res> newXinCaseStatus = newXinCaseStatusM.GetNewXinCaseStatusDs(model);
+                if (newXinCaseStatus.Count > 0)
                 {
-                    var PerformanceList = dtResult.AsEnumerable().Select(row => new NewXinCaseStatus_res
-                    {
-                        HS_id = row.Field<decimal>("HS_id").ToString(),
-                        Send_amount_date = row.IsNull("Send_amount_date") ? "" :
-                                         row.Field<string>("Send_amount_date"),
-                        get_amount_date = row.IsNull("get_amount_date") ? "" :
-                                         row.Field<string>("get_amount_date"),
-                        CS_name = row.Field<string>("CS_name"),
-                        CS_ID = row.Field<string>("CS_ID"),
-                        show_project_title = row.Field<string>("show_project_title"),
-                        get_amount = row.Field<string>("get_amount")
-                        /*
-                        addr = row.Field<string>("addr"),
-                        Loan_rate = row.Field<string>("Loan_rate"),
-                        
-                        pass_amount = row.Field<string>("pass_amount"),
-                        Send_amount = row.Field<string>("Send_amount"),
-                        project_title = row.Field<string>("project_title"),
-                        CS_MTEL1 = row.Field<string>("CS_MTEL1"),
-                        CS_MTEL2 = row.Field<string>("CS_MTEL2"),
-                        CS_introducer = row.Field<string>("CS_introducer"),
-                        plan_name = row.Field<string>("plan_name"),
-                        U_BC_name = row.Field<string>("U_BC_name"),
-                        show_Send_result_type = row.Field<string>("show_Send_result_type"),
-                        show_check_amount_type = row.Field<string>("show_check_amount_type"),
-                        show_get_amount_type = row.Field<string>("show_get_amount_type"),
-                        show_appraise_company = row.Field<string>("show_appraise_company"),
-                        show_fund_company = row.Field<string>("show_fund_company"),
-                        fin_name = row.Field<string>("fin_name"),
-                        fin_date = row.Field<DateTime>("fin_date")
-                        */
-                    }).ToList();
-
                     resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(PerformanceList);
-                    return Ok(resultClass);
+                    resultClass.objResult = JsonConvert.SerializeObject(newXinCaseStatus);
                 }
                 else
                 {
                     resultClass.ResultCode = "400";
                     resultClass.ResultMsg = "查無資料";
-                    return BadRequest(resultClass);
                 }
+                return Ok(resultClass);
+
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 新鑫已撥款明細表資料匯出Excel NewXinCaseStatus_Exccel/NewXinCaseStatus.asp
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost("NewXinCaseStatus_Exccel")]
+        public IActionResult NewXinCaseStatus_Exccel([FromForm] NewXinCaseStatus_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            NewXinCaseStatusM newXinCaseStatusM = new NewXinCaseStatusM();
+            try
+            {
+                var fileBytes = newXinCaseStatusM.GetGetNewXinCaseStatusExcel(model);
+                if (fileBytes != null)
+                {
+                    var fileName = "新鑫已撥款明細表-" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
+                    return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                }
+                return Ok(resultClass);
+
             }
             catch (Exception ex)
             {
@@ -6294,167 +6186,12 @@ namespace KF_WebAPI.Controllers
 
         }
 
-        /// <summary>
-        /// 新鑫已撥款明細表資料匯出Excel NewXinCaseStatus_Exccel/NewXinCaseStatus.asp
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
-        [HttpPost("NewXinCaseStatus_Exccel")]
-        public IActionResult NewXinCaseStatus_Exccel(string DateS, string DateE, string selYear_S)
-        {
-            var sdate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(DateS));
-            var edate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(DateE));
-            try
-            {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var parameters = new List<SqlParameter>();
-                var T_SQL = @"
-                        SELECT
-                          ISNULL(CS_PID, '') CS_ID
-                         ,ISNULL(CS_register_address, '') addr
-                         ,ISNULL(Loan_rate, '') Loan_rate
-                         ,REPLACE(REPLACE(CONVERT(VARCHAR(10), Send_amount_date, 126), '-', '/'), YEAR(Send_amount_date), YEAR(Send_amount_date) - 1911) Send_amount_date
-                         ,REPLACE(REPLACE(CONVERT(VARCHAR(10), get_amount_date, 126), '-', '/'), YEAR(get_amount_date), YEAR(get_amount_date) - 1911) get_amount_date
-                         ,H.HS_id
-                         ,H.pass_amount
-                         ,H.Send_amount
-                         ,H.get_amount
-                         ,House_pre_project.project_title
-                         ,House_apply.CS_name
-                         ,House_apply.CS_MTEL1
-                         ,House_apply.CS_MTEL2
-                         ,House_apply.CS_introducer
-                         ,User_M.U_name plan_name
-                         ,User_M.U_BC_name
-                         ,ISNULL((SELECT
-                              item_D_name
-                            FROM Item_list
-                            WHERE item_M_code = 'Send_result_type'
-                            AND item_D_type = 'Y'
-                            AND item_D_code = H.Send_result_type
-                            AND show_tag = '0'
-                            AND del_tag = '0')
-                          , '--') AS show_Send_result_type
-                         ,ISNULL((SELECT
-                              item_D_name
-                            FROM Item_list
-                            WHERE item_M_code = 'check_amount_type'
-                            AND item_D_type = 'Y'
-                            AND item_D_code = H.check_amount_type
-                            AND show_tag = '0'
-                            AND del_tag = '0')
-                          , '--') AS show_check_amount_type
-                         ,ISNULL((SELECT
-                              item_D_name
-                            FROM Item_list
-                            WHERE item_M_code = 'get_amount_type'
-                            AND item_D_type = 'Y'
-                            AND item_D_code = H.get_amount_type
-                            AND show_tag = '0'
-                            AND del_tag = '0')
-                          , '--') AS show_get_amount_type
-                         ,(SELECT
-                              item_D_name
-                            FROM Item_list
-                            WHERE item_M_code = 'appraise_company'
-                            AND item_D_type = 'Y'
-                            AND item_D_code = H.appraise_company
-                            AND show_tag = '0'
-                            AND del_tag = '0')
-                          AS show_appraise_company
-                         ,(SELECT
-                              item_D_name
-                            FROM Item_list
-                            WHERE item_M_code = 'fund_company'
-                            AND item_D_type = 'Y'
-                            AND item_D_code = H.fund_company
-                            AND show_tag = '0'
-                            AND del_tag = '0')
-                          AS show_fund_company
-                         ,(SELECT
-                              item_D_name
-                            FROM Item_list
-                            WHERE item_M_code = 'project_title'
-                            AND item_D_type = 'Y'
-                            AND item_D_code = House_pre_project.project_title
-                            AND show_tag = '0'
-                            AND del_tag = '0')
-                          AS show_project_title
-                         ,Users.U_name AS fin_name
-                         ,CONVERT(VARCHAR, house_pre_project.fin_date, 111) AS fin_date
-                        FROM House_sendcase H
-                        LEFT JOIN House_apply
-                          ON House_apply.HA_id = H.HA_id
-                            AND House_apply.del_tag = '0'
-                        LEFT JOIN House_pre_project
-                          ON House_pre_project.HP_project_id = H.HP_project_id
-                            AND House_pre_project.del_tag = '0'
-                        LEFT JOIN view_User_sales User_M
-                          ON User_M.U_num = House_apply.plan_num
-                        LEFT JOIN view_user_sales Users
-                          ON house_pre_project.fin_user = Users.U_num
-                        WHERE H.del_tag = '0'
-                        AND H.sendcase_handle_type = 'Y'
-                        AND ISNULL(H.Send_amount, '') <> ''
-                        AND (Send_amount_date >= @start_date
-                        AND Send_amount_date <= @end_date)
-                        AND fund_Company = 'FDCOM001'
-                        AND CONVERT(VARCHAR(7), get_amount_date, 126) = @selYear_S
-                        AND get_amount_type = 'GTAT002'
-                        ORDER BY Send_amount_date, H.HS_id DESC
-                    ";
-                parameters.Add(new SqlParameter("@start_date", sdate));
-                parameters.Add(new SqlParameter("@end_date", edate));
-                parameters.Add(new SqlParameter("@selYear_S", selYear_S));
-
-                #endregion
-                List<NewXinCaseStatus_Excel> excelList=new List<NewXinCaseStatus_Excel>();
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
-                if (dtResult.Rows.Count > 0)
-                {
-                    excelList = dtResult.AsEnumerable().Select(row => new NewXinCaseStatus_Excel
-                    {
-                        Send_amount_date = row.IsNull("Send_amount_date") ? "" :
-                                         row.Field<string>("Send_amount_date"),
-                        get_amount_date = row.IsNull("get_amount_date") ? "" :
-                                         row.Field<string>("get_amount_date"),
-                        CS_name = row.Field<string>("CS_name"),
-                        CS_ID = row.Field<string>("CS_ID"),
-                        show_project_title = row.Field<string>("show_project_title"),
-                        get_amount = row.Field<string>("get_amount")
-                    }).ToList();
-
-
-
-                }
-                var Excel_Headers = new Dictionary<string, string>
-                {
-                    { "Send_amount_date","出件日期" },
-                    { "get_amount_date", "撥款日期" },
-                    { "CS_name", "申請人" },
-                    { "CS_ID", "申請人ID" },
-                    { "show_project_title", "出件方案" },
-                    { "get_amount", "撥款金額(萬)" }
-                };
-
-                var fileBytes = FuncHandler.ExportToExcel(excelList, Excel_Headers);
-                var fileName = "新鑫已撥款明細表-" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
-                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
-            }
-            catch (Exception ex)
-            {
-                ResultClass<string> resultClass = new ResultClass<string>();
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
-            }
-        }
-
         // 提供撥款查詢年月 AE.GetSendcaseYYYMM
 
         [HttpPost("Amount_DateSave")]
         public IActionResult Amount_DateSave(string HS_ID, string Amount_Date)
         {
+            /*
             var sdate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(Amount_Date.Replace('/','-')));
 
             ResultClass<string> resultClass = new ResultClass<string>();
@@ -6500,6 +6237,21 @@ namespace KF_WebAPI.Controllers
                 resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
+            */
+            ResultClass<string> resultClass = new ResultClass<string>();
+            NewXinCaseStatusM newXinCaseStatusM = new NewXinCaseStatusM();
+            try
+            {
+                resultClass = newXinCaseStatusM.UpdateNewXinCaseStatus(HS_ID, Amount_Date);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+
         }
 
         #endregion
