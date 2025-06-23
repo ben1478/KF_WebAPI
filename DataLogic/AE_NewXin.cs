@@ -60,10 +60,15 @@ namespace KF_WebAPI.DataLogic
                 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
                 using (var package = new ExcelPackage(stream))
                 {
-                    //ExcelWorksheet worksheet = package.Workbook.Worksheets[0]; // Sheet0
                     try
                     {
                         ExcelWorksheet worksheet = package.FindExcelSheet(_sheetName);
+                        if (worksheet == null)
+                        {
+                            resultClass.ResultMsg = "找不到工作表: " + _sheetName;
+                            resultClass.ResultCode = "500";
+                            return resultClass;
+                        }
 
                         int rowCount = worksheet.Dimension.Rows;
                         int colCount = worksheet.Dimension.Columns;
@@ -106,7 +111,6 @@ namespace KF_WebAPI.DataLogic
         public void DiffKF_NewXinChecklistDs(List<KFNewXinChecklistD> KFNewXinChecklistDs)
         {
             FuncHandler _FuncHandler = new FuncHandler();
-            HKSCSMappingM hKSCSMappingM = new HKSCSMappingM();
             newXinChecklistDs = new List<NewXinChecklistD>();
             foreach (var item in uploadExcelData)
             {
@@ -146,10 +150,10 @@ namespace KF_WebAPI.DataLogic
                         interest_rate_pass_xls = string.IsNullOrEmpty(item["合約\r\n利率"]) ? 0 : Convert.ToDecimal(item["合約\r\n利率"])
                     };
 
-                    newXinChecklistD.CS_name = matchItem.CS_name;
+                    newXinChecklistD.CS_name = _FuncHandler.DeCodeBig5Words(matchItem.CS_name);
                     newXinChecklistD.U_BC_name = matchItem.U_BC_name;
-                    newXinChecklistD.plan_name = hKSCSMappingM.DeCodeBig5Words(matchItem.plan_name);
-                    newXinChecklistD.show_project_title = hKSCSMappingM.DeCodeBig5Words(matchItem.show_project_title);
+                    newXinChecklistD.plan_name = _FuncHandler.DeCodeBig5Words(matchItem.plan_name);
+                    newXinChecklistD.show_project_title = _FuncHandler.DeCodeBig5Words(matchItem.show_project_title);
                     newXinChecklistD.Loan_rate = matchItem.Loan_rate;
                     newXinChecklistD.interest_rate_pass = matchItem.interest_rate_pass;
                     newXinChecklistDs.Add(newXinChecklistD);
@@ -165,7 +169,7 @@ namespace KF_WebAPI.DataLogic
             if (result.ResultCode != "000")
                 return result;
 
-            // step2.讀取House_sender by 年月份:(將難字
+            // step2.讀取House_sender by 年月份
             KFNewXinChecklistM _KFNewXinChecklistM = new KFNewXinChecklistM();
             result = _KFNewXinChecklistM.GetKFNewXinChecklistDs(req.selYear_S);
             if(result.ResultCode != "000")
@@ -181,8 +185,7 @@ namespace KF_WebAPI.DataLogic
                 newXinChecklistDs = newXinChecklistDs.Where(x => x.isDiff || x.isMate || x.isHaveNCR).ToList();
             }
 
-
-                result.ResultCode = "000";
+            result.ResultCode = "000";
             return result;
         }
         
@@ -395,7 +398,7 @@ namespace KF_WebAPI.DataLogic
             // 將CS_name中的NCR字元轉換為正規表達式格式
             FuncHandler funcHandler = new FuncHandler();
             string cs2_1 = funcHandler.fromNCR(CS_name); // 將NCR字元轉換為正常字元
-            var lsCs2_1 = EncodingChecker.CheckRareChineseCharacters(cs2_1);
+            var lsCs2_1 = FuncHandler.CheckRareChineseCharacters(cs2_1);
             string regexCS = string.Empty;
             foreach (var item in lsCs2_1)
             {
@@ -430,7 +433,8 @@ namespace KF_WebAPI.DataLogic
             return null;
         }
     }
-
+    #region 難字相關處理(已移至FuncHandler.cs)
+    /*
     /// <summary>
     /// 檢查中文字是否為難字或不常用字
     /// </summary>
@@ -497,30 +501,14 @@ namespace KF_WebAPI.DataLogic
             return false; // 全部是常用可編碼字
         }
 
-        public static bool IsNotEncodableInBig5(string text)
-        {
-            try
-            {
-                var big5 = Encoding.GetEncoding(950, new EncoderExceptionFallback(), new DecoderExceptionFallback());
-                big5.GetBytes(text);
-                return false; // 可以轉換
-            }
-            catch
-            {
-                return true; // 不能轉換 → 是難字
-            }
-        }
-
-        public static bool IsUtf8FourByteChar(char c)
-        {
-            var utf8 = Encoding.UTF8;
-            byte[] bytes = utf8.GetBytes(c.ToString());
-            return bytes.Length >= 4;
-        }
     }
-
     public class HKSCSMappingM
     {
+        /// <summary>
+        ///  取得HKSCS對應的Unicode字元
+        /// </summary>
+        /// <param name="hkscs"></param>
+        /// <returns></returns>
         public ResultClass<string> GetUniCode(string hkscs)
         {
             ResultClass<string> result = new ResultClass<string>();
@@ -553,35 +541,39 @@ namespace KF_WebAPI.DataLogic
             return result;
         }
 
+        /// <summary>
+        /// 將Big5編碼的字串解碼為Unicode字元
+        /// </summary>
+        /// <param name="strBig5"></param>
+        /// <returns></returns>
         public string DeCodeBig5Words(string strBig5)
         {
             FuncHandler _FuncHandler = new FuncHandler();
             HKSCSMappingM hKSCSMappingM = new HKSCSMappingM();
-            string decodeCName = string.Empty;
-                                                           //List<string> HtmlEncodes = UnicodeToBig5UrlRecover.ConvertDecimalToUrlEncodeds(csName);
-            var words = EncodingChecker.CheckRareChineseCharacters(strBig5);
+            string decodeWords = string.Empty;
+            var words = FuncHandler.CheckRareChineseCharacters(strBig5);
             foreach (var word in words)
             {
                 if (word.IsRare)
                 {
-                    string HtmlEncode = UnicodeToBig5UrlRecover.ConvertDecimalToUrlEncoded(word.Character);
-                    ResultClass<string> resUniCode = hKSCSMappingM.GetUniCode(HtmlEncode.Replace("%", ""));
+                    string HtmlEncode = FuncHandler.ConvertDecimalToUrlEncoded(word.Character);
+                    ResultClass<string> resUniCode = _FuncHandler.GetUniCode(HtmlEncode.Replace("%", ""));
                     if (resUniCode.ResultCode != "000")
                     {
-                        Debug.WriteLine($"錯誤: {resUniCode.ResultMsg}");
+                        //Debug.WriteLine($"錯誤: {resUniCode.ResultMsg}");
                         continue;
                     }
-                    string result = Big5HkscsDecoder.ConvertHexToUnicodeChar(resUniCode.objResult);
-                    Debug.WriteLine($"解碼後字元：{result}");
-                    decodeCName += result; // 將解碼後的字元累加
+                    string result = FuncHandler.ConvertHexToUnicodeChar(resUniCode.objResult);
+                    //Debug.WriteLine($"解碼後字元：{result}");
+                    decodeWords += result; // 將解碼後的字元累加
                 }
                 else
                 {
-                    Debug.WriteLine($"✅ [{word.Character}] 是常見中文字");
-                    decodeCName += word.Character; // 將解碼後的字元累加
+                    //Debug.WriteLine($"✅ [{word.Character}] 是常見中文字");
+                    decodeWords += word.Character; // 將解碼後的字元累加
                 }
             }
-            return decodeCName;
+            return decodeWords;
         }
     }
     public class UnicodeToBig5UrlRecover
@@ -612,60 +604,9 @@ namespace KF_WebAPI.DataLogic
             }
             return sb.ToString();
         }
-        public static List<string> ConvertDecimalToUrlEncodeds(string str)
-        {
-            List<string> lsString = new List<string>();
-
-
-            for (int i = 0; i < str.Length; i += Char.IsSurrogatePair(str, i) ? 2 : 1)
-            {
-                int codePoint = Char.ConvertToUtf32(str, i);
-                var decimalInput = Char.ConvertFromUtf32(codePoint); //Converts the specified Unicode code point into a UTF-16 encoded string
-
-                Debug.WriteLine("U+{0:X4} {1} at {2}", codePoint, decimalInput, i);
-
-                char c = (char)codePoint;                          // U+E1D0
-
-                Encoding big5 = Encoding.GetEncoding(950);         // Big5 編碼
-                byte[] bytes = big5.GetBytes(new[] { c });         // 取得原始 Big5 bytes
-
-                // 轉成 %XX%YY
-                StringBuilder sb = new StringBuilder();
-                foreach (byte b in bytes)
-                {
-                    sb.Append('%');
-                    sb.Append(b.ToString("X2"));
-                }
-                lsString.Add(sb.ToString());
-            }
-            return lsString;
-        }
     }
     public class Big5HkscsDecoder
     {
-        //static Big5HkscsDecoder()
-        //{
-        //    // 讓 .NET Core 支援 Big5/HKSCS
-        //    Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-        //}
-
-        /// <summary>
-        /// 將 URL encoded 字串（如 %FB%DF）用 Big5-HKSCS 解碼為中文
-        /// </summary>
-        public static async Task<string> DecodeUrlEncodedBig5Hkscs(string urlEncoded)
-        {
-            Encoding big5Encoding = Encoding.GetEncoding(950);
-            string decodedString = HttpUtility.UrlDecode(urlEncoded, big5Encoding);
-            string utf8UrlEncoded = HttpUtility.UrlEncode(decodedString);
-            var result = new
-            {
-                big5UrlEncodedInput = urlEncoded,
-                decodedCharacter = decodedString,
-                correspondingUtf8UrlEncoded = utf8UrlEncoded
-            };
-            return decodedString;
-        }
-
         public static string ConvertHexToUnicodeChar(string hex)
         {
             // 將十六進位字串轉成整數
@@ -677,36 +618,7 @@ namespace KF_WebAPI.DataLogic
             return result;
         }
 
-        public static string ConvertBig5UrlEncodedToUtf8(string big5Encoded)
-        {
-            // Step 1: 先做 URL decode → byte[] = [0xFB, 0xDF]
-            byte[] big5Bytes = Encoding.ASCII.GetBytes(WebUtility.UrlDecode(big5Encoded));
-
-            // Step 2: 用 Big5-HKSCS 解出 Unicode 字元
-            Encoding big5 = Encoding.GetEncoding(950); // 包含常見 HKSCS 字元
-            Debug.WriteLine($"name:{big5.EncodingName} , CodePage :{big5.CodePage}");
-
-            string decodedChar = big5.GetString(big5Bytes); // 應為「峯」
-
-            // Step 3: 把字串轉成 UTF-8 編碼 bytes
-            byte[] utf8Bytes = Encoding.UTF8.GetBytes(decodedChar);
-
-            // Step 4: 轉成 %XX%YY 格式
-            StringBuilder sb = new StringBuilder();
-            foreach (byte b in utf8Bytes)
-            {
-                sb.Append('%');
-                sb.Append(b.ToString("X2"));
-            }
-
-            return sb.ToString(); // 應為 %E5%B3%AF
-        }
-        /// <summary>
-        /// 將像 %FB%DF 的字串轉為 byte[]
-        /// </summary>
-        private static byte[] DecodePercentEncodedToBytes(string encoded)
-        {
-            return Encoding.ASCII.GetBytes(WebUtility.UrlDecode(encoded));
-        }
     }
+    */
+    #endregion
 }
