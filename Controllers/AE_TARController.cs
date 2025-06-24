@@ -568,14 +568,38 @@ namespace KF_WebAPI.Controllers
         /// <summary>
         /// 取得各區業績平均表報表
         /// </summary>
-        [HttpGet("GetTargetAchieve_Excel")]
-        public ActionResult<ResultClass<string>> GetTargetAchieve_Excel(string YYYY)
+        [HttpGet("TR_Rpt_Excel")]
+        public ActionResult<ResultClass<string>> TR_Rpt_Excel(string YYYY)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var Fun = new FuncHandler();
-            var result = Fun.GetTargetAchieveList(YYYY, null);
 
-            return Ok(resultClass);
+            try
+            {
+                List<Per_Achieve> achieveList = Fun.GetTargetAchieveList(YYYY, null);
+
+                var Excel_Headers = new Dictionary<string, string>
+                    {
+                        { "month","月份" },
+                        { "total_perf", "總業績" },
+                        { "total_perf_after_discount", "折數後總業績" },
+                        { "total_target", "責任額" },
+                        { "achieve_rate", "達成率" },
+                        { "achieve_rate_after_discount","折數後達成率" }
+                    };
+
+
+                var fileBytes = FuncHandler.TargetAchieveToExcel(achieveList, Excel_Headers);
+                var fileName = (int.Parse(YYYY) - 1911).ToString() + "年度各區業績平均.xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+            
         }
         #endregion
     }

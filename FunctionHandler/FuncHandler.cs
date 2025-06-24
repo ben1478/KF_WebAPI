@@ -17,6 +17,9 @@ using System.Net.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using System.Linq;
+using OfficeOpenXml.Style;
+using System.IO;
+using static OfficeOpenXml.ExcelErrorValue;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -42,7 +45,7 @@ namespace KF_WebAPI.FunctionHandler
 
             if (endIndex > dt.Rows.Count)
             {
-                endIndex = dt.Rows.Count; 
+                endIndex = dt.Rows.Count;
             }
 
             DataTable pageTable = dt.Clone();
@@ -137,7 +140,7 @@ namespace KF_WebAPI.FunctionHandler
                     }
 
                     worksheet.Cells[1, i + 2].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                    worksheet.Cells[1, i + 2].Style.Fill.BackgroundColor.SetColor(Color.LightBlue);  
+                    worksheet.Cells[1, i + 2].Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
                 }
 
                 // 添加表頭邊框
@@ -158,7 +161,7 @@ namespace KF_WebAPI.FunctionHandler
                     for (int j = 0; j < properties.Length; j++)
                     {
                         var value = properties[j].GetValue(item);
-                        
+
                         // 檢查類型並設置值
                         if (value is int || value is long || value is float || value is double || value is decimal)
                         {
@@ -251,7 +254,6 @@ namespace KF_WebAPI.FunctionHandler
 
             return sc;
         }
-
 
         public static byte[] FeatDailyToExcel<T>(List<T> items, Dictionary<string, string> headers, string name, string datestring)
         {
@@ -535,7 +537,7 @@ namespace KF_WebAPI.FunctionHandler
                 worksheet.Cells[startRowIndex + 1, 1].Value = "總計";
                 worksheet.Cells[startRowIndex + 1, 1, startRowIndex + 1, 2].Merge = true; // 合併儲存格
                 worksheet.Cells[startRowIndex + 1, 1, startRowIndex + 1, 2].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center; // 標題居中
-                foreach (var headerKey in headers.Keys) 
+                foreach (var headerKey in headers.Keys)
                 {
                     var property = model.GetType().GetProperty(headerKey);
                     if (property != null)
@@ -664,7 +666,7 @@ namespace KF_WebAPI.FunctionHandler
             }
         }
 
-        public static byte[] FeatDailyToExcelAgain<T>(byte[] existingFileBytes, List<T> items, Dictionary<string, string> headers, string name, string datestring,int people)
+        public static byte[] FeatDailyToExcelAgain<T>(byte[] existingFileBytes, List<T> items, Dictionary<string, string> headers, string name, string datestring, int people)
         {
             using (var package = new ExcelPackage(new MemoryStream(existingFileBytes)))
             {
@@ -674,7 +676,7 @@ namespace KF_WebAPI.FunctionHandler
                 int startRowIndex = existingRowCount + 2; // 留出一行空白
 
                 // 添加合併標題
-                worksheet.Cells[startRowIndex, 1].Value = "國峯租賃股份有限公司(" + name + ") 1+" + (people-1) + "人     " + datestring;
+                worksheet.Cells[startRowIndex, 1].Value = "國峯租賃股份有限公司(" + name + ") 1+" + (people - 1) + "人     " + datestring;
                 worksheet.Cells[startRowIndex, 1, startRowIndex, headers.Count].Merge = true; // 合併儲存格
                 worksheet.Cells[startRowIndex, 1, startRowIndex, headers.Count].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center; // 標題居中
                 worksheet.Cells[startRowIndex, 1, startRowIndex, headers.Count].Style.Font.Bold = true; // 標題加粗
@@ -752,7 +754,7 @@ namespace KF_WebAPI.FunctionHandler
                 return package.GetAsByteArray();
             }
         }
-        
+
         /// <summary>
         /// 民國年月日換成西元
         /// </summary>
@@ -803,7 +805,7 @@ namespace KF_WebAPI.FunctionHandler
                 int startRowIndex = existingRowCount + 1;
 
 
-                worksheet.Cells[startRowIndex, 1].Value = "總計:" + (existingRowCount-1);
+                worksheet.Cells[startRowIndex, 1].Value = "總計:" + (existingRowCount - 1);
                 worksheet.Cells[startRowIndex, 1, startRowIndex, 10].Merge = true; // 合併儲存格
 
                 worksheet.Cells[startRowIndex, 11].Value = "合計:";
@@ -823,11 +825,11 @@ namespace KF_WebAPI.FunctionHandler
                 var formula19 = $"SUM({worksheet.Cells[2, 19].Address}:{worksheet.Cells[existingRowCount, 19].Address})";
                 worksheet.Cells[startRowIndex, 19].Formula = formula19;
                 worksheet.Cells[startRowIndex, 19].Style.Numberformat.Format = "#,##0";
-                
+
                 var formula20 = $"SUM({worksheet.Cells[2, 20].Address}:{worksheet.Cells[existingRowCount, 20].Address})";
                 worksheet.Cells[startRowIndex, 20].Formula = formula20;
                 worksheet.Cells[startRowIndex, 20].Style.Numberformat.Format = "#,##0";
-                
+
                 using (var range = worksheet.Cells[startRowIndex, 1, startRowIndex, 23])
                 {
                     range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
@@ -866,7 +868,7 @@ namespace KF_WebAPI.FunctionHandler
 
                 int rowIndex = 3; // 從第三行開始填充數據
                 var groupedItems = items.GroupBy(x => x.com_name);
-                int serialNumber = 1; 
+                int serialNumber = 1;
 
                 int subtotal = 0;
 
@@ -1095,7 +1097,7 @@ namespace KF_WebAPI.FunctionHandler
             }
         }
 
-        public static byte[] AttendanceExcelAllMonth(List<Attendance_report_excel> modelList,string yyyy,string mm, List<Flow_rest_HR_excel> flowRestList)
+        public static byte[] AttendanceExcelAllMonth(List<Attendance_report_excel> modelList, string yyyy, string mm, List<Flow_rest_HR_excel> flowRestList)
         {
             using (var package = new ExcelPackage())
             {
@@ -1103,7 +1105,7 @@ namespace KF_WebAPI.FunctionHandler
                 var bcOrder = new List<string> { "BC0800", "BC0801", "BC0802", "BC0803", "BC0900", "BC0100", "BC0200", "BC0600", "BC0300", "BC0500", "BC0400", "BC0700" };
                 var bcGroups = modelList.GroupBy(x => x.U_BC).OrderBy(g => bcOrder.IndexOf(g.Key)).ToList();
                 string[] headers = { "名稱", "日期", "上班", "下班", "遲到", "外出時間" };
-             
+
                 foreach (var bcGroup in bcGroups)
                 {
                     ExcelWorksheet worksheet;
@@ -1185,7 +1187,7 @@ namespace KF_WebAPI.FunctionHandler
                                 DateTime.TryParse(items[j].attendance_date, out attendanceDate);
                                 bool isRest = false;
                                 //颱風假
-                                if (items[j].type== "Hk_04")
+                                if (items[j].type == "Hk_04")
                                 {
                                     isRest = true;
                                     items[j].typename += " ";
@@ -1199,14 +1201,14 @@ namespace KF_WebAPI.FunctionHandler
                                     var RestList = flowRestList.Where(x => x.FR_U_num.Equals(items[j].userID) && attendanceDate.Date >= x.FR_Date_S.Date
                                     && attendanceDate.Date <= x.FR_Date_E.Date).ToList();
 
-                                    if( RestList.Count > 0)
+                                    if (RestList.Count > 0)
                                     {
-                                        foreach( var rest in RestList.Where(x=>x.Sign_name.Equals("同意")).ToList()) 
+                                        foreach (var rest in RestList.Where(x => x.Sign_name.Equals("同意")).ToList())
                                         {
                                             string displayValue = (rest.FR_total_hour % 1 == 0) ? ((int)rest.FR_total_hour).ToString() : rest.FR_total_hour.ToString();
                                             if (rest.FR_kind == "FRK017") //忘打卡FRK017
                                             {
-                                                if(rest.FR_Date_S.Hour == 9)
+                                                if (rest.FR_Date_S.Hour == 9)
                                                 {
                                                     items[j].typename += rest.FR_Kind_name + " 09:00上班";
                                                     items[j].Late = 0;
@@ -1217,21 +1219,21 @@ namespace KF_WebAPI.FunctionHandler
                                                     items[j].early = 0;
                                                 }
                                             }
-                                            else if(rest.FR_kind == "FRK016") //外出 FRK016
+                                            else if (rest.FR_kind == "FRK016") //外出 FRK016
                                             {
                                                 items[j].typename += rest.FR_note;
                                                 TimeSpan LateTime = new TimeSpan(9, 0, 0);
                                                 TimeSpan EarlyTime = new TimeSpan(18, 0, 0);
-                                                if (rest.FR_Date_S.TimeOfDay== LateTime)
+                                                if (rest.FR_Date_S.TimeOfDay == LateTime)
                                                 {
                                                     items[j].Late = 0;
                                                 }
-                                                if(rest.FR_Date_E.TimeOfDay== EarlyTime)
+                                                if (rest.FR_Date_E.TimeOfDay == EarlyTime)
                                                 {
                                                     items[j].early = 0;
                                                 }
                                             }
-                                            else if(rest.FR_total_hour >= 8)
+                                            else if (rest.FR_total_hour >= 8)
                                             {
                                                 items[j].typename += rest.FR_Kind_name + "8H ";
                                                 items[j].Late = 0;
@@ -1293,7 +1295,7 @@ namespace KF_WebAPI.FunctionHandler
                                             calculatedEarlyHour = 8;
                                         items[j].typename += "曠職" + calculatedEarlyHour + " H";
                                     }
-                                   
+
                                 }
                                 //到職日
                                 if (items[j].arrive_date.HasValue && items[j].attendance_date == items[j].arrive_date.Value.ToString("yyyy/MM/dd"))
@@ -1323,7 +1325,7 @@ namespace KF_WebAPI.FunctionHandler
                             }
                         }
                         var lateTotal = 0;
-                        if (userIDGroup.Where(x=>x.userID == "K0330").Count() > 0)
+                        if (userIDGroup.Where(x => x.userID == "K0330").Count() > 0)
                         {
                             lateTotal = Convert.ToInt32(userIDGroup.Sum(x => x.Late));
                         }
@@ -1372,10 +1374,10 @@ namespace KF_WebAPI.FunctionHandler
 
                 int rowindex_ly = 2;
                 int colindex_ly = 1;
-                var userResult = modelList.Where(x => (x.absenteeism ?? "").Equals("Y") == false).GroupBy(x => x.userID).Select(g => new { UserID = g.Key, Totalval = g.Sum(x => x.Late)}).Where(y=>y.Totalval > 0).OrderBy(x=>x.UserID);
-                foreach ( var user in userResult)
+                var userResult = modelList.Where(x => (x.absenteeism ?? "").Equals("Y") == false).GroupBy(x => x.userID).Select(g => new { UserID = g.Key, Totalval = g.Sum(x => x.Late) }).Where(y => y.Totalval > 0).OrderBy(x => x.UserID);
+                foreach (var user in userResult)
                 {
-                    if(user.Totalval > 15 && user.UserID != "K0330")
+                    if (user.Totalval > 15 && user.UserID != "K0330")
                     {
                         var name = modelList.Where(x => x.userID.Equals(user.UserID)).FirstOrDefault().user_name;
                         rowindex_ly++;
@@ -1565,7 +1567,7 @@ namespace KF_WebAPI.FunctionHandler
                 }
                 rowIndex_af++;
                 int iaf = 1;
-                foreach (var item in flowRestList.Where(x=>x.FR_kind != "FRK016" && x.FR_kind != "FRK017" && x.FR_kind != "FRK021").OrderBy(x=>x.FR_Date_S).ToList()) 
+                foreach (var item in flowRestList.Where(x => x.FR_kind != "FRK016" && x.FR_kind != "FRK017" && x.FR_kind != "FRK021").OrderBy(x => x.FR_Date_S).ToList())
                 {
                     colIndex_af = 1;
                     worksheet_af.Cells[rowIndex_af, colIndex_af].Value = iaf++;
@@ -1588,7 +1590,7 @@ namespace KF_WebAPI.FunctionHandler
                     worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
                     worksheet_af.Cells[rowIndex_af, colIndex_af, rowIndex_af + 1, colIndex_af].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
                     colIndex_af++;
-                    
+
                     worksheet_af.Cells[rowIndex_af, colIndex_af].Value = item.FR_Date_S.ToString("yyyy-MM-dd HH:mm");
                     worksheet_af.Cells[rowIndex_af + 1, colIndex_af++].Value = item.FR_Date_E.ToString("yyyy-MM-dd HH:mm");
 
@@ -1619,11 +1621,11 @@ namespace KF_WebAPI.FunctionHandler
 
                 #region 加班
                 var worksheet_wo = package.Workbook.Worksheets.Add("加班");
-                string[] headers_wo = new string[] { "序號", "名稱", "加班起迄日", "加班時數","選擇項目", "簽核結果" };         
+                string[] headers_wo = new string[] { "序號", "名稱", "加班起迄日", "加班時數", "選擇項目", "簽核結果" };
 
                 int rowIndex_wo = 1;
                 int colIndex_wo = 1;
-                
+
                 foreach (var header in headers_wo)
                 {
                     worksheet_wo.Cells[rowIndex_wo, colIndex_wo++].Value = header;
@@ -1633,7 +1635,7 @@ namespace KF_WebAPI.FunctionHandler
                 int wo_index = 1;
 
 
-                foreach (var item in flowRestList.Where(x=>x.FR_kind.Equals("FRK021")).ToList())
+                foreach (var item in flowRestList.Where(x => x.FR_kind.Equals("FRK021")).ToList())
                 {
                     colIndex_wo = 1;
                     worksheet_wo.Cells[rowIndex_wo, colIndex_wo].Value = wo_index++;
@@ -1659,8 +1661,8 @@ namespace KF_WebAPI.FunctionHandler
                     string compensationType = item.FR_ot_compen;
                     string compensationDescription = compensationType switch
                     {
-                        "0" => "補休",     
-                        "1" => "加班費",   
+                        "0" => "補休",
+                        "1" => "加班費",
                         "2" => "其他"
                     };
                     worksheet_wo.Cells[rowIndex_wo, colIndex_wo].Value = compensationDescription;
@@ -1745,17 +1747,17 @@ namespace KF_WebAPI.FunctionHandler
                     if (item.check_pay_type == "N")
                     {
                         worksheet.Cells[rowIndex, colIndex++].Value = "未沖銷";
-                        worksheet.Cells[rowIndex, colIndex-1].Style.Font.Color.SetColor(Color.Red);
+                        worksheet.Cells[rowIndex, colIndex - 1].Style.Font.Color.SetColor(Color.Red);
                     }
-                    if(item.check_pay_type == "Y")
+                    if (item.check_pay_type == "Y")
                     {
                         worksheet.Cells[rowIndex, colIndex++].Value = "已沖銷";
-                        worksheet.Cells[rowIndex, colIndex-1].Style.Font.Color.SetColor(Color.Blue);
+                        worksheet.Cells[rowIndex, colIndex - 1].Style.Font.Color.SetColor(Color.Blue);
                     }
                     if (item.check_pay_type == "S")
                     {
                         worksheet.Cells[rowIndex, colIndex++].Value = "已結清";
-                        worksheet.Cells[rowIndex, colIndex-1].Style.Font.Color.SetColor(Color.Black);
+                        worksheet.Cells[rowIndex, colIndex - 1].Style.Font.Color.SetColor(Color.Black);
                     }
                     worksheet.Cells[rowIndex, colIndex++].Value = item.check_pay_date;
                     worksheet.Cells[rowIndex, colIndex++].Value = item.check_pay_name;
@@ -1763,12 +1765,12 @@ namespace KF_WebAPI.FunctionHandler
                     if (item.bad_debt_type == "Y" && item.check_pay_type != "S")
                     {
                         worksheet.Cells[rowIndex, colIndex++].Value = "已轉呆";
-                        worksheet.Cells[rowIndex, colIndex-1].Style.Font.Color.SetColor(Color.Black);
+                        worksheet.Cells[rowIndex, colIndex - 1].Style.Font.Color.SetColor(Color.Black);
                     }
                     if (item.bad_debt_type == "N" && item.check_pay_type != "S")
                     {
                         worksheet.Cells[rowIndex, colIndex++].Value = "未轉呆";
-                        worksheet.Cells[rowIndex, colIndex-1].Style.Font.Color.SetColor(Color.Blue);
+                        worksheet.Cells[rowIndex, colIndex - 1].Style.Font.Color.SetColor(Color.Blue);
                     }
                     if (item.check_pay_type == "S")
                     {
@@ -2098,7 +2100,7 @@ namespace KF_WebAPI.FunctionHandler
             }
         }
 
-        public static byte[] ReceivableExcessExcel(List<Receivable_Excess_Excel> items,Dictionary<string,string> headers)
+        public static byte[] ReceivableExcessExcel(List<Receivable_Excess_Excel> items, Dictionary<string, string> headers)
         {
             if (items == null || items.Count == 0)
             {
@@ -2120,8 +2122,8 @@ namespace KF_WebAPI.FunctionHandler
                     cell.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
                 }
 
-                
-                int m1 = items.Where(x=>x.diffType=="M1").Count();
+
+                int m1 = items.Where(x => x.diffType == "M1").Count();
                 int m2 = items.Where(x => x.diffType == "M2").Count();
                 int m3 = items.Where(x => x.diffType == "M3").Count();
 
@@ -2237,7 +2239,7 @@ namespace KF_WebAPI.FunctionHandler
             using (var package = new ExcelPackage())
             {
                 var worksheet = package.Workbook.Worksheets.Add("Sheet0");
-                
+
 
                 // 添加表頭
                 worksheet.Cells[1, 1].Value = "排名";
@@ -2380,13 +2382,13 @@ namespace KF_WebAPI.FunctionHandler
             return result;
         }
 
-        public static bool AuditFlow(string U_num,string U_BC,string AF_ID, string FM_Source_ID, string IP)
+        public static bool AuditFlow(string U_num, string U_BC, string AF_ID, string FM_Source_ID, string IP)
         {
             bool result = false;
 
             ADOData _adoData = new ADOData();
             var T_SQL_AUDIT = @"select * from AuditFlow where AF_ID=@AF_ID";
-            var parameters_audit = new List<SqlParameter> 
+            var parameters_audit = new List<SqlParameter>
             {
                 new SqlParameter("@AF_ID", AF_ID)
             };
@@ -2401,7 +2403,7 @@ namespace KF_WebAPI.FunctionHandler
             //新增主流程
             var T_SQL_M = @"Insert into AuditFlow_M(AF_ID,FM_Source_ID,FM_BC,FM_Step,FM_Step_SignType,add_date,add_num,add_ip,edit_date,edit_num,edit_ip) 
                 Values (@AF_ID,@FM_Source_ID,@FM_BC,'1','FSIGN001',GETDATE(),@add_num,@add_ip,GETDATE(),@edit_num,@edit_ip) ";
-            var parameters_m = new List<SqlParameter> 
+            var parameters_m = new List<SqlParameter>
             {
                 new SqlParameter("@AF_ID", AF_ID),
                 new SqlParameter("@FM_Source_ID", FM_Source_ID),
@@ -2421,10 +2423,10 @@ namespace KF_WebAPI.FunctionHandler
                 var MsgNum = "";
                 for (int i = 1; i <= FM_step; i++)
                 {
-                   
+
                     var T_SQL_D = @"Insert into AuditFlow_D (AF_ID,FM_Source_ID,FD_Step,FD_Sign_Countersign,FD_Step_title,FD_Step_num,FD_Step_SignType,add_date,add_num,add_ip)
                         Values (@AF_ID,@FM_Source_ID,@FD_Step,'S',@FD_Step_title,@FD_Step_num,'FSIGN001',GETDATE(),@add_num,@add_ip)";
-                    var parameters_d = new List<SqlParameter> 
+                    var parameters_d = new List<SqlParameter>
                     {
                         new SqlParameter("@AF_ID", AF_ID),
                         new SqlParameter("@FM_Source_ID", FM_Source_ID),
@@ -2439,7 +2441,7 @@ namespace KF_WebAPI.FunctionHandler
                         case "U0000": //雙副總
                             parameters_d.Add(new SqlParameter("@FD_Step_num", "K0002"));
                             _adoData.ExecuteNonQuery(T_SQL_D, parameters_d);
-                            var parameters_dx = new List<SqlParameter> 
+                            var parameters_dx = new List<SqlParameter>
                             {
                                 new SqlParameter("@AF_ID", AF_ID),
                                 new SqlParameter("@FM_Source_ID", FM_Source_ID),
@@ -2453,7 +2455,7 @@ namespace KF_WebAPI.FunctionHandler
                             break;
                         case "U0001": //部門主管
                             var T_SQL_USER = @"select * from User_M where U_num = @U_num";
-                            var parameters_user = new List<SqlParameter> 
+                            var parameters_user = new List<SqlParameter>
                             {
                                 new SqlParameter("@U_num", U_num)
                             };
@@ -2465,7 +2467,7 @@ namespace KF_WebAPI.FunctionHandler
                                 MsgNum = leaderNum;
                             break;
                         default:
-                            if(stepPersontions[i - 1]== U_num) // 當申請人為審核者自動變更為代理人
+                            if (stepPersontions[i - 1] == U_num) // 當申請人為審核者自動變更為代理人
                             {
                                 var T_SQL_AGENT = @"select * from User_M where U_num = @U_num";
                                 var parameters_agent = new List<SqlParameter>
@@ -2493,8 +2495,8 @@ namespace KF_WebAPI.FunctionHandler
                     //訊息通知
                     if (new[] { "PO", "PP", "PS", "PA" }.Contains(AF_ID))
                         Fun.MsgIns("MSGK0005", U_num, MsgNum, "請採購單或請款單簽核通知,請前往處理!!", IP);
-                    
-                    
+
+
                 }
             }
             return result;
@@ -2522,10 +2524,10 @@ namespace KF_WebAPI.FunctionHandler
             {
                 throw;
             }
-           
+
         }
 
-        public void ExtAPILogIns(string API_CODE,string API_NAME,string API_KEY,string ACCESS_TOKEN,string PARAM_JSON,string RESULT_CODE,string RESULT_MSG)
+        public void ExtAPILogIns(string API_CODE, string API_NAME, string API_KEY, string ACCESS_TOKEN, string PARAM_JSON, string RESULT_CODE, string RESULT_MSG)
         {
             ExtAPILogIns(API_CODE, API_NAME, API_KEY, ACCESS_TOKEN, PARAM_JSON, RESULT_CODE, RESULT_MSG, "sys");
         }
@@ -2586,7 +2588,7 @@ namespace KF_WebAPI.FunctionHandler
             return sb.ToString();
         }
 
-        public List<Per_Achieve> GetTargetAchieveList(string YYYY,string? U_BC)
+        public List<Per_Achieve> GetTargetAchieveList(string YYYY, string? U_BC)
         {
             ADOData _adoData = new ADOData();
 
@@ -2682,6 +2684,336 @@ namespace KF_WebAPI.FunctionHandler
             {
                 throw ex;
             }
+        }
+
+        public static byte[] TargetAchieveToExcel(List<Per_Achieve> achieveList, Dictionary<string, string> headers)
+        {
+            var fieldsWithWan = new HashSet<string> { "total_target", "total_perf", "total_perf_after_discount" };
+            var percentFields = new HashSet<string> { "achieve_rate", "achieve_rate_after_discount" };
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("責任額達成率");
+
+                #region 台北
+                string[] taipeiBC = { "BC0100-1", "BC0100-2" };
+                var taipeiList = achieveList
+                    .Where(q => taipeiBC.Contains(q.U_BC_NEW))
+                    .GroupBy(q => q.month)
+                    .Select(g =>
+                    {
+                        double totalTarget = g.Sum(x => x.total_target);
+                        double totalPerf = g.Sum(x => x.total_perf);
+                        double totalPerfAfter = g.Sum(x => x.total_perf_after_discount);
+
+                        return new Per_Achieve
+                        {
+                            month = g.Key,
+                            U_BC_NEW = "BC0100",
+                            total_target = totalTarget,
+                            total_perf = totalPerf,
+                            total_perf_after_discount = totalPerfAfter,
+                            achieve_rate = totalTarget != 0 ? $"{(totalPerf / totalTarget * 100):F2}%" : "0.00%",
+                            achieve_rate_after_discount = totalTarget != 0 ? $"{(totalPerfAfter / totalTarget * 100):F2}%" : "0.00%",
+                            Subord = g.Sum(x => x.Subord),
+                            Leader = g.Sum(x => x.Leader)
+                        };
+                    }).ToList();
+                WriteRegionData(worksheet, taipeiList, 1, 1, "台北", headers, fieldsWithWan, percentFields);
+                #endregion
+
+                #region 台中
+                var taichungList = achieveList
+                    .Where(x => x.U_BC_NEW == "BC0300")
+                    .OrderBy(x => x.month)
+                    .Select(g =>
+                    {
+                        double totalTarget = g.total_target;
+                        double totalPerf = g.total_perf;
+                        double totalPerfAfter = g.total_perf_after_discount;
+
+                        return new Per_Achieve
+                        {
+                            month = g.month,
+                            U_BC_NEW = g.U_BC_NEW,
+                            total_target = totalTarget,
+                            total_perf = totalPerf,
+                            total_perf_after_discount = totalPerfAfter,
+                            achieve_rate = totalTarget != 0 ? $"{(totalPerf / totalTarget * 100):F2}%" : "0.00%",
+                            achieve_rate_after_discount = totalTarget != 0 ? $"{(totalPerfAfter / totalTarget * 100):F2}%" : "0.00%",
+                            Subord = g.Subord,
+                            Leader = g.Leader
+                        };
+                    }).ToList();
+                WriteRegionData(worksheet, taichungList, 1, 8, "台中", headers, fieldsWithWan, percentFields);
+                #endregion
+
+                #region 台北一區(覃學華)
+                var taipei_1_List = achieveList
+                    .Where(x => x.U_BC_NEW.Equals("BC0100-1"))
+                    .OrderBy(q => q.month)
+                    .Select(g =>
+                    {
+                        double totalTarget = g.total_target;
+                        double totalPerf = g.total_perf;
+                        double totalPerfAfter = g.total_perf_after_discount;
+
+                        return new Per_Achieve
+                        {
+                            month = g.month,
+                            U_BC_NEW = g.U_BC_NEW,
+                            total_target = totalTarget,
+                            total_perf = totalPerf,
+                            total_perf_after_discount = totalPerfAfter,
+                            achieve_rate = totalTarget != 0 ? $"{(totalPerf / totalTarget * 100):F2}%" : "0.00%",
+                            achieve_rate_after_discount = totalTarget != 0 ? $"{(totalPerfAfter / totalTarget * 100):F2}%" : "0.00%",
+                            Subord = g.Subord,
+                            Leader = g.Leader
+                        };
+                    }).ToList();
+                WriteRegionData(worksheet, taipei_1_List, 1, 15, "台北一區(覃學華)", headers, fieldsWithWan, percentFields);
+                #endregion
+
+                #region 新北
+                var newTaipeiList = achieveList
+                    .Where(x => x.U_BC_NEW.Equals("BC0200"))
+                    .OrderBy(q => q.month)
+                    .Select(g =>
+                    {
+                        double totalTarget = g.total_target;
+                        double totalPerf = g.total_perf;
+                        double totalPerfAfter = g.total_perf_after_discount;
+
+                        return new Per_Achieve
+                        {
+                            month = g.month,
+                            U_BC_NEW = g.U_BC_NEW,
+                            total_target = totalTarget,
+                            total_perf = totalPerf,
+                            total_perf_after_discount = totalPerfAfter,
+                            achieve_rate = totalTarget != 0 ? $"{(totalPerf / totalTarget * 100):F2}%" : "0.00%",
+                            achieve_rate_after_discount = totalTarget != 0 ? $"{(totalPerfAfter / totalTarget * 100):F2}%" : "0.00%",
+                            Subord = g.Subord,
+                            Leader = g.Leader
+                        };
+                    }).ToList();
+                WriteRegionData(worksheet, newTaipeiList, 11, 1, "新北", headers, fieldsWithWan, percentFields);
+                #endregion
+
+                #region 台南
+                var tainanList = achieveList
+                    .Where(x => x.U_BC_NEW.Equals("BC0500"))
+                    .OrderBy(q => q.month)
+                    .Select(g =>
+                    {
+                        double totalTarget = g.total_target;
+                        double totalPerf = g.total_perf;
+                        double totalPerfAfter = g.total_perf_after_discount;
+
+                        return new Per_Achieve
+                        {
+                            month = g.month,
+                            U_BC_NEW = g.U_BC_NEW,
+                            total_target = totalTarget,
+                            total_perf = totalPerf,
+                            total_perf_after_discount = totalPerfAfter,
+                            achieve_rate = totalTarget != 0 ? $"{(totalPerf / totalTarget * 100):F2}%" : "0.00%",
+                            achieve_rate_after_discount = totalTarget != 0 ? $"{(totalPerfAfter / totalTarget * 100):F2}%" : "0.00%",
+                            Subord = g.Subord,
+                            Leader = g.Leader
+                        };
+                    }).ToList();
+                WriteRegionData(worksheet, tainanList, 11, 8, "台南", headers, fieldsWithWan, percentFields);
+                #endregion
+
+                #region 台北二區(李詩慧)
+                var taipei_2_List = achieveList
+                    .Where(x => x.U_BC_NEW.Equals("BC0100-2"))
+                    .OrderBy(q => q.month)
+                    .Select(g =>
+                    {
+                        double totalTarget = g.total_target;
+                        double totalPerf = g.total_perf;
+                        double totalPerfAfter = g.total_perf_after_discount;
+
+                        return new Per_Achieve
+                        {
+                            month = g.month,
+                            U_BC_NEW = g.U_BC_NEW,
+                            total_target = totalTarget,
+                            total_perf = totalPerf,
+                            total_perf_after_discount = totalPerfAfter,
+                            achieve_rate = totalTarget != 0 ? $"{(totalPerf / totalTarget * 100):F2}%" : "0.00%",
+                            achieve_rate_after_discount = totalTarget != 0 ? $"{(totalPerfAfter / totalTarget * 100):F2}%" : "0.00%",
+                            Subord = g.Subord,
+                            Leader = g.Leader
+                        };
+                    }).ToList();
+                WriteRegionData(worksheet, taipei_2_List, 11, 15, "台北二區(李詩慧)", headers, fieldsWithWan, percentFields);
+                #endregion
+
+                #region 桃園
+                var taoyuanList = achieveList
+                    .Where(x => x.U_BC_NEW.Equals("BC0600"))
+                    .OrderBy(q => q.month)
+                    .Select(g =>
+                    {
+                        double totalTarget = g.total_target;
+                        double totalPerf = g.total_perf;
+                        double totalPerfAfter = g.total_perf_after_discount;
+
+                        return new Per_Achieve
+                        {
+                            month = g.month,
+                            U_BC_NEW = g.U_BC_NEW,
+                            total_target = totalTarget,
+                            total_perf = totalPerf,
+                            total_perf_after_discount = totalPerfAfter,
+                            achieve_rate = totalTarget != 0 ? $"{(totalPerf / totalTarget * 100):F2}%" : "0.00%",
+                            achieve_rate_after_discount = totalTarget != 0 ? $"{(totalPerfAfter / totalTarget * 100):F2}%" : "0.00%",
+                            Subord = g.Subord,
+                            Leader = g.Leader
+                        };
+                    }).ToList();
+                WriteRegionData(worksheet, taoyuanList, 21, 1, "桃園", headers, fieldsWithWan, percentFields);
+                #endregion
+
+                #region 高雄
+                var kaohsiungList = achieveList
+                    .Where(x => x.U_BC_NEW.Equals("BC0400"))
+                    .OrderBy(q => q.month)
+                    .Select(g =>
+                    {
+                        double totalTarget = g.total_target;
+                        double totalPerf = g.total_perf;
+                        double totalPerfAfter = g.total_perf_after_discount;
+
+                        return new Per_Achieve
+                        {
+                            month = g.month,
+                            U_BC_NEW = g.U_BC_NEW,
+                            total_target = totalTarget,
+                            total_perf = totalPerf,
+                            total_perf_after_discount = totalPerfAfter,
+                            achieve_rate = totalTarget != 0 ? $"{(totalPerf / totalTarget * 100):F2}%" : "0.00%",
+                            achieve_rate_after_discount = totalTarget != 0 ? $"{(totalPerfAfter / totalTarget * 100):F2}%" : "0.00%",
+                            Subord = g.Subord,
+                            Leader = g.Leader
+                        };
+                    }).ToList();
+                WriteRegionData(worksheet, kaohsiungList, 21, 8, "高雄", headers, fieldsWithWan, percentFields);
+                #endregion
+
+                return package.GetAsByteArray();
+            }
+        }
+
+        private static void WriteRegionData(ExcelWorksheet worksheet, List<Per_Achieve> dataList, int startRow, int startCol, string regionTitle,
+            Dictionary<string, string> headers, HashSet<string> fieldsWithWan, HashSet<string> percentFields)
+        {
+            worksheet.Cells[startRow, startCol].Value = regionTitle;
+            worksheet.Cells[startRow, startCol, startRow, startCol + headers.Count - 1].Merge = true;
+            worksheet.Cells[startRow, startCol, startRow, startCol + headers.Count - 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            worksheet.Cells[startRow, startCol, startRow, startCol + headers.Count - 1].Style.Font.Bold = true;
+
+            int rowIndex = startRow + 1;
+            int colIndex = startCol;
+
+            // 表頭
+            foreach (var header in headers)
+            {
+                var cell = worksheet.Cells[rowIndex, colIndex];
+                cell.Value = header.Value;
+                cell.Style.Font.Bold = true;
+                cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                cell.AutoFitColumns();
+                colIndex++;
+            }
+
+            // 資料列
+            rowIndex++;
+            foreach (var item in dataList)
+            {
+                colIndex = startCol;
+                foreach (var key in headers.Keys)
+                {
+                    var prop = typeof(Per_Achieve).GetProperty(key, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                    if (prop == null) continue;
+
+                    var value = prop.GetValue(item);
+                    var cell = worksheet.Cells[rowIndex, colIndex];
+
+                    if (fieldsWithWan.Contains(key))
+                        cell.Value = $"{value}萬";
+                    else if (percentFields.Contains(key))
+                    {
+                        double percent = Convert.ToDouble(value.ToString().Replace("%", "")) / 100;
+                        cell.Value = percent;
+                        cell.Style.Numberformat.Format = "0.00%";
+                    }
+                    else if (key == "month")
+                    {
+                        int month = int.Parse(value.ToString().Split('-')[1]);
+                        cell.Value = $"{month}月({item.Leader}+{item.Subord})";
+                    }
+                    else
+                        cell.Value = value;
+
+                    cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                    colIndex++;
+                }
+                rowIndex++;
+            }
+
+            // 總和列
+            int summaryRow = rowIndex;
+            colIndex = startCol;
+            worksheet.Cells[summaryRow, colIndex].Value = "總和";
+            worksheet.Cells[summaryRow, colIndex].Style.Font.Bold = true;
+            worksheet.Cells[summaryRow, colIndex].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+            double totalTargetSum = dataList.Sum(x => x.total_target);
+            double totalPerfSum = dataList.Sum(x => x.total_perf);
+            double totalPerfAfterSum = dataList.Sum(x => x.total_perf_after_discount);
+
+            colIndex++;
+            foreach (var key in headers.Keys.Skip(1))
+            {
+                var prop = typeof(Per_Achieve).GetProperty(key, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                if (prop == null) continue;
+
+                var cell = worksheet.Cells[summaryRow, colIndex];
+                cell.Style.Font.Bold = true;
+                cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+                if (fieldsWithWan.Contains(key))
+                {
+                    double sum = dataList.Sum(x => Convert.ToDouble(prop.GetValue(x) ?? 0));
+                    cell.Value = $"{sum}萬";
+                    cell.Style.Numberformat.Format = "#,##";
+                }
+                else if (key == "achieve_rate")
+                {
+                    double rate = totalTargetSum != 0 ? totalPerfSum / totalTargetSum : 0;
+                    cell.Value = rate;
+                    cell.Style.Numberformat.Format = "0.00%";
+                }
+                else if (key == "achieve_rate_after_discount")
+                {
+                    double rateAfter = totalTargetSum != 0 ? totalPerfAfterSum / totalTargetSum : 0;
+                    cell.Value = rateAfter;
+                    cell.Style.Numberformat.Format = "0.00%";
+                }
+
+                colIndex++;
+            }
+
+            // 邊框
+            var dataRange = worksheet.Cells[startRow, startCol, summaryRow, startCol + headers.Count - 1];
+            dataRange.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+            dataRange.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+            dataRange.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+            dataRange.Style.Border.Right.Style = ExcelBorderStyle.Thin;
         }
     }
 }
