@@ -587,7 +587,7 @@ namespace KF_WebAPI.DataLogic
                         get_amount = row.get_amount
                     }).ToList();
 
-                    fileBytes = FuncHandler.ExportToExcel(newXinCaseStatus, Excel_Headers);
+                    fileBytes = FuncHandler.ExportToExcel(excelList, Excel_Headers);
                     return fileBytes;
                 }
             }
