@@ -1,4 +1,5 @@
 ﻿using KF_WebAPI.BaseClass;
+using KF_WebAPI.BaseClass.AE;
 using KF_WebAPI.FunctionHandler;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,7 @@ using System;
 using System.Data;
 using System.Diagnostics;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
@@ -23,11 +25,11 @@ namespace KF_WebAPI.DataLogic
         public string selYear_S { get; set; } = ""; // 撥款年月
         public bool isDiff { get; set; } = false; // // 打勾:true -filter 不相等or未對應or難字
     }
-
+    #region 新鑫案件核對表
     public class NewXinChecklistM
     {
         private readonly string _sheetName = "Sheet0"; // Excel工作表名稱
-        
+
         // 上傳Excel資料
         public List<Dictionary<string, string>> uploadExcelData { get; set; }
 
@@ -50,7 +52,7 @@ namespace KF_WebAPI.DataLogic
                 {
                     await file.CopyToAsync(stream);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     resultClass.ResultMsg = "檔案上傳失敗: " + ex.Message;
                     resultClass.ResultCode = "500";
@@ -60,10 +62,15 @@ namespace KF_WebAPI.DataLogic
                 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
                 using (var package = new ExcelPackage(stream))
                 {
-                    //ExcelWorksheet worksheet = package.Workbook.Worksheets[0]; // Sheet0
                     try
                     {
                         ExcelWorksheet worksheet = package.FindExcelSheet(_sheetName);
+                        if (worksheet == null)
+                        {
+                            resultClass.ResultMsg = "找不到工作表: " + _sheetName;
+                            resultClass.ResultCode = "500";
+                            return resultClass;
+                        }
 
                         int rowCount = worksheet.Dimension.Rows;
                         int colCount = worksheet.Dimension.Columns;
@@ -85,16 +92,16 @@ namespace KF_WebAPI.DataLogic
                             {
                                 uploadExcelData.Add(rowDict); // 確保
                             }
-                                
+
                         }
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         resultClass.ResultMsg = "找不到工作表: " + _sheetName + " - " + ex.Message;
                         resultClass.ResultCode = "500";
                         return resultClass;
                     }
-                    
+
                 }
             }
 
@@ -106,7 +113,6 @@ namespace KF_WebAPI.DataLogic
         public void DiffKF_NewXinChecklistDs(List<KFNewXinChecklistD> KFNewXinChecklistDs)
         {
             FuncHandler _FuncHandler = new FuncHandler();
-            HKSCSMappingM hKSCSMappingM = new HKSCSMappingM();
             newXinChecklistDs = new List<NewXinChecklistD>();
             foreach (var item in uploadExcelData)
             {
@@ -118,7 +124,7 @@ namespace KF_WebAPI.DataLogic
                 var matchItems = KFNewXinChecklistDs
                                     .Where(x => Regex.IsMatch(item["申購人"], x.GetRegexCS()))
                                     .ToList();
-                                    
+
                 // 未對應
                 if (!matchItems.Any())
                 {
@@ -146,10 +152,10 @@ namespace KF_WebAPI.DataLogic
                         interest_rate_pass_xls = string.IsNullOrEmpty(item["合約\r\n利率"]) ? 0 : Convert.ToDecimal(item["合約\r\n利率"])
                     };
 
-                    newXinChecklistD.CS_name = matchItem.CS_name;
+                    newXinChecklistD.CS_name = _FuncHandler.DeCodeBig5Words(matchItem.CS_name);
                     newXinChecklistD.U_BC_name = matchItem.U_BC_name;
-                    newXinChecklistD.plan_name = hKSCSMappingM.DeCodeBig5Words(matchItem.plan_name);
-                    newXinChecklistD.show_project_title = hKSCSMappingM.DeCodeBig5Words(matchItem.show_project_title);
+                    newXinChecklistD.plan_name = _FuncHandler.DeCodeBig5Words(matchItem.plan_name);
+                    newXinChecklistD.show_project_title = _FuncHandler.DeCodeBig5Words(matchItem.show_project_title);
                     newXinChecklistD.Loan_rate = matchItem.Loan_rate;
                     newXinChecklistD.interest_rate_pass = matchItem.interest_rate_pass;
                     newXinChecklistDs.Add(newXinChecklistD);
@@ -165,27 +171,26 @@ namespace KF_WebAPI.DataLogic
             if (result.ResultCode != "000")
                 return result;
 
-            // step2.讀取House_sender by 年月份:(將難字
+            // step2.讀取House_sender by 年月份
             KFNewXinChecklistM _KFNewXinChecklistM = new KFNewXinChecklistM();
             result = _KFNewXinChecklistM.GetKFNewXinChecklistDs(req.selYear_S);
-            if(result.ResultCode != "000")
+            if (result.ResultCode != "000")
                 return result;
 
             // step3.比較Excel與House_sender by 申請人姓名(要注意難字)
             DiffKF_NewXinChecklistDs(_KFNewXinChecklistM.KFNewXinChecklistDs);
 
             // step4.篩選資料
-            if(req.isDiff == true)
+            if (req.isDiff == true)
             {
                 // 如果打勾，則篩選出不相等或未對應的資料
                 newXinChecklistDs = newXinChecklistDs.Where(x => x.isDiff || x.isMate || x.isHaveNCR).ToList();
             }
 
-
-                result.ResultCode = "000";
+            result.ResultCode = "000";
             return result;
         }
-        
+
         public ResultClass<string> GetNewXinChecklistDsYearMonth()
         {
             ResultClass<string> result = new ResultClass<string>();
@@ -254,7 +259,7 @@ namespace KF_WebAPI.DataLogic
                 {
                     result = CS_name_xls.Contains("&#") || CS_name_xls.Contains('?'); // 判斷是否包含NCR字元    
                 }
-                
+
                 return result;
             }
         }
@@ -271,8 +276,8 @@ namespace KF_WebAPI.DataLogic
         /// <summary>
         /// 判斷成數和利率是否相等
         /// </summary>
-        public bool isDiff 
-        { 
+        public bool isDiff
+        {
             get
             {
                 bool result = false;
@@ -287,7 +292,7 @@ namespace KF_WebAPI.DataLogic
                 return result;
             }
         } // 不相等(成數,利率)
-        
+
     }
 
     public class KFNewXinChecklistM
@@ -333,12 +338,12 @@ namespace KF_WebAPI.DataLogic
                         U_BC_name = row.Field<string>("U_BC_name"),
                         plan_name = row.Field<string>("plan_name"),
                         show_project_title = row.Field<string>("show_project_title"),
-                        Loan_rate = string.IsNullOrEmpty(row.Field<string>("Loan_rate"))?0: Convert.ToDecimal(row.Field<string>("Loan_rate")),
+                        Loan_rate = string.IsNullOrEmpty(row.Field<string>("Loan_rate")) ? 0 : Convert.ToDecimal(row.Field<string>("Loan_rate")),
                         interest_rate_pass = string.IsNullOrEmpty(row.Field<string>("Loan_rate")) ? 0 : Convert.ToDecimal(row.Field<string>("interest_rate_pass"))
                     }).ToList();
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 resultClass.ResultMsg = "查詢失敗: " + ex.Message;
                 resultClass.ResultCode = "500";
@@ -358,8 +363,8 @@ namespace KF_WebAPI.DataLogic
             var T_SQL = @"
                     SELECT CS_name
                         FROM House_apply
-                        WHERE HA_id IN  "+ inList + " ORDER BY HA_id DESC ";
-            
+                        WHERE HA_id IN  " + inList + " ORDER BY HA_id DESC ";
+
             try
             {
                 DataTable dtResult = _ADO.ExecuteQuery(T_SQL, parameters);
@@ -377,7 +382,6 @@ namespace KF_WebAPI.DataLogic
             return null;
         }
     }
-
     public class KFNewXinChecklistD
     {
         public string? CS_name { get; set; } // 申請人
@@ -395,7 +399,7 @@ namespace KF_WebAPI.DataLogic
             // 將CS_name中的NCR字元轉換為正規表達式格式
             FuncHandler funcHandler = new FuncHandler();
             string cs2_1 = funcHandler.fromNCR(CS_name); // 將NCR字元轉換為正常字元
-            var lsCs2_1 = EncodingChecker.CheckRareChineseCharacters(cs2_1);
+            var lsCs2_1 = FuncHandler.CheckRareChineseCharacters(cs2_1);
             string regexCS = string.Empty;
             foreach (var item in lsCs2_1)
             {
@@ -415,7 +419,229 @@ namespace KF_WebAPI.DataLogic
             return "^" + regexCS + "$"; // 添加開頭和結尾的錨點            
         }
     }
+    #endregion
+    #region 新鑫已撥款明細表
+    public class NewXinCaseStatusM
+    {
+        public List<NewXinCaseStatus_res> GetNewXinCaseStatusDs(NewXinCaseStatus_req model)
+        {
+            FuncHandler _FuncHandler = new FuncHandler();
+            List<NewXinCaseStatus_res> newXinCaseStatusList = new List<NewXinCaseStatus_res>();
+            var sdate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.start_date));
+            var edate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.end_date));
 
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                        SELECT
+                          ISNULL(CS_PID, '') CS_ID
+                         ,ISNULL(CS_register_address, '') addr
+                         ,ISNULL(Loan_rate, '') Loan_rate
+                         ,REPLACE(REPLACE(CONVERT(VARCHAR(10), Send_amount_date, 126), '-', '/'), YEAR(Send_amount_date), YEAR(Send_amount_date) - 1911) Send_amount_date
+                         ,REPLACE(REPLACE(CONVERT(VARCHAR(10), get_amount_date, 126), '-', '/'), YEAR(get_amount_date), YEAR(get_amount_date) - 1911) get_amount_date
+                         ,H.HS_id
+                         ,H.pass_amount
+                         ,H.Send_amount
+                         ,H.get_amount
+                         ,House_pre_project.project_title
+                         ,House_apply.CS_name
+                         ,House_apply.CS_MTEL1
+                         ,House_apply.CS_MTEL2
+                         ,House_apply.CS_introducer
+                         ,User_M.U_name plan_name
+                         ,User_M.U_BC_name
+                         ,ISNULL((SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'Send_result_type'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = H.Send_result_type
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          , '--') AS show_Send_result_type
+                         ,ISNULL((SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'check_amount_type'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = H.check_amount_type
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          , '--') AS show_check_amount_type
+                         ,ISNULL((SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'get_amount_type'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = H.get_amount_type
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          , '--') AS show_get_amount_type
+                         ,(SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'appraise_company'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = H.appraise_company
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          AS show_appraise_company
+                         ,(SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'fund_company'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = H.fund_company
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          AS show_fund_company
+                         ,(SELECT
+                              item_D_name
+                            FROM Item_list
+                            WHERE item_M_code = 'project_title'
+                            AND item_D_type = 'Y'
+                            AND item_D_code = House_pre_project.project_title
+                            AND show_tag = '0'
+                            AND del_tag = '0')
+                          AS show_project_title
+                         ,Users.U_name AS fin_name
+                         ,CONVERT(VARCHAR, house_pre_project.fin_date, 111) AS fin_date
+                        FROM House_sendcase H
+                        LEFT JOIN House_apply
+                          ON House_apply.HA_id = H.HA_id
+                            AND House_apply.del_tag = '0'
+                        LEFT JOIN House_pre_project
+                          ON House_pre_project.HP_project_id = H.HP_project_id
+                            AND House_pre_project.del_tag = '0'
+                        LEFT JOIN view_User_sales User_M
+                          ON User_M.U_num = House_apply.plan_num
+                        LEFT JOIN view_user_sales Users
+                          ON house_pre_project.fin_user = Users.U_num
+                        WHERE H.del_tag = '0'
+                        AND H.sendcase_handle_type = 'Y'
+                        AND ISNULL(H.Send_amount, '') <> ''
+                        AND (Send_amount_date >= @start_date
+                        AND Send_amount_date <= @end_date)
+                        AND fund_Company = 'FDCOM001'
+                        AND CONVERT(VARCHAR(7), get_amount_date, 126) = @selYear_S
+                        AND get_amount_type = 'GTAT002'
+                        ORDER BY Send_amount_date, H.HS_id DESC
+                    ";
+                parameters.Add(new SqlParameter("@start_date", sdate));
+                parameters.Add(new SqlParameter("@end_date", edate));
+                parameters.Add(new SqlParameter("@selYear_S", model.selYear_S));
+                #endregion
+
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    newXinCaseStatusList = dtResult.AsEnumerable().Select(row => new NewXinCaseStatus_res
+                    {
+                        HS_id = row.Field<decimal>("HS_id").ToString(),
+                        Send_amount_date = row.IsNull("Send_amount_date") ? "" :
+                                         row.Field<string>("Send_amount_date"),
+                        get_amount_date = row.IsNull("get_amount_date") ? "" :
+                                         row.Field<string>("get_amount_date"),
+                        CS_name = _FuncHandler.DeCodeBig5Words(row.Field<string>("CS_name")),
+                        CS_ID = row.Field<string>("CS_ID"),
+                        show_project_title = _FuncHandler.DeCodeBig5Words(row.Field<string>("show_project_title")),
+                        get_amount = row.Field<string>("get_amount")
+                    }).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("查詢失敗: " + ex.Message);
+            }
+
+            return newXinCaseStatusList;
+        }
+        public byte[] GetGetNewXinCaseStatusExcel(NewXinCaseStatus_req model)
+        {
+            var Excel_Headers = new Dictionary<string, string>
+            {
+                { "Send_amount_date","出件日期" },
+                { "get_amount_date", "撥款日期" },
+                { "CS_name", "申請人" },
+                { "CS_ID", "申請人ID" },
+                { "show_project_title", "出件方案" },
+                { "get_amount", "撥款金額(萬)" }
+            };
+            List<NewXinCaseStatus_Excel> excelList = new List<NewXinCaseStatus_Excel>();
+            byte[]? fileBytes = null;
+            try
+            {
+                List<NewXinCaseStatus_res> newXinCaseStatus = GetNewXinCaseStatusDs(model);
+                if (newXinCaseStatus.Count > 0)
+                {
+                    excelList = newXinCaseStatus.Select(row => new NewXinCaseStatus_Excel
+                    {
+                        Send_amount_date = row.Send_amount_date,
+                        get_amount_date = row.get_amount_date,
+                        CS_name = row.CS_name,
+                        CS_ID = row.CS_ID,
+                        show_project_title = row.show_project_title,
+                        get_amount = row.get_amount
+                    }).ToList();
+
+                    fileBytes = FuncHandler.ExportToExcel(newXinCaseStatus, Excel_Headers);
+                    return fileBytes;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("查詢失敗: " + ex.Message);
+            }
+            return null;
+        }
+        public ResultClass<string> UpdateNewXinCaseStatus(string HS_ID, string Amount_Date)
+        {
+            var sdate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(Amount_Date.Replace('/', '-')));
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"
+                                update House_sendcase
+                                    set Send_amount_date = @amount_date
+                                    from House_sendcase
+                                    where HS_id = @hs_id
+                    ";
+
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@amount_date", sdate),
+                    new SqlParameter("@hs_id", HS_ID)
+                };
+
+                #endregion
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "異動失敗";
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "異動成功";
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                
+            }
+            return resultClass;
+        }
+    }
+    #endregion 
     public static class ExcelPackageExtensions
     {
         public static ExcelWorksheet FindExcelSheet(this ExcelPackage package, string sheetName)
@@ -430,7 +656,8 @@ namespace KF_WebAPI.DataLogic
             return null;
         }
     }
-
+    #region 難字相關處理(已移至FuncHandler.cs)
+    /*
     /// <summary>
     /// 檢查中文字是否為難字或不常用字
     /// </summary>
@@ -497,30 +724,14 @@ namespace KF_WebAPI.DataLogic
             return false; // 全部是常用可編碼字
         }
 
-        public static bool IsNotEncodableInBig5(string text)
-        {
-            try
-            {
-                var big5 = Encoding.GetEncoding(950, new EncoderExceptionFallback(), new DecoderExceptionFallback());
-                big5.GetBytes(text);
-                return false; // 可以轉換
-            }
-            catch
-            {
-                return true; // 不能轉換 → 是難字
-            }
-        }
-
-        public static bool IsUtf8FourByteChar(char c)
-        {
-            var utf8 = Encoding.UTF8;
-            byte[] bytes = utf8.GetBytes(c.ToString());
-            return bytes.Length >= 4;
-        }
     }
-
     public class HKSCSMappingM
     {
+        /// <summary>
+        ///  取得HKSCS對應的Unicode字元
+        /// </summary>
+        /// <param name="hkscs"></param>
+        /// <returns></returns>
         public ResultClass<string> GetUniCode(string hkscs)
         {
             ResultClass<string> result = new ResultClass<string>();
@@ -553,35 +764,39 @@ namespace KF_WebAPI.DataLogic
             return result;
         }
 
+        /// <summary>
+        /// 將Big5編碼的字串解碼為Unicode字元
+        /// </summary>
+        /// <param name="strBig5"></param>
+        /// <returns></returns>
         public string DeCodeBig5Words(string strBig5)
         {
             FuncHandler _FuncHandler = new FuncHandler();
             HKSCSMappingM hKSCSMappingM = new HKSCSMappingM();
-            string decodeCName = string.Empty;
-                                                           //List<string> HtmlEncodes = UnicodeToBig5UrlRecover.ConvertDecimalToUrlEncodeds(csName);
-            var words = EncodingChecker.CheckRareChineseCharacters(strBig5);
+            string decodeWords = string.Empty;
+            var words = FuncHandler.CheckRareChineseCharacters(strBig5);
             foreach (var word in words)
             {
                 if (word.IsRare)
                 {
-                    string HtmlEncode = UnicodeToBig5UrlRecover.ConvertDecimalToUrlEncoded(word.Character);
-                    ResultClass<string> resUniCode = hKSCSMappingM.GetUniCode(HtmlEncode.Replace("%", ""));
+                    string HtmlEncode = FuncHandler.ConvertDecimalToUrlEncoded(word.Character);
+                    ResultClass<string> resUniCode = _FuncHandler.GetUniCode(HtmlEncode.Replace("%", ""));
                     if (resUniCode.ResultCode != "000")
                     {
-                        Debug.WriteLine($"錯誤: {resUniCode.ResultMsg}");
+                        //Debug.WriteLine($"錯誤: {resUniCode.ResultMsg}");
                         continue;
                     }
-                    string result = Big5HkscsDecoder.ConvertHexToUnicodeChar(resUniCode.objResult);
-                    Debug.WriteLine($"解碼後字元：{result}");
-                    decodeCName += result; // 將解碼後的字元累加
+                    string result = FuncHandler.ConvertHexToUnicodeChar(resUniCode.objResult);
+                    //Debug.WriteLine($"解碼後字元：{result}");
+                    decodeWords += result; // 將解碼後的字元累加
                 }
                 else
                 {
-                    Debug.WriteLine($"✅ [{word.Character}] 是常見中文字");
-                    decodeCName += word.Character; // 將解碼後的字元累加
+                    //Debug.WriteLine($"✅ [{word.Character}] 是常見中文字");
+                    decodeWords += word.Character; // 將解碼後的字元累加
                 }
             }
-            return decodeCName;
+            return decodeWords;
         }
     }
     public class UnicodeToBig5UrlRecover
@@ -612,60 +827,9 @@ namespace KF_WebAPI.DataLogic
             }
             return sb.ToString();
         }
-        public static List<string> ConvertDecimalToUrlEncodeds(string str)
-        {
-            List<string> lsString = new List<string>();
-
-
-            for (int i = 0; i < str.Length; i += Char.IsSurrogatePair(str, i) ? 2 : 1)
-            {
-                int codePoint = Char.ConvertToUtf32(str, i);
-                var decimalInput = Char.ConvertFromUtf32(codePoint); //Converts the specified Unicode code point into a UTF-16 encoded string
-
-                Debug.WriteLine("U+{0:X4} {1} at {2}", codePoint, decimalInput, i);
-
-                char c = (char)codePoint;                          // U+E1D0
-
-                Encoding big5 = Encoding.GetEncoding(950);         // Big5 編碼
-                byte[] bytes = big5.GetBytes(new[] { c });         // 取得原始 Big5 bytes
-
-                // 轉成 %XX%YY
-                StringBuilder sb = new StringBuilder();
-                foreach (byte b in bytes)
-                {
-                    sb.Append('%');
-                    sb.Append(b.ToString("X2"));
-                }
-                lsString.Add(sb.ToString());
-            }
-            return lsString;
-        }
     }
     public class Big5HkscsDecoder
     {
-        //static Big5HkscsDecoder()
-        //{
-        //    // 讓 .NET Core 支援 Big5/HKSCS
-        //    Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-        //}
-
-        /// <summary>
-        /// 將 URL encoded 字串（如 %FB%DF）用 Big5-HKSCS 解碼為中文
-        /// </summary>
-        public static async Task<string> DecodeUrlEncodedBig5Hkscs(string urlEncoded)
-        {
-            Encoding big5Encoding = Encoding.GetEncoding(950);
-            string decodedString = HttpUtility.UrlDecode(urlEncoded, big5Encoding);
-            string utf8UrlEncoded = HttpUtility.UrlEncode(decodedString);
-            var result = new
-            {
-                big5UrlEncodedInput = urlEncoded,
-                decodedCharacter = decodedString,
-                correspondingUtf8UrlEncoded = utf8UrlEncoded
-            };
-            return decodedString;
-        }
-
         public static string ConvertHexToUnicodeChar(string hex)
         {
             // 將十六進位字串轉成整數
@@ -677,36 +841,7 @@ namespace KF_WebAPI.DataLogic
             return result;
         }
 
-        public static string ConvertBig5UrlEncodedToUtf8(string big5Encoded)
-        {
-            // Step 1: 先做 URL decode → byte[] = [0xFB, 0xDF]
-            byte[] big5Bytes = Encoding.ASCII.GetBytes(WebUtility.UrlDecode(big5Encoded));
-
-            // Step 2: 用 Big5-HKSCS 解出 Unicode 字元
-            Encoding big5 = Encoding.GetEncoding(950); // 包含常見 HKSCS 字元
-            Debug.WriteLine($"name:{big5.EncodingName} , CodePage :{big5.CodePage}");
-
-            string decodedChar = big5.GetString(big5Bytes); // 應為「峯」
-
-            // Step 3: 把字串轉成 UTF-8 編碼 bytes
-            byte[] utf8Bytes = Encoding.UTF8.GetBytes(decodedChar);
-
-            // Step 4: 轉成 %XX%YY 格式
-            StringBuilder sb = new StringBuilder();
-            foreach (byte b in utf8Bytes)
-            {
-                sb.Append('%');
-                sb.Append(b.ToString("X2"));
-            }
-
-            return sb.ToString(); // 應為 %E5%B3%AF
-        }
-        /// <summary>
-        /// 將像 %FB%DF 的字串轉為 byte[]
-        /// </summary>
-        private static byte[] DecodePercentEncodedToBytes(string encoded)
-        {
-            return Encoding.ASCII.GetBytes(WebUtility.UrlDecode(encoded));
-        }
     }
+    */
+    #endregion
 }
