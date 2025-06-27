@@ -2210,6 +2210,7 @@ namespace KF_WebAPI.Controllers
         [HttpGet("RC_Over_Rel_Detail_LQuery")]
         public ActionResult<ResultClass<string>> RC_Over_Rel_Detail_LQuery(int overDay, string planNum)
         {
+            FuncHandler _FuncHandler = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
 
             try
@@ -2251,8 +2252,19 @@ namespace KF_WebAPI.Controllers
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
+                    var newdtResult = dtResult.AsEnumerable().Select(row => new
+                    {
+                        RC_count = row.Field<int>("RC_count"),
+                        CS_name = string.IsNullOrEmpty(row.Field<string>("CS_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("CS_name")),
+                        DelayDay = row.Field<int>("DelayDay"),
+                        amount_total = row.Field<decimal>("amount_total"),
+                        month_total = row.Field<int>("month_total"),
+                        amount_per_month = row.Field<decimal>("amount_per_month")
+                    }).ToList();
+
+
                     resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    resultClass.objResult = JsonConvert.SerializeObject(newdtResult);
                     return Ok(resultClass);
                 }
                 else
@@ -2277,6 +2289,7 @@ namespace KF_WebAPI.Controllers
         [HttpGet("RC_Over_Rel_LQuery")]
         public ActionResult<ResultClass<string>> RC_Over_Rel_LQuery(int overDay)
         {
+            FuncHandler _FuncHandler = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
 
             try
@@ -2323,8 +2336,19 @@ namespace KF_WebAPI.Controllers
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
+                    var newdtResult = dtResult.AsEnumerable().Select(row => new
+                    {
+                        BC_name = row.Field<string>("BC_name"),
+                        u_name = string.IsNullOrEmpty(row.Field<string>("u_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("u_name")),
+                        TOT_Count = row.Field<int>("TOT_Count"),
+                        amount_total = row.Field<decimal>("amount_total"),
+                        OV_Count = row.Field<int>("OV_Count"),
+                        OV_total = row.Field<decimal>("OV_total"),
+                        OV_Rate = row.Field<string>("OV_Rate"),
+                        plan_num = row.Field<string>("plan_num")
+                    }).ToList();
                     resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    resultClass.objResult = JsonConvert.SerializeObject(newdtResult);
                     return Ok(resultClass);
                 }
                 else
@@ -2347,6 +2371,7 @@ namespace KF_WebAPI.Controllers
         [HttpPost("RC_Over_Rel_Excel")]
         public IActionResult RC_Over_Rel_Excel(int overDay)
         {
+            FuncHandler _FuncHandler = new FuncHandler();
             try
             {
                 ADOData _adoData = new ADOData();
@@ -2391,7 +2416,7 @@ namespace KF_WebAPI.Controllers
                 var excelList = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Over_Rel_Excel
                 {
                     BC_name = row.Field<string>("BC_name"),
-                    u_name = row.Field<string>("u_name"),
+                    u_name = string.IsNullOrEmpty(row.Field<string>("u_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("u_name")),
                     ToT_Count = row.Field<int>("ToT_Count"),
                     amount_total = row.Field<decimal>("amount_total"),
                     OV_Count = row.Field<int>("OV_Count"),
@@ -2509,6 +2534,7 @@ namespace KF_WebAPI.Controllers
         [HttpGet("RC_Over_Rel_Case_LQuery")]
         public ActionResult<ResultClass<string>> RC_Over_Rel_Case_LQuery(int overDay)
         {
+            FuncHandler _FuncHandler = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
 
             try
@@ -2577,8 +2603,20 @@ namespace KF_WebAPI.Controllers
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
+                    var newDtResult = dtResult.AsEnumerable().Select(row => new
+                    {
+                        pro_name = string.IsNullOrEmpty(row.Field<string>("pro_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("pro_name")),
+                        TOT_Count = row.Field<int>("TOT_Count") ,
+                        amount_total = row.Field<decimal?>("amount_total") ?? 0,
+                        OV_Count = row.Field<int>("OV_Count"),
+                        OV_total = row.Field<decimal?>("OV_total") ?? 0,
+                        OV_Rate = row.Field<decimal?>("OV_Rate") ?? 0,
+                        SCount = row.Field<int>("SCount"),
+                        RemainingPrincipal = row.Field<decimal?>("RemainingPrincipal") ?? 0
+                    });
+
                     resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    resultClass.objResult = JsonConvert.SerializeObject(newDtResult);
                     return Ok(resultClass);
                 }
                 else
