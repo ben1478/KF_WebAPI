@@ -2366,6 +2366,118 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
+        /// 逾放比查詢(50萬為基準) RC_Over_Rel50_LQuery/RC_over_release.asp
+        /// </summary>
+        /// <param name="overDay">60</param>
+        /// <returns></returns>
+        [HttpGet("RC_Over_Rel50_LQuery")]
+        public ActionResult<ResultClass<string>> RC_Over_Rel50_LQuery(int overDay, int Base_AMT)
+        {
+            FuncHandler _FuncHandler = new FuncHandler();
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                    SELECT Tol.*,isnull(OV.OV_Count, 0)OV_Count, isnull(OV_total, 0)OV_total,          ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) OV_Rate,         isnull(SCount,0) SCount ,isnull(RemainingPrincipal,0)RemainingPrincipal   FROM     (/*逾期案件-總件數,總金額*/ SELECT pro_name,count(pro_name)TOT_Count,                              amount_type,sum(amount_total)amount_total      FROM        (SELECT pro_name,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,                RM.amount_total ,case when amount_total > @Base_AMT then 'U' else 'D' end amount_type         FROM           (SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date            FROM Receivable_D            WHERE del_tag = '0'AND check_pay_type='N' AND bad_debt_type='N'AND cancel_type='N'            GROUP BY RCM_id) RD         LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id         LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id and  RM.HS_id = HS.HS_id          LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id     Left Join      (   SELECT HP_project_id,P.project_title,item_D_name pro_name FROM House_pre_project P   left join   (   SELECT item_D_code, item_D_name FROM Item_list   WHERE item_M_code = 'project_title' AND item_D_type='Y'   ) I on case when P.project_title='PJ00001' then 'PJ00005'else P.project_title end=I.item_D_code WHERE P.del_tag='0'     ) P on HS.HP_project_id=P.HP_project_id         WHERE RM.RCM_id IS NOT NULL AND RM.del_tag='0' AND HA.del_tag='0'  AND HS.del_tag='0') OV      GROUP BY pro_name,amount_type) Tol   LEFT JOIN     (/*逾期案件-總件數,總金額*/  SELECT pro_name,count(pro_name)OV_Count,sum(amount_total)OV_total,amount_type      FROM        (SELECT  case when amount_total > @Base_AMT then 'U' else 'D' end amount_type,                DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total,pro_name         FROM           (SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date            FROM Receivable_D            WHERE del_tag = '0'AND check_pay_type='N' AND bad_debt_type='N'    AND cancel_type='N' GROUP BY RCM_id) RD         LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id     LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id and  RM.HS_id = HS.HS_id          LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id         Left Join      (   SELECT HP_project_id,P.project_title,item_D_name pro_name FROM House_pre_project P   left join   (   SELECT item_D_code, item_D_name FROM Item_list    WHERE item_M_code = 'project_title' AND item_D_type='Y'   ) I on case when P.project_title='PJ00001' then 'PJ00005'else P.project_title end=I.item_D_code WHERE P.del_tag='0'     ) P on HS.HP_project_id=P.HP_project_id         WHERE RM.RCM_id IS NOT NULL AND RM.del_tag='0' AND HA.del_tag='0' AND HS.del_tag='0'      AND (DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) > @overDay)) OV group by  pro_name,amount_type) OV ON Tol.pro_name=OV.pro_name and Tol.amount_type=OV.amount_type    LEFT JOIN   (  select  pro_name, sum(SCount)SCount, sum(A.amount_total)RemainingPrincipal ,case when M.amount_total > @Base_AMT then 'U' else 'D' end amount_type    from          view_Receivable_settle A     LEFT JOIN Receivable_M M ON M.RCM_id = A.RCM_id    LEFT JOIN House_apply HA ON HA.HA_id = M.HA_id    LEFT JOIN House_sendcase HS ON HS.HS_id = M.HS_id                                      LEFT JOIN                                                                                (SELECT HP_project_id,P.project_title,item_D_name pro_name                               FROM House_pre_project P                                                                 LEFT JOIN                                                                                  (SELECT item_D_code,item_D_name FROM Item_list WHERE item_M_code = 'project_title'      AND item_D_type='Y') I ON CASE                                                     WHEN P.project_title='PJ00001' THEN 'PJ00005'        ELSE P.project_title                                 END=I.item_D_code                                         WHERE P.del_tag='0') P ON HS.HP_project_id=P.HP_project_id                               group by pro_name, case when M.amount_total > @Base_AMT then 'U' else 'D' end     )S  on Tol.pro_name=S.pro_name and Tol.amount_type=S.amount_type  /*WHERE isnull(OV.OV_Count, 0)<>0*/    ORDER BY Tol.amount_type, Tol.pro_name,ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) DESC    
+                    ";
+                parameters.Add(new SqlParameter("@overDay", overDay));
+                parameters.Add(new SqlParameter("@Base_AMT", Base_AMT));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    var newdtResult = dtResult.AsEnumerable().Select(row => new
+                    {
+                        amount_type = row.Field<string>("amount_type"),
+                        pro_name = string.IsNullOrEmpty(row.Field<string>("pro_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("pro_name")),
+                        TOT_Count = row.Field<int>("TOT_Count"),
+                        amount_total = row.Field<decimal>("amount_total"),
+                        OV_Count = row.Field<int>("OV_Count"),
+                        OV_total = row.Field<decimal>("OV_total"),
+                        OV_Rate = row.Field<decimal>("OV_Rate"),
+                        SCount = row.Field<int>("SCount"),
+                        RemainingPrincipal = row.Field<decimal>("RemainingPrincipal")
+                    }).ToList();
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(newdtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 逾放比查詢[50(以下)~500(以上)多區段基準]
+        /// </summary>
+        /// <param name="overDay"></param>
+        /// <returns></returns>
+        [HttpGet("RC_Over_RelSection_LQuery")]
+        public ActionResult<ResultClass<string>> RC_Over_RelSection_LQuery(int overDay)
+        {
+            FuncHandler _FuncHandler = new FuncHandler();
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                    SELECT Tol.*, isnull(OV.OV_Count, 0)OV_Count, isnull(OV_total, 0)OV_total,          ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) OV_Rate,         isnull(SCount,0) SCount ,isnull(RemainingPrincipal,0)RemainingPrincipal   FROM     (/*逾期案件-總件數,總金額*/ SELECT pro_name,count(pro_name)TOT_Count,                              amount_type,sum(amount_total)amount_total      FROM        (SELECT pro_name,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total ,              case                     WHEN amount_total < 500000 THEN '050'                   WHEN amount_total between 500000 and 1000000 THEN '100'                   WHEN amount_total between 1000001 and 2000000 THEN '200'                   WHEN amount_total between 2000001 and 3000000 THEN '300'                   WHEN amount_total between 3000001 and 4000000 THEN '400'                   WHEN amount_total between 4000001 and 5000000 THEN '500'   WHEN amount_total >= 5000000  THEN '501'   end amount_type        FROM           (SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date            FROM Receivable_D            WHERE del_tag = '0'AND check_pay_type='N' AND bad_debt_type='N'AND cancel_type='N'            GROUP BY RCM_id) RD         LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id         LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id and  RM.HS_id = HS.HS_id          LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id     Left Join      (   SELECT HP_project_id,P.project_title,item_D_name pro_name FROM House_pre_project P   left join   (   SELECT item_D_code, item_D_name FROM Item_list   WHERE item_M_code = 'project_title' AND item_D_type='Y'   ) I on case when P.project_title='PJ00001' then 'PJ00005'else P.project_title end=I.item_D_code WHERE P.del_tag='0'     ) P on HS.HP_project_id=P.HP_project_id         WHERE RM.RCM_id IS NOT NULL AND RM.del_tag='0' AND HA.del_tag='0'  AND HS.del_tag='0') OV      GROUP BY pro_name,amount_type) Tol   LEFT JOIN     (/*逾期案件-總件數,總金額*/  SELECT pro_name,count(pro_name)OV_Count,sum(amount_total)OV_total,amount_type      FROM        (SELECT Case                    WHEN amount_total < 500000 THEN '050'                   WHEN amount_total between 500000 and 1000000 THEN '100'                   WHEN amount_total between 1000001 and 2000000 THEN '200'                   WHEN amount_total between 2000001 and 3000000 THEN '300'                   WHEN amount_total between 3000001 and 4000000 THEN '400'                   WHEN amount_total between 4000001 and 5000000 THEN '500'   WHEN amount_total >= 5000000  THEN '501'                End amount_type,              DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total,pro_name         FROM           (SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date            FROM Receivable_D            WHERE del_tag = '0'AND check_pay_type='N' AND bad_debt_type='N'    AND cancel_type='N' GROUP BY RCM_id) RD         LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id     LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id and  RM.HS_id = HS.HS_id          LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id         Left Join      (   SELECT HP_project_id,P.project_title,item_D_name pro_name FROM House_pre_project P   left join   (   SELECT item_D_code, item_D_name FROM Item_list    WHERE item_M_code = 'project_title' AND item_D_type='Y'   ) I on case when P.project_title='PJ00001' then 'PJ00005'else P.project_title end=I.item_D_code WHERE P.del_tag='0'     ) P on HS.HP_project_id=P.HP_project_id         WHERE RM.RCM_id IS NOT NULL AND RM.del_tag='0' AND HA.del_tag='0' AND HS.del_tag='0'      AND (DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) > @overDay)) OV group by  pro_name,amount_type) OV ON Tol.pro_name=OV.pro_name and Tol.amount_type=OV.amount_type    LEFT JOIN   (  select  pro_name, sum(SCount)SCount, sum(A.amount_total)RemainingPrincipal ,   case                   WHEN M.amount_total < 500000 THEN '050'                   WHEN M.amount_total between 500000 and 1000000 THEN '100'                   WHEN M.amount_total between 1000001 and 2000000 THEN '200'                   WHEN M.amount_total between 2000001 and 3000000 THEN '300'                   WHEN M.amount_total between 3000001 and 4000000 THEN '400'                   WHEN M.amount_total between 4000001 and 5000000 THEN '500'   WHEN M.amount_total >= 5000000  THEN '501'    end amount_type    from          view_Receivable_settle A     LEFT JOIN Receivable_M M ON M.RCM_id = A.RCM_id    LEFT JOIN House_apply HA ON HA.HA_id = M.HA_id    LEFT JOIN House_sendcase HS ON HS.HS_id = M.HS_id                                      LEFT JOIN                                                                                (SELECT HP_project_id,P.project_title,item_D_name pro_name                               FROM House_pre_project P                                                                 LEFT JOIN                                                                                  (SELECT item_D_code,item_D_name FROM Item_list WHERE item_M_code = 'project_title'      AND item_D_type='Y') I ON CASE                                                     WHEN P.project_title='PJ00001' THEN 'PJ00005'        ELSE P.project_title                                 END=I.item_D_code                                         WHERE P.del_tag='0') P ON HS.HP_project_id=P.HP_project_id                               group by pro_name,  Case                      WHEN M.amount_total < 500000 THEN '050'                   WHEN M.amount_total between 500000 and 1000000 THEN '100'                   WHEN M.amount_total between 1000001 and 2000000 THEN '200'                   WHEN M.amount_total between 2000001 and 3000000 THEN '300'                   WHEN M.amount_total between 3000001 and 4000000 THEN '400'                   WHEN M.amount_total between 4000001 and 5000000 THEN '500'   WHEN M.amount_total >= 5000000  THEN '501'   End )S  on Tol.pro_name=S.pro_name and Tol.amount_type=S.amount_type  /*WHERE isnull(OV.OV_Count, 0)<>0*/    ORDER BY Tol.amount_type desc, Tol.pro_name,ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) DESC
+                    ";
+                parameters.Add(new SqlParameter("@overDay", overDay));
+                #endregion
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    var newdtResult = dtResult.AsEnumerable().Select(row => new
+                    {
+                        amount_type = row.Field<string>("amount_type"),
+                        pro_name = string.IsNullOrEmpty(row.Field<string>("pro_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("pro_name")),
+                        TOT_Count = row.Field<int>("TOT_Count"),
+                        amount_total = row.Field<decimal>("amount_total"),
+                        OV_Count = row.Field<int>("OV_Count"),
+                        OV_total = row.Field<decimal>("OV_total"),
+                        OV_Rate = row.Field<decimal>("OV_Rate"),
+                        SCount = row.Field<int>("SCount"),
+                        RemainingPrincipal = row.Field<decimal>("RemainingPrincipal")
+                    }).ToList();
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(newdtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+
+        /// <summary>
         /// 逾放比查詢Excel下載 RC_Over_Rel_Excel/RC_over_release.asp
         /// </summary>
         [HttpPost("RC_Over_Rel_Excel")]
