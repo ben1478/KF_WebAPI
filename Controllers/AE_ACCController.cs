@@ -2572,51 +2572,68 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                /*
-                var T_SQL_Bak = @"SELECT BC_name,Tol.*,isnull(OV.OV_Count, 0)OV_Count,isnull(OV_total, 0)OV_total,
-                    FORMAT(ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2),'N2') + '%' OV_Rate
-                    FROM (
-                            SELECT U_BC,count(U_BC)TOT_Count,sum(amount_total)amount_total  
-                            FROM (
-                    	           SELECT M.U_BC,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total  
-                                   FROM (
-                    		              SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date  
-                                          FROM Receivable_D  
-                                          WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N'  
-                                          GROUP BY RCM_id
-                    				    ) RD  
-                                   LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id  
-                                   LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id AND RM.HS_id = HS.HS_id LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id   
-                     	           LEFT JOIN User_M M ON HA.plan_num=M.u_num WHERE RM.RCM_id IS NOT NULL AND RM.del_tag='0' AND HA.del_tag='0'   
-                    	         ) OV  
-                            GROUP BY U_BC
-                    	  ) Tol  
-                    LEFT JOIN (   
-                     	        SELECT U_BC,count(U_BC) OV_Count,sum(amount_total) OV_total 
-                    			FROM (
-                    			       SELECT M.U_BC,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total 
-                    				   FROM (
-                    					      SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date  
-                                              FROM Receivable_D  
-                                              WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N'  
-                                              GROUP BY RCM_id
-                    						) RD  
-                                       LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0'  
-                                       LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0'  
-                     	               LEFT JOIN User_M M ON HA.plan_num=M.u_num WHERE RM.RCM_id IS NOT NULL 
-                                       AND (DATEDIFF(DAY,RD.RC_date,SYSDATETIME()) > @overDay ) 
-                    			     ) OV  
-                                GROUP BY U_BC
-                    		  ) OV ON Tol.U_BC=OV.U_BC   
-                    LEFT JOIN (
-                    		    SELECT a.item_D_name BC_name,a.item_D_code  
-                                FROM Item_list a   
-                                WHERE a.item_M_code = 'branch_company' AND a.item_D_type='Y'  
-                              ) U on Tol.U_BC =U.item_D_code  
-                    ORDER BY Tol.U_BC, ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) DESC ";
-                */
                 // 增加:結清件數	結清金額欄位
-                var T_SQL = "SELECT BC_name,Tol.*,isnull(OV.OV_Count, 0)OV_Count,isnull(OV_total, 0)OV_total,       ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) OV_Rate,    isnull(SCount,0) SCount     ,isnull(RemainingPrincipal,0)RemainingPrincipal         FROM    (/*逾期案件-總件數,總金額*/                SELECT U_BC,count(U_BC)TOT_Count,sum(amount_total)amount_total                       FROM                             (SELECT M.U_BC,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay, RM.amount_total                                  FROM                              (SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date                                             FROM Receivable_D                                             WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N'                                             GROUP BY RCM_id) RD                                  LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id                                   LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id AND RM.HS_id = HS.HS_id                         LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id                               LEFT JOIN User_M M ON HA.plan_num=M.u_num                         WHERE RM.RCM_id IS NOT NULL AND RM.del_tag='0' AND HA.del_tag='0'   ) OV                           GROUP BY U_BC) Tol                        LEFT JOIN      (/*逾期案件-總件數,總金額*/                             SELECT U_BC,count(U_BC)OV_Count,sum(amount_total)OV_total                             FROM                                         (SELECT M.U_BC,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total                                     FROM                                                    (SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date                                             FROM Receivable_D                                             WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N'                                             GROUP BY RCM_id) RD                                              LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0'                                              LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0'                                          LEFT JOIN User_M M ON HA.plan_num=M.u_num WHERE RM.RCM_id IS NOT NULL  AND (DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) > @overDay) ) OV  GROUP BY U_BC) OV                                         ON Tol.U_BC=OV.U_BC                                 LEFT JOIN (                                        SELECT a.item_D_name BC_name,a.item_D_code                                                   FROM Item_list a                                                    WHERE a.item_M_code = 'branch_company' AND a.item_D_type='Y'     ) U on Tol.U_BC =U.item_D_code                                                 LEFT JOIN   (    select  U_BC, sum(SCount)SCount, sum(A.amount_total)RemainingPrincipal                                                    from view_Receivable_settle A                                                    LEFT JOIN Receivable_M M ON M.RCM_id = A.RCM_id                                                   LEFT JOIN House_apply HA ON HA.HA_id = M.HA_id                                                   LEFT JOIN House_sendcase HS ON HS.HS_id = M.HS_id                                                                        LEFT JOIN User_M U ON HA.plan_num=U.U_num group by U.U_BC)S  on Tol.U_BC=S.U_BC ORDER BY Tol.U_BC, ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) DESC";
+                var T_SQL = @"
+                        SELECT BC_name,Tol.*,isnull(OV.OV_Count, 0)OV_Count,isnull(OV_total, 0)OV_total, 
+                        ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) OV_Rate, 
+                        isnull(SCount,0) SCount ,isnull(RemainingPrincipal,0)RemainingPrincipal
+                        FROM 
+                        (/*逾期案件-總件數,總金額*/ 
+                        SELECT U_BC,count(U_BC)TOT_Count,sum(amount_total)amount_total   
+                        FROM   
+                            (SELECT isnull(G.Spec_Group,M.U_BC)U_BC ,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,   
+                                    RM.amount_total   
+                            FROM   
+                                (SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date   
+                                FROM Receivable_D   
+                                WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N'   
+                                AND cancel_type='N'   
+                                GROUP BY RCM_id) RD   
+                            LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id   
+                            LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id AND RM.HS_id = HS.HS_id LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id    
+ 	                        LEFT JOIN User_M M ON HA.plan_num=M.u_num 
+                        /*特殊組別*/  Left Join User_Spec_Group G on  HA.plan_num=G.u_num 
+ 	                        WHERE RM.RCM_id IS NOT NULL AND RM.del_tag='0' AND HA.del_tag='0'   ) OV   
+                        GROUP BY U_BC) Tol   
+                        LEFT JOIN   
+                        (/*逾期案件-總件數,總金額*/    
+                        SELECT U_BC,count(U_BC)OV_Count,sum(amount_total)OV_total FROM   
+                            (SELECT isnull(G.Spec_Group,M.U_BC)U_BC ,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total FROM   
+                                (SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date   
+                                FROM Receivable_D   
+                                WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N'   
+                                GROUP BY RCM_id) RD   
+                            LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0'   
+                            LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0'   
+ 	                        LEFT JOIN User_M M ON HA.plan_num=M.u_num 
+                        /*特殊組別*/  Left Join User_Spec_Group G on  HA.plan_num=G.u_num 
+ 	                        WHERE RM.RCM_id IS NOT NULL   
+                                AND (DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) >  @overDay ) ) OV   
+                        GROUP BY U_BC) OV ON Tol.U_BC=OV.U_BC    
+                        LEFT JOIN    
+                        (SELECT a.item_D_name BC_name,a.item_D_code   
+                        FROM Item_list a    
+                        WHERE a.item_M_code = 'branch_company' AND a.item_D_type='Y'   
+                        union all  
+                        SELECT a.item_D_name BC_name,a.item_D_code 
+                        FROM Item_list a   
+                        WHERE a.item_M_code = 'Spec_Group' AND a.item_D_type='Y'  
+                        ) U on Tol.U_BC =U.item_D_code   
+                        LEFT JOIN 
+                        (  
+                        select  isnull(G.Spec_Group,U.U_BC)U_BC , sum(SCount)SCount, sum(A.amount_total)RemainingPrincipal  
+                        from view_Receivable_settle A 												 																																																																																					
+  	                        LEFT JOIN Receivable_M M ON M.RCM_id = A.RCM_id							 																																											
+  	                        LEFT JOIN House_apply HA ON HA.HA_id = M.HA_id							 																																											
+  	                        LEFT JOIN House_sendcase HS ON HS.HS_id = M.HS_id	                      
+  	                        LEFT JOIN User_M U ON HA.plan_num=U.U_num 	              
+  	                        Left Join User_Spec_Group G on  HA.plan_num=G.u_num           
+                        group by  isnull(G.Spec_Group,U.U_BC) 
+                        )	S  on Tol.U_BC=S.U_BC                                                         
+
+                        /* where isnull(OV.OV_Count, 0)<>0   */ 
+                        ORDER BY Tol.U_BC, ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) DESC 
+                        ";
                 parameters.Add(new SqlParameter("@overDay", overDay));
                 #endregion
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
