@@ -545,9 +545,9 @@ namespace KF_WebAPI.DataLogic
                                          row.Field<string>("Send_amount_date"),
                         get_amount_date = row.IsNull("get_amount_date") ? "" :
                                          row.Field<string>("get_amount_date"),
-                        CS_name = _FuncHandler.DeCodeBig5Words(row.Field<string>("CS_name")),
+                        CS_name =  row.IsNull("CS_name") ? "" : _FuncHandler.DeCodeBig5Words(row.Field<string>("CS_name")),
                         CS_ID = row.Field<string>("CS_ID"),
-                        show_project_title = _FuncHandler.DeCodeBig5Words(row.Field<string>("show_project_title")),
+                        show_project_title = row.IsNull("show_project_title") ? "" : _FuncHandler.DeCodeBig5Words(row.Field<string>("show_project_title")),
                         get_amount = row.Field<string>("get_amount")
                     }).ToList();
                 }
