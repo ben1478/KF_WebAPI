@@ -2297,40 +2297,55 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"SELECT BC_name,Tol.*,isnull(OV.OV_Count,0) OV_Count,isnull(OV_total, 0) OV_total,M.u_name,
-                    FORMAT(ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100,2),'N2') + '%' OV_Rate 
-                    FROM (
-                           SELECT plan_num,count(plan_num) TOT_Count,sum(amount_total) amount_total    
-                    	   FROM ( 
-                    	          SELECT HA.plan_num,DATEDIFF(DAY,RD.RC_date,SYSDATETIME()) DiffDay,RM.amount_total 
-                    			  FROM (
-                    			          SELECT RCM_id,min(RC_count) RC_count,min(RC_date) RC_date 
-                    					  FROM Receivable_D 			
-                    					  WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N' GROUP BY RCM_id 		
-                    				   ) RD 		
-                    			  LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0' 		
-                    			  LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0' 		
-                    			  WHERE RM.RCM_id IS NOT NULL
-                    		    ) OV GROUP BY plan_num 
-                    	) Tol 
-                    LEFT JOIN ( 
-                                 SELECT plan_num,count(plan_num) OV_Count,sum(amount_total) OV_total 
-                    			 FROM (
-                    			        SELECT HA.plan_num,DATEDIFF(DAY,RD.RC_date,SYSDATETIME()) DiffDay,RM.amount_total 
-                    					FROM ( 
-                    					        SELECT RCM_id,min(RC_count) RC_count,min(RC_date) RC_date FROM Receivable_D 			
-                    							WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N' GROUP BY RCM_id 		 
-                    						 ) RD 			
-                    				    LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0' 			
-                    				    LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0' 			
-                    				    WHERE RM.RCM_id IS NOT NULL AND (DATEDIFF(DAY,RD.RC_date,SYSDATETIME()) > @overDay) 	  
-                    				 ) OV GROUP BY plan_num    
-                    		  ) OV ON Tol.plan_num=OV.plan_num  
-                    Left Join User_M M on Tol.plan_num=M.u_num    
-                    LEFT JOIN (
-                    		    SELECT a.item_D_name BC_name,a.item_D_code FROM Item_list a WHERE a.item_M_code = 'branch_company' AND a.item_D_type='Y'
-                    		  ) U on M.U_BC =U.item_D_code  
-                    where isnull(OV.OV_Count, 0) <> 0  ORDER BY M.U_BC,ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) desc,Tol.plan_num";
+                var T_SQL = @"
+                        SELECT isnull(BC_name_SP,BC_name) BC_name,Tol.*,isnull(OV.OV_Count, 0)OV_Count,isnull(OV_total, 0)OV_total,M.u_name, 
+                             ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2)   OV_Rate FROM 
+                        (/*逾期案件-總件數,總金額*/  
+	                        SELECT plan_num,count(plan_num)TOT_Count,sum(amount_total)amount_total 
+                           FROM 
+                             ( 
+		                        SELECT HA.plan_num,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total FROM 
+                                ( 
+			                        SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date FROM Receivable_D 
+			                        WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N' 
+			                        GROUP BY RCM_id 
+		                        ) RD 
+		                        LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0' 
+		                        LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0' 
+		                        WHERE RM.RCM_id IS NOT NULL    
+	                          ) OV GROUP BY plan_num 
+                        ) Tol 
+                        LEFT JOIN 
+                          (/*逾期案件-總件數,總金額*/  
+	                        SELECT plan_num,count(plan_num)OV_Count,sum(amount_total)OV_total FROM 
+                             ( 
+		                        SELECT HA.plan_num,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total FROM 
+                                ( 
+			                        SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date FROM Receivable_D 
+			                        WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N' 
+			                        GROUP BY RCM_id 
+		                         ) RD 
+			                        LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0' 
+			                        LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0' 
+			                        WHERE RM.RCM_id IS NOT NULL AND (DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) >  @overDay ) 
+	                          ) OV GROUP BY plan_num 
+                           ) OV ON Tol.plan_num=OV.plan_num 
+                         Left Join User_M M on Tol.plan_num=M.u_num   
+                         LEFT JOIN 
+                          (SELECT a.item_D_name BC_name,a.item_D_code 
+ 	                        FROM Item_list a  
+ 	                        WHERE a.item_M_code = 'branch_company' AND a.item_D_type='Y' 
+                          ) U on M.U_BC =U.item_D_code 
+
+                          Left Join   
+                          (SELECT a.item_D_name BC_name_SP,a.item_D_code,G.U_num  
+                            FROM Item_list a Left Join User_Spec_Group G on a.item_D_code=G.Spec_Group  
+                           WHERE a.item_M_code = 'Spec_Group' AND a.item_D_type='Y' 
+   	                         ) Sp ON M.U_num =Sp.U_num 
+
+                         where isnull(OV.OV_Count, 0)<>0  
+                        ORDER BY M.U_BC,ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) desc ,Tol.plan_num 
+                        ";
                 parameters.Add(new SqlParameter("@overDay", overDay));
                 #endregion
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
@@ -2344,7 +2359,7 @@ namespace KF_WebAPI.Controllers
                         amount_total = row.Field<decimal>("amount_total"),
                         OV_Count = row.Field<int>("OV_Count"),
                         OV_total = row.Field<decimal>("OV_total"),
-                        OV_Rate = row.Field<string>("OV_Rate"),
+                        OV_Rate = row.Field<decimal>("OV_Rate"),
                         plan_num = row.Field<string>("plan_num")
                     }).ToList();
                     resultClass.ResultCode = "000";
