@@ -870,7 +870,7 @@ namespace KF_WebAPI.Controllers
         [HttpPost("House_SendCase_LQuery")]
         public ActionResult<ResultClass<string>> House_SendCase_LQuery(House_sendcase_Req model)
         {
-            
+            FuncHandler _FuncHandler = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
             var sqlBuilder = new StringBuilder(
                 @"SELECT 
@@ -910,7 +910,6 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
-
                 var parameters = new List<SqlParameter>();
                 //申請人
                 if (!string.IsNullOrEmpty(model.CS_name))
@@ -918,14 +917,12 @@ namespace KF_WebAPI.Controllers
                     sqlBuilder.Append(" AND A.CS_name like  @CS_name ");
                     parameters.Add(new SqlParameter("@CS_name", "%" + model.CS_name + "%"));
                 }
-
                 //區
                 if (!string.IsNullOrEmpty(model.BC_code))
                 {
                     sqlBuilder.Append(" AND M.U_BC = @BC_code ");
                     parameters.Add(new SqlParameter("@BC_code", model.BC_code));
                 }
-
                 //撥款年月
                 if (!string.IsNullOrEmpty(model.selYear_S))
                 {
@@ -935,7 +932,6 @@ namespace KF_WebAPI.Controllers
                     parameters.Add(new SqlParameter("@y", y));
                     parameters.Add(new SqlParameter("@m", m));
                 }
-
                 //業務
                 if (!string.IsNullOrEmpty(model.plan_name))
                 {
@@ -943,18 +939,39 @@ namespace KF_WebAPI.Controllers
                     parameters.Add(new SqlParameter("@plan_name", model.plan_name));
                     
                 }
-
                 if (!string.IsNullOrEmpty(model.OrderByStr))
                 {
                     sqlBuilder.Append($" order by {model.OrderByStr}");
                 }
 
-
                 DataTable dtResult = _adoData.ExecuteQuery(sqlBuilder.ToString(), parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    var newdtResult = dtResult.AsEnumerable().Select(row => new
+                    {
+                        File_ID = row.Field<string>("File_ID"),
+                        U_BC_name = string.IsNullOrEmpty(row.Field<string>("U_BC_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("U_BC_name")),
+                        Send_amount_date = row.Field<string>("Send_amount_date"),
+                        CS_name = string.IsNullOrEmpty(row.Field<string>("CS_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("CS_name")),
+                        CS_introducer = string.IsNullOrEmpty(row.Field<string>("CS_introducer")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("CS_introducer")),
+                        plan_name = string.IsNullOrEmpty(row.Field<string>("plan_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("plan_name")),
+                        get_amount_date = row.Field<string>("get_amount_date"),
+                        get_amount = row.Field<string>("get_amount"),
+                        interest_rate_pass = row.Field<string>("interest_rate_pass"),
+                        upLoad_Count = row.Field<int>("upLoad_Count")
+                    }).ToList();
 
-                resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
-                return Ok(resultClass);
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(newdtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+
             }
             catch (Exception ex)
             {
@@ -1026,11 +1043,11 @@ namespace KF_WebAPI.Controllers
         [HttpPost("Complaint_LQuery")]
         public ActionResult<ResultClass<string>> Complaint_LQuery(Complaint_Req model)
         {
+            FuncHandler _FuncHandler = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
                 ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
-
                 var sqlBuilder = new StringBuilder(
                     "SELECT Comp_Id, CS_name, M1.U_name Sales_name, ub.item_D_name BC_name, Complaint, CompDate, Remark, M2.U_name add_name " +
                         "FROM dbo.Complaint C " +
@@ -1039,7 +1056,6 @@ namespace KF_WebAPI.Controllers
                         "LEFT JOIN User_M M2 on C.Add_num = M2.u_num " +
                         "where 1 = 1 "
                         );
-
                 var parameters = new List<SqlParameter>();
 
                 //區
@@ -1055,14 +1071,30 @@ namespace KF_WebAPI.Controllers
                     sqlBuilder.Append($" AND left(C.compDate,{model.selYear_S.Length}) = @selYear_S ");
                     parameters.Add(new SqlParameter("@selYear_S", model.selYear_S));
                 }
-
-
-
                 DataTable dtResult = _adoData.ExecuteQuery(sqlBuilder.ToString(), parameters);
+                if (dtResult.Rows.Count > 0) { 
+                    var result = dtResult.AsEnumerable().Select(row => new
+                    {
+                        Comp_Id = row.Field<decimal>("Comp_Id"),
+                        CS_name = string.IsNullOrEmpty(row.Field<string>("CS_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("CS_name")),
+                        Sales_name = string.IsNullOrEmpty(row.Field<string>("Sales_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("Sales_name")),
+                        BC_name = row.Field<string>("BC_name"),
+                        Complaint = row.Field<string>("Complaint"),
+                        CompDate = row.Field<string>("CompDate"),
+                        Remark = row.Field<string>("Remark"),
+                        add_name = string.IsNullOrEmpty(row.Field<string>("add_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("add_name"))
+                    }).ToList();
 
-                resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
-                return Ok(resultClass);
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(result);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
             }
             catch (Exception ex)
             {

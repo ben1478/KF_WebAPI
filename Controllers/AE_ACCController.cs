@@ -3453,6 +3453,7 @@ namespace KF_WebAPI.Controllers
         [HttpGet("Debt_Certificate_LQuery")]
         public ActionResult<ResultClass<string>> Debt_Certificate_LQuery(string? cs_name)
         {
+            FuncHandler _FuncHandler = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
             try
@@ -3467,7 +3468,7 @@ namespace KF_WebAPI.Controllers
                 var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new Debt_Certificate_Lres
                 {
                     Debt_ID = row.Field<int>("Debt_ID"),
-                    cs_name = row.Field<string>("cs_name"),
+                    cs_name = row.IsNull("cs_name") ? "" : _FuncHandler.DeCodeBig5Words(row.Field<string>("cs_name")),
                     CS_PID = row.Field<string>("CS_PID"),
                     str_loan_amount = row.Field<string>("loan_amount"),
                     str_certificate_date_S = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("certificate_date_S").ToString("yyyy/MM/dd")),
