@@ -5112,6 +5112,7 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         public ActionResult<ResultClass<string>> Performance_LQuery([FromBody] Performance_req model)
         {
+            FuncHandler _FuncHandler = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
             var roleNum = HttpContext.Session.GetString("Role_num");
@@ -5168,6 +5169,7 @@ namespace KF_WebAPI.Controllers
                     ON User_M.U_num = M.plan_num
                 WHERE U_PFT <> 'PFT100' AND U_PFT <> 'PFE831'
                   AND isnull(M.yyyy, SUBSTRING(@StartDate, 1, 4)) = SUBSTRING(@StartDate, 1, 4)
+                  and (is_susp IS NULL OR is_susp <> 'Y' OR (is_susp = 'Y' AND U_susp_date > @StartDate))
             ");
                 parameters.Add(new SqlParameter("@StartDate", SqlDbType.VarChar) { Value = startDate });
                 parameters.Add(new SqlParameter("@PerfFuncEndDate", SqlDbType.VarChar) { Value = performanceFuncEndDate });
@@ -5176,7 +5178,7 @@ namespace KF_WebAPI.Controllers
 
                 // --- 動態加入篩選條件 (WHERE) ---
                 // 區域篩選
-                if (!string.IsNullOrEmpty(model.u_bc_title))
+                if (!model.u_bc_title.Equals("all", StringComparison.OrdinalIgnoreCase))
                 {
                     if (model.u_bc_title.Equals("six_area", StringComparison.OrdinalIgnoreCase))
                     {
@@ -5197,9 +5199,10 @@ namespace KF_WebAPI.Controllers
                 }
 
                 // 到職日基準日篩選
-                if (!string.IsNullOrEmpty(model.start_date) && DateTime.TryParse(model.start_date, out DateTime arrivalDate))
+                if (!string.IsNullOrEmpty(model.start_date))
                 {
-                    sqlBuilder.Append(" AND User_M.U_arrive_date <= @ArrivalDate ");
+                    DateTime arrivalDate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.start_date));
+                    sqlBuilder.Append(" AND User_M.U_arrive_date >= @ArrivalDate ");
                     parameters.Add(new SqlParameter("@ArrivalDate", SqlDbType.Date) { Value = arrivalDate });
                 }
 
@@ -5226,7 +5229,7 @@ namespace KF_WebAPI.Controllers
                         U_leave_date = row.Field<string>("U_leave_date"),
                         U_BC_name = row.Field<string>("U_BC_name"),
                         title = row.Field<string>("title"),
-                        U_name = row.Field<string>("U_name"),
+                        U_name = _FuncHandler.DeCodeBig5Words(row.Field<string>("U_name")),
                         U_num = row.Field<string>("U_num"),
                         U_BC = row.Field<string>("U_BC"),
                         Cal_Arrive = row.IsNull("Cal_Arrive") ? "" : row.Field<DateTime>("Cal_Arrive").ToShortDateString(),
@@ -5257,7 +5260,7 @@ namespace KF_WebAPI.Controllers
                 {
                     resultClass.ResultCode = "400";
                     resultClass.ResultMsg = "查無資料";
-                    return BadRequest(resultClass);
+                    return Ok(resultClass);
                 }
             }
             catch (Exception ex)
