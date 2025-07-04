@@ -22,6 +22,7 @@ using Microsoft.AspNetCore.Hosting.Server;
 using OfficeOpenXml;
 using System.Threading.Tasks;
 using KF_WebAPI.DataLogic;
+using Azure.Core;
 
 namespace KF_WebAPI.Controllers
 {
@@ -5109,89 +5110,113 @@ namespace KF_WebAPI.Controllers
         /// <summary>
         /// 全區業績表查詢 Performance_LQuery/Performance.asp
         /// </summary>
-        public ActionResult<ResultClass<string>> Performance_LQuery(Performance_req model)
+        public ActionResult<ResultClass<string>> Performance_LQuery([FromBody] Performance_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
             var roleNum = HttpContext.Session.GetString("Role_num");
             var User_U_BC = HttpContext.Session.GetString("User_U_BC");
 
+            // --- 日期處理 ---
+            // 將 "yyyy-MM" 轉換為 "yyyy-MM-01"
+            string startDate = $"{model.selYear_S}-01";
+            string endDate = $"{model.selYear_E}-01";
+
+            // 計算 fun_PerformanceByMonth 所需的參數
+            DateTime startDateTime = DateTime.Parse(startDate);
+            DateTime endDateTime = DateTime.Parse(endDate);
+
+            string performanceFuncEndDate = endDateTime.AddMonths(1).AddDays(-1).ToString("yyyy-MM-dd");
+            int monthDiff = (endDateTime.Year - startDateTime.Year) * 12 + endDateTime.Month - startDateTime.Month + 1;
+
             try
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"
-                        SELECT
-                              *
-                             ,CASE
-                                WHEN DATEDIFF(MONTH, Cal_Arrive, @selYear_S) < 0 THEN /*判斷到職日-起始日*/      	
-                                /*小於0代表到職日比較晚,所以要除12-(到職日-起始日的月份)*/ 
-                                    ROUND(totle / (12 + DATEDIFF(MONTH, Cal_Arrive, @selYear_S)), 0)
-                                ELSE ROUND(REPLACE(YearAvg, ',', ''), 0)
-                              END cal_yearAvg/*計算過後的年平均*/
-                            FROM (SELECT
-                                U_num
-                               ,DATEADD(MONTH, 1, U_arrive_date) Cal_Arrive
-                               ,/*計算年平均要以到職日加1個月來算*/U_BC
-                               ,U_name
-                               ,CONVERT(VARCHAR(10), U_arrive_date, 126) U_arrive_date
-                               ,CONVERT(VARCHAR(10), [U_leave_date], 126) [U_leave_date]
-                               ,CASE
-                                  WHEN [U_leave_date] IS NULL THEN 'Y'
-                                  ELSE 'N'
-                                END [enable]
-                               ,ub.item_D_name U_BC_name
-                               ,pft.item_D_name title
-                               ,U_PFT
-                              FROM User_M u
-                              LEFT JOIN Item_list ub
-                                ON ub.item_M_code = 'branch_company'
-                                AND ub.item_D_type = 'Y'
-                                AND ub.item_D_code = u.U_BC
-                                AND ub.del_tag = '0'
-                              LEFT JOIN Item_list pft
-                                ON pft.item_M_code = 'professional_title'
-                                AND pft.item_D_type = 'Y'
-                                AND pft.item_D_code = u.U_PFT
-                                AND pft.del_tag = '0'
-                              WHERE (u_bc BETWEEN 'BC0100' AND 'BC0600'
-                              OR (U_BC IN ('BC0900')
-                              AND pft.item_sort BETWEEN '120' AND '170'
-                              OR U_PFT IN ('PFE830', 'PFE820')))/*只計算這六個部門及數位行銷*/) User_M
-                            LEFT JOIN [dbo].[fun_PerformanceByMonth](@selYear_S, CONVERT(VARCHAR(10), DATEADD(DAY, -1, DATEADD(MONTH, 1, @selYear_E)), 126), DATEDIFF(MONTH, @selYear_S, DATEADD(DAY, -1, DATEADD(MONTH, 1, @selYear_E)) + 1), @isACT) M
-                              ON User_M.U_num = M.plan_num
-                            WHERE U_PFT <> 'PFT100'
-                            AND U_PFT <> 'PFE831' /*職等=助理or 副總不計算*/
-                            and (   -- 區
-                                        (@u_bc_title = null or @u_bc_title = '' or @u_bc_title = 'all') 
-                                        or (@u_bc_title='six_area' and U_BC between 'BC0100' and 'BC0600') 
-                                        or (U_BC = @u_bc_title)
-                                 )
-                            and (   -- 到職日基準日
-                                    (@start_date = null or @start_date = '')
-                                    or (convert(datetime, U_arrive_date) >= convert(datetime, @start_date) )
-                                )
-                            and (   -- 在職狀態
-                                    (@Enable = null or @Enable = '')
-                                    or (Enable = @Enable)
-                                )
-                            ORDER BY 
-                                case when @OrderBy = 1 then totle  END DESC,
-                                case when @OrderBy = 2 then U_BC end ASC,  U_PFT ,U_arrive_date 
-                    ";
-                parameters.Add(new SqlParameter("@u_bc_title", model.u_bc_title));
-                parameters.Add(new SqlParameter("@selYear_S", model.selYear_S + "-01"));
-                parameters.Add(new SqlParameter("@selYear_E", model.selYear_E + "-01"));
-                parameters.Add(new SqlParameter("@start_date", model.start_date));
-                parameters.Add(new SqlParameter("@Enable", model.Enable));
-                parameters.Add(new SqlParameter("@isACT", model.isACT));
-                parameters.Add(new SqlParameter("@OrderBy", model.OrderBy));
+                var sqlBuilder = new StringBuilder();
+                sqlBuilder.Append(@"
+                SELECT *,
+                       CASE 
+                           WHEN datediff(month, Cal_Arrive, @StartDate) < 0 
+                           THEN ROUND(totle / (12 + datediff(month, Cal_Arrive, @StartDate)), 0)
+                           ELSE ROUND(replace(ISNULL(YearAvg, 0), ',', ''), 0)
+                       END AS cal_yearAvg
+                FROM (
+                    SELECT 
+                        isnull(is_susp, 'N') AS is_susp,
+                        U_susp_date,
+                        U_num,
+                        DATEADD(month, 
+                            CASE WHEN U.U_PFT IN ('PFT015', 'PFT020', 'PFT030', 'PFT050') THEN 0 ELSE 1 END,
+                            U_arrive_date
+                        ) AS Cal_Arrive,
+                        U_BC,
+                        U_name,
+                        convert(varchar(10), U_arrive_date, 126) AS U_arrive_date,
+                        convert(varchar(10), U_leave_date, 126) AS U_leave_date,
+                        CASE WHEN U_leave_date IS NULL THEN 'Y' ELSE 'N' END AS enable,
+                        ub.item_D_name AS U_BC_name,
+                        pft.item_D_name AS title,
+                        U_PFT
+                    FROM User_M u
+                    LEFT JOIN Item_list ub ON ub.item_M_code = 'branch_company' AND ub.item_D_type = 'Y' AND ub.item_D_code = u.U_BC AND ub.del_tag = '0'
+                    LEFT JOIN Item_list pft ON pft.item_M_code = 'professional_title' AND pft.item_D_type = 'Y' AND pft.item_D_code = u.U_PFT AND pft.del_tag = '0'
+                    WHERE (u.u_bc BETWEEN 'BC0100' AND 'BC0600' OR (u.U_BC IN ('BC0900') AND pft.item_sort BETWEEN '120' AND '170' OR u.U_PFT IN ('PFE830', 'PFE820')))
+                ) User_M
+                LEFT JOIN [dbo].[fun_PerformanceByMonth] (@StartDate, @PerfFuncEndDate, @MonthDiff, @isACT) M 
+                    ON User_M.U_num = M.plan_num
+                WHERE U_PFT <> 'PFT100' AND U_PFT <> 'PFE831'
+                  AND isnull(M.yyyy, SUBSTRING(@StartDate, 1, 4)) = SUBSTRING(@StartDate, 1, 4)
+            ");
+                parameters.Add(new SqlParameter("@StartDate", SqlDbType.VarChar) { Value = startDate });
+                parameters.Add(new SqlParameter("@PerfFuncEndDate", SqlDbType.VarChar) { Value = performanceFuncEndDate });
+                parameters.Add(new SqlParameter("@MonthDiff", SqlDbType.Int) { Value = monthDiff });
+                parameters.Add(new SqlParameter("@isACT", SqlDbType.VarChar) { Value = string.IsNullOrEmpty(model.isACT) ? "" : model.isACT });
+
+                // --- 動態加入篩選條件 (WHERE) ---
+                // 區域篩選
+                if (!string.IsNullOrEmpty(model.u_bc_title))
+                {
+                    if (model.u_bc_title.Equals("six_area", StringComparison.OrdinalIgnoreCase))
+                    {
+                        sqlBuilder.Append(" AND User_M.U_BC BETWEEN 'BC0100' AND 'BC0600' ");
+                    }
+                    else
+                    {
+                        sqlBuilder.Append(" AND User_M.U_BC = @U_BC_Title ");
+                        parameters.Add(new SqlParameter("@U_BC_Title", SqlDbType.VarChar) { Value = model.u_bc_title });
+                    }
+                }
+
+                // 在職狀態篩選
+                if (!string.IsNullOrEmpty(model.Enable))
+                {
+                    sqlBuilder.Append(" AND User_M.enable = @Enable ");
+                    parameters.Add(new SqlParameter("@Enable", SqlDbType.Char, 1) { Value = model.Enable });
+                }
+
+                // 到職日基準日篩選
+                if (!string.IsNullOrEmpty(model.start_date) && DateTime.TryParse(model.start_date, out DateTime arrivalDate))
+                {
+                    sqlBuilder.Append(" AND User_M.U_arrive_date <= @ArrivalDate ");
+                    parameters.Add(new SqlParameter("@ArrivalDate", SqlDbType.Date) { Value = arrivalDate });
+                }
+
+                // --- 動態加入排序 (ORDER BY) ---
+                if ("1".Equals(model.OrderBy))
+                {
+                    sqlBuilder.Append(" ORDER BY totle DESC ");
+                }
+                else
+                {
+                    sqlBuilder.Append(" ORDER BY User_M.U_BC, User_M.U_PFT, User_M.U_arrive_date ");
+                }
 
 
                 #endregion
 
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                DataTable dtResult = _adoData.ExecuteQuery(sqlBuilder.ToString(), parameters);
                 if (dtResult.Rows.Count > 0)
                 {
                     var PerformanceList = dtResult.AsEnumerable().Select(row => new Performance_res
@@ -5219,7 +5244,7 @@ namespace KF_WebAPI.Controllers
                         Dec = row.IsNull("Dec") ? "0" : row.Field<string>("Dec"),
                         Totle = row.IsNull("Totle") ? "0" : row.Field<Double>("Totle").ToString(),
                         MonAVG = row.IsNull("MonAVG") ? "0" : row.Field<string>("MonAVG"),
-                        YearAVG = row.IsNull("YearAVG") ? "0" : row.Field<string>("YearAVG"),
+                        //YearAVG = row.IsNull("YearAVG") ? "0" : row.Field<string>("YearAVG"),
                         cal_yearAvg = row.IsNull("cal_yearAvg") ? "0" : row.Field<Double>("cal_yearAvg").ToString()
 
                     }).ToList();
@@ -5544,98 +5569,34 @@ namespace KF_WebAPI.Controllers
         /// <param name="isACT"></param>
         /// <returns></returns>
         [HttpGet("Performance_Cens_Detail")]
-        public ActionResult<ResultClass<string>> Performance_Cens_Detail(string key, string isACT)
+        public ActionResult<ResultClass<string>> Performance_Cens_Detail([FromQuery] Performance_Cens_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var User_Num = HttpContext.Session.GetString("UserID");
             var roleNum = HttpContext.Session.GetString("Role_num");
             var User_U_BC = HttpContext.Session.GetString("User_U_BC");
-            
+
             try
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"
-                        select 
-                            Cen,    M.U_BC, plan_num, M.U_name,  
-                            case when  Cen	='Y' then null else  M2.U_name end  as Cancel_Na, 
-                            convert(varchar(10), get_amount_date, 126) yyyymmdd,convert(varchar(7),
-                            case when CancelDate is null then get_amount_date else 
-                                    case when  Cen	='N' then
-                                    case when  @isACT ='Y' then 
-                                        CancelDate
-                                    else
-                                        get_amount_date
-                                    end
-                                    else
-                                    get_amount_date
-                                end
-                            end, 126) yyyymm,
-                            case when  CancelDate is not null and convert(varchar(7),CancelDate, 126)<>convert(varchar(7),get_amount_date, 126)  then 
-                                    case when  Cen	='Y' then   CAST(convert(float, House_sendcase.get_amount) AS DECIMAL) else 0 end
-                                else  
-                                        CAST(isnull(convert(float, House_sendcase.get_amount),0) AS DECIMAL)
-                            end get_amount  ,
-                                case when  CancelDate is null then 
-                                    0
-                                else  
-                                        case when  Cen	='N' then
-                                            CAST(convert(float, House_sendcase.get_amount) AS DECIMAL)* 1
-                                            else
-                                            0
-                                        end 
-                                end Cancel_amount, case when  Cen	='Y' then null else convert(varchar(10), CancelDate, 126)end  CancelDate,  case when  Cen	='Y' then null else Cancel_num end Cancel_num
-                            FROM (select 'N' Cen, * from House_sendcase union all select 'Y' Cen, * from House_sendcase where CancelDate is not null and convert(varchar(7), CancelDate, 126)<> convert(varchar(7), get_amount_date, 126)    ) House_sendcase
-                            LEFT JOIN House_apply as House_apply ON House_apply.HA_id = House_sendcase.HA_id
-                            LEFT JOIN
-                            (SELECT CASE
-                                        WHEN U_BC ='BC0900' THEN U_BC
-                                        ELSE 'general'
-                                    END U_BC_rule/*BC0900的業績折扣*/,
-                                    u.U_BC,
-                                    U_num,
-                                    U_name,
-                                    ub.item_D_name U_BC_name,
-                                    pt.item_sort,
-                                    U_arrive_date
-                            FROM User_M u
-                            LEFT JOIN Item_list ub ON ub.item_M_code='branch_company'
-                            AND ub.item_D_type='Y'
-                            AND ub.item_D_code=u.U_BC
-                            LEFT JOIN Item_list pt ON pt.item_M_code='professional_title'
-                            AND pt.item_D_type='Y'
-                            AND pt.item_D_code=u.U_PFT) M ON M.U_num = House_apply.plan_num
-                            LEFT JOIN User_M M2 on Cancel_num=M2.U_num
-                            where
-                                House_sendcase.del_tag = '0' AND House_apply.del_tag='0'  AND isnull(exc_flag,'N')='N'
-                                AND convert(float, isnull(House_sendcase.get_amount, 0))<>'0'
-                                AND (convert(varchar(7), get_amount_date, 126) BETWEEN @Date_S AND @Date_E or convert(varchar(7), CancelDate, 126) BETWEEN @Date_S AND @Date_E )    
-                                and plan_num = @plan_num
-                            order by yyyymmdd
+                        SELECT isnull(Cancel_amount,0) Can_amt, *  
+                            from [dbo].[fun_CancelInfo](@isACT,@Date_S,@Date_E) 
+                            where  plan_num+yyyymm = @KeyVal
                     ";
-                parameters.Add(new SqlParameter("@Date_S", key.Substring(5, 7)));
-                parameters.Add(new SqlParameter("@Date_E", key.Substring(5, 7)));
-                parameters.Add(new SqlParameter("@isACT", isACT));
-                parameters.Add(new SqlParameter("@plan_num", key.Substring(0,5) ));
+                parameters.Add(new SqlParameter("@Date_S", model.Date_S));
+                parameters.Add(new SqlParameter("@Date_E", model.Date_E));
+                parameters.Add(new SqlParameter("@isACT", model.isACT));
+                parameters.Add(new SqlParameter("@KeyVal", model.key));
                 #endregion
 
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
-                List<Performance_Cen_res> Performance_Cen_resList = new List<Performance_Cen_res>();
                 if (dtResult.Rows.Count > 0)
                 {
-
-                    Performance_Cen_resList = dtResult.AsEnumerable().Select(row => new Performance_Cen_res
-                    {
-                        yyyymmdd = row.Field<string>("yyyymmdd"),
-                        get_amount = row.IsNull("get_amount") ? 0 : row.Field<decimal>("get_amount"),
-                        Cancel_amount = row.IsNull("Cancel_amount") ? 0 : row.Field<decimal>("Cancel_amount"),
-                        CancelDate = row.Field<string>("CancelDate"),
-                        Cancel_Na = row.IsNull("Cancel_Na") ? string.Empty :  row.Field<string>("Cancel_Na")
-                    }).ToList();
-
                     resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(Performance_Cen_resList);
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
                     return Ok(resultClass);
                 }
                 else

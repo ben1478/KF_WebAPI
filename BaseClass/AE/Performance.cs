@@ -56,7 +56,12 @@ namespace KF_WebAPI.BaseClass.AE
         /// <summary>
         /// 業務員編號
         /// </summary>
-        public string? plan_num { get; set; }
+        //public string? plan_num { get; set; }
+
+        /// <summary>
+        /// U_num + yyyy + "-月"
+        /// </summary>
+        public string? key { get; set; }
 
     }
 
