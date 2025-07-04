@@ -23,6 +23,8 @@ using OfficeOpenXml;
 using System.Threading.Tasks;
 using KF_WebAPI.DataLogic;
 using Azure.Core;
+using KF_WebAPI.Services.AE;
+using Microsoft.Extensions.Configuration;
 
 namespace KF_WebAPI.Controllers
 {
@@ -5218,7 +5220,7 @@ namespace KF_WebAPI.Controllers
                 #endregion
 
                 // 在這裡呼叫輔助函式來產生偵錯用的 T-SQL
-                string debugSql = SqlDebugHelper.GenerateDebugSql(sqlBuilder.ToString(), parameters);
+                string debugSql = FuncHandler.GenerateDebugSql(sqlBuilder.ToString(), parameters);
 
                 // 您可以將 debugSql 輸出到 Console、Log 檔案或偵錯視窗
                 Console.WriteLine("--- DEBUG T-SQL ---");
@@ -6226,7 +6228,6 @@ namespace KF_WebAPI.Controllers
 
         #endregion
 
-
         #region 新鑫案件核對表 Report_M/NewXinUpload.asp
         [HttpPost("NewXinUpload_LQuery")]
         public async Task<IActionResult> NewXinUpload_LQuery([FromForm] NewXinChecklistRequest req)
@@ -6346,63 +6347,31 @@ namespace KF_WebAPI.Controllers
 
         }
         #endregion
-    }
 
-    public static class SqlDebugHelper
-    {
-        /// <summary>
-        /// 產生用於偵錯和記錄的完整 T-SQL 語法。
-        /// </summary>
-        /// <param name="sqlTemplate">包含參數預留位置的 SQL 樣板。</param>
-        /// <param name="parameters">SQL 參數集合。</param>
-        /// <returns>組合完成的 T-SQL 字串。</returns>
-        public static string GenerateDebugSql(string sqlTemplate, IEnumerable<SqlParameter> parameters)
+        #region 核准放款表/佣金表
+        [HttpPost("Approval_Loan_Sales_LQuery")]
+        public ActionResult<ResultClass<string>> Approval_Loan_Sales_LQuery([FromQuery] ReportQueryParameters parameters)
         {
-            // 使用 StringBuilder 提高字串操作效率
-            var sb = new StringBuilder(sqlTemplate);
-
-            // 先依據參數名稱長度由長到短排序，避免參數名稱是另一參數的子字串時發生錯誤
-            // 例如：先替換 @p10 再替換 @p1
-            foreach (var p in parameters.OrderByDescending(p => p.ParameterName.Length))
+            if (string.IsNullOrEmpty(parameters.SelYear_S))
             {
-                string valueToReplace;
-                object pValue = p.Value;
+                return BadRequest("撥款年月 (selYear_S) 是必要參數。");
+            };
+            ResultClass<string> resultClass = new ResultClass<string>();
+            CommissionReportService _reportService = new CommissionReportService();
+            try
+            {
+                var data = _reportService.GetReportDataAsync(parameters);
+                return Ok(data);
 
-                if (pValue == null || pValue == DBNull.Value)
-                {
-                    valueToReplace = "NULL";
-                }
-                else
-                {
-                    var type = pValue.GetType();
-
-                    // 處理需要加單引號的類型
-                    if (type == typeof(string) || type == typeof(Guid))
-                    {
-                        // 將字串中的單引號逸出，變成兩個單引號
-                        valueToReplace = $"'{pValue.ToString().Replace("'", "''")}'";
-                    }
-                    else if (type == typeof(DateTime))
-                    {
-                        // 使用標準格式，避免地區設定問題
-                        valueToReplace = $"'{((DateTime)pValue).ToString("yyyy-MM-dd HH:mm:ss.fff")}'";
-                    }
-                    else if (type == typeof(bool))
-                    {
-                        valueToReplace = (bool)pValue ? "1" : "0";
-                    }
-                    else // 處理數字等其他不需要單引號的類型
-                    {
-                        valueToReplace = pValue.ToString();
-                    }
-                }
-
-                // 將 SQL 樣板中的參數名稱替換為格式化後的值
-                sb.Replace(p.ParameterName, valueToReplace);
             }
-
-            return sb.ToString();
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
         }
+        #endregion
     }
 }
 

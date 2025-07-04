@@ -3164,5 +3164,59 @@ namespace KF_WebAPI.FunctionHandler
             dataRange.Style.Border.Left.Style = ExcelBorderStyle.Thin;
             dataRange.Style.Border.Right.Style = ExcelBorderStyle.Thin;
         }
+
+        /// <summary>
+        /// 產生用於偵錯和記錄的完整 T-SQL 語法。
+        /// </summary>
+        /// <param name="sqlTemplate">包含參數預留位置的 SQL 樣板。</param>
+        /// <param name="parameters">SQL 參數集合。</param>
+        /// <returns>組合完成的 T-SQL 字串。</returns>
+        public static string GenerateDebugSql(string sqlTemplate, IEnumerable<SqlParameter> parameters)
+        {
+            // 使用 StringBuilder 提高字串操作效率
+            var sb = new StringBuilder(sqlTemplate);
+
+            // 先依據參數名稱長度由長到短排序，避免參數名稱是另一參數的子字串時發生錯誤
+            // 例如：先替換 @p10 再替換 @p1
+            foreach (var p in parameters.OrderByDescending(p => p.ParameterName.Length))
+            {
+                string valueToReplace;
+                object pValue = p.Value;
+
+                if (pValue == null || pValue == DBNull.Value)
+                {
+                    valueToReplace = "NULL";
+                }
+                else
+                {
+                    var type = pValue.GetType();
+
+                    // 處理需要加單引號的類型
+                    if (type == typeof(string) || type == typeof(Guid))
+                    {
+                        // 將字串中的單引號逸出，變成兩個單引號
+                        valueToReplace = $"'{pValue.ToString().Replace("'", "''")}'";
+                    }
+                    else if (type == typeof(DateTime))
+                    {
+                        // 使用標準格式，避免地區設定問題
+                        valueToReplace = $"'{((DateTime)pValue).ToString("yyyy-MM-dd HH:mm:ss.fff")}'";
+                    }
+                    else if (type == typeof(bool))
+                    {
+                        valueToReplace = (bool)pValue ? "1" : "0";
+                    }
+                    else // 處理數字等其他不需要單引號的類型
+                    {
+                        valueToReplace = pValue.ToString();
+                    }
+                }
+
+                // 將 SQL 樣板中的參數名稱替換為格式化後的值
+                sb.Replace(p.ParameterName, valueToReplace);
+            }
+
+            return sb.ToString();
+        }
     }
 }
