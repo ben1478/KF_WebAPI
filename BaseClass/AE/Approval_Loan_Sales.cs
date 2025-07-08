@@ -4,6 +4,7 @@ using KF_WebAPI.FunctionHandler;
 using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
 using System.Data;
+using System.Reflection;
 using System.Text;
 
 namespace KF_WebAPI.BaseClass.AE
@@ -81,8 +82,28 @@ namespace KF_WebAPI.BaseClass.AE
         public string? U_bc_title { get; set; }
         public string? Plan_num { get; set; }
         public string? CS_introducer { get; set; }
-        public string SelYear_S { get; set; } = $"{DateTime.Now.Year}-{DateTime.Now.Month:D2}"; // Default to current month
-        public string OrderBy { get; set; } = "2"; // Default to '區-業務'
+        public string? SelYear_S { get; set; } 
+        public string? OrderBy { get; set; }
+        public string? U_BC { get; set; } // 部門代碼
+        public string? U_num { get; set; } // 使用者編號
+        //public string? Role_num { get; set; }
+    }
+
+    public class CommissionRuleDto
+    {
+        public string? RefName { get; set; }
+        public string? RefDate { get; set; }
+        public string GetAmount { get; set; }
+        public decimal Discount { get; set; }
+        public string Expe_comm_amt { get; set; }
+        public string RefRateI { get; set; }
+        public string RefRateL { get; set; }
+        public string FR_M_name { get; set; }
+        public string FR_D_ratio_A { get; set; }
+        public string FR_D_ratio_B { get; set; }
+        public string FR_D_rate { get; set; }
+        public string FR_D_discount { get; set; }
+        public string Sel { get; set; }
     }
 }
 
@@ -94,12 +115,18 @@ namespace KF_WebAPI.Services.AE
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             ADOData _ADO = new();
+            ResultClass<string> userInfo = GetRoleNum(parameters.U_num);
+            if (userInfo.ResultCode != "000")
+            {
+                return resultClass;
+            }
+
             // 1.呼叫新方法來建立動態的 WHERE 條件
             var (sql_txt, sql_txt_CS, dynamicParams) = BuildWhereClause(parameters, new UserContext
             {
-                RoleNum = "1008", // 假設為業務主管角色，實際應從使用者上下文獲取
-                BranchCode = "BC0100", // 假設部門代碼
-                UserNum = "U12345" // 假設使用者編號
+                RoleNum = userInfo.objResult, // 角色
+                BranchCode = parameters.U_BC, // 部門代碼
+                UserNum = parameters.U_num // 使用者編號
             });
 
             // 2. 獲取靜態的 SQL 查詢模板
@@ -122,9 +149,18 @@ namespace KF_WebAPI.Services.AE
                 string tSql = FuncHandler.GenerateDebugSql(finalSql, dynamicParams);
                 Console.WriteLine(tSql); // 用於調試，輸出最終的 SQL 查詢語句                   
                 DataTable dtResult = _ADO.ExecuteQuery(finalSql, dynamicParams);
-                resultClass.ResultCode = "000";
-                resultClass.ResultMsg = "查詢成功";
-                resultClass.objResult =  JsonConvert.SerializeObject(dtResult);
+                // todo:難字 CommissionReportRow
+                if (dtResult.Rows.Count > 0 )
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "查詢成功";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                }
                 return resultClass;
             }
             catch (Exception ex)
@@ -386,9 +422,9 @@ namespace KF_WebAPI.Services.AE
             var dynamicParams = new List<SqlParameter>();
 
             // 複製 ASP 中的參數，並根據權限覆寫
-            var planNum = parameters.Plan_num;
-            var uBcTitle = parameters.U_bc_title;
-
+            var planNum = string.IsNullOrEmpty(parameters.Plan_num)?  string.Empty : parameters.Plan_num;
+            var uBcTitle = string.IsNullOrEmpty(parameters.U_bc_title) ? string.Empty : parameters.U_bc_title ;
+            
             // 步驟 1: 根據使用者角色(Auth)設定權限和預設過濾條件
             // 這段邏輯取代了 ASP 中的 session("Role_num") 判斷
             switch (user.RoleNum)
@@ -463,7 +499,154 @@ namespace KF_WebAPI.Services.AE
 
             return (sqlBuilder.ToString(), csSqlBuilder.ToString(), dynamicParams);
         }
+        public ResultClass<string> GetRoleNum(string U_num)
+        {
+            ResultClass<string> result = new ResultClass<string>();
+            try
+            {
+                ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
+                var parameters = new List<SqlParameter>();
+                #region SQL
+                var T_SQL = @"SELECT 
+                                  [Role_num]
+                              FROM [AE_DB_TEST].[dbo].[User_M]
+                              where 
+                                del_tag = 0 and U_leave_date is null
+                                and is_susp is null
+                                and U_num = @U_num ";
 
+                #endregion
+                parameters.Add(new SqlParameter("@U_num", U_num));
+
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+
+                if (dtResult.Rows.Count > 0)
+                {
+                    result.ResultCode = "000";
+                    result.objResult = dtResult.Rows[0][0].ToString();
+                }
+                else
+                {
+                    result.ResultCode = "400";
+                    result.ResultMsg = "查無資料";
+                    result.objResult = string.Empty;
+                }
+            }
+            catch (Exception ex)
+            {
+                result.ResultCode = "500";
+                result.ResultMsg = $" response: {ex.Message}";
+                result.objResult = string.Empty;
+            }
+            return result;
+        }
+
+        // 在 CommissionReportService.cs 中
+        public ResultClass<string> GetCommissionRules(string hsId, string isConfirm, string mainKey)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            ADOData _adoData = new();
+
+            string uBcRule = "general"; // 根據舊程式碼，此值固定為 'general'
+            string tableFeatRuleSql;
+            string sqlColumn;
+
+            var parameters = new List<SqlParameter>();
+            parameters.Add(new SqlParameter("@MainKey", mainKey));
+            parameters.Add(new SqlParameter("@UbcRule", uBcRule));
+            parameters.Add(new SqlParameter("@HsId", hsId));
+
+            if (isConfirm == "Y")
+            {
+                // 確認過的抓 LOG 檔
+                tableFeatRuleSql = @"
+            SELECT FR_M_code, FR_M_name, FR_D_ratio_A, FR_D_ratio_B,
+                   FR_D_rate, FR_D_discount, F.U_BC,
+                   CONVERT(varchar, ISNULL(F.edit_date, F.add_date), 120) AS RefDate,
+                   U_name AS RefName
+            FROM dbo.Feat_rule_comm_Log F
+            LEFT JOIN User_M M ON ISNULL(F.edit_num, F.add_num) = U_num
+            WHERE LogKey = @MainKey AND F.U_BC = @UbcRule";
+                sqlColumn = " ISNULL(R.RefName, '') AS RefName, ISNULL(R.RefDate, '') AS RefDate, ";
+            }
+            else
+            {
+                // 沒確認過的抓目前設定檔
+                tableFeatRuleSql = "SELECT * FROM dbo.Feat_rule_comm WHERE FR_M_type = 'N' AND del_tag = '0' AND U_BC = @UbcRule";
+                sqlColumn = " '' AS RefName, '' AS RefDate, ";
+            }
+
+            string finalSql = $@"
+                SELECT {sqlColumn}
+                       REPLACE(CONVERT(VARCHAR(15), CONVERT(MONEY, H.get_amount * 10000), 1), '.00', '') AS get_amount,
+                       CONVERT(float, ISNULL(S.FR_D_discount, 0)) * 0.01 AS discount,
+                       REPLACE(CONVERT(VARCHAR(15), CONVERT(MONEY, (H.get_amount * 10000 * 0.01 * ISNULL(CONVERT(float, S.FR_D_discount), 0))), 1), '.00', '') AS Expe_comm_amt,
+                       interest_rate_pass AS refRateI,
+                       Loan_rate AS refRateL,
+                       ISNULL(R.FR_M_name, '') AS FR_M_name,
+                       ISNULL(CONVERT(VARCHAR, R.FR_D_ratio_A), '') AS FR_D_ratio_A,
+                       ISNULL(CONVERT(VARCHAR, R.FR_D_ratio_B), '') AS FR_D_ratio_B,
+                       ISNULL(CONVERT(VARCHAR, R.FR_D_rate), '') AS FR_D_rate,
+                       ISNULL(CONVERT(VARCHAR, R.FR_D_discount), '') AS FR_D_discount,
+                       CASE WHEN S.FR_D_rate = R.FR_D_rate THEN 'Y' ELSE 'N' END AS Sel
+                FROM House_sendcase H
+                LEFT JOIN House_apply A ON A.HA_id = H.HA_id AND A.del_tag = '0'
+                LEFT JOIN (
+                    SELECT 'general' AS U_BC_rule, u.U_BC, U_num, U_name, item_D_name AS U_BC_name
+                    FROM User_M u
+                    LEFT JOIN Item_list ub ON ub.item_M_code = 'branch_company' AND ub.item_D_type = 'Y' AND ub.item_D_code = u.U_BC
+                ) M ON M.U_num = A.plan_num
+                LEFT JOIN House_pre_project P ON P.HP_project_id = H.HP_project_id
+                LEFT JOIN ({tableFeatRuleSql}) S ON project_title = S.FR_M_code
+                    AND Loan_rate BETWEEN S.FR_D_ratio_A AND S.FR_D_ratio_B
+                    AND dbo.PadStringWithZero(interest_rate_pass) = S.FR_D_rate
+                    AND M.U_BC_rule = S.U_BC
+                LEFT JOIN ({tableFeatRuleSql}) R ON S.FR_M_code = R.FR_M_code
+                    AND Loan_rate BETWEEN R.FR_D_ratio_A AND R.FR_D_ratio_B
+                    AND S.U_BC = R.U_BC
+                WHERE hs_id = @HsId
+                ORDER BY R.FR_D_ratio_A, R.FR_D_rate DESC";
+            try
+            {
+                var dtResult = _adoData.ExecuteQuery(finalSql, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    // IEnumerable<CommissionRuleDto>
+                    var result = dtResult.AsEnumerable().Select(row => new CommissionRuleDto
+                    {
+                        RefName = row.Field<string>("RefName"),
+                        RefDate = row.Field<string>("RefDate"),
+                        GetAmount = row.Field<string>("get_amount"),
+                        Discount = (decimal)row.Field<double>("discount"),
+                        Expe_comm_amt = row.Field<string>("Expe_comm_amt"),
+                        RefRateI = row.Field<string>("refRateI"),
+                        RefRateL = row.Field<string>("refRateL"),
+                        FR_M_name = row.Field<string>("FR_M_name"),
+                        FR_D_ratio_A = row.Field<string>("FR_D_ratio_A"),
+                        FR_D_ratio_B = row.Field<string>("FR_D_ratio_B"),
+                        FR_D_rate = row.Field<string>("FR_D_rate"),
+                        FR_D_discount = row.Field<string>("FR_D_discount"),
+                        Sel = row.Field<string>("Sel")
+                    }).ToList();
+
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(result);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    resultClass.objResult = string.Empty;
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $"查詢失敗: {ex.Message}";
+                resultClass.objResult = string.Empty;
+            }
+            return resultClass;
+        }
     }
 
     class UserContext
@@ -471,7 +654,7 @@ namespace KF_WebAPI.Services.AE
         /// <summary>
         /// 角色代碼，例如 "1009" (業務), "1008" (業務主管), "1001" (開發者)
         /// </summary>
-        public string RoleNum { get; set; } = "1001"; // 預設為最高權限，便於測試
+        public string? RoleNum { get; set; } // 預設為最高權限，便於測試
 
         /// <summary>
         /// 使用者編號 (U_num)

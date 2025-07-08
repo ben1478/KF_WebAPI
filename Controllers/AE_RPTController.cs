@@ -6350,12 +6350,27 @@ namespace KF_WebAPI.Controllers
 
         #region 核准放款表/佣金表
         [HttpPost("Approval_Loan_Sales_LQuery")]
-        public ActionResult<ResultClass<string>> Approval_Loan_Sales_LQuery([FromQuery] ReportQueryParameters parameters)
+        public ActionResult<ResultClass<string>> Approval_Loan_Sales_LQuery([FromBody] ReportQueryParameters parameters)
         {
+            #region 預設值:撥款年月/排序
+            // 撥款年月
             if (string.IsNullOrEmpty(parameters.SelYear_S))
             {
-                return BadRequest("撥款年月 (selYear_S) 是必要參數。");
+                string currentYear = DateTime.Now.Year.ToString();
+                string month = DateTime.Now.Month.ToString("D2");
+                if(DateTime.Now.Day < 20)
+                {
+                    month = (DateTime.Now.Month - 1).ToString("D2");
+                    if (month == "00")
+                    {
+                        currentYear = (DateTime.Now.Year - 1).ToString();
+                        month = "12";
+                    }
+                }
+                parameters.SelYear_S = $"{currentYear}-{month}"; // 預設為當前年月
             };
+            parameters.OrderBy = string.IsNullOrEmpty(parameters.OrderBy) ? "2" : parameters.OrderBy;
+            #endregion
             ResultClass<string> resultClass = new ResultClass<string>();
             CommissionReportService _reportService = new CommissionReportService();
             try
@@ -6371,6 +6386,39 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+        [HttpGet("GetRleNum")]
+        public ActionResult<ResultClass<string>> GetRoleNum(string U_num)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            CommissionReportService _reportService = new CommissionReportService();
+            try
+            {
+                var data = _reportService.GetRoleNum(U_num);
+                return Ok(data);
+
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        [HttpGet("GetCommissionRules")]
+        public async Task<IActionResult> GetCommissionRules(
+            [FromQuery] string hsId, [FromQuery] string isConfirm, [FromQuery] string mainKey)
+        {
+            if (string.IsNullOrEmpty(hsId) || string.IsNullOrEmpty(isConfirm) || string.IsNullOrEmpty(mainKey))
+            {
+                return BadRequest("缺少必要參數。");
+            }
+            CommissionReportService _reportService = new CommissionReportService();
+            var rules = _reportService.GetCommissionRules(hsId, isConfirm, mainKey);
+            return Ok(rules);
+        }
+
         #endregion
     }
 }
