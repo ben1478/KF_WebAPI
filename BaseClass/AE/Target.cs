@@ -39,4 +39,15 @@
         public int Subord { get; set; }
         public int Leader { get; set; } 
     }
+
+    public class Per_Target_res
+    {
+        public int PE_ID { get; set; }
+        public string titleName { get; set; }
+        public string U_name { get; set; }
+        public string PE_num { get; set; }
+        public int PE_target { get; set; }
+        public string PE_Date { get; set; }
+        public string PE_Date_Minguo { get; set; }
+    }
 }

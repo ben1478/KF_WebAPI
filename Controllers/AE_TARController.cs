@@ -364,12 +364,7 @@ namespace KF_WebAPI.Controllers
                               left join Item_list Li on Li.item_M_code='professional_title' and Li.item_D_code=Pe.PE_title
                               left join User_M Um on Um.U_num=Pe.PE_num
                               left join Item_list Lis on Lis.item_M_code = 'SpecName' AND Lis.item_D_type = 'Y' and Lis.item_D_txt_A = Um.U_num
-                              where PE_title IN ('PFT060','PFT030','PFT050','PFT300') ";
-                if (!string.IsNullOrEmpty(c_name))
-                {
-                    T_SQL += " and U_name like @c_name";
-                    parameters.Add(new SqlParameter("@c_name", "%" + c_name + "%"));
-                }
+                              where PE_title IN ('PFT060','PFT030','PFT050','PFT300')";
                 if (!string.IsNullOrEmpty(PE_DATE))
                 {
                     T_SQL += " and PE_DATE = @PE_DATE";
@@ -378,8 +373,25 @@ namespace KF_WebAPI.Controllers
                 T_SQL += " order by PE_Date desc,Li.item_sort";
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+
+                //TODO 後續資料庫升級後再修改寫法(再把name加入where 條件)
+                List<Per_Target_res> perTargetList = new List<Per_Target_res>();
+                perTargetList = dtResult.AsEnumerable().Select(row => new Per_Target_res 
+                {
+                    PE_ID = row.Field<int>("PE_ID"),
+                    titleName = row.Field<string>("titleName"),
+                    U_name = row.Field<string>("U_name"),
+                    PE_num = row.Field<string>("PE_num"),
+                    PE_target = row.Field<int>("PE_target"),
+                    PE_Date = row.Field<string>("PE_Date"),
+                    PE_Date_Minguo = row.Field<string>("PE_Date_Minguo")
+                }).ToList();
+                if (!string.IsNullOrEmpty(c_name))
+                {
+                    perTargetList = perTargetList.Where(x=>x.U_name.Equals(c_name)).ToList();
+                }
                 resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                resultClass.objResult = JsonConvert.SerializeObject(perTargetList);
                 return Ok(resultClass);
             }
             catch (Exception ex)
