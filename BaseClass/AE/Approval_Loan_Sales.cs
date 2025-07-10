@@ -105,6 +105,19 @@ namespace KF_WebAPI.BaseClass.AE
         public string FR_D_discount { get; set; }
         public string Sel { get; set; }
     }
+
+    // Models/OtherFeeDetailDto.cs
+    public class OtherFeeDetailDto
+    {
+        public string ItemDCode { get; set; }
+        public string ItemDName { get; set; }
+        public string KeyVal { get; set; }
+        public decimal RemitAmt { get; set; }
+        public decimal CleanAmt { get; set; }
+        public decimal BonusAmt { get; set; }
+        public decimal SubsidyAmt { get; set; }
+        public decimal TotAmt { get; set; }
+    }
 }
 
 namespace KF_WebAPI.Services.AE
@@ -647,6 +660,115 @@ namespace KF_WebAPI.Services.AE
             }
             return resultClass;
         }
+        // In CommissionReportService.cs
+
+        /// <summary>
+        /// 獲取各區其他費用的詳細明細。
+        /// </summary>
+        public ResultClass<string> GetOtherFeeDetailsAsync(string? uBcTitle, string selYearS)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var parameters = new List<SqlParameter>();
+            // 基礎查詢，從 Item_list 取得所有分公司
+            var sqlBuilder = new StringBuilder(@"
+                SELECT
+                    i.item_D_code AS ItemDCode,
+                    i.item_D_name AS ItemDName,
+                    i.item_D_code + @SelYearS AS KeyVal,
+                    i.item_sort
+                FROM Item_list i
+                WHERE i.item_M_code = 'branch_company' AND i.item_D_type = 'Y' AND i.show_tag = '0' AND i.del_tag = '0'
+            ");
+            parameters.Add(new SqlParameter("@SelYearS", selYearS));
+
+            // 根據傳入的 uBcTitle 加入過濾條件
+            if (string.IsNullOrEmpty(uBcTitle) || uBcTitle == "666")
+            {
+                sqlBuilder.Append(" AND i.item_D_code NOT LIKE 'BC080%' AND i.item_D_code <> 'BC0700' ");
+            }
+            else
+            {
+                sqlBuilder.Append(" AND i.item_D_code = @UbcTitle ");
+                parameters.Add(new SqlParameter("@UbcTitle", uBcTitle));
+            }
+
+            // 使用 CTE (Common Table Expression) 來獲取最新的費用紀錄
+            var finalSql = $@"
+                WITH LatestLogs AS (
+                    SELECT KeyVal, ColumnNA, ColumnVal
+                    FROM LogTable
+                    WHERE identify IN (
+                        SELECT MAX(identify)
+                        FROM LogTable
+                        WHERE TableNA = 'OtherAmt'
+                        GROUP BY KeyVal, ColumnNA
+                    )
+                ),
+                BranchList AS (
+                    {sqlBuilder}
+                )
+                SELECT
+                    b.ItemDCode,
+                    b.ItemDName,
+                    b.KeyVal,
+                    ISNULL(TRY_CAST(l_remit.ColumnVal AS decimal(18, 2)), 0) AS RemitAmt,
+                    ISNULL(TRY_CAST(l_clean.ColumnVal AS decimal(18, 2)), 0) AS CleanAmt,
+                    ISNULL(TRY_CAST(l_bonus.ColumnVal AS decimal(18, 2)), 0) AS BonusAmt,
+                    ISNULL(TRY_CAST(l_subsidy.ColumnVal AS decimal(18, 2)), 0) AS SubsidyAmt,
+                    (
+                        ISNULL(TRY_CAST(l_remit.ColumnVal AS decimal(18, 2)), 0) +
+                        ISNULL(TRY_CAST(l_clean.ColumnVal AS decimal(18, 2)), 0) +
+                        ISNULL(TRY_CAST(l_bonus.ColumnVal AS decimal(18, 2)), 0) +
+                        ISNULL(TRY_CAST(l_subsidy.ColumnVal AS decimal(18, 2)), 0)
+                    ) AS TotAmt                    
+                FROM BranchList b
+                LEFT JOIN LatestLogs l_remit ON b.KeyVal = l_remit.KeyVal AND l_remit.ColumnNA = 'RemitAmt'
+                LEFT JOIN LatestLogs l_clean ON b.KeyVal = l_clean.KeyVal AND l_clean.ColumnNA = 'CleanAmt'
+                LEFT JOIN LatestLogs l_bonus ON b.KeyVal = l_bonus.KeyVal AND l_bonus.ColumnNA = 'BonusAmt'
+                LEFT JOIN LatestLogs l_subsidy ON b.KeyVal = l_subsidy.KeyVal AND l_subsidy.ColumnNA = 'SubsidyAmt'
+                ORDER BY b.item_sort ASC
+            ";
+
+            ADOData _adoData = new();
+            
+            try
+            {
+                var dtResult = _adoData.ExecuteQuery(finalSql, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    // IEnumerable<CommissionRuleDto>
+                    var result = dtResult.AsEnumerable().Select(row => new OtherFeeDetailDto
+                    {
+                        ItemDCode = row.Field<string>("ItemDCode"),
+                        ItemDName = row.Field<string>("ItemDName"),
+                        KeyVal = row.Field<string>("KeyVal"),
+                        RemitAmt = row.Field<decimal>("RemitAmt"),
+                        CleanAmt = row.Field<decimal>("CleanAmt"),
+                        BonusAmt = row.Field<decimal>("BonusAmt"),
+                        SubsidyAmt = row.Field<decimal>("SubsidyAmt"),
+                        TotAmt = row.Field<decimal>("TotAmt")
+                    }).ToList();
+
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(result);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    resultClass.objResult = string.Empty;
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $"查詢失敗: {ex.Message}";
+                resultClass.objResult = string.Empty;
+            }
+            return resultClass;
+            
+        }
+
     }
 
     class UserContext
