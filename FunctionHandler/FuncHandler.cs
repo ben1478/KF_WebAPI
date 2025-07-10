@@ -1132,7 +1132,7 @@ namespace KF_WebAPI.FunctionHandler
                             worksheet = package.Workbook.Worksheets.Add("台北");
                             break;
                         case "BC0200":
-                            worksheet = package.Workbook.Worksheets.Add("板橋");
+                            worksheet = package.Workbook.Worksheets.Add("新北");
                             break;
                         case "BC0600":
                             worksheet = package.Workbook.Worksheets.Add("桃園");
@@ -1447,16 +1447,16 @@ namespace KF_WebAPI.FunctionHandler
                 if (modelList?.Any(x => x.type != null && x.type.Equals("Hk_04")) == true)
                 {
                     // 添加合併標題 曠職
-                    worksheet_ly.Cells[1, 6].Value = Convert.ToInt32(yyyy) - 1911 + "年" + mm + "月  國峯颱風假";
-                    worksheet_ly.Cells[1, 6, 1, 7].Merge = true;
-                    worksheet_ly.Cells[1, 6, 1, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                    worksheet_ly.Cells[1, 6, 1, 7].Style.Font.Bold = true;
+                    worksheet_ly.Cells[1, 12].Value = Convert.ToInt32(yyyy) - 1911 + "年" + mm + "月  國峯颱風假";
+                    worksheet_ly.Cells[1, 12, 1, 13].Merge = true;
+                    worksheet_ly.Cells[1, 12, 1, 13].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet_ly.Cells[1, 12, 1, 13].Style.Font.Bold = true;
 
-                    worksheet_ly.Cells[2, 6].Value = "名稱";
-                    worksheet_ly.Cells[2, 7].Value = "日期";
+                    worksheet_ly.Cells[2, 12].Value = "名稱";
+                    worksheet_ly.Cells[2, 13].Value = "日期";
 
                     rowindex_ly = 2;
-                    colindex_ly = 6;
+                    colindex_ly = 12;
 
                     foreach (var bcGroup in modelList.Where(x => x.type != null && x.type.Equals("Hk_04")).GroupBy(x => x.U_BC).OrderBy(g => bcOrder.IndexOf(g.Key)).ToList())
                     {
@@ -1464,58 +1464,76 @@ namespace KF_WebAPI.FunctionHandler
                         switch (bcGroup.Key)
                         {
                             case "BC0800":
-                                worksheet_ly.Cells[rowindex_ly, 6].Value = "總公司";
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                worksheet_ly.Cells[rowindex_ly, 12].Value = "總公司";
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.Font.Bold = true;
+                                break;
+                            case "BC0801":
+                                worksheet_ly.Cells[rowindex_ly, 12].Value = "資訊部";
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.Font.Bold = true;
+                                break;
+                            case "BC0802":
+                                worksheet_ly.Cells[rowindex_ly, 12].Value = "審查部";
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.Font.Bold = true;
+                                break;
+                            case "BC0803":
+                                worksheet_ly.Cells[rowindex_ly, 12].Value = "財會部";
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.Font.Bold = true;
                                 break;
                             case "BC0900":
-                                worksheet_ly.Cells[rowindex_ly, 6].Value = "行銷部";
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                worksheet_ly.Cells[rowindex_ly, 12].Value = "行銷部";
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.Font.Bold = true;
                                 break;
                             case "BC0100":
-                                worksheet_ly.Cells[rowindex_ly, 6].Value = "台北";
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                worksheet_ly.Cells[rowindex_ly, 12].Value = "台北";
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.Font.Bold = true;
                                 break;
                             case "BC0200":
-                                worksheet_ly.Cells[rowindex_ly, 6].Value = "板橋";
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                worksheet_ly.Cells[rowindex_ly, 12].Value = "新北";
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.Font.Bold = true;
                                 break;
                             case "BC0600":
-                                worksheet_ly.Cells[rowindex_ly, 6].Value = "桃園";
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                worksheet_ly.Cells[rowindex_ly, 12].Value = "桃園";
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.Font.Bold = true;
                                 break;
                             case "BC0300":
-                                worksheet_ly.Cells[rowindex_ly, 6].Value = "台中";
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                worksheet_ly.Cells[rowindex_ly, 12].Value = "台中";
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.Font.Bold = true;
                                 break;
                             case "BC0500":
-                                worksheet_ly.Cells[rowindex_ly, 6].Value = "台南";
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                worksheet_ly.Cells[rowindex_ly, 12].Value = "台南";
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.Font.Bold = true;
                                 break;
                             case "BC0400":
-                                worksheet_ly.Cells[rowindex_ly, 6].Value = "高雄";
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                worksheet_ly.Cells[rowindex_ly, 12].Value = "高雄";
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.Font.Bold = true;
                                 break;
                             case "BC0700":
-                                worksheet_ly.Cells[rowindex_ly, 6].Value = "湧立";
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Merge = true;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-                                worksheet_ly.Cells[rowindex_ly, 6, rowindex_ly, 7].Style.Font.Bold = true;
+                                worksheet_ly.Cells[rowindex_ly, 12].Value = "湧立";
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Merge = true;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                                worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.Font.Bold = true;
                                 break;
                         }
 
@@ -1537,7 +1555,7 @@ namespace KF_WebAPI.FunctionHandler
                                             rowindex_ly++;
                                             worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = $"{item.userID}: {item.user_name}";
                                             worksheet_ly.Cells[rowindex_ly, colindex_ly++].Value = item.attendance_week;
-                                            colindex_ly = 6;
+                                            colindex_ly = 12;
                                         }
                                     }
                                 }
@@ -1546,7 +1564,7 @@ namespace KF_WebAPI.FunctionHandler
                     }
 
                     // 添加框線
-                    var range_ly3 = worksheet_ly.Cells[1, 6, rowindex_ly, 7];
+                    var range_ly3 = worksheet_ly.Cells[1, 12, rowindex_ly, 13];
                     range_ly3.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                     range_ly3.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
                     range_ly3.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
