@@ -1132,7 +1132,7 @@ namespace KF_WebAPI.FunctionHandler
                             worksheet = package.Workbook.Worksheets.Add("台北");
                             break;
                         case "BC0200":
-                            worksheet = package.Workbook.Worksheets.Add("板橋");
+                            worksheet = package.Workbook.Worksheets.Add("新北");
                             break;
                         case "BC0600":
                             worksheet = package.Workbook.Worksheets.Add("桃園");
@@ -1500,7 +1500,7 @@ namespace KF_WebAPI.FunctionHandler
                                 worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.Font.Bold = true;
                                 break;
                             case "BC0200":
-                                worksheet_ly.Cells[rowindex_ly, 12].Value = "板橋";
+                                worksheet_ly.Cells[rowindex_ly, 12].Value = "新北";
                                 worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Merge = true;
                                 worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
                                 worksheet_ly.Cells[rowindex_ly, 12, rowindex_ly, 13].Style.Font.Bold = true;
