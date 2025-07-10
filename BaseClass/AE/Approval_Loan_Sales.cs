@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using System.Data;
 using System.Reflection;
 using System.Text;
+using static Grpc.Core.Metadata;
 
 namespace KF_WebAPI.BaseClass.AE
 {
@@ -118,6 +119,42 @@ namespace KF_WebAPI.BaseClass.AE
         public decimal SubsidyAmt { get; set; }
         public decimal TotAmt { get; set; }
     }
+
+    public class LogEntryDto
+    {
+        public string TableNA { get; set; } = "OtherAmt";
+        public string KeyVal { get; set; }
+        public string ColumnNA { get; set; }
+        public string ColumnVal { get; set; }
+        public string LogID { get; set; } // The User's U_num
+    }
+
+    // 核准放款表/佣金表-其他費用(isEditOtherFee = true)
+    public class FeeLogDto
+    {
+        public string LogUser { get; set; }
+        public string ColumnNA { get; set; }
+        public string ColumnVal { get; set; }
+        public string Remark { get; set; }
+        public string Logdate { get; set; }
+    }
+    // 核准放款表/佣金表-其他費用(isEditOtherFee = false)
+    public class SaveFeeLogDto
+    {
+        public string TableNA { get; set; }
+        public string KeyVal { get; set; }
+        public string ColumnNA { get; set; }
+        public string ColumnVal { get; set; }
+        public string LogID { get; set; }
+    }
+    public class BranchDto
+    {
+        // 對應 item_D_code
+        public string BranchCode { get; set; }
+        // 對應 item_D_name
+        public string BranchName { get; set; }
+    }
+
 }
 
 namespace KF_WebAPI.Services.AE
@@ -767,6 +804,209 @@ namespace KF_WebAPI.Services.AE
             }
             return resultClass;
             
+        }
+        // In CommissionReportService.cs
+
+        /// <summary>
+        /// 核准放款表/佣金表-其他費用(isEditOtherFee = false)
+        /// </summary>
+        public ResultClass<string> GetFeeLogs(string tableNA, string keyVal, string columnNA)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            // 1. 將傳入的欄位字串，整理成乾淨的 List<string>
+            var columnsList = columnNA.Split(',')
+                                      .Select(c => c.Trim())
+                                      .Where(c => !string.IsNullOrEmpty(c))
+                                      .ToList();
+            if (!columnsList.Any())
+            {
+                resultClass.ResultCode = "400";
+                resultClass.ResultMsg = "查無資料";
+                resultClass.objResult = string.Empty;
+                return resultClass;
+            }
+
+            var parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@TableNA", tableNA),
+                new SqlParameter("@KeyVal", keyVal)
+            };
+
+            var paramNames = new List<string>();
+            for (int i = 0; i < columnsList.Count; i++)
+            {
+                var paramName = $"@p{i}";
+                paramNames.Add(paramName);
+                parameters.Add(new SqlParameter(paramName, columnsList[i]));
+            }
+            var sql = $@"
+                SELECT 
+                    M.U_name AS LogUser,
+                    L.ColumnNA,
+                    L.ColumnVal,
+                    ISNULL(L.Remark, '') AS Remark,
+                    CONVERT(varchar, L.Logdate, 120) AS Logdate
+                FROM dbo.LogTable L
+                LEFT JOIN User_M M ON L.LogID = M.U_num
+                WHERE L.TableNA = @TableNA AND L.KeyVal = @KeyVal AND L.ColumnNA IN ({string.Join(", ", paramNames)})
+                ORDER BY L.Logdate DESC";
+
+            ADOData _adoData = new();
+
+            try
+            {
+                var dtResult = _adoData.ExecuteQuery(sql, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    // IEnumerable<CommissionRuleDto>
+                    var result = dtResult.AsEnumerable().Select(row => new FeeLogDto
+                    {
+                        LogUser = row.Field<string>("LogUser"),
+                        ColumnNA = row.Field<string>("ColumnNA"),
+                        ColumnVal = row.Field<string>("ColumnVal"),
+                        Remark = row.Field<string>("Remark"),
+                        Logdate = row.Field<string>("Logdate")
+                    }).ToList();
+
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(result);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    resultClass.objResult = string.Empty;
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $"查詢失敗: {ex.Message}";
+                resultClass.objResult = string.Empty;
+            }
+            return resultClass;
+        }
+
+        /// <summary>
+        /// 核准放款表/佣金表-其他費用.SaveLogByObj(isEditOtherFee = true)
+        /// </summary>
+        public async Task<bool> SaveOtherFeesAsync(List<SaveFeeLogDto> logEntries, bool checkForChanges)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            List<SaveFeeLogDto> entriesToSave = new List<SaveFeeLogDto>();
+            ADOData _adoData = new ADOData();
+            
+            if (checkForChanges)
+            {
+                foreach (var entry in logEntries)
+                {
+                    var latestValSql = @"
+                        SELECT TOP 1 ColumnVal 
+                        FROM LogTable 
+                        WHERE TableNA = @TableNA AND KeyVal = @KeyVal AND ColumnNA = @ColumnNA
+                        ORDER BY identify DESC";
+                    var parameters = new List<SqlParameter>();
+                    parameters.Add(new SqlParameter("@TableNA", entry.TableNA));
+                    parameters.Add(new SqlParameter("@KeyVal", entry.KeyVal));
+                    parameters.Add(new SqlParameter("@ColumnNA", entry.ColumnNA));
+                    var latestVal = _adoData.ExecuteQuery(latestValSql, parameters).Rows[0][0];
+
+                    // If no record exists, or if the value has changed, add it to the list to be saved.
+                    if (latestVal == null || latestVal != entry.ColumnVal)
+                    {
+                        entriesToSave.Add(entry);
+                    }
+                }
+            }
+            else
+            {
+                entriesToSave = logEntries;
+            }
+
+            if (!entriesToSave.Any())
+            {
+                return true; // Nothing to save, but operation is "successful".
+            }
+
+            // Use a transaction to ensure all entries are saved or none are.
+
+            try
+            {
+                var insertSql = @"
+                    INSERT INTO LogTable (TableNA, KeyVal, ColumnNA, ColumnVal, LogID, LogDate, add_date, add_num)
+                    VALUES (@TableNA, @KeyVal, @ColumnNA, @ColumnVal, @LogID, SYSDATETIME(), SYSDATETIME(), @LogID)";
+                foreach (var entry in entriesToSave)
+                {
+                    var parameters = new List<SqlParameter>();
+                    parameters.Add(new SqlParameter("@TableNA", entry.TableNA));
+                    parameters.Add(new SqlParameter("@KeyVal", entry.KeyVal));
+                    parameters.Add(new SqlParameter("@ColumnNA", entry.ColumnNA)); ;
+                    parameters.Add(new SqlParameter("@ColumnVal", entry.ColumnVal));
+                    parameters.Add(new SqlParameter("@LogID", entry.LogID));
+                    parameters.Add(new SqlParameter("@add_num", entry.LogID));
+                    int result = _adoData.ExecuteNonQuery(insertSql, parameters);
+                    
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (ex)
+                return false;
+            }
+        }
+
+        // 在 CommissionReportService.cs 或其他服務中
+
+        /// <summary>
+        /// 獲取所有有效的分公司列表，用於下拉選單。
+        /// </summary>
+        public ResultClass<string> GetBranchesAsync()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            ADOData _adoData = new ADOData();
+            var sql = @"
+                SELECT 
+                    item_D_code AS BranchCode,
+                    item_D_name AS BranchName
+                FROM Item_list
+                WHERE item_M_code = 'branch_company' 
+                  AND item_D_type = 'Y' 
+                  AND show_tag = '0' 
+                  AND del_tag = '0' 
+                  AND item_D_code NOT LIKE 'BC080%' 
+                  AND item_D_code <> 'BC0700'
+                ORDER BY item_sort";
+
+            try
+            {
+                var dtResult = _adoData.ExecuteSQuery(sql);
+                if (dtResult.Rows.Count > 0)
+                {
+                    // IEnumerable<CommissionRuleDto>
+                    var result = dtResult.AsEnumerable().Select(row => new BranchDto
+                    {
+                        BranchCode = row.Field<string>("BranchCode"),
+                        BranchName = row.Field<string>("BranchName")
+                    }).ToList();
+
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(result);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    resultClass.objResult = string.Empty;
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $"查詢失敗: {ex.Message}";
+                resultClass.objResult = string.Empty;
+            }
+            return resultClass;
         }
 
     }

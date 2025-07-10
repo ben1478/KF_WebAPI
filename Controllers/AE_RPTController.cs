@@ -6436,6 +6436,54 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+        // In CommissionReportController.cs
+
+        [HttpGet("GetFeeLogs")]
+        public ActionResult<ResultClass<string>> GetFeeLogs([FromQuery] string tableNA, [FromQuery] string keyVal, [FromQuery] string columnNA)
+        {
+            CommissionReportService _reportService = new CommissionReportService();
+            var logs = _reportService.GetFeeLogs(tableNA, keyVal, columnNA);
+            return Ok(logs);
+        }
+
+        // Modify the existing SaveOtherFees endpoint to accept the 'check' parameter
+        [HttpPost("SaveOtherFees")]
+        public async Task<IActionResult> SaveOtherFees([FromBody] List<SaveFeeLogDto> logEntries, [FromQuery] string check = "Y")
+        {
+            CommissionReportService _reportService = new CommissionReportService();
+            bool checkForChanges = (check == "Y");
+            var success = await _reportService.SaveOtherFeesAsync(logEntries, checkForChanges);
+
+            if (success)
+            {
+                return Ok(new { message = "儲存成功" });
+            }
+            else
+            {
+                return StatusCode(500, new { message = "儲存失敗，請檢查後端日誌。" });
+            }
+        }
+
+        // 在 CommissionReportController.cs 或您的 API 控制器中
+
+        [HttpGet("GetBranches")]
+        public async Task<IActionResult> GetBranches()
+        {
+            CommissionReportService _reportService = new CommissionReportService();
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var branches = _reportService.GetBranchesAsync();
+                return Ok(branches); // 直接回傳物件陣列
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
         #endregion
     }
 }
