@@ -6419,6 +6419,23 @@ namespace KF_WebAPI.Controllers
             return Ok(rules);
         }
 
+        [HttpGet("GetOtherFeeDetails")]
+        public ActionResult<ResultClass<string>> GetOtherFeeDetails([FromQuery] string? u_bc_title, [FromQuery] string selYear_S)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                CommissionReportService _reportService = new CommissionReportService();
+                var details = _reportService.GetOtherFeeDetailsAsync(u_bc_title, selYear_S);
+                return Ok(details); // 直接回傳物件陣列
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
         #endregion
     }
 }
