@@ -117,6 +117,7 @@ namespace KF_WebAPI.BaseClass.AE
         public decimal CleanAmt { get; set; }
         public decimal BonusAmt { get; set; }
         public decimal SubsidyAmt { get; set; }
+        public decimal FaresAmt { get; set; } // 過車費
         public decimal TotAmt { get; set; }
     }
 
@@ -702,7 +703,7 @@ namespace KF_WebAPI.Services.AE
         /// <summary>
         /// 獲取各區其他費用的詳細明細。
         /// </summary>
-        public ResultClass<string> GetOtherFeeDetailsAsync(string? uBcTitle, string selYearS)
+        public async Task<ResultClass<string>> GetOtherFeeDetailsAsync(string? uBcTitle, string selYearS)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var parameters = new List<SqlParameter>();
@@ -752,17 +753,20 @@ namespace KF_WebAPI.Services.AE
                     ISNULL(TRY_CAST(l_clean.ColumnVal AS decimal(18, 2)), 0) AS CleanAmt,
                     ISNULL(TRY_CAST(l_bonus.ColumnVal AS decimal(18, 2)), 0) AS BonusAmt,
                     ISNULL(TRY_CAST(l_subsidy.ColumnVal AS decimal(18, 2)), 0) AS SubsidyAmt,
+                    ISNULL(TRY_CAST(l_fares.ColumnVal AS decimal(18, 2)), 0) AS FaresAmt,
                     (
                         ISNULL(TRY_CAST(l_remit.ColumnVal AS decimal(18, 2)), 0) +
                         ISNULL(TRY_CAST(l_clean.ColumnVal AS decimal(18, 2)), 0) +
                         ISNULL(TRY_CAST(l_bonus.ColumnVal AS decimal(18, 2)), 0) +
-                        ISNULL(TRY_CAST(l_subsidy.ColumnVal AS decimal(18, 2)), 0)
+                        ISNULL(TRY_CAST(l_subsidy.ColumnVal AS decimal(18, 2)), 0) +
+                        ISNULL(TRY_CAST(l_fares.ColumnVal AS decimal(18, 2)), 0)
                     ) AS TotAmt                    
                 FROM BranchList b
                 LEFT JOIN LatestLogs l_remit ON b.KeyVal = l_remit.KeyVal AND l_remit.ColumnNA = 'RemitAmt'
                 LEFT JOIN LatestLogs l_clean ON b.KeyVal = l_clean.KeyVal AND l_clean.ColumnNA = 'CleanAmt'
                 LEFT JOIN LatestLogs l_bonus ON b.KeyVal = l_bonus.KeyVal AND l_bonus.ColumnNA = 'BonusAmt'
                 LEFT JOIN LatestLogs l_subsidy ON b.KeyVal = l_subsidy.KeyVal AND l_subsidy.ColumnNA = 'SubsidyAmt'
+                LEFT JOIN LatestLogs l_fares ON b.KeyVal = l_fares.KeyVal AND l_fares.ColumnNA = 'FaresAmt'
                 ORDER BY b.item_sort ASC
             ";
 
@@ -783,6 +787,7 @@ namespace KF_WebAPI.Services.AE
                         CleanAmt = row.Field<decimal>("CleanAmt"),
                         BonusAmt = row.Field<decimal>("BonusAmt"),
                         SubsidyAmt = row.Field<decimal>("SubsidyAmt"),
+                        FaresAmt = row.Field<decimal>("FaresAmt"),
                         TotAmt = row.Field<decimal>("TotAmt")
                     }).ToList();
 
@@ -900,19 +905,16 @@ namespace KF_WebAPI.Services.AE
             {
                 foreach (var entry in logEntries)
                 {
-                    var latestValSql = @"
+                    var latestValSql = @$"
                         SELECT TOP 1 ColumnVal 
                         FROM LogTable 
-                        WHERE TableNA = @TableNA AND KeyVal = @KeyVal AND ColumnNA = @ColumnNA
+                        WHERE TableNA = '{entry.TableNA}' AND KeyVal = '{entry.KeyVal}' AND ColumnNA = '{entry.ColumnNA}'
                         ORDER BY identify DESC";
-                    var parameters = new List<SqlParameter>();
-                    parameters.Add(new SqlParameter("@TableNA", entry.TableNA));
-                    parameters.Add(new SqlParameter("@KeyVal", entry.KeyVal));
-                    parameters.Add(new SqlParameter("@ColumnNA", entry.ColumnNA));
-                    var latestVal = _adoData.ExecuteQuery(latestValSql, parameters).Rows[0][0];
+
+                    var latestVal = _adoData.ExecuteSQuery(latestValSql);
 
                     // If no record exists, or if the value has changed, add it to the list to be saved.
-                    if (latestVal == null || latestVal != entry.ColumnVal)
+                    if (latestVal.Rows.Count == 0 || latestVal.Rows[0][0] != entry.ColumnVal)
                     {
                         entriesToSave.Add(entry);
                     }
@@ -932,19 +934,15 @@ namespace KF_WebAPI.Services.AE
 
             try
             {
-                var insertSql = @"
-                    INSERT INTO LogTable (TableNA, KeyVal, ColumnNA, ColumnVal, LogID, LogDate, add_date, add_num)
-                    VALUES (@TableNA, @KeyVal, @ColumnNA, @ColumnVal, @LogID, SYSDATETIME(), SYSDATETIME(), @LogID)";
+                
                 foreach (var entry in entriesToSave)
                 {
-                    var parameters = new List<SqlParameter>();
-                    parameters.Add(new SqlParameter("@TableNA", entry.TableNA));
-                    parameters.Add(new SqlParameter("@KeyVal", entry.KeyVal));
-                    parameters.Add(new SqlParameter("@ColumnNA", entry.ColumnNA)); ;
-                    parameters.Add(new SqlParameter("@ColumnVal", entry.ColumnVal));
-                    parameters.Add(new SqlParameter("@LogID", entry.LogID));
-                    parameters.Add(new SqlParameter("@add_num", entry.LogID));
-                    int result = _adoData.ExecuteNonQuery(insertSql, parameters);
+                    var insertSql = @$"
+                    INSERT INTO LogTable (TableNA, KeyVal, ColumnNA, ColumnVal, LogID, LogDate)
+                    VALUES ('{entry.TableNA}', '{entry.KeyVal}', '{entry.ColumnNA}', '{entry.ColumnVal}', '{entry.LogID}', SYSDATETIME() )";
+                    Console.WriteLine($"insertSql={insertSql}");
+
+                    _adoData.ExecuteSQuery(insertSql);
                     
                 }
                 return true;

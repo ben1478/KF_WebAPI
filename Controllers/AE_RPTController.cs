@@ -6420,13 +6420,13 @@ namespace KF_WebAPI.Controllers
         }
 
         [HttpGet("GetOtherFeeDetails")]
-        public ActionResult<ResultClass<string>> GetOtherFeeDetails([FromQuery] string? u_bc_title, [FromQuery] string selYear_S)
+        public async Task<ActionResult<ResultClass<string>>> GetOtherFeeDetails([FromQuery] string? u_bc_title, [FromQuery] string selYear_S)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
                 CommissionReportService _reportService = new CommissionReportService();
-                var details = _reportService.GetOtherFeeDetailsAsync(u_bc_title, selYear_S);
+                var details = await _reportService.GetOtherFeeDetailsAsync(u_bc_title, selYear_S);
                 return Ok(details); // 直接回傳物件陣列
             }
             catch (Exception ex)
