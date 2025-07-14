@@ -5449,11 +5449,10 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@u_bc_title", model.u_bc_title));
                 parameters.Add(new SqlParameter("@selYear_S", model.selYear_S + "-01"));
                 parameters.Add(new SqlParameter("@selYear_E", model.selYear_E + "-01"));
-                parameters.Add(new SqlParameter("@start_date", model.start_date));
+                parameters.Add(new SqlParameter("@start_date", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.start_date))));
                 parameters.Add(new SqlParameter("@Enable", model.Enable));
                 parameters.Add(new SqlParameter("@isACT", model.isACT));
                 parameters.Add(new SqlParameter("@OrderBy", model.OrderBy));
-
                 #endregion
                 List<Performance_Excel> excelList = new List<Performance_Excel>();
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
