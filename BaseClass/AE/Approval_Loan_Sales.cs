@@ -507,7 +507,7 @@ namespace KF_WebAPI.Services.AE
             if (!string.IsNullOrEmpty(planNum))
             {
                 // 如果有指定業務員，則以此為最高優先級
-                sqlBuilder.Append(" AND A.plan_num = @PlanNum ");
+                sqlBuilder.Append(" AND M.U_num  = @PlanNum ");
                 dynamicParams.Add(new SqlParameter("PlanNum", planNum));
             }
             else if (!string.IsNullOrEmpty(uBcTitle))
