@@ -23,7 +23,7 @@ using OfficeOpenXml;
 using System.Threading.Tasks;
 using KF_WebAPI.DataLogic;
 using Azure.Core;
-using KF_WebAPI.Services.AE;
+using KF_WebAPI.DataLogic;
 using Microsoft.Extensions.Configuration;
 
 namespace KF_WebAPI.Controllers
@@ -6349,7 +6349,7 @@ namespace KF_WebAPI.Controllers
 
         #region 核准放款表/佣金表
         [HttpPost("Approval_Loan_Sales_LQuery")]
-        public ActionResult<ResultClass<string>> Approval_Loan_Sales_LQuery([FromBody] ReportQueryParameters parameters)
+        public async Task<ActionResult<ResultClass<string>>> Approval_Loan_Sales_LQuery([FromBody] ReportQueryParameters parameters)
         {
             #region 預設值:撥款年月/排序
             // 撥款年月
@@ -6371,10 +6371,10 @@ namespace KF_WebAPI.Controllers
             parameters.OrderBy = string.IsNullOrEmpty(parameters.OrderBy) ? "2" : parameters.OrderBy;
             #endregion
             ResultClass<string> resultClass = new ResultClass<string>();
-            CommissionReportService _reportService = new CommissionReportService();
+            AE_Approval_Loan_Sales _reportService = new AE_Approval_Loan_Sales();
             try
             {
-                var data = _reportService.GetReportDataAsync(parameters);
+                var data = await _reportService.GetReportDataAsync(parameters);
                 return Ok(data);
 
             }
@@ -6390,7 +6390,7 @@ namespace KF_WebAPI.Controllers
         public ActionResult<ResultClass<string>> GetRoleNum(string U_num)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
-            CommissionReportService _reportService = new CommissionReportService();
+            AE_Approval_Loan_Sales _reportService = new AE_Approval_Loan_Sales();
             try
             {
                 var data = _reportService.GetRoleNum(U_num);
@@ -6413,7 +6413,7 @@ namespace KF_WebAPI.Controllers
             {
                 return BadRequest("缺少必要參數。");
             }
-            CommissionReportService _reportService = new CommissionReportService();
+            AE_Approval_Loan_Sales _reportService = new AE_Approval_Loan_Sales();
             var rules = _reportService.GetCommissionRules(hsId, isConfirm, mainKey);
             return Ok(rules);
         }
@@ -6424,7 +6424,7 @@ namespace KF_WebAPI.Controllers
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
-                CommissionReportService _reportService = new CommissionReportService();
+                AE_Approval_Loan_Sales _reportService = new AE_Approval_Loan_Sales();
                 var details = await _reportService.GetOtherFeeDetailsAsync(u_bc_title, selYear_S);
                 return Ok(details); // 直接回傳物件陣列
             }
@@ -6441,7 +6441,7 @@ namespace KF_WebAPI.Controllers
         [HttpGet("GetFeeLogs")]
         public ActionResult<ResultClass<string>> GetFeeLogs([FromQuery] string tableNA, [FromQuery] string keyVal, [FromQuery] string columnNA)
         {
-            CommissionReportService _reportService = new CommissionReportService();
+            AE_Approval_Loan_Sales _reportService = new AE_Approval_Loan_Sales();
             var logs = _reportService.GetFeeLogs(tableNA, keyVal, columnNA);
             return Ok(logs);
         }
@@ -6450,7 +6450,7 @@ namespace KF_WebAPI.Controllers
         [HttpPost("SaveOtherFees")]
         public async Task<IActionResult> SaveOtherFees([FromBody] List<SaveFeeLogDto> logEntries, [FromQuery] string check = "Y")
         {
-            CommissionReportService _reportService = new CommissionReportService();
+            AE_Approval_Loan_Sales _reportService = new AE_Approval_Loan_Sales();
             bool checkForChanges = (check == "Y");
             var success = await _reportService.SaveOtherFeesAsync(logEntries, checkForChanges);
 
@@ -6469,7 +6469,7 @@ namespace KF_WebAPI.Controllers
         [HttpGet("GetBranches")]
         public async Task<IActionResult> GetBranches()
         {
-            CommissionReportService _reportService = new CommissionReportService();
+            AE_Approval_Loan_Sales _reportService = new AE_Approval_Loan_Sales();
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
@@ -6489,7 +6489,7 @@ namespace KF_WebAPI.Controllers
         [HttpGet("GetDisbursementMonths")]
         public async Task<IActionResult> GetDisbursementMonths()
         {
-            CommissionReportService _reportService = new CommissionReportService();
+            AE_Approval_Loan_Sales _reportService = new AE_Approval_Loan_Sales();
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
