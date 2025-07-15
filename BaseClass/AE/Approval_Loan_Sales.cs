@@ -156,6 +156,15 @@ namespace KF_WebAPI.BaseClass.AE
         public string BranchName { get; set; }
     }
 
+    // 撥款年月
+    public class MonthOptionDto
+    {
+        // 選項的顯示文字，例如 "114-07"
+        public string YyyMM { get; set; }
+        // 選項的實際值，例如 "2025-07"
+        public string Yyyymm { get; set; }
+    }
+
 }
 
 namespace KF_WebAPI.Services.AE
@@ -507,7 +516,7 @@ namespace KF_WebAPI.Services.AE
             if (!string.IsNullOrEmpty(planNum))
             {
                 // 如果有指定業務員，則以此為最高優先級
-                sqlBuilder.Append(" AND A.plan_num = @PlanNum ");
+                sqlBuilder.Append(" AND M.U_num  = @PlanNum ");
                 dynamicParams.Add(new SqlParameter("PlanNum", planNum));
             }
             else if (!string.IsNullOrEmpty(uBcTitle))
@@ -986,6 +995,57 @@ namespace KF_WebAPI.Services.AE
                     {
                         BranchCode = row.Field<string>("BranchCode"),
                         BranchName = row.Field<string>("BranchName")
+                    }).ToList();
+
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(result);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    resultClass.objResult = string.Empty;
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $"查詢失敗: {ex.Message}";
+                resultClass.objResult = string.Empty;
+            }
+            return resultClass;
+        }
+
+        // 在 CommissionReportService.cs 中
+
+        /// <summary>
+        /// 獲取撥款年月下拉選單的選項列表
+        /// </summary>
+        public async Task<ResultClass<string>> GetDisbursementMonthsAsync()
+        {
+            // 使用您提供的 SQL 查詢
+            var sql = @"
+                SELECT DISTINCT 
+                    CONVERT(varchar(4), (CONVERT(varchar(4), get_amount_date, 126) - 1911)) + '-' + 
+                    CONVERT(varchar(2), MONTH(get_amount_date)) AS yyyMM,
+                    CONVERT(varchar(7), get_amount_date, 126) AS yyyymm 
+                FROM House_sendcase 
+                WHERE YEAR(get_amount_date) > YEAR(DATEADD(year, -2, SYSDATETIME())) 
+                ORDER BY yyyymm DESC";
+
+            ResultClass<string> resultClass = new ResultClass<string>();
+            ADOData _adoData = new ADOData();
+
+            try
+            {
+                var dtResult = _adoData.ExecuteSQuery(sql);
+                if (dtResult.Rows.Count > 0)
+                {
+                    // IEnumerable<CommissionRuleDto>
+                    var result = dtResult.AsEnumerable().Select(row => new MonthOptionDto
+                    {
+                        YyyMM = row.Field<string>("YyyMM"),
+                        Yyyymm = row.Field<string>("Yyyymm")
                     }).ToList();
 
                     resultClass.ResultCode = "000";
