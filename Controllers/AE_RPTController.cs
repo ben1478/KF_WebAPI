@@ -6483,6 +6483,26 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+        // 在您的 Controller.cs 檔案中
+
+        [HttpGet("GetDisbursementMonths")]
+        public async Task<IActionResult> GetDisbursementMonths()
+        {
+            CommissionReportService _reportService = new CommissionReportService();
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var months = await _reportService.GetDisbursementMonthsAsync();
+                return Ok(months);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
         #endregion
     }
 }
