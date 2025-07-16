@@ -762,59 +762,80 @@ namespace KF_WebAPI.DataLogic
         /// </summary>
         public async Task<bool> SaveOtherFeesAsync(List<SaveFeeLogDto> logEntries, bool checkForChanges)
         {
-            ResultClass<string> resultClass = new ResultClass<string>();
-            List<SaveFeeLogDto> entriesToSave = new List<SaveFeeLogDto>();
             ADOData _adoData = new ADOData();
-
-            if (checkForChanges)
-            {
-                foreach (var entry in logEntries)
-                {
-                    var latestValSql = @$"
-                        SELECT TOP 1 ColumnVal 
-                        FROM LogTable 
-                        WHERE TableNA = '{entry.TableNA}' AND KeyVal = '{entry.KeyVal}' AND ColumnNA = '{entry.ColumnNA}'
-                        ORDER BY identify DESC";
-
-                    var latestVal = _adoData.ExecuteSQuery(latestValSql);
-
-                    // If no record exists, or if the value has changed, add it to the list to be saved.
-                    if (latestVal.Rows.Count == 0 || latestVal.Rows[0][0] != entry.ColumnVal)
-                    {
-                        entriesToSave.Add(entry);
-                    }
-                }
-            }
-            else
-            {
-                entriesToSave = logEntries;
-            }
-
-            if (!entriesToSave.Any())
-            {
-                return true; // Nothing to save, but operation is "successful".
-            }
-
-            // Use a transaction to ensure all entries are saved or none are.
-
+            string connectionString = _adoData.GetConnStr();
+            // 使用 using 確保連線被正確關閉和釋放
+            await using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync();
+            // 1. 開始資料庫交易
+            await using var transaction = connection.BeginTransaction();
             try
             {
-
-                foreach (var entry in entriesToSave)
+                List<SaveFeeLogDto> entriesToSave = new List<SaveFeeLogDto>();
+                if (checkForChanges)
                 {
-                    var insertSql = @$"
-                    INSERT INTO LogTable (TableNA, KeyVal, ColumnNA, ColumnVal, LogID, LogDate)
-                    VALUES ('{entry.TableNA}', '{entry.KeyVal}', '{entry.ColumnNA}', '{entry.ColumnVal}', '{entry.LogID}', SYSDATETIME() )";
-                    Console.WriteLine($"insertSql={insertSql}");
+                    foreach (var entry in logEntries)
+                    {
+                        var latestValSql = @$"
+                        SELECT TOP 1 ColumnVal 
+                        FROM LogTable 
+                        WHERE TableNA = @TableNA AND KeyVal = @KeyVal AND ColumnNA = @ColumnNA
+                        ORDER BY identify DESC";
+                        // 建立指令時，同時指定 connection 和 transaction
+                        await using var cmdCheck = new SqlCommand(latestValSql, connection, transaction);
+                        cmdCheck.Parameters.AddWithValue("@TableNA", entry.TableNA);
+                        cmdCheck.Parameters.AddWithValue("@KeyVal", entry.KeyVal);
+                        cmdCheck.Parameters.AddWithValue("@ColumnNA", entry.ColumnNA);
 
-                    _adoData.ExecuteSQuery(insertSql);
+                        var latestVal = await cmdCheck.ExecuteScalarAsync() as string;
+
+                        // If no record exists, or if the value has changed, add it to the list to be saved.
+                        if (latestVal == null || latestVal != entry.ColumnVal)
+                        {
+                            entriesToSave.Add(entry);
+                        }
+                    }
+                }
+                else
+                {
+                    entriesToSave = logEntries;
+                }
+
+                if (!entriesToSave.Any())
+                {
+                    await transaction.CommitAsync(); // 即使沒有東西要儲存，也完成交易
+                    return true; // Nothing to save, but operation is "successful".
+                }
+
+                // 使用參數化的 INSERT 語句
+                var insertSql = @"
+                    INSERT INTO LogTable (TableNA, KeyVal, ColumnNA, ColumnVal, LogID, LogDate)
+                    VALUES (@TableNA, @KeyVal, @ColumnNA, @ColumnVal, @LogID, SYSDATETIME())";
+
+                foreach (var entryToSave in entriesToSave)
+                {
+                    await using var cmdInsert = new SqlCommand(insertSql, connection, transaction);
+                    cmdInsert.Parameters.AddWithValue("@TableNA", entryToSave.TableNA);
+                    cmdInsert.Parameters.AddWithValue("@KeyVal", entryToSave.KeyVal);
+                    cmdInsert.Parameters.AddWithValue("@ColumnNA", entryToSave.ColumnNA);
+                    cmdInsert.Parameters.AddWithValue("@ColumnVal", entryToSave.ColumnVal);
+                    cmdInsert.Parameters.AddWithValue("@LogID", entryToSave.LogID);
+
+                    await cmdInsert.ExecuteNonQueryAsync();
 
                 }
+                // 2. 如果所有指令都成功，提交交易，讓變更生效
+                await transaction.CommitAsync();
                 return true;
+
             }
             catch (Exception ex)
             {
-                // Log the exception (ex)
+                // 3. 如果中途發生任何錯誤，復原交易，所有已執行的變更都會被取消
+                await transaction.RollbackAsync();
+
+                // 在此處應記錄詳細錯誤日誌 (ex)
+                Console.WriteLine($"交易失敗: {ex.Message}");
                 return false;
             }
         }
