@@ -151,6 +151,12 @@ namespace KF_WebAPI.BaseClass.AE
         [JsonProperty("charge_check")]
         public decimal charge_check { get; set; }
 
+        [JsonProperty("Subsidy_agent")]
+        public decimal Subsidy_agent { get; set; } // 代書費
+
+        [JsonProperty("Subsidy_amt")]
+        public decimal Subsidy_amt { get; set; }   // 過車費
+
         [JsonProperty("get_amount_final")]
         public decimal get_amount_final { get; set; }
 

@@ -158,6 +158,8 @@ namespace KF_WebAPI.DataLogic
                     ISNULL(charge_flow, 0) * (CASE WHEN isThisMonCancel='Y' THEN -1 ELSE 1 END) charge_flow,
                     ISNULL(charge_agent, 0) * (CASE WHEN isThisMonCancel='Y' THEN -1 ELSE 1 END) charge_agent,
                     ISNULL(charge_check, 0) * (CASE WHEN isThisMonCancel='Y' THEN -1 ELSE 1 END) charge_check,
+                    ISNULL(H.Subsidy_agent, 0) * (CASE WHEN isThisMonCancel='Y' THEN -1 ELSE 1 END) AS Subsidy_agent,
+                    ISNULL(H.Subsidy_amt, 0) * (CASE WHEN isThisMonCancel='Y' THEN -1 ELSE 1 END) AS Subsidy_amt,                    
                     ISNULL(get_amount_final, 0) * (CASE WHEN isThisMonCancel='Y' THEN -1 ELSE 1 END) get_amount_final,
                     ISNULL(H.subsidized_interest,0) subsidized_interest,
                     CASE WHEN M.U_BC = 'BC0900' THEN 0
@@ -274,7 +276,11 @@ namespace KF_WebAPI.DataLogic
                     CONVERT(varchar(4),(CONVERT(varchar(4), get_amount_date, 126)-1911))+'-'+CONVERT(varchar(2), dbo.PadWithZero(MONTH(get_amount_date))) +'-'+CONVERT(varchar(2), dbo.PadWithZero(DAY(get_amount_date))) get_amount_date,
                     'NA' Send_result_date, 'NA' CS_introducer, M.U_name plan_name, H.get_amount pass_amount, H.get_amount * (CASE WHEN isCancel='Y' THEN -1 ELSE 1 END) get_amount,
                     H.show_fund_company, H.show_project_title, 'NA' Loan_rate, 'NA' interest_rate_original, H.interest_rate_pass + '%' interest_rate_pass,
-                    0 charge_flow, 0 charge_agent, 0 charge_check, 0 get_amount_final, 0 subsidized_interest, 0 Expe_comm_amt,
+                    0 charge_flow, 0 charge_agent, 
+                    0 charge_check,
+                    0 AS Subsidy_agent, 
+                    0 AS Subsidy_amt, 
+                    0 get_amount_final, 0 subsidized_interest, 0 Expe_comm_amt,
                     0 AS act_comm_amt,
                     0 AS act_comm_amt_Cancel,
                     0 AS Expe_comm_amt_firm,
@@ -603,7 +609,8 @@ namespace KF_WebAPI.DataLogic
                     WHERE identify IN (
                         SELECT MAX(identify)
                         FROM LogTable
-                        WHERE TableNA = 'OtherAmt'
+                        WHERE TableNA = 'OtherAmt' 
+                            AND ColumnNA IN ('RemitAmt', 'CleanAmt', 'BonusAmt') 
                         GROUP BY KeyVal, ColumnNA
                     )
                 ),
@@ -617,21 +624,15 @@ namespace KF_WebAPI.DataLogic
                     ISNULL(TRY_CAST(l_remit.ColumnVal AS decimal(18, 2)), 0) AS RemitAmt,
                     ISNULL(TRY_CAST(l_clean.ColumnVal AS decimal(18, 2)), 0) AS CleanAmt,
                     ISNULL(TRY_CAST(l_bonus.ColumnVal AS decimal(18, 2)), 0) AS BonusAmt,
-                    ISNULL(TRY_CAST(l_subsidy.ColumnVal AS decimal(18, 2)), 0) AS SubsidyAmt,
-                    ISNULL(TRY_CAST(l_fares.ColumnVal AS decimal(18, 2)), 0) AS FaresAmt,
                     (
                         ISNULL(TRY_CAST(l_remit.ColumnVal AS decimal(18, 2)), 0) +
                         ISNULL(TRY_CAST(l_clean.ColumnVal AS decimal(18, 2)), 0) +
-                        ISNULL(TRY_CAST(l_bonus.ColumnVal AS decimal(18, 2)), 0) +
-                        ISNULL(TRY_CAST(l_subsidy.ColumnVal AS decimal(18, 2)), 0) +
-                        ISNULL(TRY_CAST(l_fares.ColumnVal AS decimal(18, 2)), 0)
+                        ISNULL(TRY_CAST(l_bonus.ColumnVal AS decimal(18, 2)), 0)
                     ) AS TotAmt                    
                 FROM BranchList b
                 LEFT JOIN LatestLogs l_remit ON b.KeyVal = l_remit.KeyVal AND l_remit.ColumnNA = 'RemitAmt'
                 LEFT JOIN LatestLogs l_clean ON b.KeyVal = l_clean.KeyVal AND l_clean.ColumnNA = 'CleanAmt'
                 LEFT JOIN LatestLogs l_bonus ON b.KeyVal = l_bonus.KeyVal AND l_bonus.ColumnNA = 'BonusAmt'
-                LEFT JOIN LatestLogs l_subsidy ON b.KeyVal = l_subsidy.KeyVal AND l_subsidy.ColumnNA = 'SubsidyAmt'
-                LEFT JOIN LatestLogs l_fares ON b.KeyVal = l_fares.KeyVal AND l_fares.ColumnNA = 'FaresAmt'
                 ORDER BY b.item_sort ASC
             ";
 
@@ -651,8 +652,6 @@ namespace KF_WebAPI.DataLogic
                         RemitAmt = row.Field<decimal>("RemitAmt"),
                         CleanAmt = row.Field<decimal>("CleanAmt"),
                         BonusAmt = row.Field<decimal>("BonusAmt"),
-                        SubsidyAmt = row.Field<decimal>("SubsidyAmt"),
-                        FaresAmt = row.Field<decimal>("FaresAmt"),
                         TotAmt = row.Field<decimal>("TotAmt")
                     }).ToList();
 
