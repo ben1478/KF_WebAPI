@@ -222,14 +222,31 @@ namespace KF_WebAPI.BaseClass.AE
     // Models/OtherFeeDetailDto.cs
     public class OtherFeeDetailDto
     {
+        [JsonPropertyName("ItemDCode")]
         public string ItemDCode { get; set; }
+
+        [JsonPropertyName("ItemDName")]
         public string ItemDName { get; set; }
+
+        [JsonPropertyName("KeyVal")]
         public string KeyVal { get; set; }
+
+        [JsonPropertyName("RemitAmt")]
         public decimal RemitAmt { get; set; }
+
+        [JsonPropertyName("CleanAmt")]
         public decimal CleanAmt { get; set; }
+
+        [JsonPropertyName("BonusAmt")]
         public decimal BonusAmt { get; set; }
+
+        [JsonPropertyName("SubsidyAmt")]
         public decimal SubsidyAmt { get; set; }
-        public decimal FaresAmt { get; set; } // 過車費
+
+        [JsonPropertyName("FaresAmt")]
+        public decimal FaresAmt { get; set; }
+
+        [JsonPropertyName("TotAmt")]
         public decimal TotAmt { get; set; }
     }
 
