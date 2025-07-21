@@ -2616,6 +2616,10 @@ namespace KF_WebAPI.FunctionHandler
         }
         public string DeCodeBig5Words(string strBig5)
         {
+            if(string.IsNullOrEmpty(strBig5))
+            {
+                return string.Empty;
+            }
             string decodeWords = string.Empty;
             var words = CheckRareChineseCharacters(strBig5);
             foreach (var word in words)

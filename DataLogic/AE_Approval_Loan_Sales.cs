@@ -1,9 +1,9 @@
-﻿using Dapper;
+﻿using Newtonsoft.Json;
+using Dapper;
 using KF_WebAPI.BaseClass;
 using KF_WebAPI.BaseClass.AE;
 using KF_WebAPI.FunctionHandler;
 using Microsoft.Data.SqlClient;
-using Newtonsoft.Json;
 using System.Data;
 using System.Text;
 
@@ -11,15 +11,11 @@ namespace KF_WebAPI.DataLogic
 {
     public class AE_Approval_Loan_Sales
     {
-        public async Task<ResultClass<string>> GetReportDataAsync(ReportQueryParameters parameters)
+        public async Task<IEnumerable<CommissionReportRow>> GetReportDataAsync(ReportQueryParameters parameters)
         {
-            ResultClass<string> resultClass = new ResultClass<string>();
             ADOData _ADO = new();
             ResultClass<string> userInfo = GetRoleNum(parameters.U_num);
-            if (userInfo.ResultCode != "000")
-            {
-                return resultClass;
-            }
+
             var user = new UserContext
             {
                 RoleNum = userInfo.objResult, // 角色
@@ -64,26 +60,16 @@ namespace KF_WebAPI.DataLogic
                         row.show_fund_company = _FuncHandler.DeCodeBig5Words(row.show_fund_company);
                         row.plan_name = _FuncHandler.DeCodeBig5Words(row.plan_name);
                         row.CS_introducer = _FuncHandler.DeCodeBig5Words(row.CS_introducer);
-                        row.Comm_Remark = _FuncHandler.DeCodeBig5Words(row.Comm_Remark);
                         #endregion
                     }
 
-                    resultClass.ResultCode = "000";
-                    resultClass.ResultMsg = "查詢成功";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
                 }
-                else
-                {
-                    resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "查無資料";
-                }
-                return resultClass;
+
+                return dtResult;
             }
             catch (Exception ex)
             {
-                resultClass.ResultMsg = "查詢失敗: " + ex.Message;
-                resultClass.ResultCode = "500";
-                return resultClass;
+                throw new Exception($"查詢明細失敗: {ex.Message}", ex);
             }
         }
 
@@ -574,10 +560,9 @@ namespace KF_WebAPI.DataLogic
         /// <summary>
         /// 獲取各區其他費用的詳細明細。
         /// </summary>
-        public async Task<ResultClass<string>> GetOtherFeeDetailsAsync(string? uBcTitle, string selYearS)
+        public async Task<IEnumerable<OtherFeeDetailDto>> GetOtherFeeDetailsAsync(string? uBcTitle, string selYearS)
         {
-            ResultClass<string> resultClass = new ResultClass<string>();
-            var parameters = new List<SqlParameter>();
+            var parameters = new DynamicParameters();
             // 基礎查詢，從 Item_list 取得所有分公司
             var sqlBuilder = new StringBuilder(@"
                 SELECT
@@ -588,7 +573,7 @@ namespace KF_WebAPI.DataLogic
                 FROM Item_list i
                 WHERE i.item_M_code = 'branch_company' AND i.item_D_type = 'Y' AND i.show_tag = '0' AND i.del_tag = '0'
             ");
-            parameters.Add(new SqlParameter("@SelYearS", selYearS));
+            parameters.Add("@SelYearS", selYearS);
 
             // 根據傳入的 uBcTitle 加入過濾條件
             if (string.IsNullOrEmpty(uBcTitle) || uBcTitle == "666")
@@ -598,7 +583,7 @@ namespace KF_WebAPI.DataLogic
             else
             {
                 sqlBuilder.Append(" AND i.item_D_code = @UbcTitle ");
-                parameters.Add(new SqlParameter("@UbcTitle", uBcTitle));
+                parameters.Add("@UbcTitle", uBcTitle);
             }
 
             // 使用 CTE (Common Table Expression) 來獲取最新的費用紀錄
@@ -637,42 +622,17 @@ namespace KF_WebAPI.DataLogic
             ";
 
             ADOData _adoData = new();
-
+            using var connection = new SqlConnection(_adoData.GetConnStr());
             try
             {
-                var dtResult = _adoData.ExecuteQuery(finalSql, parameters);
-                if (dtResult.Rows.Count > 0)
-                {
-                    // IEnumerable<CommissionRuleDto>
-                    var result = dtResult.AsEnumerable().Select(row => new OtherFeeDetailDto
-                    {
-                        ItemDCode = row.Field<string>("ItemDCode"),
-                        ItemDName = row.Field<string>("ItemDName"),
-                        KeyVal = row.Field<string>("KeyVal"),
-                        RemitAmt = row.Field<decimal>("RemitAmt"),
-                        CleanAmt = row.Field<decimal>("CleanAmt"),
-                        BonusAmt = row.Field<decimal>("BonusAmt"),
-                        TotAmt = row.Field<decimal>("TotAmt")
-                    }).ToList();
-
-                    resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(result);
-                }
-                else
-                {
-                    resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "查無資料";
-                    resultClass.objResult = string.Empty;
-                }
+                // _adoData.ExecuteQuery(finalSql, parameters);
+                var dtResult = await connection.QueryAsync<OtherFeeDetailDto>(finalSql, parameters);
+                return dtResult;
             }
             catch (Exception ex)
             {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $"查詢失敗: {ex.Message}";
-                resultClass.objResult = string.Empty;
+                throw new Exception($"查詢其他費用明細失敗: {ex.Message}", ex);
             }
-            return resultClass;
-
         }
         // In CommissionReportService.cs
 

@@ -1,198 +1,194 @@
-﻿using KF_WebAPI.BaseClass;
-using KF_WebAPI.BaseClass.AE;
-using KF_WebAPI.FunctionHandler;
-using Microsoft.Data.SqlClient;
-using Newtonsoft.Json;
-using System.Data;
-using System.Reflection;
-using System.Text;
-using static Grpc.Core.Metadata;
+﻿using System.Text.Json.Serialization;
 
 namespace KF_WebAPI.BaseClass.AE
 {
-    // Models/CommissionReportRow.cs
+
+    /// <summary>
+    /// 報表資料的 C# 資料傳輸物件 (DTO)。
+    /// C# 屬性名稱已完全匹配 SQL 查詢別名的大小寫。
+    /// 使用 [JsonPropertyName] 屬性，確保序列化為 JSON 時，其鍵名 (key)
+    /// 也與 C# 屬性名稱完全一致，覆蓋掉 ASP.NET Core 的預設 camelCase 策略。
+    /// </summary>
     public class CommissionReportRow
     {
-        // 為了讓 C# 的屬性名稱能對應到 JSON 中不規則的大小寫名稱，
-        // 我們使用 [JsonProperty] 這個屬性來做精確的映射。
-
-        [JsonProperty("isSer")]
+        [JsonPropertyName("isSer")]
         public string isSer { get; set; }
 
-        [JsonProperty("act_service_amt")]
+        [JsonPropertyName("act_service_amt")]
         public decimal act_service_amt { get; set; }
 
-        [JsonProperty("service_Rate")]
+        [JsonPropertyName("service_Rate")]
         public decimal service_Rate { get; set; }
 
-        [JsonProperty("fund_company")]
+        [JsonPropertyName("fund_company")]
         public string fund_company { get; set; }
 
-        [JsonProperty("isKF_CommRate")]
+        [JsonPropertyName("isKF_CommRate")]
         public string isKF_CommRate { get; set; }
 
-        [JsonProperty("isThisMonCancel")]
-        public string IsThisMonCancel { get; set; }
+        [JsonPropertyName("isThisMonCancel")]
+        public string isThisMonCancel { get; set; }
 
-        [JsonProperty("CaseType")]
+        [JsonPropertyName("CaseType")]
         public string CaseType { get; set; }
 
-        [JsonProperty("item_sort")]
+        [JsonPropertyName("item_sort")]
         public int? item_sort { get; set; }
 
-        [JsonProperty("U_arrive_date")]
+        [JsonPropertyName("U_arrive_date")]
         public DateTime? U_arrive_date { get; set; }
 
-        [JsonProperty("KFRate")]
+        [JsonPropertyName("KFRate")]
         public string KFRate { get; set; }
 
-        [JsonProperty("U_BC")]
+        [JsonPropertyName("U_BC")]
         public string U_BC { get; set; }
 
-        [JsonProperty("U_BC_rule")]
+        [JsonPropertyName("U_BC_rule")]
         public string U_BC_rule { get; set; }
 
-        [JsonProperty("isChange")]
+        [JsonPropertyName("isChange")]
         public string isChange { get; set; }
 
-        [JsonProperty("Ismisaligned")]
+        [JsonPropertyName("Ismisaligned")]
         public string Ismisaligned { get; set; }
 
-        [JsonProperty("isCancel")]
+        [JsonPropertyName("isCancel")]
         public string isCancel { get; set; }
 
-        [JsonProperty("DidGet_amount")]
+        [JsonPropertyName("DidGet_amount")]
         public decimal DidGet_amount { get; set; }
 
-        [JsonProperty("Comparison")]
+        [JsonPropertyName("Comparison")]
         public string Comparison { get; set; }
 
-        [JsonProperty("isDiscount")]
+        [JsonPropertyName("IsDiscount")]
         public string IsDiscount { get; set; }
 
-        [JsonProperty("isComm")]
+        [JsonPropertyName("isComm")]
         public string isComm { get; set; }
 
-        [JsonProperty("project_title")]
+        [JsonPropertyName("project_title")]
         public string project_title { get; set; }
 
-        [JsonProperty("refRateI")]
+        [JsonPropertyName("refRateI")]
         public string refRateI { get; set; }
 
-        [JsonProperty("refRateL")]
+        [JsonPropertyName("refRateL")]
         public string refRateL { get; set; }
 
-        [JsonProperty("interest_rate_pass")]
+        [JsonPropertyName("interest_rate_pass")]
         public string interest_rate_pass { get; set; }
 
-        [JsonProperty("I_PID")]
+        [JsonPropertyName("I_PID")]
         public string I_PID { get; set; }
 
-        [JsonProperty("IsConfirm")]
+        [JsonPropertyName("IsConfirm")]
         public string IsConfirm { get; set; }
 
-        [JsonProperty("Introducer_PID")]
+        [JsonPropertyName("Introducer_PID")]
         public string Introducer_PID { get; set; }
 
-        [JsonProperty("I_Count")]
+        [JsonPropertyName("I_Count")]
         public int I_Count { get; set; }
 
-        [JsonProperty("HS_id")]
-        public int HS_id { get; set; }
+        [JsonPropertyName("HS_id")]
+        public long HS_id { get; set; }
 
-        [JsonProperty("U_BC_name")]
+        [JsonPropertyName("U_BC_name")]
         public string U_BC_name { get; set; }
 
-        [JsonProperty("CS_name")]
+        [JsonPropertyName("CS_name")]
         public string CS_name { get; set; }
 
-        [JsonProperty("misaligned_date")]
+        [JsonPropertyName("misaligned_date")]
         public string misaligned_date { get; set; }
 
-        [JsonProperty("Send_amount_date")]
+        [JsonPropertyName("Send_amount_date")]
         public string Send_amount_date { get; set; }
 
-        [JsonProperty("get_amount_date")]
+        [JsonPropertyName("get_amount_date")]
         public string get_amount_date { get; set; }
 
-        [JsonProperty("Send_result_date")]
+        [JsonPropertyName("Send_result_date")]
         public string Send_result_date { get; set; }
 
-        [JsonProperty("CS_introducer")]
+        [JsonPropertyName("CS_introducer")]
         public string CS_introducer { get; set; }
 
-        [JsonProperty("plan_name")]
+        [JsonPropertyName("plan_name")]
         public string plan_name { get; set; }
 
-        [JsonProperty("pass_amount")]
+        [JsonPropertyName("pass_amount")]
         public decimal pass_amount { get; set; }
 
-        [JsonProperty("get_amount")]
+        [JsonPropertyName("get_amount")]
         public decimal get_amount { get; set; }
 
-        [JsonProperty("show_fund_company")]
+        [JsonPropertyName("show_fund_company")]
         public string show_fund_company { get; set; }
 
-        [JsonProperty("show_project_title")]
+        [JsonPropertyName("show_project_title")]
         public string show_project_title { get; set; }
 
-        [JsonProperty("Loan_rate")]
+        [JsonPropertyName("Loan_rate")]
         public string Loan_rate { get; set; }
 
-        [JsonProperty("interest_rate_original")]
+        [JsonPropertyName("interest_rate_original")]
         public string interest_rate_original { get; set; }
 
-        [JsonProperty("charge_flow")]
+        [JsonPropertyName("charge_flow")]
         public decimal charge_flow { get; set; }
 
-        [JsonProperty("charge_agent")]
+        [JsonPropertyName("charge_agent")]
         public decimal charge_agent { get; set; }
 
-        [JsonProperty("charge_check")]
+        [JsonPropertyName("charge_check")]
         public decimal charge_check { get; set; }
 
-        [JsonProperty("Subsidy_agent")]
-        public decimal Subsidy_agent { get; set; } // 代書費
+        [JsonPropertyName("Subsidy_agent")]
+        public decimal Subsidy_agent { get; set; }
 
-        [JsonProperty("Subsidy_amt")]
-        public decimal Subsidy_amt { get; set; }   // 過車費
+        [JsonPropertyName("Subsidy_amt")]
+        public decimal Subsidy_amt { get; set; }
 
-        [JsonProperty("get_amount_final")]
+        [JsonPropertyName("get_amount_final")]
         public decimal get_amount_final { get; set; }
 
-        [JsonProperty("subsidized_interest")]
+        [JsonPropertyName("subsidized_interest")]
         public decimal subsidized_interest { get; set; }
 
-        [JsonProperty("Expe_comm_amt")]
+        [JsonPropertyName("Expe_comm_amt")]
         public decimal Expe_comm_amt { get; set; }
 
-        [JsonProperty("Expe_comm_amt_firm")]
+        [JsonPropertyName("Expe_comm_amt_firm")]
         public decimal Expe_comm_amt_firm { get; set; }
 
-        [JsonProperty("act_comm_amt")]
+        [JsonPropertyName("act_comm_amt")]
         public decimal act_comm_amt { get; set; }
 
-        [JsonProperty("act_comm_amt_Cancel")]
+        [JsonPropertyName("act_comm_amt_Cancel")]
         public decimal? act_comm_amt_Cancel { get; set; }
 
-        [JsonProperty("act_perf_amt")]
+        [JsonPropertyName("act_perf_amt")]
         public decimal act_perf_amt { get; set; }
 
-        [JsonProperty("Expe_perf_amt")]
+        [JsonPropertyName("Expe_perf_amt")]
         public decimal Expe_perf_amt { get; set; }
 
-        [JsonProperty("Expe_perf_amt_firm")]
+        [JsonPropertyName("Expe_perf_amt_firm")]
         public decimal Expe_perf_amt_firm { get; set; }
 
-        [JsonProperty("Comm_Remark")]
+        [JsonPropertyName("Comm_Remark")]
         public string Comm_Remark { get; set; }
 
-        [JsonProperty("Bank_name")]
+        [JsonPropertyName("Bank_name")]
         public string Bank_name { get; set; }
 
-        [JsonProperty("Bank_account")]
+        [JsonPropertyName("Bank_account")]
         public string Bank_account { get; set; }
     }
+
     // Models/ReportQueryParameters.cs
     public class ReportQueryParameters
     {

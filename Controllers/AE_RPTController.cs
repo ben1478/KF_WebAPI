@@ -6356,7 +6356,7 @@ namespace KF_WebAPI.Controllers
 
         #region 核准放款表/佣金表
         [HttpPost("Approval_Loan_Sales_LQuery")]
-        public async Task<ActionResult<ResultClass<string>>> Approval_Loan_Sales_LQuery([FromBody] ReportQueryParameters parameters)
+        public async Task<IActionResult> Approval_Loan_Sales_LQuery([FromBody] ReportQueryParameters parameters)
         {
             #region 預設值:撥款年月/排序
             // 撥款年月
@@ -6377,7 +6377,6 @@ namespace KF_WebAPI.Controllers
             };
             parameters.OrderBy = string.IsNullOrEmpty(parameters.OrderBy) ? "2" : parameters.OrderBy;
             #endregion
-            ResultClass<string> resultClass = new ResultClass<string>();
             AE_Approval_Loan_Sales _reportService = new AE_Approval_Loan_Sales();
             try
             {
@@ -6387,9 +6386,7 @@ namespace KF_WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
+                return StatusCode(500, new { message = $"查詢失敗: {ex.Message}" });
             }
         }
 
@@ -6426,7 +6423,7 @@ namespace KF_WebAPI.Controllers
         }
 
         [HttpGet("GetOtherFeeDetails")]
-        public async Task<ActionResult<ResultClass<string>>> GetOtherFeeDetails([FromQuery] string? u_bc_title, [FromQuery] string selYear_S)
+        public async Task<IActionResult> GetOtherFeeDetails([FromQuery] string? u_bc_title, [FromQuery] string selYear_S)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
@@ -6437,9 +6434,7 @@ namespace KF_WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
+                return StatusCode(500, new { message = $"查詢失敗: {ex.Message}" });
             }
         }
 
