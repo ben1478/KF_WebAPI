@@ -60,6 +60,7 @@ namespace KF_WebAPI.DataLogic
                         row.show_fund_company = _FuncHandler.DeCodeBig5Words(row.show_fund_company);
                         row.plan_name = _FuncHandler.DeCodeBig5Words(row.plan_name);
                         row.CS_introducer = _FuncHandler.DeCodeBig5Words(row.CS_introducer);
+                        row.Comm_Remark = _FuncHandler.DeCodeBig5Words(row.Comm_Remark);
                         #endregion
                     }
 
