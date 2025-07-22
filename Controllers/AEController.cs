@@ -13,6 +13,8 @@ using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Reflection;
+using KF_WebAPI.BaseClass.Max104;
+using Microsoft.AspNetCore.Http;
 
 namespace KF_WebAPI.Controllers
 {
@@ -366,119 +368,6 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
-        /// 提供所有分公司清單 item_M_code='branch_company'
-        /// </summary>
-        [HttpGet("GetBCList")]
-        public ActionResult<ResultClass<string>> GetBCList()
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
-
-            try
-            {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var T_SQL = "select item_D_code,item_D_name from Item_list where item_M_code='branch_company' and item_D_type='Y' and show_tag ='0'";
-                #endregion
-                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
-                if (dtResult.Rows.Count > 0)
-                {
-                    resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
-                    return Ok(resultClass);
-                }
-                else
-                {
-                    resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "查無資料";
-                    return BadRequest(resultClass);
-                }
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
-            }
-        }
-
-        /// <summary>
-        /// 提供所有學歷 item_M_code = 'school_level'
-        /// </summary>
-        /// [HttpGet("Get_School_level")]
-        [HttpGet("GetSchoolLevelList")]
-        public ActionResult<ResultClass<string>> GetSchoolLevelList()
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
-
-            try
-            {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var parameters = new List<SqlParameter>();
-                var T_SQL = @"select item_D_code,item_D_name from Item_list where item_M_code = 'school_level' AND item_D_type='Y' 
-                    AND show_tag='0' AND del_tag='0' order by item_sort";
-                #endregion
-
-                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
-                if (dtResult.Rows.Count > 0)
-                {
-                    resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
-                    return Ok(resultClass);
-                }
-                else
-                {
-                    resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "查無資料";
-                    return BadRequest(resultClass);
-                }
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
-            }
-        }
-
-        /// <summary>
-        ///提供所有職稱
-        /// </summary>
-        [HttpGet("GetTitleList")]
-        public ActionResult<ResultClass<string>> GetTitleList()
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
-
-            try
-            {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var T_SQL = @"select item_D_code,item_D_name from Item_list where item_M_code='professional_title' and item_D_type='Y' 
-                    and show_tag ='0'";
-                #endregion
-                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
-                if (dtResult.Rows.Count > 0)
-                {
-                    resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
-                    return Ok(resultClass);
-                }
-                else
-                {
-                    resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "查無資料";
-                    return BadRequest(resultClass);
-                }
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
-            }
-        }
-
-        /// <summary>
         /// 提供所有角色 select R_num,R_name from Role_M
         /// </summary>
         [HttpGet("GetRoleProfessionalList")]
@@ -514,43 +403,6 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
 
-        }
-
-        /// <summary>
-        /// 提供放款公司列表 GetCompanyList/_fn.asp
-        /// </summary>
-        [HttpGet("GetCompanyList")]
-        public ActionResult<ResultClass<string>> GetCompanyList()
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
-
-            try
-            {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var T_SQL = @"select item_D_code,item_D_name from Item_list where item_M_code='fund_company' and item_D_type='Y' 
-                    and del_tag='0' and show_tag='0'";
-                #endregion
-                var dtResult = _adoData.ExecuteSQuery(T_SQL);
-                if (dtResult.Rows.Count > 0)
-                {
-                    resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
-                    return Ok(resultClass);
-                }
-                else
-                {
-                    resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "查無資料";
-                    return BadRequest(resultClass);
-                }
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
-            }
         }
 
         /// <summary>
@@ -873,6 +725,36 @@ namespace KF_WebAPI.Controllers
                 {
                     resultClass.objResult = "Y";
                 }
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 取得代碼資料
+        /// </summary>
+        [HttpGet("GetItemList")]
+        public ActionResult<ResultClass<string>> GetItemList(string item_M_code)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var T_SQL = @"select item_D_code,item_D_name from Item_list 
+                              where item_M_code=@item_M_code and item_D_type='Y' and del_tag='0' order by item_sort";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@item_M_code",item_M_code)
+                };
+                var dtresult = _adoData.ExecuteQuery(T_SQL, parameters);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtresult);
                 return Ok(resultClass);
             }
             catch (Exception ex)

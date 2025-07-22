@@ -2357,7 +2357,7 @@ namespace KF_WebAPI.Controllers
                     }).ToList();
                     #endregion
 
-                    var fileBytes = FuncHandler.AttendanceExcelAllMonth(attendanceReportList, model.yyyymmdd_s.Substring(0, 4), model.yyyymmdd_s.Substring(5, 2), flowRestList);
+                    var fileBytes = FuncHandler.AttendanceExcelAllMonth(attendanceReportList, model.yyyymmdd_s.Substring(0, 4), model.yyyymmdd_s.Substring(4, 2), flowRestList);
                     var fileName = "出缺勤報表_國峯" + DateTime.Now.ToString("yyyyMMddHHmm") + ".xlsx";
                     return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
                 }

@@ -22,10 +22,10 @@ namespace KF_WebAPI.Controllers
     [Route("[controller]")]
     public class AE_ACCController : ControllerBase
     {
+        #region 提前結清
         /// <summary>
         /// 抓取延滯利息金額
         /// </summary>
-        /// <returns></returns>
         [HttpGet("GetDelayAMT")]
         public ActionResult<ResultClass<string>> GetDelayAMT(string RCM_id, string RC_date_E)
         {
@@ -58,7 +58,6 @@ namespace KF_WebAPI.Controllers
         /// <summary>
         /// 提供分期人員清單
         /// </summary>
-        /// <returns></returns>
         [HttpGet("Settle_Show_LQuery")]
         public ActionResult<ResultClass<string>> Settle_Show_LQuery(string? CS_name, string? CS_PID)
         {
@@ -112,7 +111,6 @@ namespace KF_WebAPI.Controllers
         /// <summary>
         /// 提供結清紀錄
         /// </summary>
-        /// <param name="RCM_ID"></param>
         [HttpGet("Settle_Show_SQuery")]
         public ActionResult<ResultClass<string>> Settle_Show_SQuery(string RCM_ID)
         {
@@ -192,7 +190,7 @@ namespace KF_WebAPI.Controllers
         /// 取得法院相關費用總金額
         /// </summary>
         [HttpGet("GetCourtAmt")]
-        public ActionResult<ResultClass<string>> GetCourtAmt (string HS_id)
+        public ActionResult<ResultClass<string>> GetCourtAmt(string HS_id)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -224,7 +222,7 @@ namespace KF_WebAPI.Controllers
                     dtDefault.Columns.Add("TotAmt", typeof(decimal));
 
                     DataRow dr = dtDefault.NewRow();
-                    dr["HS_ID"] = HS_id;  
+                    dr["HS_ID"] = HS_id;
                     dr["TotAmt"] = 0;
                     dtDefault.Rows.Add(dr);
 
@@ -284,6 +282,98 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+        #endregion
+
+        #region 帳款其他資訊
+        /// <summary>
+        /// 取得帳款其他資訊
+        /// </summary>
+        [HttpGet("Receivable_Info_LQuery")]
+        public ActionResult<ResultClass<string>> Receivable_Info_LQuery(string RCM_id)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            resultClass.ResultCode = "200";
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var T_SQL = @"select pay_type,pay_text,pay_money from Receivable_Info where RCM_id=@RCM_id";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@RCM_id",RCM_id)
+                };
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+
+                if (dtResult.Rows.Count > 0)
+                    resultClass.ResultCode = "000";
+
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 新增或修改帳款其他資訊
+        /// </summary>
+        [HttpPost("Receivable_Info_Upd")]
+        public ActionResult<ResultClass<string>> Receivable_Info_Upd(List<Receivable_Info_res> receivableList)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+
+                //先做刪除的動作
+                var T_SQL_DE = @"Delete Receivable_Info where RCM_id=@RCM_id";
+                var parameters_de = new List<SqlParameter>
+                    {
+                        new SqlParameter("@RCM_id",receivableList[0].RCM_id)
+                    };
+
+                int result_de = _adoData.ExecuteNonQuery(T_SQL_DE, parameters_de);
+
+                var T_SQL_IN = @"Insert into Receivable_Info (RCM_id,pay_type,pay_money,pay_text,add_date,add_num,add_ip)
+                                     Values (@RCM_id,@pay_type,@pay_money,@pay_text,getdate(),@add_num,@add_ip)";
+                foreach (var item in receivableList)
+                {
+                    var parameters_in = new List<SqlParameter>
+                        {
+                            new SqlParameter("@RCM_id",item.RCM_id),
+                            new SqlParameter("@pay_type",item.pay_type),
+                            new SqlParameter("@pay_money",item.pay_money),
+                            new SqlParameter("@pay_text",item.pay_text),
+                            new SqlParameter("@add_num",item.User),
+                            new SqlParameter("@add_ip",clientIp)
+                        };
+                    int result_in = _adoData.ExecuteNonQuery(T_SQL_IN, parameters_in);
+
+                    if (result_in == 0)
+                    {
+                        resultClass.ResultCode = "400";
+                        resultClass.ResultMsg = "明細檔新增失敗";
+                        return BadRequest(resultClass);
+                    }
+
+                }
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "新增成功";
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
 
         #region 通用
         /// <summary>
