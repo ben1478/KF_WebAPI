@@ -336,4 +336,13 @@
         public decimal amount_total { get; set; }
         public string RCM_note { get;set; }
     }
+
+    public class Receivable_Info_res 
+    {
+        public decimal RCM_id { get; set; }
+        public string pay_type { get; set; }
+        public int pay_money { get; set; }
+        public string pay_text { get; set; }
+        public string User { get; set; }
+    }
 }
