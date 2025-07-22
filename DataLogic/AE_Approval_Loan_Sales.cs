@@ -43,8 +43,8 @@ namespace KF_WebAPI.DataLogic
             FuncHandler _FuncHandler = new FuncHandler();
             try
             {
-                //string tSql = FuncHandler.GenerateDebugSql(finalSql, dynamicParams); // 不支援 dapper
-                //Console.WriteLine(tSql); // 用於調試，輸出最終的 SQL 查詢語句                   
+                string tSql = FuncHandler.GenerateDebugSql(finalSql, dynamicParams); // 不支援 dapper
+                Console.WriteLine(tSql); // 用於調試，輸出最終的 SQL 查詢語句                   
 
                 //使用 Dapper 執行查詢並自動映射
                 using var connection = new SqlConnection(_ADO.GetConnStr());
@@ -640,9 +640,8 @@ namespace KF_WebAPI.DataLogic
         /// <summary>
         /// 核准放款表/佣金表-其他費用(isEditOtherFee = false)
         /// </summary>
-        public ResultClass<string> GetFeeLogs(string tableNA, string keyVal, string columnNA)
+        public async Task<IEnumerable<FeeLogDto>> GetFeeLogs(string tableNA, string keyVal, string columnNA)
         {
-            ResultClass<string> resultClass = new ResultClass<string>();
             // 1. 將傳入的欄位字串，整理成乾淨的 List<string>
             var columnsList = columnNA.Split(',')
                                       .Select(c => c.Trim())
@@ -650,24 +649,18 @@ namespace KF_WebAPI.DataLogic
                                       .ToList();
             if (!columnsList.Any())
             {
-                resultClass.ResultCode = "400";
-                resultClass.ResultMsg = "查無資料";
-                resultClass.objResult = string.Empty;
-                return resultClass;
+                return null;
             }
-
-            var parameters = new List<SqlParameter>
-            {
-                new SqlParameter("@TableNA", tableNA),
-                new SqlParameter("@KeyVal", keyVal)
-            };
+            var parameters = new DynamicParameters();
+            parameters.Add("@TableNA", tableNA);
+            parameters.Add("@KeyVal", keyVal);
 
             var paramNames = new List<string>();
             for (int i = 0; i < columnsList.Count; i++)
             {
                 var paramName = $"@p{i}";
                 paramNames.Add(paramName);
-                parameters.Add(new SqlParameter(paramName, columnsList[i]));
+                parameters.Add(paramName, columnsList[i]);
             }
             var sql = $@"
                 SELECT 
@@ -682,39 +675,17 @@ namespace KF_WebAPI.DataLogic
                 ORDER BY L.Logdate DESC";
 
             ADOData _adoData = new();
-
+            using var connection = new SqlConnection(_adoData.GetConnStr());
             try
             {
-                var dtResult = _adoData.ExecuteQuery(sql, parameters);
-                if (dtResult.Rows.Count > 0)
-                {
-                    // IEnumerable<CommissionRuleDto>
-                    var result = dtResult.AsEnumerable().Select(row => new FeeLogDto
-                    {
-                        LogUser = row.Field<string>("LogUser"),
-                        ColumnNA = row.Field<string>("ColumnNA"),
-                        ColumnVal = row.Field<string>("ColumnVal"),
-                        Remark = row.Field<string>("Remark"),
-                        Logdate = row.Field<string>("Logdate")
-                    }).ToList();
-
-                    resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(result);
-                }
-                else
-                {
-                    resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "查無資料";
-                    resultClass.objResult = string.Empty;
-                }
+                var dtResult = await connection.QueryAsync<FeeLogDto>(sql, parameters);
+                return dtResult;
             }
             catch (Exception ex)
             {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $"查詢失敗: {ex.Message}";
-                resultClass.objResult = string.Empty;
+                throw new Exception($"查詢其他費用歷程失敗: {ex.Message}", ex);
             }
-            return resultClass;
+
         }
 
         /// <summary>

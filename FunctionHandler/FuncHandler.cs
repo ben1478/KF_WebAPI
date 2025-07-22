@@ -1,27 +1,29 @@
-﻿using KF_WebAPI.BaseClass;
+﻿using Dapper;
+using KF_WebAPI.BaseClass;
 using KF_WebAPI.BaseClass.AE;
-using OfficeOpenXml;
-using System.Data;
-using Microsoft.Data.SqlClient;
-using System.Drawing;
-using System.Reflection;
-using System.Reflection.PortableExecutable;
+using KF_WebAPI.Controllers;
+using KF_WebAPI.DataLogic;
 using Microsoft.AspNetCore.Http;
-using System.Globalization;
-using System;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.Identity.Client;
 using Newtonsoft.Json.Linq;
-using System.Collections;
-using KF_WebAPI.Controllers;
-using System.Net.Http;
-using Microsoft.AspNetCore.Mvc;
-using System.Text;
-using System.Linq;
+using OfficeOpenXml;
 using OfficeOpenXml.Style;
-using System.IO;
-using static OfficeOpenXml.ExcelErrorValue;
-using KF_WebAPI.DataLogic;
+using System;
+using System.Collections;
+using System.Data;
 using System.Diagnostics;
+using System.Drawing;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Reflection;
+using System.Reflection.PortableExecutable;
+using System.Text;
+using System.Text.RegularExpressions;
+using static OfficeOpenXml.ExcelErrorValue;
 
 namespace KF_WebAPI.FunctionHandler
 {
@@ -2685,7 +2687,23 @@ namespace KF_WebAPI.FunctionHandler
                 // 如果是 surrogate pair，要跳過下個 char（它已包含在 codePoint 中）
                 if (char.IsHighSurrogate(text[i]) && i + 1 < text.Length && char.IsLowSurrogate(text[i + 1]))
                     i++; // skip next
-                bool isRare = IsRareChineseCodePoint(codePoint) || IsDifficultChineseChar(text[i].ToString());
+
+                bool isRare = false; // 預設為 false
+
+                // **步驟 1**: 先判斷是否為「非」中文的常見字元 (數字、英文、基本符號)
+                // 如果是，則 isRare 絕對為 false，直接跳過後續的罕見字檢查
+                if (Regex.IsMatch(text[i].ToString(), @"^[a-zA-Z0-9\s,.％，():\-]+$"))
+                {
+                    isRare = false;
+                }
+                // **步驟 2**: 如果不是上述常見字元，才進一步進行罕見字判斷
+                else
+                {
+                    isRare = IsRareChineseCodePoint(codePoint) || IsDifficultChineseChar(text[i].ToString());
+                }
+                //bool isRare = IsRareChineseCodePoint(codePoint) || IsDifficultChineseChar(text[i].ToString());
+                
+                
                 result.Add((text[i].ToString(), isRare));
             }
             return result;
@@ -3240,5 +3258,71 @@ namespace KF_WebAPI.FunctionHandler
 
             return sb.ToString();
         }
+
+        /// <summary>
+        /// 將 Dapper 的 SQL 範本和參數組合成一個可用於偵錯的 T-SQL 字串。
+        /// </summary>
+        /// <param name="sql">包含 @parameter 參數的 SQL 語句</param>
+        /// <param name="parameters">Dapper 的 DynamicParameters 物件或匿名物件</param>
+        /// <returns>一個完整的、可執行的 T-SQL 字串</returns>
+        public static string GenerateDebugSql(string sql, object parameters)
+        {
+            if (parameters == null) return sql;
+
+            var paramDictionary = new Dictionary<string, object>();
+
+            if (parameters is DynamicParameters dapperParams)
+            {
+                foreach (var name in dapperParams.ParameterNames)
+                {
+                    paramDictionary[name] = dapperParams.Get<object>(name);
+                }
+            }
+            else // 處理匿名物件
+            {
+                var properties = parameters.GetType().GetProperties();
+                foreach (var prop in properties)
+                {
+                    paramDictionary[prop.Name] = prop.GetValue(parameters);
+                }
+            }
+
+            var debugSql = new StringBuilder(sql);
+
+            // 從長到短排序，避免參數名稱部分重疊導致取代錯誤 (例如 @p10, @p1)
+            foreach (var param in paramDictionary.OrderByDescending(p => p.Key.Length))
+            {
+                string formattedValue;
+                var value = param.Value;
+
+                if (value == null)
+                {
+                    formattedValue = "NULL";
+                }
+                else
+                {
+                    var type = value.GetType();
+                    if (type == typeof(string) || type == typeof(DateTime) || type == typeof(Guid))
+                    {
+                        // 為字串、日期等加上單引號，並跳脫內部的單引號
+                        formattedValue = $"'{value.ToString().Replace("'", "''")}'";
+                    }
+                    else if (value is IEnumerable && type != typeof(string))
+                    {
+                        // 處理 IN 子句中的列表
+                        var items = (value as IEnumerable).Cast<object>();
+                        formattedValue = $"({string.Join(", ", items.Select(i => i is string ? $"'{i.ToString().Replace("'", "''")}'" : i.ToString()))})";
+                    }
+                    else // 處理數字、布林值等
+                    {
+                        formattedValue = value.ToString();
+                    }
+                }
+                debugSql.Replace($"@{param.Key}", formattedValue);
+            }
+
+            return debugSql.ToString();
+        }
+
     }
 }

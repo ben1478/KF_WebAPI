@@ -262,10 +262,19 @@ namespace KF_WebAPI.BaseClass.AE
     // 核准放款表/佣金表-其他費用(isEditOtherFee = true)
     public class FeeLogDto
     {
+        [JsonPropertyName("LogUser")]
         public string LogUser { get; set; }
+
+        [JsonPropertyName("ColumnNA")]
         public string ColumnNA { get; set; }
+
+        [JsonPropertyName("ColumnVal")]
         public string ColumnVal { get; set; }
+
+        [JsonPropertyName("Remark")]
         public string Remark { get; set; }
+
+        [JsonPropertyName("Logdate")]
         public string Logdate { get; set; }
     }
     // 核准放款表/佣金表-其他費用(isEditOtherFee = false)

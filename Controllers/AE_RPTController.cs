@@ -25,6 +25,7 @@ using KF_WebAPI.DataLogic;
 using Azure.Core;
 using KF_WebAPI.DataLogic;
 using Microsoft.Extensions.Configuration;
+using System.Runtime.InteropServices;
 
 namespace KF_WebAPI.Controllers
 {
@@ -6425,7 +6426,6 @@ namespace KF_WebAPI.Controllers
         [HttpGet("GetOtherFeeDetails")]
         public async Task<IActionResult> GetOtherFeeDetails([FromQuery] string? u_bc_title, [FromQuery] string selYear_S)
         {
-            ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
                 AE_Approval_Loan_Sales _reportService = new AE_Approval_Loan_Sales();
@@ -6441,11 +6441,18 @@ namespace KF_WebAPI.Controllers
         // In CommissionReportController.cs
 
         [HttpGet("GetFeeLogs")]
-        public ActionResult<ResultClass<string>> GetFeeLogs([FromQuery] string tableNA, [FromQuery] string keyVal, [FromQuery] string columnNA)
+        public async Task<IActionResult> GetFeeLogs([FromQuery] string tableNA, [FromQuery] string keyVal, [FromQuery] string columnNA)
         {
-            AE_Approval_Loan_Sales _reportService = new AE_Approval_Loan_Sales();
-            var logs = _reportService.GetFeeLogs(tableNA, keyVal, columnNA);
-            return Ok(logs);
+            try
+            {
+                AE_Approval_Loan_Sales _reportService = new AE_Approval_Loan_Sales();
+                var logs = await _reportService.GetFeeLogs(tableNA, keyVal, columnNA);
+                return Ok(logs);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"查詢失敗: {ex.Message}" });
+            }
         }
 
         // Modify the existing SaveOtherFees endpoint to accept the 'check' parameter
