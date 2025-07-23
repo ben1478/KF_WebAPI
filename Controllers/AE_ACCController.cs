@@ -296,7 +296,7 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
-                var T_SQL = @"select pay_type,pay_text,pay_money from Receivable_Info where RCM_id=@RCM_id";
+                var T_SQL = @"select pay_type,pay_date,pay_text,pay_money from Receivable_Info where RCM_id=@RCM_id";
                 var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@RCM_id",RCM_id)
@@ -339,14 +339,15 @@ namespace KF_WebAPI.Controllers
 
                 int result_de = _adoData.ExecuteNonQuery(T_SQL_DE, parameters_de);
 
-                var T_SQL_IN = @"Insert into Receivable_Info (RCM_id,pay_type,pay_money,pay_text,add_date,add_num,add_ip)
-                                     Values (@RCM_id,@pay_type,@pay_money,@pay_text,getdate(),@add_num,@add_ip)";
+                var T_SQL_IN = @"Insert into Receivable_Info (RCM_id,pay_type,pay_date,pay_money,pay_text,add_date,add_num,add_ip)
+                                     Values (@RCM_id,@pay_type,@pay_date,@pay_money,@pay_text,getdate(),@add_num,@add_ip)";
                 foreach (var item in receivableList)
                 {
                     var parameters_in = new List<SqlParameter>
                         {
                             new SqlParameter("@RCM_id",item.RCM_id),
                             new SqlParameter("@pay_type",item.pay_type),
+                            new SqlParameter("@pay_date",item.pay_date),
                             new SqlParameter("@pay_money",item.pay_money),
                             new SqlParameter("@pay_text",item.pay_text),
                             new SqlParameter("@add_num",item.User),

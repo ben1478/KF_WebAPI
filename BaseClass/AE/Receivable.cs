@@ -341,6 +341,7 @@
     {
         public decimal RCM_id { get; set; }
         public string pay_type { get; set; }
+        public string pay_date { get; set; }
         public int pay_money { get; set; }
         public string pay_text { get; set; }
         public string User { get; set; }
