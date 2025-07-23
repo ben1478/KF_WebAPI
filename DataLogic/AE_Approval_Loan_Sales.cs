@@ -341,7 +341,6 @@ namespace KF_WebAPI.DataLogic
                 case "1008": // 業務主管
                 case "1014":
                     uBcTitle = user.BranchCode; // 只能看自己部門
-                    planNum = null; // 主管預設看全部門，除非前端指定
                     break;
 
                 case "1009": // 業務
