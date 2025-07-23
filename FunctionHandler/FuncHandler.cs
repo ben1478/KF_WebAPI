@@ -2692,7 +2692,7 @@ namespace KF_WebAPI.FunctionHandler
 
                 // **步驟 1**: 先判斷是否為「非」中文的常見字元 (數字、英文、基本符號)
                 // 如果是，則 isRare 絕對為 false，直接跳過後續的罕見字檢查
-                if (Regex.IsMatch(text[i].ToString(), @"^[a-zA-Z0-9\s,.％，():\-]+$"))
+                if (Regex.IsMatch(text[i].ToString(), @"^[a-zA-Z0-9\s,.％，()（）:\/-]+$"))
                 {
                     isRare = false;
                 }
