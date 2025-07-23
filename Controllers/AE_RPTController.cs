@@ -6391,7 +6391,7 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-        [HttpGet("GetRleNum")]
+        [HttpGet("GetRoleNum")]
         public ActionResult<ResultClass<string>> GetRoleNum(string U_num)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
