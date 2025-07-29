@@ -17,6 +17,12 @@ namespace KF_WebAPI.Controllers
     public class AE_SALController : ControllerBase
     {
 
+        // Role Constants
+        private const string ROLE_MANAGER = "1008";
+        private const string ROLE_SALES = "1009";
+        private const string ROLE_ASSISTANT = "1010";
+        private readonly List<string> ADMIN_ROLES = new List<string> { "1001", "1004", "1006", "1007" };
+
         # region 車貸
         /// <summary>
         /// 車貸列表查詢 House_othercase_LQuery
@@ -28,7 +34,7 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
-
+                var parameters = new List<SqlParameter>();
                 var sqlBuilder = new StringBuilder("SELECT " +
                     " show_fund_company, show_project_title, cs_name, cs_id, get_amount, period, interest_rate_pass, FORMAT(get_amount_date,'yyyy/MM/dd') as get_amount_date, comm_amt, case_remark, case_id " +
                     "   ,(select U_name FROM User_M where U_num = ho.plan_num AND del_tag='0') as plan_name " +
@@ -39,13 +45,35 @@ namespace KF_WebAPI.Controllers
                     "   LEFT JOIN Item_list ub ON ub.item_M_code='branch_company'  AND ub.item_D_code=M1.U_BC " +
                     "   WHERE 1 = 1 ");
 
-                var parameters = new List<SqlParameter>();
-
-                //區
-                if (!string.IsNullOrEmpty(model.BC_code))
+                // --- Role-based Filtering Logic ---
+                switch (model.UserRole)
                 {
-                    sqlBuilder.Append(" AND item_D_code = @BC_code ");
-                    parameters.Add(new SqlParameter("@BC_code", model.BC_code));
+                    case ROLE_SALES: // 業務: Can only see their own cases.
+                        sqlBuilder.Append(" AND ho.plan_num = @UserNum");
+                        parameters.Add(new SqlParameter("@UserNum", model.UserNum));
+                        break;
+
+                    case ROLE_MANAGER: // 業務主管: Can see all cases in their branch.
+                    case ROLE_ASSISTANT: // 業務助理: Can see all cases in their branch.
+                        sqlBuilder.Append(" AND M1.U_BC = @UserBC");
+                        parameters.Add(new SqlParameter("@UserBC", model.UserBC));
+                        break;
+
+                    default:
+                        if (ADMIN_ROLES.Contains(model.UserRole)) // Admins: Can filter by branch.
+                        {
+                            if (!string.IsNullOrEmpty(model.BC_code))
+                            {
+                                sqlBuilder.Append(" AND ub.item_D_code = @BC_code");
+                                parameters.Add(new SqlParameter("@BC_code", model.BC_code));
+                            }
+                        }
+                        else // Default for any other unhandled roles, restrict to own cases for security.
+                        {
+                            sqlBuilder.Append(" AND ho.plan_num = @UserNum");
+                            parameters.Add(new SqlParameter("@UserNum", model.UserNum));
+                        }
+                        break;
                 }
 
                 if (!string.IsNullOrEmpty(model.selYear_S))
@@ -58,9 +86,26 @@ namespace KF_WebAPI.Controllers
                 }
 
                 DataTable dtResult = _adoData.ExecuteQuery(sqlBuilder.ToString(), parameters);
+                // --- Check if the financial period is closed ---
+                bool isPeriodClosed = false;
+                if (!string.IsNullOrEmpty(model.selYear_S))
+                {
+                    string chkSql = "SELECT count(*) FROM dbo.CheckoutList WHERE CheckStatus='Y' AND CheckYYYYMM=@selYear_S";
+                    var chkParams = new List<SqlParameter> { new SqlParameter("@selYear_S", model.selYear_S) };
+                    DataTable dtChk = _adoData.ExecuteQuery(chkSql, chkParams);
+                    if (dtChk.Rows.Count > 0 && Convert.ToInt32(dtChk.Rows[0][0]) > 0)
+                    {
+                        isPeriodClosed = true;
+                    }
+                }
 
+                var response = new HouseOthercaseQueryResponse
+                {
+                    Data = dtResult,
+                    IsPeriodClosed = isPeriodClosed
+                };
                 resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                resultClass.objResult = JsonConvert.SerializeObject(response);
                 return Ok(resultClass);
             }
             catch (Exception ex)

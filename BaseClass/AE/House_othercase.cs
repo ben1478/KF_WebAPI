@@ -53,6 +53,34 @@ namespace KF_WebAPI.BaseClass.AE
         /// </summary>
         
         public string? selYear_S { get; set; }
+
+        /// <summary>
+        /// Logged-in user's ID
+        /// </summary>
+        public string? UserNum { get; set; }
+
+        /// <summary>
+        /// Logged-in user's Role ID
+        /// </summary>
+        public string? UserRole { get; set; }
+
+        /// <summary>
+        /// Logged-in user's Branch Code
+        /// </summary>
+        public string? UserBC { get; set; }
     }
-    
+
+    public class HouseOthercaseQueryResponse
+    {
+        /// <summary>
+        /// The list of case data.
+        /// </summary>
+        public object Data { get; set; }
+
+        /// <summary>
+        /// Indicates if the selected period is financially closed.
+        /// </summary>
+        public bool IsPeriodClosed { get; set; }
+    }
+
 }
