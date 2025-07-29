@@ -32,7 +32,7 @@ namespace KF_WebAPI.Controllers
                 var sqlBuilder = new StringBuilder("SELECT " +
                     " show_fund_company, show_project_title, cs_name, cs_id, get_amount, period, interest_rate_pass, FORMAT(get_amount_date,'yyyy/MM/dd') as get_amount_date, comm_amt, case_remark, case_id " +
                     "   ,(select U_name FROM User_M where U_num = ho.plan_num AND del_tag='0') as plan_name " +
-                    "   ,(SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = ho.case_id and del_tag = '0') AS case_id_count "+
+                    "   ,(SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = ho.case_id and del_tag = '0') AS case_id_count " +
                     "   ,ub.item_D_name BC_name, ub.item_D_code BC_code, confirm_num " +
                     " FROM House_othercase ho " +
                     "   LEFT JOIN User_M M1 on ho.plan_num=M1.u_num " +
@@ -86,7 +86,7 @@ namespace KF_WebAPI.Controllers
                 var T_SQL = @"SELECT " +
                     " show_fund_company, show_project_title, cs_name, cs_id, get_amount, period, interest_rate_pass, FORMAT(get_amount_date,'yyyy/MM/dd') as get_amount_date, comm_amt, case_remark, act_perf_amt, case_id, confirm_num " +
                     " ,plan_num,(select U_name FROM User_M where U_num = House_othercase.plan_num AND del_tag='0') as plan_name " +
-                    ",(SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = House_othercase.case_id and del_tag = '0') AS case_id_count "+
+                    ",(SELECT COUNT(*) FROM ASP_UpLoad WHERE cknum = House_othercase.case_id and del_tag = '0') AS case_id_count " +
                     " FROM House_othercase WHERE case_id = @ID";
                 var parameters = new List<SqlParameter>
                 {
@@ -136,7 +136,7 @@ namespace KF_WebAPI.Controllers
                     group by CONVERT(VARCHAR(7), get_amount_date, 126),RIGHT('0'+CONVERT(VARCHAR(3), DATEPART(year,get_amount_date)-1911), 3) + '-'+
                     RIGHT('0'+CONVERT(VARCHAR(2), month(get_amount_date), 112),2)
                     order by v desc";
-                
+
                 #endregion
                 var dtResult = _adoData.ExecuteSQuery(T_SQL);
 
@@ -170,16 +170,16 @@ namespace KF_WebAPI.Controllers
             ResultClass<string> resultClass = new ResultClass<string>();
 
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
-            string case_id =  FuncHandler.GetCheckNum();
+            string case_id = FuncHandler.GetCheckNum();
             case_id = case_id.Substring(0, case_id.Length - 6);
             var get_amount_date = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.get_amount_date));
 
             try
-              {
-                  ADOData _adoData = new ADOData();
-                  #region SQL
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
 
-                  var T_SQL = @"INSERT INTO [House_othercase]
+                var T_SQL = @"INSERT INTO [House_othercase]
                        ([case_id]
                        ,[CaseType]
                        ,[show_fund_company]
@@ -216,11 +216,11 @@ namespace KF_WebAPI.Controllers
                        ,@add_num
                        ,@add_ip)";
 
-                
+
 
                 var parameters = new List<SqlParameter>
                   {
-                      
+
 
                       new SqlParameter("@case_id", case_id),
                       new SqlParameter("@CaseType", string.IsNullOrEmpty(model.CaseType) ? DBNull.Value : model.CaseType),
@@ -233,7 +233,7 @@ namespace KF_WebAPI.Controllers
                       new SqlParameter("@interest_rate_pass", string.IsNullOrEmpty(model.interest_rate_pass) ? DBNull.Value : model.interest_rate_pass),
 
                       new SqlParameter("@get_amount_date", string.IsNullOrEmpty(model.get_amount_date) ? DBNull.Value : get_amount_date),
-                      
+
                       new SqlParameter("@case_remark", string.IsNullOrEmpty(model.case_remark) ? DBNull.Value : model.case_remark),
                       // 數值Nullable 要參考其他人的做法，
                       new SqlParameter("@comm_amt", model.comm_amt),
@@ -244,30 +244,30 @@ namespace KF_WebAPI.Controllers
                       new SqlParameter("@add_num", model.add_num),
                       new SqlParameter("@add_ip", clientIp)
                   };
-             
 
-                    #endregion
-                    int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
 
-                    if (result == 0)
-                    {
-                        resultClass.ResultCode = "400";
-                        resultClass.ResultMsg = "新增失敗";
-                        return BadRequest(resultClass);
-                    }
-                    else
-                    {
-                        resultClass.ResultCode = "000";
-                        resultClass.ResultMsg = "新增成功";
-                        return Ok(resultClass);
-                    }
-                }
-                catch (Exception ex)
+                #endregion
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+
+                if (result == 0)
                 {
-                    resultClass.ResultCode = "500";
-                    resultClass.ResultMsg = $" response: {ex.Message}";
-                    return StatusCode(500, resultClass);
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "新增失敗";
+                    return BadRequest(resultClass);
                 }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "新增成功";
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
 
 
         }
@@ -350,7 +350,7 @@ namespace KF_WebAPI.Controllers
                 resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
-          
+
         }
 
         /// <summary>
@@ -402,7 +402,7 @@ namespace KF_WebAPI.Controllers
         {
 
             string SC = SpecialCkeck(model.U_num);
-            string isDel = (SC.Contains("7005") || SC.Contains("7036") )? "Y" : "N";
+            string isDel = (SC.Contains("7005") || SC.Contains("7036")) ? "Y" : "N";
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
@@ -416,7 +416,7 @@ namespace KF_WebAPI.Controllers
                     ",(select U_name FROM User_M where U_num = agcy.add_num AND del_tag = '0') as add_name " +
                     ",(select U_name FROM User_M where U_num = agcy.check_process_num AND del_tag='0') as check_process_name " +
                     ",isEdit = case when agcy.add_num = @U_num then 'Y' else 'N' end " +
-                    ",@isDel as isDel "+
+                    ",@isDel as isDel " +
                     " from House_agency agcy " +
                     " join User_M as addUser on addUser.U_num = agcy.add_num AND addUser.del_tag='0' " +
                     " WHERE 1 = 1 "
@@ -440,7 +440,7 @@ namespace KF_WebAPI.Controllers
                 DateTime.TryParse(FuncHandler.ConvertROCToGregorian(model.Date_S), out DateS);
                 DateTime DateE = DateTime.MinValue;
                 DateTime.TryParse(FuncHandler.ConvertROCToGregorian(model.Date_E), out DateE);
-                
+
 
                 bool isCanQuery = true;
                 // 7036:業務流程區	[特定權限全區, 全時段開放] 可查詢全部人員資料且不限3個月內
@@ -474,9 +474,9 @@ namespace KF_WebAPI.Controllers
                 // 申請日期
                 //if (!string.IsNullOrEmpty(model.Date_S) && !string.IsNullOrEmpty(model.Date_E))
                 //{
-                    sqlBuilder.Append(" AND agcy.add_date between @Date_S and @Date_E ");
-                    parameters.Add(new SqlParameter("@Date_S", DateS));
-                    parameters.Add(new SqlParameter("@Date_E", DateE.AddDays(1)));
+                sqlBuilder.Append(" AND agcy.add_date between @Date_S and @Date_E ");
+                parameters.Add(new SqlParameter("@Date_S", DateS));
+                parameters.Add(new SqlParameter("@Date_E", DateE.AddDays(1)));
                 //}
                 sqlBuilder.Append(" order by AG_id desc ");
                 DataTable dtResult = _adoData.ExecuteQuery(sqlBuilder.ToString(), parameters);
@@ -689,7 +689,7 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@check_process_note",  string.IsNullOrEmpty(model.check_process_note) ? DBNull.Value : model.check_process_note),
                     new SqlParameter("@close_type",  string.IsNullOrEmpty(model.close_type) ? DBNull.Value : model.close_type),
                     new SqlParameter("@close_type_date",  string.IsNullOrEmpty(model.close_type_date) ? DBNull.Value : model.close_type_date),
-                    
+
                     new SqlParameter("@edit_date", DateTime.Today),
                     new SqlParameter("@edit_num", model.edit_num.ToUpper()),
                     new SqlParameter("@edit_ip", clientIp)
@@ -810,32 +810,32 @@ namespace KF_WebAPI.Controllers
             // 7005	開發人員區	管理者	最高權限
             // 0:本人
             ADOData _adoData = new ADOData();
-                #region SQL
-                var T_SQL = @"select sp_id from [dbo].[Special_set] as ss
+            #region SQL
+            var T_SQL = @"select sp_id from [dbo].[Special_set] as ss
                                 where sp_type = 1 and SS.U_num = @U_num and SS.sp_id in  (7005,7018,7036) ";
-                var parameters = new List<SqlParameter>
+            var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@u_num", User)
                 };
-                #endregion
-                var dtresult = _adoData.ExecuteQuery(T_SQL, parameters);
-                
-                string sResult = "";
-                foreach(DataRow dr in dtresult.Rows)
-                {
-                    sResult = dr["sp_id"].ToString() + "/"+sResult ; 
-                }
-                if(string.IsNullOrEmpty(sResult))
-                {
-                    sResult = User; //回傳本人員編
-                }
-                else
-                {
-                    sResult = sResult.Substring(0, sResult.Length - 1); //回傳:7018/7036
-                }
-                
-                return sResult;
-            
+            #endregion
+            var dtresult = _adoData.ExecuteQuery(T_SQL, parameters);
+
+            string sResult = "";
+            foreach (DataRow dr in dtresult.Rows)
+            {
+                sResult = dr["sp_id"].ToString() + "/" + sResult;
+            }
+            if (string.IsNullOrEmpty(sResult))
+            {
+                sResult = User; //回傳本人員編
+            }
+            else
+            {
+                sResult = sResult.Substring(0, sResult.Length - 1); //回傳:7018/7036
+            }
+
+            return sResult;
+
         }
 
         private bool isDepManager(string User)
@@ -937,7 +937,7 @@ namespace KF_WebAPI.Controllers
                 {
                     sqlBuilder.Append(" AND M.U_name = @plan_name ");
                     parameters.Add(new SqlParameter("@plan_name", model.plan_name));
-                    
+
                 }
                 if (!string.IsNullOrEmpty(model.OrderByStr))
                 {
@@ -1043,6 +1043,11 @@ namespace KF_WebAPI.Controllers
         [HttpPost("Complaint_LQuery")]
         public ActionResult<ResultClass<string>> Complaint_LQuery(Complaint_Req model)
         {
+            //檢查必要的參數
+            if (string.IsNullOrEmpty(model.UserNum) || string.IsNullOrEmpty(model.UserRole))
+            {
+                return BadRequest(new { message = "缺少必要的使用者資訊 (UserNum, UserRole)。" });
+            }            
             FuncHandler _FuncHandler = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
             try
@@ -1057,7 +1062,35 @@ namespace KF_WebAPI.Controllers
                         "where 1 = 1 "
                         );
                 var parameters = new List<SqlParameter>();
+                 // ========== 權限規則 ==========
+                switch (model.UserRole)
+                {
+                    case "1008": // 業務主管
+                    case "1010": // 業務助理
+                        sqlBuilder.Append(" AND M1.U_BC = @UserBC ");
+                        parameters.Add(new SqlParameter("@UserBC", model.UserBC));
+                        break;
 
+                    case "1009": // 業務
+                        sqlBuilder.Append(" AND C.Sales_num = @UserNum ");
+                        parameters.Add(new SqlParameter("@UserNum", model.UserNum));
+                        break;
+
+                    case "1004": // 財務
+                    case "1007": // 管理部主管
+                    case "1001": // 開發者 (Admin roles)
+                        if (!string.IsNullOrEmpty(model.BC_code))
+                        {
+                            sqlBuilder.Append(" AND M1.U_BC = @BC_code ");
+                            parameters.Add(new SqlParameter("@BC_code", model.BC_code));
+                        }
+                        break;
+
+                    default: // 其他未定義角色，預設只能看自己的資料以策安全
+                        sqlBuilder.Append(" AND C.Sales_num = @UserNum ");
+                        parameters.Add(new SqlParameter("@UserNum", model.UserNum));
+                        break;
+                }
                 //區
                 if (!string.IsNullOrEmpty(model.BC_code))
                 {
@@ -1071,8 +1104,18 @@ namespace KF_WebAPI.Controllers
                     sqlBuilder.Append($" AND left(C.compDate,{model.selYear_S.Length}) = @selYear_S ");
                     parameters.Add(new SqlParameter("@selYear_S", model.selYear_S));
                 }
+
+                // 在這裡呼叫輔助函式來產生偵錯用的 T-SQL
+                string debugSql = FuncHandler.GenerateDebugSql(sqlBuilder.ToString(), parameters);
+
+                // 您可以將 debugSql 輸出到 Console、Log 檔案或偵錯視窗
+                Console.WriteLine("--- DEBUG T-SQL ---");
+                Console.WriteLine(debugSql);
+                Console.WriteLine("-------------------");
+
                 DataTable dtResult = _adoData.ExecuteQuery(sqlBuilder.ToString(), parameters);
-                if (dtResult.Rows.Count > 0) { 
+                if (dtResult.Rows.Count > 0)
+                {
                     var result = dtResult.AsEnumerable().Select(row => new
                     {
                         Comp_Id = row.Field<decimal>("Comp_Id"),
@@ -1245,7 +1288,7 @@ namespace KF_WebAPI.Controllers
             // CompDate 傳入格式 國曆：yyy-MM-dd 需轉成國曆：yyy/MM/dd 並且要去零 。例如:113-01-01 -> 113/1/1
 
             ResultClass<string> resultClass = new ResultClass<string>();
-            
+
             try
             {
                 ADOData _adoData = new ADOData();
@@ -1302,12 +1345,41 @@ namespace KF_WebAPI.Controllers
         /// 刪除單筆 House_othercase_Del
         /// </summary>
         [HttpDelete("Complaint_Del")]
-        public ActionResult<ResultClass<string>> Complaint_Del(string Id)
+        public ActionResult<ResultClass<string>> Complaint_Del(string Id, string UserNum, string UserRole)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
                 ADOData _adoData = new ADOData();
+                bool canDelete = false;
+
+                // ========== 權限檢查 ==========
+                switch (UserRole)
+                {
+                    case "1004": // 財務
+                    case "1007": // 管理部主管
+                    case "1001": // 開發者
+                        canDelete = true;
+                        break;
+                    default:
+                        // 檢查是否為資料建立者
+                        var checkSql = "SELECT Add_num FROM dbo.Complaint WHERE Comp_Id = @Id";
+                        var checkParams = new List<SqlParameter> { new SqlParameter("@Id", Id) };
+                        DataTable dt = _adoData.ExecuteQuery(checkSql, checkParams);
+                        if (dt.Rows.Count > 0 && dt.Rows[0]["Add_num"].ToString().Trim().Equals(UserNum, StringComparison.OrdinalIgnoreCase))
+                        {
+                            canDelete = true;
+                        }
+                        break;
+                }
+
+                if (!canDelete)
+                {
+                    resultClass.ResultCode = "403";
+                    resultClass.ResultMsg = "權限不足，無法刪除此筆資料。";
+                    return StatusCode(403, resultClass);
+                }
+
                 #region SQL
                 var T_SQL = @"Delete Complaint where Comp_Id=@Id";
                 var parameters = new List<SqlParameter>
@@ -1396,11 +1468,10 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-
         #endregion
         #region 新鑫案件核對表
         [HttpPost]
-        public async Task<IActionResult> uploadFile (List<IFormFile> files)
+        public async Task<IActionResult> uploadFile(List<IFormFile> files)
         {
             string _storagePath = @"C:\UploadedFiles"; // todo: 要改成測試區上傳路徑
             var size = files.Sum(f => f.Length);
@@ -1417,15 +1488,49 @@ namespace KF_WebAPI.Controllers
                     }
                 }
             }
-
             return Ok(new { count = files.Count, size });
         }
         #endregion
-    }
+        /// <summary>
+        /// 獲取使用者基本資料(含角色、部門)
+        /// </summary>
+        [HttpGet("GetUserProfile")]
+        public ActionResult<ResultClass<string>> GetUserProfile(string userNum)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var T_SQL = @"SELECT U_num, U_name, Role_num, U_BC FROM User_M WHERE U_num = @UserNum AND del_tag = '0'";
+                var parameters = new List<SqlParameter> { new SqlParameter("@UserNum", userNum) };
+                
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
 
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "404";
+                    resultClass.ResultMsg = "User not found.";
+                    return NotFound(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $"Response error: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }    
+    }
     public class UserListRowData
     {
         public string AccountID { get; set; }
         public string UserName { get; set; }
     }
+
 }

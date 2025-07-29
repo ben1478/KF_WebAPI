@@ -28,17 +28,10 @@ namespace KF_WebAPI.BaseClass.AE
 
     public class Complaint_Req
     {
-
-        /// <summary>
-        /// 業務部門
-        /// </summary>
-        public string BC_code { get; set; }
-
-        /// <summary>
-        /// 客訴時間(年月)
-        /// </summary>
-        public string selYear_S { get; set; }
-
+        public string? BC_code { get; set; }     
+        public string? selYear_S { get; set; }   
+        public string? UserNum { get; set; }      
+        public string? UserRole { get; set; }     
+        public string? UserBC { get; set; } 
     }
-    
 }
