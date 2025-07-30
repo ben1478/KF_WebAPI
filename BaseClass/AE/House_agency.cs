@@ -42,6 +42,7 @@ namespace KF_WebAPI.BaseClass.AE
 
     }
 
+    // 作為一個通用的模型，同時支援新增與更新操作
     public class House_agency_Ins
     {
         public int? AG_id { get; set; }
@@ -75,7 +76,7 @@ namespace KF_WebAPI.BaseClass.AE
      
 
     }
-
+    // 列表查詢
     public class House_agency_Req
     {
         public int? AG_id { get; set; }
