@@ -464,7 +464,7 @@ namespace KF_WebAPI.Controllers
                     ",@isDel as isDel " +
                     " from House_agency agcy " +
                     " join User_M as addUser on addUser.U_num = agcy.add_num AND addUser.del_tag='0' " +
-                    " WHERE 1 = 1 "
+                    " WHERE 1 = 1 and agcy.del_tag = '0' "
                     );
 
                 var parameters = new List<SqlParameter>
@@ -516,14 +516,21 @@ namespace KF_WebAPI.Controllers
                 }
                 #endregion
 
-                // 申請日期
-                //if (!string.IsNullOrEmpty(model.Date_S) && !string.IsNullOrEmpty(model.Date_E))
-                //{
+
                 sqlBuilder.Append(" AND agcy.add_date between @Date_S and @Date_E ");
                 parameters.Add(new SqlParameter("@Date_S", DateS));
                 parameters.Add(new SqlParameter("@Date_E", DateE.AddDays(1)));
-                //}
+
                 sqlBuilder.Append(" order by AG_id desc ");
+
+                // 在這裡呼叫輔助函式來產生偵錯用的 T-SQL
+                string debugSql = FuncHandler.GenerateDebugSql(sqlBuilder.ToString(), parameters);
+
+                // 您可以將 debugSql 輸出到 Console、Log 檔案或偵錯視窗
+                Console.WriteLine("--- DEBUG T-SQL ---");
+                Console.WriteLine(debugSql);
+                Console.WriteLine("-------------------");
+
                 DataTable dtResult = _adoData.ExecuteQuery(sqlBuilder.ToString(), parameters);
 
                 resultClass.ResultCode = "000";
@@ -684,6 +691,42 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
+
+                #region 權限處理
+                // 首先，取得原始紀錄以驗證權限
+                var originalRecordSql = "SELECT * FROM House_agency WHERE AG_id = @AG_id";
+                var originalParams = new List<SqlParameter> { new SqlParameter("@AG_id", model.AG_id) };
+                DataTable dtOriginal = _adoData.ExecuteQuery(originalRecordSql, originalParams);
+
+                if (dtOriginal.Rows.Count == 0)
+                {
+                    return BadRequest(new { resultCode = "404", resultMsg = "找不到紀錄。" });
+                }
+                var original = dtOriginal.Rows[0];
+
+                // *** 安全性與權限檢查 ***
+                bool canUpdate = false;
+                // 情境一：原始建立者的一般編輯 (取代 House_agency_edit.asp)
+                if (original["add_num"].ToString().Equals(model.edit_num, StringComparison.OrdinalIgnoreCase))
+                {
+                    canUpdate = true;
+                }
+                // 情境二：主管指派對保人員 (取代 House_agency_set.asp)
+                if (original["check_leader_num"].ToString().Equals(model.edit_num, StringComparison.OrdinalIgnoreCase))
+                {
+                    canUpdate = true;
+                }
+                // 情境三：對保人員更新進度 (取代 House_agency_process.asp)
+                if (original["check_process_num"].ToString().Equals(model.edit_num, StringComparison.OrdinalIgnoreCase))
+                {
+                    canUpdate = true;
+                }
+
+                if (!canUpdate)
+                {
+                    return StatusCode(403, new { resultCode = "403", resultMsg = "權限不足，無法更新。" });
+                }
+                #endregion
                 #region SQL
                 var T_SQL = @"UPDATE [dbo].[House_agency]
                                SET 
@@ -758,7 +801,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
+                resultClass.ResultMsg = $" 後端錯誤: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
 
@@ -768,17 +811,29 @@ namespace KF_WebAPI.Controllers
         /// 刪除委對單單筆 House_agency_Del
         /// </summary>
         [HttpDelete("House_agency_Del")]
-        public ActionResult<ResultClass<string>> House_agency_Del(string Id)
+        public ActionResult<ResultClass<string>> House_agency_Del(string Id, string UserNum)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
             try
             {
                 ADOData _adoData = new ADOData();
+                // 再次進行權限檢查
+                string SC = SpecialCkeck(UserNum);
+                if (!SC.Contains("7005")) // 只有最高權限管理者可以刪除
+                {
+                    return StatusCode(403, new { resultCode = "403", resultMsg = "權限不足。" });
+                }
                 #region SQL
-                var T_SQL = @"Delete House_agency where AG_id=@Id";
+                var T_SQL = @"UPDATE House_agency 
+                          SET del_tag = '1', del_date = @del_date, del_num = @del_num, del_ip = @del_ip 
+                          WHERE AG_id=@Id";
                 var parameters = new List<SqlParameter>
                 {
-                    new SqlParameter("@Id",Id)
+                    new SqlParameter("@Id", Id),
+                    new SqlParameter("@del_date", DateTime.Now),
+                    new SqlParameter("@del_num", UserNum),
+                    new SqlParameter("@del_ip", clientIp)
                 };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
@@ -798,7 +853,7 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
+                resultClass.ResultMsg = $" 後端錯誤: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }

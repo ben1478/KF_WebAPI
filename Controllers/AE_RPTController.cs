@@ -5903,6 +5903,31 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
+
+                // 1. 在更新前，檢查 Introducer_PID 是否已被【其他】記錄使用
+                var checkSql = "SELECT COUNT(*) FROM Introducer_Comm WHERE del_tag = '0' AND Introducer_PID = @Introducer_PID AND U_ID <> @U_ID";
+                var checkParams = new List<SqlParameter>
+                {
+                    new SqlParameter("@Introducer_PID", model.Introducer_PID),
+                    new SqlParameter("@U_ID", model.U_ID) // 排除當前正在修改的這筆記錄
+                };
+
+                // 使用 ExecuteQuery 進行檢查
+                DataTable dtCheck = _adoData.ExecuteQuery(checkSql, checkParams);
+                int existingCount = 0;
+                if (dtCheck.Rows.Count > 0)
+                {
+                    existingCount = Convert.ToInt32(dtCheck.Rows[0][0]);
+                }
+
+                if (existingCount > 0)
+                {
+                    // 如果計數大於 0，表示 PID 已被其他記錄使用，回傳錯誤訊息
+                    resultClass.ResultCode = "409";
+                    resultClass.ResultMsg = "此[身分證字號]或[統一編號]已被使用！";
+                    return Conflict(resultClass);
+                }
+
                 #region SQL
                 var T_SQL = @"
                     UPDATE [dbo].[Introducer_Comm]
@@ -6020,8 +6045,33 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
+
+                // 1. 在新增前，先檢查 Introducer_PID 是否已存在
+                var checkSql = "SELECT COUNT(*) FROM Introducer_Comm WHERE del_tag = '0' AND Introducer_PID = @Introducer_PID";
+                var checkParams = new List<SqlParameter>
+                {
+                    new SqlParameter("@Introducer_PID", model.Introducer_PID)
+                };
+
+                // 使用 ExecuteQuery，因為 ADOData.cs 中沒有 ExecuteScalar
+                DataTable dtCheck = _adoData.ExecuteQuery(checkSql, checkParams);
+                int existingCount = 0;
+                if (dtCheck.Rows.Count > 0)
+                {
+                    // 取得第一行第一列的計數值
+                    existingCount = Convert.ToInt32(dtCheck.Rows[0][0]);
+                }
+
+                if (existingCount > 0)
+                {
+                    // 如果計數大於 0，表示 PID 已被使用，回傳錯誤訊息
+                    resultClass.ResultCode = "409";
+                    resultClass.ResultMsg = "此[身分證字號]或[統一編號]已被使用！";
+                    return Conflict(resultClass);
+                }
+
                 #region SQL
-                
+
                 var T_SQL = @"
                     INSERT INTO [dbo].[Introducer_Comm]
                                ([Introducer_name]
