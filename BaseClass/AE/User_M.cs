@@ -93,6 +93,7 @@
         public string? U_address_live { get; set; }
         public string? str_U_arrive_date { get; set; }
         public string? str_U_leave_date { get; set; }
+        public string User { get; set; }
     }
 
     public class User_M_Upd: User_M_Ins

@@ -2659,13 +2659,16 @@ namespace KF_WebAPI.Controllers
                     select (select item_D_name from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND item_D_code = UM.U_BC AND del_tag='0') as U_BC_name
                     ,(select item_D_name from Item_list where item_M_code = 'professional_title' AND item_D_type='Y' AND item_D_code = UM.U_PFT AND del_tag='0') as U_PFT_name
                     ,(select U_name FROM User_M where U_num = UM.U_agent_num AND del_tag='0') as U_agent_name
-                    ,U_num,U_name,Case When ISNULL(UM.U_leave_date,'')='' THEN '0' ELSE '1' END as del_tag
+                    ,U_num,ISNULL(Li.item_D_name,UM.U_name) as U_name
+                    ,Case When ISNULL(UM.U_leave_date,'')='' THEN '0' ELSE '1' END as del_tag
                     ,(select U_name FROM User_M where U_num = UM.U_leader_1_num AND del_tag='0') as U_leader_1_name
                     ,(select U_name FROM User_M where U_num = UM.U_leader_2_num AND del_tag='0') as U_leader_2_name
                     ,(select U_name FROM User_M where U_num = UM.U_leader_3_num AND del_tag='0') as U_leader_3_name,Rm.R_name,UM.U_Check_BC
                     ,(select item_sort from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND item_D_code = UM.U_BC AND del_tag='0') as U_BC_sort,U_cknum
                     ,(select item_sort from Item_list where item_M_code = 'professional_title' AND item_D_type='Y' AND item_D_code = UM.U_PFT AND del_tag='0') as U_PFT_sort
-                    from User_M UM left join Role_M Rm on UM.Role_num = Rm.R_num where 1=1";
+                    from User_M UM left join Role_M Rm on UM.Role_num = Rm.R_num 
+                    left join Item_list Li on item_M_code='SpecName' and item_D_type='Y' and Li.item_D_txt_A = UM.U_num
+                    where 1=1";
                 if (!string.IsNullOrEmpty(model.U_Num_Name))
                 {
                     T_SQL += " AND (U_num LIKE '%' + @U_Num_Name + '%' OR U_name LIKE '%' + @U_Num_Name + '%') ";
@@ -2696,55 +2699,46 @@ namespace KF_WebAPI.Controllers
                 #endregion
 
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
-                if (dtResult.Rows.Count > 0)
+                var modellist_M = dtResult.AsEnumerable().Select(row => new User_M_res
                 {
-                    var modellist_M = dtResult.AsEnumerable().Select(row => new User_M_res
-                    {
-                        U_BC_name = row.Field<string>("U_BC_name"),
-                        U_PFT_name = row.Field<string>("U_PFT_name"),
-                        R_name = row.Field<string>("R_name"),
-                        U_num = row.Field<string>("U_num"),
-                        U_name = row.Field<string>("U_name"),
-                        U_agent_name = row.Field<string>("U_agent_name"),
-                        U_leader_1_name = row.Field<string>("U_leader_1_name"),
-                        U_leader_2_name = row.Field<string>("U_leader_2_name"),
-                        del_tag = row.Field<string>("del_tag") == "0" ? "在職" : "離職",
-                        cknum = row.Field<string>("U_cknum"),
-                        U_Check_BC = row.Field<string>("U_Check_BC")
-                    }).ToList();
+                    U_BC_name = row.Field<string>("U_BC_name"),
+                    U_PFT_name = row.Field<string>("U_PFT_name"),
+                    R_name = row.Field<string>("R_name"),
+                    U_num = row.Field<string>("U_num"),
+                    U_name = row.Field<string>("U_name"),
+                    U_agent_name = row.Field<string>("U_agent_name"),
+                    U_leader_1_name = row.Field<string>("U_leader_1_name"),
+                    U_leader_2_name = row.Field<string>("U_leader_2_name"),
+                    del_tag = row.Field<string>("del_tag") == "0" ? "在職" : "離職",
+                    cknum = row.Field<string>("U_cknum"),
+                    U_Check_BC = row.Field<string>("U_Check_BC")
+                }).ToList();
 
-                    foreach (var item in modellist_M)
+                foreach (var item in modellist_M)
+                {
+                    var str_Bc = item.U_Check_BC.Split('#').Where(code => !string.IsNullOrEmpty(code)).ToArray();
+                    if (str_Bc.Length == 0)
+                        continue;
+                    #region SQL
+                    var parameters_bc = new List<SqlParameter>();
+                    var T_SQL_BC = "SELECT item_D_name FROM Item_list WHERE item_M_code = 'branch_company' AND item_D_type = 'Y'";
+                    var inClause = string.Join(", ", str_Bc.Select((code, index) => "@code" + index));
+                    T_SQL_BC = T_SQL_BC + " AND item_D_code IN (" + inClause + ")";
+                    for (int i = 0; i < str_Bc.Length; i++)
                     {
-                        var str_Bc = item.U_Check_BC.Split('#').Where(code => !string.IsNullOrEmpty(code)).ToArray();
-                        if (str_Bc.Length == 0)
-                            continue;
-                        #region SQL
-                        var parameters_bc = new List<SqlParameter>();
-                        var T_SQL_BC = "SELECT item_D_name FROM Item_list WHERE item_M_code = 'branch_company' AND item_D_type = 'Y'";
-                        var inClause = string.Join(", ", str_Bc.Select((code, index) => "@code" + index));
-                        T_SQL_BC = T_SQL_BC + " AND item_D_code IN (" + inClause + ")";
-                        for (int i = 0; i < str_Bc.Length; i++)
-                        {
-                            parameters_bc.Add(new SqlParameter("@code" + i, str_Bc[i]));
-                        }
-                        #endregion
-                        DataTable result_bc =_adoData.ExecuteQuery(T_SQL_BC, parameters_bc);
-                        var values = result_bc.AsEnumerable()
-                             .Select(row => "#" + row.Field<string>("item_D_name"))
-                             .ToArray();
-                        item.U_Check_BC = string.Join("", values);
+                        parameters_bc.Add(new SqlParameter("@code" + i, str_Bc[i]));
                     }
+                    #endregion
+                    DataTable result_bc = _adoData.ExecuteQuery(T_SQL_BC, parameters_bc);
+                    var values = result_bc.AsEnumerable()
+                         .Select(row => "#" + row.Field<string>("item_D_name"))
+                         .ToArray();
+                    item.U_Check_BC = string.Join("", values);
+                }
 
-                    resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(modellist_M);
-                    return Ok(resultClass);
-                }
-                else
-                {
-                    resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "查無資料";
-                    return BadRequest(resultClass);
-                }
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(modellist_M);
+                return Ok(resultClass);
             }
             catch (Exception ex)
             {
@@ -2803,8 +2797,6 @@ namespace KF_WebAPI.Controllers
         public ActionResult<ResultClass<string>> User_M_SUpd(User_M_Upd model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
-
-            var User_Num = HttpContext.Session.GetString("UserID");
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
 
             try
@@ -2816,144 +2808,25 @@ namespace KF_WebAPI.Controllers
                     Update User_M set edit_num=@edit_num,edit_date=@edit_date,edit_ip=@edit_ip,U_sex=@U_sex,Marriage=@Marriage,Military=@Military
                     ,Military_SDate=@Military_SDate,Military_EDate=@Military_EDate,Military_Exemption=@Military_Exemption,License_Car=@License_Car
                     ,Self_Car=@Self_Car,License_Motorcycle=@License_Motorcycle,Self_Motorcycle=@Self_Motorcycle,School_SDate=@School_SDate,School_EDate=@School_EDate
-                    ,U_BC=@U_BC,U_PFT=@U_PFT,Role_num=@Role_num,U_agent_num=@U_agent_num";
-                if (!string.IsNullOrEmpty(model.U_name))
-                {
-                    T_SQL += ",U_name=@U_name";
-                    parameters.Add(new SqlParameter("@U_name", model.U_name));
-                }
-                if (!string.IsNullOrEmpty(model.U_Ename))
-                {
-                    T_SQL += ",U_Ename=@U_Ename";
-                    parameters.Add(new SqlParameter("@U_Ename", model.U_Ename));
-                }
-                if (!string.IsNullOrEmpty(model.str_U_Birthday))
-                {
-                    T_SQL += ",U_Birthday=@U_Birthday";
-                    var Birthday = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_Birthday));
-                    parameters.Add(new SqlParameter("@U_Birthday", Birthday));
-                }
-                if (model.Children != null) 
-                {
-                    T_SQL += " ,Children=@Children";
-                    parameters.Add(new SqlParameter("@Children", model.Children));
-                }
-                else
-                {
-                    T_SQL += " ,Children=@Children";
-                    parameters.Add(new SqlParameter("@Children", DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.U_PID)) 
-                {
-                    T_SQL += ",U_PID=@U_PID";
-                    parameters.Add(new SqlParameter("@U_PID",model.U_PID));
-                }
-                if (!string.IsNullOrEmpty(model.U_Tel)) 
-                {
-                    T_SQL += " ,U_Tel=@U_Tel";
-                    parameters.Add(new SqlParameter("@U_Tel", model.U_Tel));
-                }
-                if (!string.IsNullOrEmpty(model.U_MTel)) 
-                {
-                    T_SQL += " ,U_MTel=@U_MTel";
-                    parameters.Add(new SqlParameter("@U_MTel", model.U_MTel));
-                }
-                if (!string.IsNullOrEmpty(model.U_Email)) 
-                {
-                    T_SQL += " ,U_Email=@U_Email";
-                    parameters.Add(new SqlParameter("@U_Email", model.U_Email));
-                }
-                if (!string.IsNullOrEmpty(model.Emergency_contact)) 
-                {
-                    T_SQL += " ,Emergency_contact=@Emergency_contact";
-                    parameters.Add(new SqlParameter("@Emergency_contact", model.Emergency_contact));
-                }
-                if (!string.IsNullOrEmpty(model.Emergency_Tel)) 
-                {
-                    T_SQL += " ,Emergency_Tel=@Emergency_Tel";
-                    parameters.Add(new SqlParameter("@Emergency_Tel", model.Emergency_Tel));
-                }
-                if (!string.IsNullOrEmpty(model.Emergency_MTel)) 
-                {
-                    T_SQL += " ,Emergency_MTel=@Emergency_MTel";
-                    parameters.Add(new SqlParameter("@Emergency_MTel", model.Emergency_MTel));
-                }
-                if (!string.IsNullOrEmpty(model.School_Level)) 
-                {
-                    T_SQL += " ,School_Level=@School_Level";
-                    parameters.Add(new SqlParameter("@School_Level", model.School_Level));
-                }
-                if (!string.IsNullOrEmpty(model.School_Name)) 
-                {
-                    T_SQL += " ,School_Name=@School_Name";
-                    parameters.Add(new SqlParameter("@School_Name", model.School_Name));
-                }
-                if (!string.IsNullOrEmpty(model.School_Graduated)) 
-                {
-                    T_SQL += " ,School_Graduated=@School_Graduated";
-                    parameters.Add(new SqlParameter("@School_Graduated", model.School_Graduated));
-                }
-                if (!string.IsNullOrEmpty(model.School_D_N)) 
-                {
-                    T_SQL += " ,School_D_N=@School_D_N";
-                    parameters.Add(new SqlParameter("@School_D_N", model.School_D_N));
-                }
-                if (!string.IsNullOrEmpty(model.School_Major)) 
-                {
-                    T_SQL += " ,School_Major=@School_Major";
-                    parameters.Add(new SqlParameter("@School_Major", model.School_Major));
-                }
-                if (!string.IsNullOrEmpty(model.U_leader_1_num)) 
-                {
-                    T_SQL += " ,U_leader_1_num=@U_leader_1_num";
-                    parameters.Add(new SqlParameter("@U_leader_1_num", model.U_leader_1_num));
-                }
-                if (!string.IsNullOrEmpty(model.U_leader_2_num)) 
-                {
-                    T_SQL += " ,U_leader_2_num=@U_leader_2_num";
-                    parameters.Add(new SqlParameter("@U_leader_2_num", model.U_leader_2_num));
-                }
-                if (!string.IsNullOrEmpty(model.U_Check_BC)) 
-                {
-                    T_SQL += " ,U_Check_BC=@U_Check_BC";
-                    parameters.Add(new SqlParameter("@U_Check_BC", model.U_Check_BC));
-                }
-                if (!string.IsNullOrEmpty(model.U_address_live)) 
-                {
-                    T_SQL += " ,U_address_live=@U_address_live";
-                    parameters.Add(new SqlParameter("@U_address_live", model.U_address_live));
-                }
-                if (!string.IsNullOrEmpty(model.str_U_arrive_date)) 
-                {
-                    T_SQL += " ,U_arrive_date=@U_arrive_date";
-                    var arriveDate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_arrive_date));
-                    parameters.Add(new SqlParameter("@U_arrive_date", arriveDate));
-                }
-                if (!string.IsNullOrEmpty(model.str_U_leave_date))
-                {
-                    T_SQL += " ,U_leave_date=@U_leave_date";
-                    var leaveDate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_leave_date));
-                    parameters.Add(new SqlParameter("@U_leave_date", leaveDate));
-                }
-                else
-                {
-                    T_SQL += " ,U_leave_date=@U_leave_date";
-                    parameters.Add(new SqlParameter("@U_leave_date", DBNull.Value));
-                }
-                T_SQL += " Where U_id=@U_id";
-                parameters.Add(new SqlParameter("@edit_num", User_Num));
+                    ,U_BC=@U_BC,U_PFT=@U_PFT,Role_num=@Role_num,U_agent_num=@U_agent_num,Children=@Children,U_leave_date=@U_leave_date,U_name=@U_name,U_Ename=@U_Ename
+                    ,U_Birthday=@U_Birthday,U_PID=@U_PID,U_Tel=@U_Tel,U_MTel=@U_MTel,U_Email=@U_Email,Emergency_contact=@Emergency_contact,Emergency_Tel=@Emergency_Tel
+                    ,Emergency_MTel=@Emergency_MTel,School_Level=@School_Level,School_Name=@School_Name,School_Graduated=@School_Graduated,School_D_N=@School_D_N
+                    ,School_Major=@School_Major,U_leader_1_num=@U_leader_1_num,U_leader_2_num=@U_leader_2_num,U_Check_BC=@U_Check_BC,U_address_live=@U_address_live
+                    ,U_arrive_date=@U_arrive_date Where U_id=@U_id";
+
+                parameters.Add(new SqlParameter("@edit_num", model.User));
                 parameters.Add(new SqlParameter("@edit_date", DateTime.Now));
                 parameters.Add(new SqlParameter("@edit_ip", clientIp));
                 parameters.Add(new SqlParameter("@U_sex", model.U_sex));
                 parameters.Add(new SqlParameter("@Marriage", model.Marriage));
-                parameters.Add(new SqlParameter("@Military", model.Military));
+                parameters.Add(new SqlParameter("@Military", string.IsNullOrEmpty(model.Military) ? DBNull.Value : model.Military));
                 parameters.Add(new SqlParameter("@Military_SDate", model.Military_SDate));
                 parameters.Add(new SqlParameter("@Military_EDate", model.Military_EDate));
                 parameters.Add(new SqlParameter("@Military_Exemption", model.Military_Exemption));
                 parameters.Add(new SqlParameter("@License_Car", model.License_Car));
-                parameters.Add(new SqlParameter("@Self_Car", model.Self_Car));
+                parameters.Add(new SqlParameter("@Self_Car", string.IsNullOrEmpty(model.Self_Car) ? DBNull.Value : model.Self_Car));
                 parameters.Add(new SqlParameter("@License_Motorcycle", model.License_Motorcycle));
-                parameters.Add(new SqlParameter("@Self_Motorcycle", model.Self_Motorcycle));
+                parameters.Add(new SqlParameter("@Self_Motorcycle", string.IsNullOrEmpty(model.Self_Motorcycle) ? DBNull.Value : model.Self_Motorcycle));
                 parameters.Add(new SqlParameter("@School_SDate", model.School_SDate));
                 parameters.Add(new SqlParameter("@School_EDate", model.School_EDate));
                 parameters.Add(new SqlParameter("@U_BC", model.U_BC));
@@ -2961,6 +2834,31 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@Role_num", model.Role_num));
                 parameters.Add(new SqlParameter("@U_agent_num", model.U_agent_num));
                 parameters.Add(new SqlParameter("@U_id", model.U_id));
+                parameters.Add(new SqlParameter("@Children", model.Children ?? (object)DBNull.Value));
+                parameters.Add(new SqlParameter("@U_leave_date", !string.IsNullOrEmpty(model.str_U_leave_date)
+                    ? (object)DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_leave_date)) : DBNull.Value));
+                parameters.Add(new SqlParameter("@U_name", string.IsNullOrEmpty(model.U_name) ? DBNull.Value : model.U_name));
+                parameters.Add(new SqlParameter("@U_Ename", string.IsNullOrEmpty(model.U_Ename) ? DBNull.Value : model.U_Ename));
+                parameters.Add(new SqlParameter("@U_Birthday", string.IsNullOrEmpty(model.str_U_Birthday) 
+                    ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_Birthday))));
+                parameters.Add(new SqlParameter("@U_PID", string.IsNullOrEmpty(model.U_PID) ? DBNull.Value : model.U_PID));
+                parameters.Add(new SqlParameter("@U_Tel", string.IsNullOrEmpty(model.U_Tel) ? DBNull.Value : model.U_Tel));
+                parameters.Add(new SqlParameter("@U_MTel", string.IsNullOrEmpty(model.U_MTel) ? DBNull.Value : model.U_MTel));
+                parameters.Add(new SqlParameter("@U_Email", string.IsNullOrEmpty(model.U_Email) ? DBNull.Value : model.U_Email));
+                parameters.Add(new SqlParameter("@Emergency_contact", string.IsNullOrEmpty(model.Emergency_contact) ? DBNull.Value : model.Emergency_contact));
+                parameters.Add(new SqlParameter("@Emergency_Tel", string.IsNullOrEmpty(model.Emergency_Tel) ? DBNull.Value : model.Emergency_Tel));
+                parameters.Add(new SqlParameter("@Emergency_MTel", string.IsNullOrEmpty(model.Emergency_MTel) ? DBNull.Value : model.Emergency_MTel));
+                parameters.Add(new SqlParameter("@School_Level", string.IsNullOrEmpty(model.School_Level) ? DBNull.Value : model.School_Level));
+                parameters.Add(new SqlParameter("@School_Name", string.IsNullOrEmpty(model.School_Name) ? DBNull.Value : model.School_Name));
+                parameters.Add(new SqlParameter("@School_Graduated", string.IsNullOrEmpty(model.School_Graduated) ? DBNull.Value : model.School_Graduated));
+                parameters.Add(new SqlParameter("@School_D_N", string.IsNullOrEmpty(model.School_D_N) ? DBNull.Value : model.School_D_N));
+                parameters.Add(new SqlParameter("@School_Major", string.IsNullOrEmpty(model.School_Major) ? DBNull.Value : model.School_Major));
+                parameters.Add(new SqlParameter("@U_leader_1_num", string.IsNullOrEmpty(model.U_leader_1_num) ? DBNull.Value : model.U_leader_1_num));
+                parameters.Add(new SqlParameter("@U_leader_2_num", string.IsNullOrEmpty(model.U_leader_2_num) ? DBNull.Value : model.U_leader_2_num));
+                parameters.Add(new SqlParameter("@U_Check_BC", string.IsNullOrEmpty(model.U_Check_BC) ? DBNull.Value : model.U_Check_BC));
+                parameters.Add(new SqlParameter("@U_address_live", string.IsNullOrEmpty(model.U_address_live) ? DBNull.Value : model.U_address_live));
+                parameters.Add(new SqlParameter("@U_arrive_date", string.IsNullOrEmpty(model.str_U_arrive_date)
+                  ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_arrive_date))));
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
@@ -2976,10 +2874,11 @@ namespace KF_WebAPI.Controllers
                     return Ok(resultClass);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
-                return StatusCode(500, resultClass); 
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
         }
         /// <summary>
@@ -2989,7 +2888,6 @@ namespace KF_WebAPI.Controllers
         public ActionResult<ResultClass<string>> User_M_Ins(User_M_Ins model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
-            var User_Num = HttpContext.Session.GetString("UserID");
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
 
             try
@@ -3023,47 +2921,19 @@ namespace KF_WebAPI.Controllers
                     @License_Motorcycle,@Self_Motorcycle,@U_Tel,@U_MTel,@U_Email,@Emergency_contact,@Emergency_Tel,
                     @Emergency_MTel,@School_Level,@School_Name,@School_SDate,@School_EDate,@School_Graduated,@School_D_N,
                     @School_Major,@U_BC,@U_PFT,@Role_num,@U_agent_num,@U_leader_1_num,@U_leader_2_num,@U_leader_3_num,@U_Check_BC,@U_address_live,@U_arrive_date,@U_leave_date )";               
-                parameters.Add(new SqlParameter("@add_num", User_Num));
+                parameters.Add(new SqlParameter("@add_num", model.User));
                 parameters.Add(new SqlParameter("@add_date",DateTime.Now));
                 parameters.Add(new SqlParameter("@add_ip", clientIp));
                 parameters.Add(new SqlParameter("@U_cknum", FuncHandler.GetCheckNum()));
                 parameters.Add(new SqlParameter("@U_num", model.U_num));
                 parameters.Add(new SqlParameter("@U_name", model.U_name));
-                if (!string.IsNullOrEmpty(model.U_Ename))
-                {
-                    parameters.Add(new SqlParameter("@U_Ename", model.U_Ename));
-                }
-                else
-                {
-                    parameters.Add (new SqlParameter("@U_Ename","")); 
-                }
-                if (model.str_U_Birthday != null)
-                {
-                    var Birthday = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_Birthday));
-                    parameters.Add(new SqlParameter("@U_Birthday", Birthday));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@U_Birthday", DBNull.Value));
-                }
+                parameters.Add(new SqlParameter("@U_Ename", string.IsNullOrEmpty(model.U_Ename) ? "" : model.U_Ename));
+                parameters.Add(new SqlParameter("@U_Birthday", string.IsNullOrEmpty(model.str_U_Birthday) 
+                    ? DBNull.Value: DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_Birthday))));             
                 parameters.Add(new SqlParameter("@U_sex", model.U_sex));
                 parameters.Add(new SqlParameter("@Marriage", model.Marriage));
-                if(model.Children != null) 
-                {
-                    parameters.Add(new SqlParameter("@Children", model.Children));
-                }
-                else
-                {
-                    parameters.Add (new SqlParameter("@Children",DBNull.Value));
-                }
-                if (!string.IsNullOrEmpty(model.U_PID))
-                {
-                    parameters.Add(new SqlParameter("@U_PID", model.U_PID));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@U_PID", DBNull.Value));
-                }
+                parameters.Add(new SqlParameter("@Children", model.Children ?? (object)DBNull.Value));
+                parameters.Add(new SqlParameter("@U_PID", string.IsNullOrEmpty(model.U_PID) ? DBNull.Value : model.U_PID));
                 parameters.Add(new SqlParameter("@Military",model.Military));
                 parameters.Add(new SqlParameter("@Military_SDate", model.Military_SDate));
                 parameters.Add(new SqlParameter("@Military_EDate", model.Military_EDate));
@@ -3072,137 +2942,31 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@Self_Car", model.Self_Car));
                 parameters.Add(new SqlParameter("@License_Motorcycle", model.License_Motorcycle));
                 parameters.Add(new SqlParameter("@Self_Motorcycle", model.Self_Motorcycle));
-                if (!string.IsNullOrEmpty(model.U_Tel))
-                {
-                    parameters.Add(new SqlParameter("@U_Tel", model.U_Tel));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@U_Tel",""));
-                }
-                if (!string.IsNullOrEmpty(model.U_MTel))
-                {
-                    parameters.Add(new SqlParameter("@U_MTel", model.U_MTel));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@U_MTel", ""));
-                }
-                if (!string.IsNullOrEmpty(model.U_Email))
-                {
-                    parameters.Add(new SqlParameter("@U_Email", model.U_Email));
-                }
-                else
-                {
-                    parameters.Add (new SqlParameter("@U_Email",""));
-                }
-                if (!string.IsNullOrEmpty(model.Emergency_contact))
-                {
-                    parameters.Add(new SqlParameter("@Emergency_contact", model.Emergency_contact));
-                }
-                else
-                { 
-                    parameters.Add(new SqlParameter("@Emergency_contact", ""));
-                }
-                if (!string.IsNullOrEmpty(model.Emergency_Tel))
-                {
-                    parameters.Add(new SqlParameter("@Emergency_Tel",model.Emergency_Tel));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@Emergency_Tel", ""));
-                }
-                if (!string.IsNullOrEmpty(model.Emergency_MTel))
-                {
-                    parameters.Add(new SqlParameter("@Emergency_MTel", model.Emergency_MTel));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@Emergency_MTel", ""));
-                }
-                if (!string.IsNullOrEmpty(model.School_Level))
-                {
-                    parameters.Add(new SqlParameter("@School_Level", model.School_Level));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@School_Level", ""));
-                }
-                if (!string.IsNullOrEmpty(model.School_Name))
-                {
-                    parameters.Add(new SqlParameter("@School_Name",model.School_Name));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@School_Name", ""));
-                }
+                parameters.Add(new SqlParameter("@U_Tel", string.IsNullOrEmpty(model.U_Tel) ? "" : model.U_Tel));
+                parameters.Add(new SqlParameter("@U_MTel", string.IsNullOrEmpty(model.U_MTel) ? "" : model.U_MTel));
+                parameters.Add(new SqlParameter("@U_Email", string.IsNullOrEmpty(model.U_Email) ? "" : model.U_Email));
+                parameters.Add(new SqlParameter("@Emergency_contact", string.IsNullOrEmpty(model.Emergency_contact) ? "" : model.Emergency_contact));
+                parameters.Add(new SqlParameter("@Emergency_Tel", string.IsNullOrEmpty(model.Emergency_Tel) ? "" : model.Emergency_Tel));
+                parameters.Add(new SqlParameter("@Emergency_MTel", string.IsNullOrEmpty(model.Emergency_MTel) ? "" : model.Emergency_MTel));
+                parameters.Add(new SqlParameter("@School_Level", string.IsNullOrEmpty(model.School_Level) ? "" : model.School_Level));
+                parameters.Add(new SqlParameter("@School_Name", string.IsNullOrEmpty(model.School_Name) ? "" : model.School_Name));              
                 parameters.Add(new SqlParameter("@School_SDate", model.School_SDate));
                 parameters.Add(new SqlParameter("@School_EDate", model.School_EDate));
-                if (!string.IsNullOrEmpty(model.School_Graduated))
-                {
-                    parameters.Add(new SqlParameter("@School_Graduated", model.School_Graduated));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@School_Graduated", ""));
-                }
-                if (!string.IsNullOrEmpty(model.School_D_N))
-                {
-                    parameters.Add(new SqlParameter("@School_D_N", model.School_D_N));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@School_D_N", ""));
-                }
-                if (!string.IsNullOrEmpty(model.School_Major))
-                {
-                    parameters.Add(new SqlParameter("@School_Major", model.School_Major));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@School_Major", ""));
-                }
+                parameters.Add(new SqlParameter("@School_Graduated", string.IsNullOrEmpty(model.School_Graduated) ? "" : model.School_Graduated));
+                parameters.Add(new SqlParameter("@School_D_N", string.IsNullOrEmpty(model.School_D_N) ? "" : model.School_D_N));
+                parameters.Add(new SqlParameter("@School_Major", string.IsNullOrEmpty(model.School_Major) ? "" : model.School_Major));                
                 parameters.Add(new SqlParameter("@U_BC",model.U_BC));
                 parameters.Add(new SqlParameter("@U_PFT", model.U_PFT));
                 parameters.Add(new SqlParameter("@Role_num", model.Role_num));
                 parameters.Add(new SqlParameter("@U_agent_num", model.U_agent_num));
-                if (!string.IsNullOrEmpty(model.U_leader_1_num))
-                {
-                    parameters.Add(new SqlParameter("@U_leader_1_num", model.U_leader_1_num));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@U_leader_1_num", ""));
-                }
-                if (!string.IsNullOrEmpty(model.U_leader_2_num))
-                {
-                    parameters.Add(new SqlParameter("@U_leader_2_num", model.U_leader_2_num));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@U_leader_2_num", ""));
-                }
+                parameters.Add(new SqlParameter("@U_leader_1_num", string.IsNullOrEmpty(model.U_leader_1_num) ? "" : model.U_leader_1_num));
+                parameters.Add(new SqlParameter("@U_leader_2_num", string.IsNullOrEmpty(model.U_leader_2_num) ? "" : model.U_leader_2_num));              
                 parameters.Add(new SqlParameter("@U_leader_3_num", ""));
                 parameters.Add(new SqlParameter("@U_Check_BC", "#" + model.U_BC));
-                if (!string.IsNullOrEmpty(model.U_address_live))
-                {
-                    parameters.Add(new SqlParameter("@U_address_live", model.U_address_live));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@U_address_live", ""));
-                }
-                var arriveDate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_arrive_date));
-                parameters.Add(new SqlParameter("@U_arrive_date", arriveDate));
-                if (!string.IsNullOrEmpty(model.str_U_leave_date))
-                {
-                    var leaveDate = DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_leave_date));
-                    parameters.Add(new SqlParameter("@U_leave_date", leaveDate));
-                }
-                else
-                {
-                    parameters.Add(new SqlParameter("@U_leave_date", DBNull.Value));
-                }
+                parameters.Add(new SqlParameter("@U_address_live", string.IsNullOrEmpty(model.U_address_live) ? "" : model.U_address_live));              
+                parameters.Add(new SqlParameter("@U_arrive_date", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_arrive_date))));
+                parameters.Add(new SqlParameter("@U_leave_date",
+                    string.IsNullOrEmpty(model.str_U_leave_date)? DBNull.Value: (object)DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_leave_date))));
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
@@ -3763,6 +3527,38 @@ namespace KF_WebAPI.Controllers
                 resultClass.ResultCode = "500";
                 return StatusCode(500, resultClass);
             }
+        }
+        /// <summary>
+        /// 抓取emp.json UserM_List/GetUser.asp
+        /// </summary>
+        [HttpGet("GetEmpJson")]
+        public IActionResult GetEmpJson()
+        {
+            ADOData _adoData = new ADOData();
+            var SQL = @"SELECT U_num emp_id,U_name emp_name,U_BC_name dep_na,FORMAT(U_arrive_date, 'yyyy-MM-dd')U_arrive_date,
+                        CASE WHEN U_PFT ='PFE831' THEN 'N' ELSE 'Y' END isHit,
+                        CASE WHEN FORMAT(U_arrive_date, 'yyyy-MM-dd')>'2024-01-02' THEN 'Y' ELSE 'N' END isJunior
+                        FROM User_M UM
+                        LEFT JOIN (SELECT item_sort U_BC_sort,item_D_name U_BC_name,* FROM Item_list WHERE item_M_code = 'branch_company' AND item_D_type='Y' AND del_tag='0') U ON UM.U_BC=U.item_D_code
+                        LEFT JOIN (SELECT item_sort U_PFT_sort,item_D_name U_PFT_name,* FROM Item_list WHERE item_M_code = 'professional_title' AND item_D_type='Y' AND del_tag='0') P ON UM.U_PFT=P.item_D_code
+                        WHERE ISNULL(UM.U_leave_date, '')='' AND U_num NOT IN ('AA999','K9999','K0999','K0000')
+                        AND U_BC NOT IN ('BC0700') ORDER BY U_PFT_sort,U_arrive_date,U_BC_sort,U_id";
+            DataTable dtResult = _adoData.ExecuteSQuery(SQL);
+            var result = new List<object>();
+
+            foreach (DataRow row in dtResult.Rows)
+            {
+                result.Add(new
+                {
+                    emp_id = row["emp_id"].ToString(),
+                    dep_na = row["dep_na"].ToString(),
+                    isJunior = row["isJunior"].ToString(),
+                    isHit = row["isHit"].ToString(),
+                    U_arrive_date = row["U_arrive_date"].ToString(),
+                    emp_name = row["emp_name"].ToString()
+                });
+            }
+            return Ok(result);
         }
         #endregion
 
