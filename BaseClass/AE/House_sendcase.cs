@@ -64,31 +64,14 @@ namespace KF_WebAPI.BaseClass.AE
     /// </summary>
     public class House_sendcase_Req
     {
-        /// <summary>
-        /// 申請人
-        /// </summary>
-        public string CS_name { get; set; }
+        public string? CS_name { get; set; }
+        public string? BC_code { get; set; }
+        public string? plan_name { get; set; }
+        public string? selYear_S { get; set; }
+        public string? OrderByStr { get; set; }
 
-        /// <summary>
-        /// 區
-        /// </summary>
-        public string BC_code { get; set; }
-
-        /// <summary>
-        /// 業務
-        /// </summary>
-        public string plan_name { get; set; }
-        
-
-        /// <summary>
-        /// 撥款年月
-        /// </summary>
-        public string selYear_S { get; set; }
-        
-
-        /// <summary>
-        /// 排序
-        /// </summary>
-        public string OrderByStr { get; set; }
+        public string? UserNum { get; set; }
+        public string? UserRole { get; set; }
+        public string? UserBC { get; set; }
     }
 }

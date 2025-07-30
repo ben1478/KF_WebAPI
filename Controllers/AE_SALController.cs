@@ -917,6 +917,8 @@ namespace KF_WebAPI.Controllers
         {
             FuncHandler _FuncHandler = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
+            ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
+            var parameters = new List<SqlParameter>();
             var sqlBuilder = new StringBuilder(
                 @"SELECT 
                     'FEE-' + cast(HS_ID as varchar)[File_ID],
@@ -952,21 +954,44 @@ namespace KF_WebAPI.Controllers
                         WHERE H.del_tag = '0' AND H.sendcase_handle_type = 'Y' AND isnull(H.Send_amount, '')<> ''
                             AND get_amount_type = 'GTAT002'"
                     );
+
+            // --- Role-based Filtering ---
+            var adminRoles = new[] { "1001", "1002", "1004", "1007" };
+            var managerRoles = new[] { "1008", "1014" };
+            var assistantRoles = new[] { "1010", "1011" };
+            var salesRole = "1009";
+
             try
             {
-                ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
-                var parameters = new List<SqlParameter>();
+                if (model.UserRole == salesRole)
+                {
+                    sqlBuilder.Append(" AND A.plan_num = @UserNum ");
+                    parameters.Add(new SqlParameter("@UserNum", model.UserNum));
+                }
+                else if (managerRoles.Contains(model.UserRole) || assistantRoles.Contains(model.UserRole))
+                {
+                    sqlBuilder.Append(" AND M.U_BC = @UserBC ");
+                    parameters.Add(new SqlParameter("@UserBC", model.UserBC));
+                }
+
                 //申請人
                 if (!string.IsNullOrEmpty(model.CS_name))
                 {
                     sqlBuilder.Append(" AND A.CS_name like  @CS_name ");
                     parameters.Add(new SqlParameter("@CS_name", "%" + model.CS_name + "%"));
                 }
-                //區
-                if (!string.IsNullOrEmpty(model.BC_code))
+                // Only Admins can filter by branch dropdown
+                if (adminRoles.Contains(model.UserRole) && !string.IsNullOrEmpty(model.BC_code))
                 {
                     sqlBuilder.Append(" AND M.U_BC = @BC_code ");
                     parameters.Add(new SqlParameter("@BC_code", model.BC_code));
+                }
+
+                // Admins and Managers can filter by salesperson
+                if ((adminRoles.Contains(model.UserRole) || managerRoles.Contains(model.UserRole)) && !string.IsNullOrEmpty(model.plan_name))
+                {
+                    sqlBuilder.Append(" AND M.U_name = @plan_name ");
+                    parameters.Add(new SqlParameter("@plan_name", model.plan_name));
                 }
                 //撥款年月
                 if (!string.IsNullOrEmpty(model.selYear_S))
@@ -977,17 +1002,23 @@ namespace KF_WebAPI.Controllers
                     parameters.Add(new SqlParameter("@y", y));
                     parameters.Add(new SqlParameter("@m", m));
                 }
-                //業務
-                if (!string.IsNullOrEmpty(model.plan_name))
-                {
-                    sqlBuilder.Append(" AND M.U_name = @plan_name ");
-                    parameters.Add(new SqlParameter("@plan_name", model.plan_name));
 
-                }
+                // 排序
                 if (!string.IsNullOrEmpty(model.OrderByStr))
                 {
-                    sqlBuilder.Append($" order by {model.OrderByStr}");
+                    sqlBuilder.Append($" ORDER BY {model.OrderByStr}");
                 }
+                else // Default order
+                {
+                    sqlBuilder.Append(" ORDER BY M.U_BC, M.U_name");
+                }
+
+                string debugSql = FuncHandler.GenerateDebugSql(sqlBuilder.ToString(), parameters);
+
+                // 您可以將 debugSql 輸出到 Console、Log 檔案或偵錯視窗
+                Console.WriteLine("--- DEBUG T-SQL ---");
+                Console.WriteLine(debugSql);
+                Console.WriteLine("-------------------");
 
                 DataTable dtResult = _adoData.ExecuteQuery(sqlBuilder.ToString(), parameters);
                 if (dtResult.Rows.Count > 0)
@@ -1003,7 +1034,8 @@ namespace KF_WebAPI.Controllers
                         get_amount_date = row.Field<string>("get_amount_date"),
                         get_amount = row.Field<string>("get_amount"),
                         interest_rate_pass = row.Field<string>("interest_rate_pass"),
-                        upLoad_Count = row.Field<int>("upLoad_Count")
+                        upLoad_Count = row.Field<int>("upLoad_Count"),
+                        isCancel = row.Field<string>("isCancel")
                     }).ToList();
 
                     resultClass.ResultCode = "000";
