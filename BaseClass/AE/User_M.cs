@@ -110,10 +110,12 @@
         public string? Marriage { get; set; }
         public int? Children { get; set; }
         public string? U_PID { get; set; }
+        public string? ID_104 { get; set; }
     }
 
     public class User_M_res
     {
+        public decimal? ID_104 { get; set; }
         public string? U_BC_name { get; set; }
         public string? U_PFT_name { get; set; }
         public string? R_name { get; set; }

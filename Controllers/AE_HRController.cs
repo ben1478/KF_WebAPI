@@ -2656,7 +2656,7 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"
-                    select (select item_D_name from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND item_D_code = UM.U_BC AND del_tag='0') as U_BC_name
+                    select ID_104,(select item_D_name from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND item_D_code = UM.U_BC AND del_tag='0') as U_BC_name
                     ,(select item_D_name from Item_list where item_M_code = 'professional_title' AND item_D_type='Y' AND item_D_code = UM.U_PFT AND del_tag='0') as U_PFT_name
                     ,(select U_name FROM User_M where U_num = UM.U_agent_num AND del_tag='0') as U_agent_name
                     ,U_num,ISNULL(Li.item_D_name,UM.U_name) as U_name
@@ -2695,12 +2695,25 @@ namespace KF_WebAPI.Controllers
                     T_SQL += " AND Rm.R_num=@R_num";
                     parameters.Add(new SqlParameter("@R_num", model.U_Role));
                 }
+                if (!string.IsNullOrEmpty(model.ID_104))
+                {
+                    if (model.ID_104 == "Y")
+                    {
+                        T_SQL += " AND UM.ID_104 is not null";
+                    }
+                    else
+                    {
+                        T_SQL += " AND UM.ID_104 is null";
+                    }
+                    
+                }
                 T_SQL += " order by U_type desc,U_leave_date,U_BC_sort,U_PFT_sort,U_id";
                 #endregion
 
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
                 var modellist_M = dtResult.AsEnumerable().Select(row => new User_M_res
                 {
+                    ID_104 = row.Field<decimal?>("ID_104"),
                     U_BC_name = row.Field<string>("U_BC_name"),
                     U_PFT_name = row.Field<string>("U_PFT_name"),
                     R_name = row.Field<string>("R_name"),
@@ -2993,10 +3006,9 @@ namespace KF_WebAPI.Controllers
         /// 密碼變更 Password_Upd/User_edit_psw.asp
         /// </summary>
         [HttpPost("Password_Upd")]
-        public ActionResult<ResultClass<string>> Password_Upd(string U_num,int Psw)
+        public ActionResult<ResultClass<string>> Password_Upd(string U_num,int Psw,string User)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
-            var User_Num = HttpContext.Session.GetString("UserID");
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
 
             try
@@ -3022,7 +3034,7 @@ namespace KF_WebAPI.Controllers
                 var T_SQL = "Update User_M set U_psw=@U_psw,edit_ip=@edit_ip,edit_num=@edit_num,edit_date=@edit_date Where U_num=@U_num";
                 parameters.Add(new SqlParameter("@U_psw", Psw));
                 parameters.Add(new SqlParameter("@edit_ip", clientIp));
-                parameters.Add(new SqlParameter("@edit_num", User_Num));
+                parameters.Add(new SqlParameter("@edit_num", User));
                 parameters.Add(new SqlParameter("@edit_date", DateTime.Now));
                 parameters.Add(new SqlParameter("@U_num", U_num));
                 #endregion
@@ -3040,9 +3052,10 @@ namespace KF_WebAPI.Controllers
                     return Ok(resultClass);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -3050,10 +3063,9 @@ namespace KF_WebAPI.Controllers
         /// 取得或新增年假管理資料 User_Hday_List_Change/User_Hday_edit.asp
         /// </summary>
         [HttpPost("User_Hday_List_Change")]
-        public ActionResult<ResultClass<string>> User_Hday_List_Change(string U_num)
+        public ActionResult<ResultClass<string>> User_Hday_List_Change(string U_num,string User)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
-            var User_Num = HttpContext.Session.GetString("UserID");
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
 
             try
@@ -3092,10 +3104,10 @@ namespace KF_WebAPI.Controllers
                         user_Hday.U_num = U_num;
                         user_Hday.tbInfo.del_tag = "0";
                         user_Hday.tbInfo.add_date = DateTime.Now.ToString();
-                        user_Hday.tbInfo.add_num = User_Num;
+                        user_Hday.tbInfo.add_num = U_num;
                         user_Hday.tbInfo.add_ip = clientIp;
                         user_Hday.tbInfo.edit_date = DateTime.Now.ToString();
-                        user_Hday.tbInfo.edit_num = User_Num;
+                        user_Hday.tbInfo.edit_num = U_num;
                         user_Hday.tbInfo.edit_ip = clientIp;
                         user_Hday.H_day_adjust = 0;
                         switch (i)
@@ -3421,7 +3433,6 @@ namespace KF_WebAPI.Controllers
         public ActionResult<ResultClass<string>> User_Hday_Upd(List<User_Hday_Upd> Modellist)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
-            var User_Num = HttpContext.Session.GetString("UserID");
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
 
             try
@@ -3451,7 +3462,7 @@ namespace KF_WebAPI.Controllers
                     }
                     parameters_up.Add(new SqlParameter("@H_day_total", item.H_day_total));
                     parameters_up.Add(new SqlParameter("@edit_date", DateTime.Now));
-                    parameters_up.Add(new SqlParameter("@edit_num", User_Num));
+                    parameters_up.Add(new SqlParameter("@edit_num", item.User));
                     parameters_up.Add(new SqlParameter("@edit_ip", clientIp));
                     parameters_up.Add(new SqlParameter("@U_num", item.U_num));
                     parameters_up.Add(new SqlParameter("@H_year_count", item.H_year_count));
@@ -3522,9 +3533,10 @@ namespace KF_WebAPI.Controllers
                     return BadRequest(resultClass);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
@@ -3559,6 +3571,45 @@ namespace KF_WebAPI.Controllers
                 });
             }
             return Ok(result);
+        }
+        /// <summary>
+        /// 變更104編號
+        /// </summary>
+        [HttpPost("User_104_Upd")]
+        public ActionResult<ResultClass<string>> User_104_Upd(User_104_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var T_SQL = @"Update User_M set ID_104=@ID_104 where U_num=@U_num";
+                var parameters = new List<SqlParameter>()
+                {
+                    new SqlParameter("@ID_104", model.ID_104),
+                    new SqlParameter("@U_num",model.U_num)
+                };
+                int reult = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (reult == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "變更失敗";
+                    return BadRequest(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "變更成功";
+                    return Ok(resultClass);
+                }
+               
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
         }
         #endregion
 

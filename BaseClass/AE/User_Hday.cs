@@ -55,5 +55,13 @@
         public decimal? H_hours { get; set; }
         public string? H_day_adjust_note { get; set; }
         public decimal? H_day_total { get; set; }
+        public string User { get;set; }
+    }
+
+    public class User_104_req
+    {
+        public string U_num { get; set; }
+        public decimal ID_104 { get; set; } 
+
     }
 }
