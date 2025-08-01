@@ -2772,7 +2772,6 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"
                     select UM.*,(select U_name FROM User_M where U_num = UM.U_agent_num AND del_tag='0') as U_agent_name                
                     ,(select U_name FROM User_M where U_num = UM.U_leader_1_num AND del_tag='0') as U_leader_1_name
@@ -2780,7 +2779,10 @@ namespace KF_WebAPI.Controllers
                     ,(select U_name FROM User_M where U_num = UM.U_leader_3_num AND del_tag='0') as U_leader_3_name
                     ,Rm.R_num ,Rm.R_name
                     from User_M UM left join Role_M Rm on Rm.R_num = UM.Role_num where 1=1 AND U_num=@U_num";
-                parameters.Add(new SqlParameter("@U_num", U_num));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@U_num", U_num)
+                };
                 #endregion
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
                 if (dtResult.Rows.Count > 0)
@@ -2816,7 +2818,6 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"
                     Update User_M set edit_num=@edit_num,edit_date=@edit_date,edit_ip=@edit_ip,U_sex=@U_sex,Marriage=@Marriage,Military=@Military
                     ,Military_SDate=@Military_SDate,Military_EDate=@Military_EDate,Military_Exemption=@Military_Exemption,License_Car=@License_Car
@@ -2827,51 +2828,54 @@ namespace KF_WebAPI.Controllers
                     ,School_Major=@School_Major,U_leader_1_num=@U_leader_1_num,U_leader_2_num=@U_leader_2_num,U_Check_BC=@U_Check_BC,U_address_live=@U_address_live
                     ,U_arrive_date=@U_arrive_date Where U_id=@U_id";
 
-                parameters.Add(new SqlParameter("@edit_num", model.User));
-                parameters.Add(new SqlParameter("@edit_date", DateTime.Now));
-                parameters.Add(new SqlParameter("@edit_ip", clientIp));
-                parameters.Add(new SqlParameter("@U_sex", model.U_sex));
-                parameters.Add(new SqlParameter("@Marriage", model.Marriage));
-                parameters.Add(new SqlParameter("@Military", string.IsNullOrEmpty(model.Military) ? DBNull.Value : model.Military));
-                parameters.Add(new SqlParameter("@Military_SDate", model.Military_SDate));
-                parameters.Add(new SqlParameter("@Military_EDate", model.Military_EDate));
-                parameters.Add(new SqlParameter("@Military_Exemption", model.Military_Exemption));
-                parameters.Add(new SqlParameter("@License_Car", model.License_Car));
-                parameters.Add(new SqlParameter("@Self_Car", string.IsNullOrEmpty(model.Self_Car) ? DBNull.Value : model.Self_Car));
-                parameters.Add(new SqlParameter("@License_Motorcycle", model.License_Motorcycle));
-                parameters.Add(new SqlParameter("@Self_Motorcycle", string.IsNullOrEmpty(model.Self_Motorcycle) ? DBNull.Value : model.Self_Motorcycle));
-                parameters.Add(new SqlParameter("@School_SDate", model.School_SDate));
-                parameters.Add(new SqlParameter("@School_EDate", model.School_EDate));
-                parameters.Add(new SqlParameter("@U_BC", model.U_BC));
-                parameters.Add(new SqlParameter("@U_PFT", model.U_PFT));
-                parameters.Add(new SqlParameter("@Role_num", model.Role_num));
-                parameters.Add(new SqlParameter("@U_agent_num", model.U_agent_num));
-                parameters.Add(new SqlParameter("@U_id", model.U_id));
-                parameters.Add(new SqlParameter("@Children", model.Children ?? (object)DBNull.Value));
-                parameters.Add(new SqlParameter("@U_leave_date", !string.IsNullOrEmpty(model.str_U_leave_date)
-                    ? (object)DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_leave_date)) : DBNull.Value));
-                parameters.Add(new SqlParameter("@U_name", string.IsNullOrEmpty(model.U_name) ? DBNull.Value : model.U_name));
-                parameters.Add(new SqlParameter("@U_Ename", string.IsNullOrEmpty(model.U_Ename) ? DBNull.Value : model.U_Ename));
-                parameters.Add(new SqlParameter("@U_Birthday", string.IsNullOrEmpty(model.str_U_Birthday) 
-                    ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_Birthday))));
-                parameters.Add(new SqlParameter("@U_PID", string.IsNullOrEmpty(model.U_PID) ? DBNull.Value : model.U_PID));
-                parameters.Add(new SqlParameter("@U_Tel", string.IsNullOrEmpty(model.U_Tel) ? DBNull.Value : model.U_Tel));
-                parameters.Add(new SqlParameter("@U_MTel", string.IsNullOrEmpty(model.U_MTel) ? DBNull.Value : model.U_MTel));
-                parameters.Add(new SqlParameter("@U_Email", string.IsNullOrEmpty(model.U_Email) ? DBNull.Value : model.U_Email));
-                parameters.Add(new SqlParameter("@Emergency_contact", string.IsNullOrEmpty(model.Emergency_contact) ? DBNull.Value : model.Emergency_contact));
-                parameters.Add(new SqlParameter("@Emergency_Tel", string.IsNullOrEmpty(model.Emergency_Tel) ? DBNull.Value : model.Emergency_Tel));
-                parameters.Add(new SqlParameter("@Emergency_MTel", string.IsNullOrEmpty(model.Emergency_MTel) ? DBNull.Value : model.Emergency_MTel));
-                parameters.Add(new SqlParameter("@School_Level", string.IsNullOrEmpty(model.School_Level) ? DBNull.Value : model.School_Level));
-                parameters.Add(new SqlParameter("@School_Name", string.IsNullOrEmpty(model.School_Name) ? DBNull.Value : model.School_Name));
-                parameters.Add(new SqlParameter("@School_Graduated", string.IsNullOrEmpty(model.School_Graduated) ? DBNull.Value : model.School_Graduated));
-                parameters.Add(new SqlParameter("@School_D_N", string.IsNullOrEmpty(model.School_D_N) ? DBNull.Value : model.School_D_N));
-                parameters.Add(new SqlParameter("@School_Major", string.IsNullOrEmpty(model.School_Major) ? DBNull.Value : model.School_Major));
-                parameters.Add(new SqlParameter("@U_leader_1_num", string.IsNullOrEmpty(model.U_leader_1_num) ? DBNull.Value : model.U_leader_1_num));
-                parameters.Add(new SqlParameter("@U_leader_2_num", string.IsNullOrEmpty(model.U_leader_2_num) ? DBNull.Value : model.U_leader_2_num));
-                parameters.Add(new SqlParameter("@U_Check_BC", string.IsNullOrEmpty(model.U_Check_BC) ? DBNull.Value : model.U_Check_BC));
-                parameters.Add(new SqlParameter("@U_address_live", string.IsNullOrEmpty(model.U_address_live) ? DBNull.Value : model.U_address_live));
-                parameters.Add(new SqlParameter("@U_arrive_date", string.IsNullOrEmpty(model.str_U_arrive_date)
-                  ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_arrive_date))));
+                var parameters = new List<SqlParameter>() 
+                {
+                    new SqlParameter("@edit_num", model.User),
+                    new SqlParameter("@edit_date", DateTime.Now),
+                    new SqlParameter("@edit_ip", clientIp),
+                    new SqlParameter("@U_sex", model.U_sex),
+                    new SqlParameter("@Marriage", model.Marriage),
+                    new SqlParameter("@Military", string.IsNullOrEmpty(model.Military) ? DBNull.Value : model.Military),
+                    new SqlParameter("@Military_SDate", model.Military_SDate),
+                    new SqlParameter("@Military_EDate", model.Military_EDate),
+                    new SqlParameter("@Military_Exemption", model.Military_Exemption),
+                    new SqlParameter("@License_Car", model.License_Car),
+                    new SqlParameter("@Self_Car", string.IsNullOrEmpty(model.Self_Car) ? DBNull.Value : model.Self_Car),
+                    new SqlParameter("@License_Motorcycle", model.License_Motorcycle),
+                    new SqlParameter("@Self_Motorcycle", string.IsNullOrEmpty(model.Self_Motorcycle) ? DBNull.Value : model.Self_Motorcycle),
+                    new SqlParameter("@School_SDate", model.School_SDate),
+                    new SqlParameter("@School_EDate", model.School_EDate),
+                    new SqlParameter("@U_BC", model.U_BC),
+                    new SqlParameter("@U_PFT", model.U_PFT),
+                    new SqlParameter("@Role_num", model.Role_num),
+                    new SqlParameter("@U_agent_num", model.U_agent_num),
+                    new SqlParameter("@U_id", model.U_id),
+                    new SqlParameter("@Children", model.Children ?? (object)DBNull.Value),
+                    new SqlParameter("@U_leave_date", !string.IsNullOrEmpty(model.str_U_leave_date)
+                    ? (object)DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_leave_date)) : DBNull.Value),
+                    new SqlParameter("@U_name", string.IsNullOrEmpty(model.U_name) ? DBNull.Value : model.U_name),
+                    new SqlParameter("@U_Ename", string.IsNullOrEmpty(model.U_Ename) ? DBNull.Value : model.U_Ename),
+                    new SqlParameter("@U_Birthday", string.IsNullOrEmpty(model.str_U_Birthday)
+                    ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_Birthday))),
+                    new SqlParameter("@U_PID", string.IsNullOrEmpty(model.U_PID) ? DBNull.Value : model.U_PID),
+                    new SqlParameter("@U_Tel", string.IsNullOrEmpty(model.U_Tel) ? DBNull.Value : model.U_Tel),
+                    new SqlParameter("@U_MTel", string.IsNullOrEmpty(model.U_MTel) ? DBNull.Value : model.U_MTel),
+                    new SqlParameter("@U_Email", string.IsNullOrEmpty(model.U_Email) ? DBNull.Value : model.U_Email),
+                    new SqlParameter("@Emergency_contact", string.IsNullOrEmpty(model.Emergency_contact) ? DBNull.Value : model.Emergency_contact),
+                    new SqlParameter("@Emergency_Tel", string.IsNullOrEmpty(model.Emergency_Tel) ? DBNull.Value : model.Emergency_Tel),
+                    new SqlParameter("@Emergency_MTel", string.IsNullOrEmpty(model.Emergency_MTel) ? DBNull.Value : model.Emergency_MTel),
+                    new SqlParameter("@School_Level", string.IsNullOrEmpty(model.School_Level) ? DBNull.Value : model.School_Level),
+                    new SqlParameter("@School_Name", string.IsNullOrEmpty(model.School_Name) ? DBNull.Value : model.School_Name),
+                    new SqlParameter("@School_Graduated", string.IsNullOrEmpty(model.School_Graduated) ? DBNull.Value : model.School_Graduated),
+                    new SqlParameter("@School_D_N", string.IsNullOrEmpty(model.School_D_N) ? DBNull.Value : model.School_D_N),
+                    new SqlParameter("@School_Major", string.IsNullOrEmpty(model.School_Major) ? DBNull.Value : model.School_Major),
+                    new SqlParameter("@U_leader_1_num", string.IsNullOrEmpty(model.U_leader_1_num) ? DBNull.Value : model.U_leader_1_num),
+                    new SqlParameter("@U_leader_2_num", string.IsNullOrEmpty(model.U_leader_2_num) ? DBNull.Value : model.U_leader_2_num),
+                    new SqlParameter("@U_Check_BC", string.IsNullOrEmpty(model.U_Check_BC) ? DBNull.Value : model.U_Check_BC),
+                    new SqlParameter("@U_address_live", string.IsNullOrEmpty(model.U_address_live) ? DBNull.Value : model.U_address_live),
+                    new SqlParameter("@U_arrive_date", string.IsNullOrEmpty(model.str_U_arrive_date)
+                    ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_arrive_date)))
+                };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
@@ -2908,9 +2912,11 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region 檢查員編
                 #region SQL
-                var parameters_nu = new List<SqlParameter>();
                 var T_SQL_NU = "select * from User_M where del_tag = '0' AND U_num=@U_num ";
-                parameters_nu.Add(new SqlParameter("@U_num", model.U_num));
+                var parameters_nu = new List<SqlParameter> 
+                {
+                    new SqlParameter("@U_num", model.U_num)
+                };
                 #endregion
                 int result_nu = _adoData.ExecuteNonQuery(T_SQL_NU, parameters_nu);
                 if (result_nu > 0)
@@ -2922,7 +2928,6 @@ namespace KF_WebAPI.Controllers
                 #endregion
 
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = @"
                     Insert into User_M ( add_num,add_date,add_ip,U_cknum,U_num,U_name,U_Ename,U_Birthday,U_sex,Marriage,Children,U_PID,Military,Military_SDate,
                     Military_EDate,Military_Exemption,License_Car,Self_Car,License_Motorcycle,Self_Motorcycle,
@@ -2933,53 +2938,57 @@ namespace KF_WebAPI.Controllers
                     @U_PID,@Military,@Military_SDate,@Military_EDate,@Military_Exemption,@License_Car,@Self_Car,
                     @License_Motorcycle,@Self_Motorcycle,@U_Tel,@U_MTel,@U_Email,@Emergency_contact,@Emergency_Tel,
                     @Emergency_MTel,@School_Level,@School_Name,@School_SDate,@School_EDate,@School_Graduated,@School_D_N,
-                    @School_Major,@U_BC,@U_PFT,@Role_num,@U_agent_num,@U_leader_1_num,@U_leader_2_num,@U_leader_3_num,@U_Check_BC,@U_address_live,@U_arrive_date,@U_leave_date )";               
-                parameters.Add(new SqlParameter("@add_num", model.User));
-                parameters.Add(new SqlParameter("@add_date",DateTime.Now));
-                parameters.Add(new SqlParameter("@add_ip", clientIp));
-                parameters.Add(new SqlParameter("@U_cknum", FuncHandler.GetCheckNum()));
-                parameters.Add(new SqlParameter("@U_num", model.U_num));
-                parameters.Add(new SqlParameter("@U_name", model.U_name));
-                parameters.Add(new SqlParameter("@U_Ename", string.IsNullOrEmpty(model.U_Ename) ? "" : model.U_Ename));
-                parameters.Add(new SqlParameter("@U_Birthday", string.IsNullOrEmpty(model.str_U_Birthday) 
-                    ? DBNull.Value: DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_Birthday))));             
-                parameters.Add(new SqlParameter("@U_sex", model.U_sex));
-                parameters.Add(new SqlParameter("@Marriage", model.Marriage));
-                parameters.Add(new SqlParameter("@Children", model.Children ?? (object)DBNull.Value));
-                parameters.Add(new SqlParameter("@U_PID", string.IsNullOrEmpty(model.U_PID) ? DBNull.Value : model.U_PID));
-                parameters.Add(new SqlParameter("@Military",model.Military));
-                parameters.Add(new SqlParameter("@Military_SDate", model.Military_SDate));
-                parameters.Add(new SqlParameter("@Military_EDate", model.Military_EDate));
-                parameters.Add(new SqlParameter("@Military_Exemption", model.Military_Exemption));
-                parameters.Add(new SqlParameter("@License_Car", model.License_Car));
-                parameters.Add(new SqlParameter("@Self_Car", model.Self_Car));
-                parameters.Add(new SqlParameter("@License_Motorcycle", model.License_Motorcycle));
-                parameters.Add(new SqlParameter("@Self_Motorcycle", model.Self_Motorcycle));
-                parameters.Add(new SqlParameter("@U_Tel", string.IsNullOrEmpty(model.U_Tel) ? "" : model.U_Tel));
-                parameters.Add(new SqlParameter("@U_MTel", string.IsNullOrEmpty(model.U_MTel) ? "" : model.U_MTel));
-                parameters.Add(new SqlParameter("@U_Email", string.IsNullOrEmpty(model.U_Email) ? "" : model.U_Email));
-                parameters.Add(new SqlParameter("@Emergency_contact", string.IsNullOrEmpty(model.Emergency_contact) ? "" : model.Emergency_contact));
-                parameters.Add(new SqlParameter("@Emergency_Tel", string.IsNullOrEmpty(model.Emergency_Tel) ? "" : model.Emergency_Tel));
-                parameters.Add(new SqlParameter("@Emergency_MTel", string.IsNullOrEmpty(model.Emergency_MTel) ? "" : model.Emergency_MTel));
-                parameters.Add(new SqlParameter("@School_Level", string.IsNullOrEmpty(model.School_Level) ? "" : model.School_Level));
-                parameters.Add(new SqlParameter("@School_Name", string.IsNullOrEmpty(model.School_Name) ? "" : model.School_Name));              
-                parameters.Add(new SqlParameter("@School_SDate", model.School_SDate));
-                parameters.Add(new SqlParameter("@School_EDate", model.School_EDate));
-                parameters.Add(new SqlParameter("@School_Graduated", string.IsNullOrEmpty(model.School_Graduated) ? "" : model.School_Graduated));
-                parameters.Add(new SqlParameter("@School_D_N", string.IsNullOrEmpty(model.School_D_N) ? "" : model.School_D_N));
-                parameters.Add(new SqlParameter("@School_Major", string.IsNullOrEmpty(model.School_Major) ? "" : model.School_Major));                
-                parameters.Add(new SqlParameter("@U_BC",model.U_BC));
-                parameters.Add(new SqlParameter("@U_PFT", model.U_PFT));
-                parameters.Add(new SqlParameter("@Role_num", model.Role_num));
-                parameters.Add(new SqlParameter("@U_agent_num", model.U_agent_num));
-                parameters.Add(new SqlParameter("@U_leader_1_num", string.IsNullOrEmpty(model.U_leader_1_num) ? "" : model.U_leader_1_num));
-                parameters.Add(new SqlParameter("@U_leader_2_num", string.IsNullOrEmpty(model.U_leader_2_num) ? "" : model.U_leader_2_num));              
-                parameters.Add(new SqlParameter("@U_leader_3_num", ""));
-                parameters.Add(new SqlParameter("@U_Check_BC", "#" + model.U_BC));
-                parameters.Add(new SqlParameter("@U_address_live", string.IsNullOrEmpty(model.U_address_live) ? "" : model.U_address_live));              
-                parameters.Add(new SqlParameter("@U_arrive_date", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_arrive_date))));
-                parameters.Add(new SqlParameter("@U_leave_date",
-                    string.IsNullOrEmpty(model.str_U_leave_date)? DBNull.Value: (object)DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_leave_date))));
+                    @School_Major,@U_BC,@U_PFT,@Role_num,@U_agent_num,@U_leader_1_num,@U_leader_2_num,@U_leader_3_num,@U_Check_BC,@U_address_live,@U_arrive_date,@U_leave_date )";
+
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@add_num", model.User),
+                    new SqlParameter("@add_date",DateTime.Now),
+                    new SqlParameter("@add_ip", clientIp),
+                    new SqlParameter("@U_cknum", FuncHandler.GetCheckNum()),
+                    new SqlParameter("@U_num", model.U_num),
+                    new SqlParameter("@U_name", model.U_name),
+                    new SqlParameter("@U_Ename", string.IsNullOrEmpty(model.U_Ename) ? "" : model.U_Ename),
+                    new SqlParameter("@U_Birthday", string.IsNullOrEmpty(model.str_U_Birthday)
+                    ? DBNull.Value: DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_Birthday))),
+                    new SqlParameter("@U_sex", model.U_sex),
+                    new SqlParameter("@Marriage", model.Marriage),
+                    new SqlParameter("@Children", model.Children ?? (object)DBNull.Value),
+                    new SqlParameter("@U_PID", string.IsNullOrEmpty(model.U_PID) ? DBNull.Value : model.U_PID),
+                    new SqlParameter("@Military",model.Military),
+                    new SqlParameter("@Military_SDate", model.Military_SDate),
+                    new SqlParameter("@Military_EDate", model.Military_EDate),
+                    new SqlParameter("@Military_Exemption", model.Military_Exemption),
+                    new SqlParameter("@License_Car", model.License_Car),
+                    new SqlParameter("@Self_Car", model.Self_Car),
+                    new SqlParameter("@License_Motorcycle", model.License_Motorcycle),
+                    new SqlParameter("@Self_Motorcycle", model.Self_Motorcycle),
+                    new SqlParameter("@U_Tel", string.IsNullOrEmpty(model.U_Tel) ? "" : model.U_Tel),
+                    new SqlParameter("@U_MTel", string.IsNullOrEmpty(model.U_MTel) ? "" : model.U_MTel),
+                    new SqlParameter("@U_Email", string.IsNullOrEmpty(model.U_Email) ? "" : model.U_Email),
+                    new SqlParameter("@Emergency_contact", string.IsNullOrEmpty(model.Emergency_contact) ? "" : model.Emergency_contact),
+                    new SqlParameter("@Emergency_Tel", string.IsNullOrEmpty(model.Emergency_Tel) ? "" : model.Emergency_Tel),
+                    new SqlParameter("@Emergency_MTel", string.IsNullOrEmpty(model.Emergency_MTel) ? "" : model.Emergency_MTel),
+                    new SqlParameter("@School_Level", string.IsNullOrEmpty(model.School_Level) ? "" : model.School_Level),
+                    new SqlParameter("@School_Name", string.IsNullOrEmpty(model.School_Name) ? "" : model.School_Name),
+                    new SqlParameter("@School_SDate", model.School_SDate),
+                    new SqlParameter("@School_EDate", model.School_EDate),
+                    new SqlParameter("@School_Graduated", string.IsNullOrEmpty(model.School_Graduated) ? "" : model.School_Graduated),
+                    new SqlParameter("@School_D_N", string.IsNullOrEmpty(model.School_D_N) ? "" : model.School_D_N),
+                    new SqlParameter("@School_Major", string.IsNullOrEmpty(model.School_Major) ? "" : model.School_Major),
+                    new SqlParameter("@U_BC",model.U_BC),
+                    new SqlParameter("@U_PFT", model.U_PFT),
+                    new SqlParameter("@Role_num", model.Role_num),
+                    new SqlParameter("@U_agent_num", model.U_agent_num),
+                    new SqlParameter("@U_leader_1_num", string.IsNullOrEmpty(model.U_leader_1_num) ? "" : model.U_leader_1_num),
+                    new SqlParameter("@U_leader_2_num", string.IsNullOrEmpty(model.U_leader_2_num) ? "" : model.U_leader_2_num),
+                    new SqlParameter("@U_leader_3_num", ""),
+                    new SqlParameter("@U_Check_BC", "#" + model.U_BC),
+                    new SqlParameter("@U_address_live", string.IsNullOrEmpty(model.U_address_live) ? "" : model.U_address_live),
+                    new SqlParameter("@U_arrive_date", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_arrive_date))),
+                    new SqlParameter("@U_leave_date",
+                    string.IsNullOrEmpty(model.str_U_leave_date)? DBNull.Value: (object)DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_leave_date)))
+                };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
@@ -3016,9 +3025,11 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region 檢查使用者
                 #region SQL
-                var parameters_um = new List<SqlParameter>();
                 var T_SQL_Um = "select * from User_M where del_tag = '0' AND U_num=@U_num";
-                parameters_um.Add(new SqlParameter("@U_num", U_num));
+                var parameters_um = new List<SqlParameter> 
+                {
+                    new SqlParameter("@U_num", U_num)
+                };
                 #endregion
                 int result_um = _adoData.ExecuteNonQuery(T_SQL_Um, parameters_um);
                 if (result_um == 0)
@@ -3030,13 +3041,15 @@ namespace KF_WebAPI.Controllers
                 #endregion
 
                 #region SQL
-                var parameters = new List<SqlParameter>();
                 var T_SQL = "Update User_M set U_psw=@U_psw,edit_ip=@edit_ip,edit_num=@edit_num,edit_date=@edit_date Where U_num=@U_num";
-                parameters.Add(new SqlParameter("@U_psw", Psw));
-                parameters.Add(new SqlParameter("@edit_ip", clientIp));
-                parameters.Add(new SqlParameter("@edit_num", User));
-                parameters.Add(new SqlParameter("@edit_date", DateTime.Now));
-                parameters.Add(new SqlParameter("@U_num", U_num));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@U_psw", Psw),
+                    new SqlParameter("@edit_ip", clientIp),
+                    new SqlParameter("@edit_num", User),
+                    new SqlParameter("@edit_date", DateTime.Now),
+                    new SqlParameter("@U_num", U_num)
+                };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
@@ -3071,10 +3084,12 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
-               
-                var parameters = new List<SqlParameter>();
+                
                 var T_SQL = "Select * from User_Hday Where del_tag='0' and U_num=@U_num";
-                parameters.Add(new SqlParameter("@U_num", U_num));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@U_num", U_num)
+                };
                
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if(dtResult.Rows.Count > 0)
@@ -3085,9 +3100,11 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
-                    var parameters_u = new List<SqlParameter>();
                     var T_SQL_U = "select U_arrive_date from User_M where U_num=@U_num";
-                    parameters_u.Add(new SqlParameter("@U_num", U_num));
+                    var parameters_u = new List<SqlParameter> 
+                    {
+                        new SqlParameter("@U_num", U_num)
+                    };
 
                     DataTable dtResult_U = _adoData.ExecuteQuery(T_SQL_U, parameters_u);
                     DateTime Arrive_Date = Convert.ToDateTime(dtResult_U.Rows[0]["U_arrive_date"]);
@@ -3375,35 +3392,40 @@ namespace KF_WebAPI.Controllers
                     foreach (var item in userHdaysList)
                     {
                         #region SQL
-                        var parameters_in = new List<SqlParameter>();
                         var T_SQL_IN = "Insert into User_Hday (U_num,H_year_count,H_begin,H_end,H_day_base,H_day_adjust,H_day_adjust_note";
                         T_SQL_IN = T_SQL_IN + " ,H_day_total,del_tag,add_date,add_num,add_ip,edit_date,edit_num,edit_ip,H_spent_count)";
                         T_SQL_IN = T_SQL_IN + "  Values ( @U_num,@H_year_count,@H_begin,@H_end,@H_day_base,@H_day_adjust";
                         T_SQL_IN = T_SQL_IN + " ,@H_day_adjust_note,@H_day_total,@del_tag,@add_date,@add_num,@add_ip,";
                         T_SQL_IN = T_SQL_IN + " @edit_date,@edit_num,@edit_ip,@H_spent_count)";
-                        parameters_in.Add(new SqlParameter("@U_num", item.U_num));
-                        parameters_in.Add(new SqlParameter("@H_year_count", item.H_year_count));
-                        parameters_in.Add(new SqlParameter("@H_begin", item.H_begin));
-                        parameters_in.Add(new SqlParameter("@H_end", item.H_end));
-                        parameters_in.Add(new SqlParameter("@H_day_base", item.H_day_base));
-                        parameters_in.Add(new SqlParameter("@H_day_adjust", item.H_day_adjust));
-                        parameters_in.Add(new SqlParameter("@H_day_adjust_note", ""));
-                        parameters_in.Add(new SqlParameter("@H_day_total", item.H_day_total));
-                        parameters_in.Add(new SqlParameter("@del_tag", item.tbInfo.del_tag));
-                        parameters_in.Add(new SqlParameter("@add_date", DateTime.Now));
-                        parameters_in.Add(new SqlParameter("@add_num", item.tbInfo.add_num));
-                        parameters_in.Add(new SqlParameter("@add_ip", item.tbInfo.add_ip));
-                        parameters_in.Add(new SqlParameter("@edit_date", DateTime.Now));
-                        parameters_in.Add(new SqlParameter("@edit_num", item.tbInfo.edit_num));
-                        parameters_in.Add(new SqlParameter("@edit_ip", item.tbInfo.edit_ip));
-                        parameters_in.Add(new SqlParameter("@H_spent_count", "0"));
+
+                        var parameters_in = new List<SqlParameter> 
+                        {
+                            new SqlParameter("@U_num", item.U_num),
+                            new SqlParameter("@H_year_count", item.H_year_count),
+                            new SqlParameter("@H_begin", item.H_begin),
+                            new SqlParameter("@H_end", item.H_end),
+                            new SqlParameter("@H_day_base", item.H_day_base),
+                            new SqlParameter("@H_day_adjust", item.H_day_adjust),
+                            new SqlParameter("@H_day_adjust_note", ""),
+                            new SqlParameter("@H_day_total", item.H_day_total),
+                            new SqlParameter("@del_tag", item.tbInfo.del_tag),
+                            new SqlParameter("@add_date", DateTime.Now),
+                            new SqlParameter("@add_num", item.tbInfo.add_num),
+                            new SqlParameter("@add_ip", item.tbInfo.add_ip),
+                            new SqlParameter("@edit_date", DateTime.Now),
+                            new SqlParameter("@edit_num", item.tbInfo.edit_num),
+                            new SqlParameter("@edit_ip", item.tbInfo.edit_ip),
+                            new SqlParameter("@H_spent_count", "0")
+                        };
                         #endregion
                         var result_in = _adoData.ExecuteNonQuery(T_SQL_IN, parameters_in);
                     }
 
-                    var parameters_ag = new List<SqlParameter>();
                     var T_SQL_AG = "Select * from User_Hday Where del_tag='0' and U_num=@U_num";
-                    parameters_ag.Add(new SqlParameter("@U_num", U_num));
+                    var parameters_ag = new List<SqlParameter> 
+                    {
+                        new SqlParameter("@U_num", U_num)
+                    };
 
                     DataTable dtResult_ag = _adoData.ExecuteQuery(T_SQL_AG, parameters_ag);
                     if(dtResult_ag.Rows.Count > 0)
@@ -3442,30 +3464,25 @@ namespace KF_WebAPI.Controllers
                 foreach (var item in Modellist)
                 {
                     #region SQL
-                    var parameters_up = new List<SqlParameter>();
                     var T_SQL_UP = @"
                         Update User_Hday set H_begin=@H_begin,H_end=@H_end,H_day_base=@H_day_base
                         ,H_day_adjust=@H_day_adjust,H_hours=@H_hours,H_day_adjust_note=@H_day_adjust_note,H_day_total=@H_day_total
-                        ,edit_date=@edit_date,edit_num=@edit_num,edit_ip=@edit_ip Where U_num=@U_num and H_year_count=@H_year_count";                   
-                    parameters_up.Add(new SqlParameter("@H_begin", DateTime.Parse(FuncHandler.ConvertROCToGregorian(item.str_H_begin))));
-                    parameters_up.Add(new SqlParameter("@H_end", DateTime.Parse(FuncHandler.ConvertROCToGregorian(item.str_H_end))));
-                    parameters_up.Add(new SqlParameter("@H_day_base", item.H_day_base));
-                    parameters_up.Add(new SqlParameter("@H_day_adjust", item.H_day_adjust));
-                    parameters_up.Add(new SqlParameter("@H_hours", item.H_hours));
-                    if (!string.IsNullOrEmpty(item.H_day_adjust_note))
+                        ,edit_date=@edit_date,edit_num=@edit_num,edit_ip=@edit_ip Where U_num=@U_num and H_year_count=@H_year_count";
+                    var parameters_up = new List<SqlParameter> 
                     {
-                        parameters_up.Add(new SqlParameter("@H_day_adjust_note", item.H_day_adjust_note));
-                    }
-                    else
-                    {
-                        parameters_up.Add(new SqlParameter("@H_day_adjust_note", ""));
-                    }
-                    parameters_up.Add(new SqlParameter("@H_day_total", item.H_day_total));
-                    parameters_up.Add(new SqlParameter("@edit_date", DateTime.Now));
-                    parameters_up.Add(new SqlParameter("@edit_num", item.User));
-                    parameters_up.Add(new SqlParameter("@edit_ip", clientIp));
-                    parameters_up.Add(new SqlParameter("@U_num", item.U_num));
-                    parameters_up.Add(new SqlParameter("@H_year_count", item.H_year_count));
+                        new SqlParameter("@H_begin", DateTime.Parse(FuncHandler.ConvertROCToGregorian(item.str_H_begin))),
+                        new SqlParameter("@H_end", DateTime.Parse(FuncHandler.ConvertROCToGregorian(item.str_H_end))),
+                        new SqlParameter("@H_day_base", item.H_day_base),
+                        new SqlParameter("@H_day_adjust", item.H_day_adjust),
+                        new SqlParameter("@H_hours", item.H_hours),
+                        new SqlParameter("@H_day_adjust_note", string.IsNullOrEmpty(item.H_day_adjust_note) ? "" : item.H_day_adjust_note),
+                        new SqlParameter("@H_day_total", item.H_day_total),
+                        new SqlParameter("@edit_date", DateTime.Now),
+                        new SqlParameter("@edit_num", item.User),
+                        new SqlParameter("@edit_ip", clientIp),
+                        new SqlParameter("@U_num", item.U_num),
+                        new SqlParameter("@H_year_count", item.H_year_count)
+                    };
                     #endregion
                     int reult_up = _adoData.ExecuteNonQuery(T_SQL_UP, parameters_up);
                     if (reult_up == 0)
@@ -3498,7 +3515,7 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var parameters = new List<SqlParameter>();
+                
                 var T_SQL = @"
                     select u_name, School_Name +'-'+School_Major +'-'+SG_NA+'('+SL_NA+')' student
                     ,convert(varchar(3), (year(U_arrive_date)-1911))+'-'+convert(varchar(2),month(U_arrive_date))+'-'+convert(varchar(2),Day(U_arrive_date)) U_arrive_date
@@ -3517,7 +3534,10 @@ namespace KF_WebAPI.Controllers
                     (select item_D_code U_BC,item_D_name BC_NA from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND show_tag='0' AND del_tag='0' )B
                     on M.U_BC=B.U_BC
                     where M.U_num = @U_num";
-                parameters.Add(new SqlParameter("@U_num", U_num));
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@U_num", U_num)
+                };
                 #endregion
                 DataTable dtresult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if(dtresult.Rows.Count > 0)
