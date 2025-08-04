@@ -417,7 +417,7 @@ namespace KF_WebAPI.DataLogic
                 #region SQL
                 var T_SQL = @"SELECT 
                                   [Role_num]
-                              FROM [AE_DB_TEST].[dbo].[User_M]
+                              FROM [User_M]
                               where 
                                 del_tag = 0 and U_leave_date is null
                                 and is_susp is null

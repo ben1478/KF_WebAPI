@@ -871,7 +871,7 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var T_SQL = @"SELECT [Map_id]
-                              FROM [AE_DB_TEST].[dbo].[Menu_set]
+                              FROM [Menu_set]
                               where menu_id = 1034 -- 委對單
                                 and u_num = @u_num
                                 and per_edit = 1 -- 可修改";
