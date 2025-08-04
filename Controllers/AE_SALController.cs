@@ -1223,12 +1223,6 @@ namespace KF_WebAPI.Controllers
                         parameters.Add(new SqlParameter("@UserNum", model.UserNum));
                         break;
                 }
-                //區
-                if (!string.IsNullOrEmpty(model.BC_code))
-                {
-                    sqlBuilder.Append(" AND M1.U_BC = @BC_code ");
-                    parameters.Add(new SqlParameter("@BC_code", model.BC_code));
-                }
 
                 //客訴時間(年月)
                 if (!string.IsNullOrEmpty(model.selYear_S))
@@ -1293,13 +1287,14 @@ namespace KF_WebAPI.Controllers
                 #region SQL
 
                 var T_SQL =
-                    @"SELECT Comp_Id, CS_name, M1.U_name Sales_name, ub.item_D_name BC_name, Complaint, CompDate, Remark, M2.U_name add_name,M3.U_name edit_name " +
+                    @"SELECT Comp_Id, CS_name, Sales_num, M1.U_name Sales_name, ub.item_D_name BC_name, Complaint, CompDate, CompTime, Remark, M2.U_name add_name,M3.U_name edit_name " +
                         "FROM dbo.Complaint C " +
                         "LEFT JOIN User_M M1 on C.Sales_num = M1.u_num " +
                         "LEFT JOIN Item_list ub ON ub.item_M_code = 'branch_company'  AND ub.item_D_code = M1.U_BC " +
                         "LEFT JOIN User_M M2 on C.Add_num = M2.u_num " +
                         "LEFT JOIN User_M M3 on C.Edit_num = M3.u_num " +
-                        "where Comp_Id = @Id ";
+                        "where Comp_Id = @Id " +
+                        "order by Comp_Id";
 
 
                 var parameters = new List<SqlParameter>
