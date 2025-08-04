@@ -85,10 +85,12 @@ namespace KF_WebAPI.DataLogic
             // 所有的 VBScript 變數都已被替換為 @parameters 或 /*{{placeholders}}*/
             return @"
                 SELECT
-                    CASE WHEN isCompany='N' AND CONVERT(varchar(100), Send_amount_date, 111) >= '2024/08/20' AND fund_company= 'FDCOM001' THEN 'Y' ELSE 'N' END isSer, /*作業服務費*/
+                    H.Subsidy_amt,
+                    H.Subsidy_agent,
+                    CASE WHEN isCompany='N' AND CONVERT(varchar(100), Send_amount_date, 111) >= '2024/08/20' AND (fund_company= 'FDCOM001' OR project_title='PJ00099') THEN 'Y' ELSE 'N' END isSer, /*作業服務費*/
                     ISNULL(act_service_amt,0) act_service_amt,
                     /*新鑫專案,進件日>=20240820,介紹人:個人戶,非公司行號,收5%服務費*/
-                    CASE WHEN CONVERT(varchar(100), Send_amount_date, 111) >= '2024/08/20' AND fund_company= 'FDCOM001' AND I.isCompany='N'
+                    CASE WHEN CONVERT(varchar(100), Send_amount_date, 111) >= '2024/08/20' AND (fund_company= 'FDCOM001' OR project_title='PJ00099') AND I.isCompany='N'
                         THEN CONVERT(float, (dbo.GetRateByName('SerRate', @SelYearS) * 0.01))
                         ELSE 0
                     END service_Rate,
@@ -253,6 +255,8 @@ namespace KF_WebAPI.DataLogic
                 UNION ALL /*其他案件(機車貸商品貸)*/
 
                 SELECT
+                    0 Subsidy_amt,
+                    0 Subsidy_agent,
                     'N' isSer, 0 act_service_amt, 0 service_Rate, '' fund_company, 'N' isKF_CommRate, isThisMonCancel, CaseType, item_sort, M.U_arrive_date, 'N' KFRate, M.U_BC, M.U_BC_rule,
                     CASE WHEN LogDate > H.confirm_date THEN 'Y' ELSE 'N' END isChange,
                     'ThisMon' Ismisaligned, isCancel, ISNULL(get_amount, 0) * 10000 * (CASE WHEN isCancel='Y' THEN -1 ELSE 1 END) DidGet_amount,
