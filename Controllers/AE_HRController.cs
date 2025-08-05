@@ -2666,6 +2666,7 @@ namespace KF_WebAPI.Controllers
                     ,(select U_name FROM User_M where U_num = UM.U_leader_3_num AND del_tag='0') as U_leader_3_name,Rm.R_name,UM.U_Check_BC
                     ,(select item_sort from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND item_D_code = UM.U_BC AND del_tag='0') as U_BC_sort,U_cknum
                     ,(select item_sort from Item_list where item_M_code = 'professional_title' AND item_D_type='Y' AND item_D_code = UM.U_PFT AND del_tag='0') as U_PFT_sort
+                    ,case when exists (select 1 from User_Hday where User_Hday.U_num = UM.U_num) then 'Y' else 'N' end as has_hday                    
                     from User_M UM left join Role_M Rm on UM.Role_num = Rm.R_num 
                     left join Item_list Li on item_M_code='SpecName' and item_D_type='Y' and Li.item_D_txt_A = UM.U_num
                     where 1=1";
@@ -2724,6 +2725,7 @@ namespace KF_WebAPI.Controllers
                     U_leader_2_name = row.Field<string>("U_leader_2_name"),
                     del_tag = row.Field<string>("del_tag") == "0" ? "在職" : "離職",
                     cknum = row.Field<string>("U_cknum"),
+                    has_hday = row.Field<string>("has_hday"),
                     U_Check_BC = row.Field<string>("U_Check_BC")
                 }).ToList();
 
@@ -2826,7 +2828,7 @@ namespace KF_WebAPI.Controllers
                     ,U_Birthday=@U_Birthday,U_PID=@U_PID,U_Tel=@U_Tel,U_MTel=@U_MTel,U_Email=@U_Email,Emergency_contact=@Emergency_contact,Emergency_Tel=@Emergency_Tel
                     ,Emergency_MTel=@Emergency_MTel,School_Level=@School_Level,School_Name=@School_Name,School_Graduated=@School_Graduated,School_D_N=@School_D_N
                     ,School_Major=@School_Major,U_leader_1_num=@U_leader_1_num,U_leader_2_num=@U_leader_2_num,U_Check_BC=@U_Check_BC,U_address_live=@U_address_live
-                    ,U_arrive_date=@U_arrive_date Where U_id=@U_id";
+                    ,U_arrive_date=@U_arrive_date,is_susp=@is_susp,U_susp_date=@U_susp_date Where U_id=@U_id";
 
                 var parameters = new List<SqlParameter>() 
                 {
@@ -2874,7 +2876,10 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@U_Check_BC", string.IsNullOrEmpty(model.U_Check_BC) ? DBNull.Value : model.U_Check_BC),
                     new SqlParameter("@U_address_live", string.IsNullOrEmpty(model.U_address_live) ? DBNull.Value : model.U_address_live),
                     new SqlParameter("@U_arrive_date", string.IsNullOrEmpty(model.str_U_arrive_date)
-                    ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_arrive_date)))
+                    ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_arrive_date))),
+                    new SqlParameter("@is_susp", string.IsNullOrEmpty(model.is_susp) ? DBNull.Value : model.is_susp),
+                    new SqlParameter("@U_susp_date", string.IsNullOrEmpty(model.str_U_susp_date)
+                    ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_susp_date)))
                 };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);

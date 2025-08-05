@@ -100,6 +100,8 @@
     {
         public string U_id { get; set; }
         public string? U_Check_BC { get; set; }
+        public string? is_susp { get; set; }
+        public string? str_U_susp_date { get; set; }
     }
     public class Uesr_M_req
     {
@@ -126,6 +128,7 @@
         public string? U_leader_2_name { get; set; }
         public string? del_tag { get; set; }
         public string? cknum { get; set; }
+        public string? has_hday { get; set; }
         public string? U_Check_BC { get; set; }
     }
 }
