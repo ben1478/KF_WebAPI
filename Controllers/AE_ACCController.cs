@@ -140,6 +140,9 @@ namespace KF_WebAPI.Controllers
                               isnull(M.Interest_AMT,0) interest_AMT,
                               0 as Delay_AMT,'Y' as isFirst,amount_per_month,H.CS_name,
                               ISNULL((select SUM(ISNULL(RecPayAmt-RC_amount,0)) from Receivable_D where RCM_id=@RCM_ID and check_pay_type='Y' and RecPayAmt > 0),0) as OverAmt
+                              ,(select project_title from House_pre_project 
+                              inner join House_sendcase on House_sendcase.HP_project_id = House_pre_project.HP_project_id  
+                              where House_pre_project.HA_id = H.HA_id and M.HS_id = House_sendcase.HS_id) as project_title                              
                               FROM Receivable_M M
                               LEFT JOIN House_sendcase S ON M.HS_id=S.HS_id
                               LEFT JOIN Receivable_D D1 ON M.RCM_id=D1.RCM_id
@@ -155,6 +158,9 @@ namespace KF_WebAPI.Controllers
                               isnull(M.Interest_AMT,0) interest_AMT,
                               (select dbo.GetTotalDelay_AMT(@RCM_ID,SYSDATETIME())) Delay_AMT,'N' as isFirst,M.amount_per_month,H.CS_name,
                               ISNULL((select SUM(ISNULL(RecPayAmt-RC_amount,0)) from Receivable_D where RCM_id=@RCM_ID and check_pay_type='Y' and RecPayAmt > 0),0) as OverAmt
+                              ,(select project_title from House_pre_project 
+                              inner join House_sendcase on House_sendcase.HP_project_id = House_pre_project.HP_project_id  
+                              where House_pre_project.HA_id = H.HA_id and M.HS_id = House_sendcase.HS_id) as project_title                              
                               FROM Receivable_D D
                               LEFT JOIN Receivable_D D1 ON D.RCM_id=D1.RCM_id AND (D.RC_count+1) = D1.RC_count
                               LEFT JOIN Receivable_M M ON D.RCM_id=M.RCM_id
