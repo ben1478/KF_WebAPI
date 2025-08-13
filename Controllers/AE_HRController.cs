@@ -2649,7 +2649,6 @@ namespace KF_WebAPI.Controllers
         public ActionResult<ResultClass<string>> User_M_LQuery(Uesr_M_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
-            var User_Num = HttpContext.Session.GetString("UserID");
             try
             {
                 ADOData _adoData = new ADOData();
