@@ -22,4 +22,11 @@
         public string User { get; set; }
     }
 
+    public class SC_PerMission 
+    {
+        public string User { get; set; }
+        public string Sp_id { get; set;}
+        public string U_num { get; set; }
+        public string sp_type { get; set; }
+    }
 }

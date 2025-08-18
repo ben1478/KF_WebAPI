@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Xml.Linq;
@@ -229,6 +230,7 @@ namespace KF_WebAPI.Controllers
                 {
                     new SqlParameter("@roleNum",ModelList[0].R_num)
                 };
+                #endregion
                 List<MS_PerMission> dbData = _adoData.ExecuteQuery(T_SQL_Old, parameters_old).AsEnumerable().Select(row => new MS_PerMission
                 {
                     Map_id = row.Field<decimal?>("Map_id"),
@@ -245,7 +247,7 @@ namespace KF_WebAPI.Controllers
 
                 foreach (var item in ModelList)
                 {
-                    if(item.Map_id != 0)
+                    if (item.Map_id != 0)
                     {
                         if (dbDict.TryGetValue((decimal)item.Map_id, out var existing))
                         {
@@ -302,7 +304,142 @@ namespace KF_WebAPI.Controllers
                         _adoData.ExecuteNonQuery(insertSql, parameters_Ins);
                     }
                 }
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 取得特殊權限清單 Spec_Set_LQuery
+        /// </summary>
+        [HttpGet("Spec_Set_LQuery")]
+        public ActionResult<ResultClass<string>> Spec_Set_LQuery()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"SELECT *,( SELECT item_D_name FROM Item_list WHERE item_M_code = 'sp_kind' AND item_D_type = 'Y' AND item_D_code = Special_list.sp_kind
+                              AND show_tag = '0' AND del_tag = '0') AS show_sp_kind,STUFF(( SELECT ' || ' + UM.U_name FROM Special_set SS 
+                              JOIN User_M UM ON UM.U_num = SS.U_num AND UM.del_tag = '0' WHERE SS.del_tag = '0' AND SS.SP_id = Special_list.SP_id AND SS.SP_type = '1'
+                              FOR XML PATH(''), TYPE ).value('.', 'NVARCHAR(MAX)'), 1, 4, '') AS show_U_name FROM Special_list WHERE del_tag = '0' ORDER BY sp_kind";
                 #endregion
+                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 取得特殊權限明細 Spec_Set_SQuery
+        /// </summary>
+        [HttpGet("Spec_Set_SQuery")]
+        public ActionResult<ResultClass<string>> Spec_Set_SQuery(string spID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"select (select sp_name from Special_list where del_tag = '0' AND SP_id = @SP_id) as Spec_name,
+                              UM.U_num,(UM.U_num + '-' + ISNULL(LI.item_D_name,UM.U_name)) as show_name,ST.sp_type from User_M UM
+                              Left join Special_set ST on ST.U_num = UM.U_num and ST.sp_id=@SP_id and ST.del_tag = '0'
+                              Left join Item_list LI on LI.item_M_code='SpecName' and LI.item_D_txt_A=UM.U_num
+                              where UM.del_tag = '0' order by UM.U_id";
+                var parameters = new List<SqlParameter>()
+                {
+                    new SqlParameter("@sp_id",spID)
+                };
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 修改特殊權限 Spec_Set_Upd
+        /// </summary>
+        [HttpPost("Spec_Set_Upd")]
+        public ActionResult<ResultClass<string>> Spec_Set_Upd(List<SC_PerMission> ModelList)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL_Old = @"select * from Special_set where sp_id=@sp_id and del_tag = '0'";
+                var parameters_old = new List<SqlParameter>()
+                {
+                    new SqlParameter("@sp_id",ModelList[0].Sp_id)
+                };
+                #endregion
+                List<SC_PerMission> dbData = _adoData.ExecuteQuery(T_SQL_Old,parameters_old).AsEnumerable().Select(row => new SC_PerMission 
+                {
+                    Sp_id = row.Field<string>("sp_id"),
+                    U_num = row.Field<string>("U_num"),
+                    sp_type = row.Field<string>("sp_type"),
+                }).ToList();
+
+                var dbDict = dbData.ToDictionary(x => x.U_num, x => x);
+                foreach (var item in ModelList) 
+                {
+                    if(dbDict.TryGetValue(item.U_num, out var existing))
+                    {
+                        bool isChanged = item.sp_type != existing.sp_type;
+                        if(isChanged)
+                        {
+                            string updateSql = @"Update Special_set set sp_type=@sp_type,edit_date=getdate(),edit_num=@User,edit_ip=@IP where sp_id=@sp_id and U_num=@U_num";
+                            var parameters_Upd = new List<SqlParameter>()
+                            {
+                                new SqlParameter("@sp_type",item.sp_type),
+                                new SqlParameter("@User",item.User),
+                                new SqlParameter("@IP",clientIp),
+                                new SqlParameter("@sp_id",item.Sp_id),
+                                new SqlParameter("@U_num",item.U_num)
+                            };
+                            _adoData.ExecuteNonQuery(updateSql, parameters_Upd);
+                        }
+                    }
+                    else
+                    {
+                        if (item.sp_type == "1")
+                        {
+                            string insertSql = @"Insert into Special_set(U_num,U_name,sp_id,sp_type,del_tag,add_date,add_num,add_ip) 
+                                                 Values (@U_num,(select U_name from User_M where U_num=@U_num),@sp_id,@sp_type,'0',getdate(),@add_num,@add_ip)";
+                            var parameters_Ins = new List<SqlParameter>()
+                            {
+                                new SqlParameter("@U_num",item.U_num),
+                                new SqlParameter("@sp_id",item.Sp_id),
+                                new SqlParameter("@sp_type",item.sp_type),
+                                new SqlParameter("@add_num",item.User),
+                                new SqlParameter("@add_ip",clientIp)
+                            };
+                            _adoData.ExecuteNonQuery(insertSql, parameters_Ins);
+                        }
+                    }
+                }
                 return Ok(resultClass);
             }
             catch (Exception ex)
