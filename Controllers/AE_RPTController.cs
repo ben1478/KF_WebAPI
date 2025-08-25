@@ -5170,6 +5170,33 @@ namespace KF_WebAPI.Controllers
                 ) User_M
                 LEFT JOIN [dbo].[fun_PerformanceByMonth] (@StartDate, @PerfFuncEndDate, @MonthDiff, @isACT) M 
                     ON User_M.U_num = M.plan_num
+                LEFT JOIN (
+                    SELECT plan_num,yyyy,
+                        Jan_C = sum(CASE WHEN RIGHT(yyyymm, 2) = '01' THEN caseCount ELSE 0 END),
+                        Feb_C = sum(CASE WHEN RIGHT(yyyymm, 2) = '02' THEN caseCount ELSE 0 END),
+                        Mar_C = sum(CASE WHEN RIGHT(yyyymm, 2) = '03' THEN caseCount ELSE 0 END),
+                        Apr_C = sum(CASE WHEN RIGHT(yyyymm, 2) = '04' THEN caseCount ELSE 0 END),
+                        May_C = sum(CASE WHEN RIGHT(yyyymm, 2) = '05' THEN caseCount ELSE 0 END),
+                        Jun_C = sum(CASE WHEN RIGHT(yyyymm, 2) = '06' THEN caseCount ELSE 0 END),
+                        Jul_C = sum(CASE WHEN RIGHT(yyyymm, 2) = '07' THEN caseCount ELSE 0 END),
+                        Aug_C = sum(CASE WHEN RIGHT(yyyymm, 2) = '08' THEN caseCount ELSE 0 END),
+                        Sep_C = sum(CASE WHEN RIGHT(yyyymm, 2) = '09' THEN caseCount ELSE 0 END),
+                        Oct_C = sum(CASE WHEN RIGHT(yyyymm, 2) = '10' THEN caseCount ELSE 0 END),
+                        Nov_C = sum(CASE WHEN RIGHT(yyyymm, 2) = '11' THEN caseCount ELSE 0 END),
+                        Dec_C = sum(CASE WHEN RIGHT(yyyymm, 2) = '12' THEN caseCount ELSE 0 END)
+	                    from (
+                    select  A.plan_num,convert(varchar(4), get_amount_date , 126) yyyy,convert(varchar(7), get_amount_date , 126) yyyymm,
+                    count(get_amount_date) caseCount
+                    from House_sendcase H
+                    Left join House_apply A on H.HA_id=A.HA_id
+                    Left join USER_M M on A.plan_num=M.U_num
+                    where H.del_tag='0' and A.del_tag='0' and
+                    convert(varchar(7), get_amount_date , 126)  > '2023-01' and get_amount_type='GTAT002'
+                    group by A.plan_num,convert(varchar(4), get_amount_date , 126),
+                    convert(varchar(7), get_amount_date , 126) )A group by  plan_num,yyyy
+                    ) B on M.yyyy=B.yyyy and M.plan_num=B.plan_num
+
+
                 WHERE U_PFT <> 'PFT100' AND U_PFT <> 'PFE831'
                   AND isnull(M.yyyy, SUBSTRING(@StartDate, 1, 4)) = SUBSTRING(@StartDate, 1, 4)
                   and (is_susp IS NULL OR is_susp <> 'Y' OR (is_susp = 'Y' AND U_susp_date > @StartDate))
