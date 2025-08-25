@@ -5191,7 +5191,7 @@ namespace KF_WebAPI.Controllers
                     Left join House_apply A on H.HA_id=A.HA_id
                     Left join USER_M M on A.plan_num=M.U_num
                     where H.del_tag='0' and A.del_tag='0' and
-                    convert(varchar(7), get_amount_date , 126)  > '2023-01' and get_amount_type='GTAT002'
+                    get_amount_date between @StartDate and @PerfFuncEndDate and get_amount_type='GTAT002'
                     group by A.plan_num,convert(varchar(4), get_amount_date , 126),
                     convert(varchar(7), get_amount_date , 126) )A group by  plan_num,yyyy
                     ) B on M.yyyy=B.yyyy and M.plan_num=B.plan_num
