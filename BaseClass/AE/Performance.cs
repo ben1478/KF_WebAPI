@@ -91,6 +91,18 @@ namespace KF_WebAPI.BaseClass.AE
         public string? Oct { get; set; }
         public string? Nov { get; set; }
         public string? Dec { get; set; }
+        public Int32? Jan_C { get; set; }
+        public Int32? Feb_C { get; set; }
+        public Int32? Mar_C { get; set; }
+        public Int32? Apr_C { get; set; }
+        public Int32? May_C { get; set; }
+        public Int32? Jun_C { get; set; }
+        public Int32? Jul_C { get; set; }
+        public Int32? Aug_C { get; set; }
+        public Int32? Sep_C { get; set; }
+        public Int32? Oct_C { get; set; }
+        public Int32? Nov_C { get; set; }
+        public Int32? Dec_C { get; set; }
         public string? Totle { get; set; }
         public string? MonAVG { get; set; }
         public string? YearAVG { get; set; }
