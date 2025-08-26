@@ -26,9 +26,12 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"select distinct H.CS_name,H.CS_PID,M.RCM_id,M.sett_AMT,M.amount_total from Receivable_M M
+                var T_SQL = @"select distinct H.CS_name,H.CS_PID,M.RCM_id,M.sett_AMT,M.amount_total,RD.RemainingPrincipal 
+                              from Receivable_M M
                               Inner join Receivable_D D on M.RCM_id = D.RCM_id
                               Inner join House_apply H on H.HA_id = M.HA_id
+                              OUTER APPLY ( SELECT TOP 1 RemainingPrincipal FROM Receivable_D WHERE RCM_id = M.RCM_id AND check_pay_type = 'Y' 
+                              ORDER BY RC_count DESC ) RD
                               where D.bad_debt_type='Y' and D.check_pay_type='N' and D.cancel_type='N'
                               and not exists(select 1 from StagnationDebt_M where rcm_id = M.RCM_id and del_tag='0')";
                 #endregion
@@ -57,11 +60,13 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"Insert into StagnationDebt_M(rcm_id,total_due_amount,total_paid_amount,total_bad_debt,remarks,del_tag,add_date,add_num,add_ip) 
-                              Values (@rcm_id,@total_due_amount,@total_paid_amount,@total_bad_debt,@remarks,'0',getdate(),@add_num,@add_ip)";
+                var T_SQL = @"Insert into StagnationDebt_M(RCM_id,amount_total,RemainingPrincipal,total_due_amount,total_paid_amount,total_bad_debt,remarks,is_close,del_tag,add_date,add_num,add_ip) 
+                              Values (@RCM_id,@amount_total,@RemainingPrincipal,@total_due_amount,@total_paid_amount,@total_bad_debt,@remarks,'N','0',getdate(),@add_num,@add_ip)";
                 var parameters = new List<SqlParameter>() 
                 {
-                    new SqlParameter("@rcm_id",model.rcm_id),
+                    new SqlParameter("@RCM_id",model.RCM_id),
+                    new SqlParameter("@amount_total",model.amount_total),
+                    new SqlParameter("@RemainingPrincipal",model.RemainingPrincipal),
                     new SqlParameter("@total_due_amount",model.total_due_amount),
                     new SqlParameter("@total_paid_amount",model.total_paid_amount),
                     new SqlParameter("@total_bad_debt",model.total_bad_debt),
@@ -103,15 +108,23 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"select SM.sdm_id,HA.CS_name,HA.CS_PID,FORMAT(SM.total_bad_debt,'N0') as str_total_bad_debt,SM.remarks 
-                              ,ISNULL(CAST(YEAR(latest_collection_date) - 1911 AS varchar) + '/' +RIGHT('0' + CAST(MONTH(latest_collection_date) AS varchar), 2) 
-                              + '/' +RIGHT('0' + CAST(DAY(latest_collection_date) AS varchar), 2), '') AS collection_date_roc
-                              from StagnationDebt_M SM
-                              inner join Receivable_M RM on RM.RCM_id = SM.rcm_id
-                              inner join House_apply HA on HA.HA_id = RM.HA_id
-                              left join (select sdm_id,MAX(collection_date) AS latest_collection_date 
-                              FROM StagnationDebt_D where del_tag = '0' GROUP BY sdm_id) AS MAX_SD ON MAX_SD.sdm_id = SM.sdm_id
-                              where SM.del_tag = '0' ";
+                var T_SQL = @"SELECT SM.sdm_id,HA.CS_name,HA.CS_PID,
+                              FORMAT(SM.total_bad_debt - ISNULL(PD.total_payment, 0), 'N0') AS str_total_bad_debt,SM.remarks,
+                              ISNULL(CAST(YEAR(MAX_SD.latest_collection_date) - 1911 AS varchar) + '/' 
+                              + RIGHT('0' + CAST(MONTH(MAX_SD.latest_collection_date) AS varchar), 2) + '/' 
+                              + RIGHT('0' + CAST(DAY(MAX_SD.latest_collection_date) AS varchar), 2), 
+                              '') AS collection_date_roc,
+                              FORMAT(SM.amount_total, 'N0') AS str_amount_total,
+                              FORMAT(SM.RemainingPrincipal, 'N0') AS str_RemainingPrincipal,
+                              CASE WHEN SM.is_close = 'Y' THEN '已結清' ELSE '未結清' END AS str_close
+                              FROM StagnationDebt_M SM
+                              INNER JOIN Receivable_M RM ON RM.RCM_id = SM.rcm_id
+                              INNER JOIN House_apply HA ON HA.HA_id = RM.HA_id
+                              LEFT JOIN (SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id
+                              ) PD ON PD.sdm_id = SM.sdm_id
+                              LEFT JOIN (SELECT sdm_id, MAX(collection_date) AS latest_collection_date FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id
+                              ) MAX_SD ON MAX_SD.sdm_id = SM.sdm_id
+                              WHERE SM.del_tag = '0'";
                 #endregion
                 var dtResult = _adoData.ExecuteSQuery(T_SQL);
                 resultClass.ResultCode = "000";
@@ -215,12 +228,18 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"select SM.sdm_id,HA.CS_name,HA.CS_PID,FORMAT(SM.total_due_amount,'N0') as str_total_due_amount
-                              ,FORMAT(SM.total_paid_amount,'N0') as str_total_paid_amount,FORMAT(SM.total_bad_debt,'N0') as str_total_bad_debt,SM.remarks 
+                var T_SQL = @"select SM.sdm_id,HA.CS_name,HA.CS_PID,SM.remarks
+                              ,FORMAT(SM.total_due_amount,'N0') as str_total_due_amount
+                              ,FORMAT(SM.total_paid_amount+PD.total_payment,'N0') as str_total_paid_amount
+                              ,FORMAT(SM.total_bad_debt-PD.total_payment,'N0') as str_total_bad_debt
+                              ,FORMAT(SM.amount_total,'N0') as str_amount_total
+                              ,FORMAT(SM.RemainingPrincipal,'N0') as str_RemainingPrincipal
                               from StagnationDebt_M SM
                               left join Receivable_M RM on RM.RCM_id = SM.rcm_id
                               left join House_apply HA on HA.HA_id=RM.HA_id
-                              where sdm_id=@sdm_id and SM.del_tag ='0'";
+                              LEFT JOIN (SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id
+                              ) PD ON PD.sdm_id = SM.sdm_id
+                              where SM.sdm_id=@sdm_id and SM.del_tag ='0'";
                 var parameters = new List<SqlParameter>()
                 {
                     new SqlParameter("@sdm_id",sdm_id)
@@ -237,6 +256,8 @@ namespace KF_WebAPI.Controllers
                 var model = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new StagnationDebt_Res 
                 {
                     sdm_id = row.Field<int>("sdm_id"),
+                    str_amount_total = row.Field<string>("str_amount_total"),
+                    str_RemainingPrincipal = row.Field<string>("str_RemainingPrincipal"),
                     str_total_due_amount = row.Field<string>("str_total_due_amount"),
                     str_total_paid_amount = row.Field<string>("str_total_paid_amount"),
                     str_total_bad_debt = row.Field<string>("str_total_bad_debt"),
@@ -298,6 +319,15 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
+                    #region 判定是否結清且修改狀態
+                    var T_SQL_I = @"UPDATE StagnationDebt_M SET is_close = 'Y', edit_date = GETDATE(),edit_num = 'sys',edit_ip = '::1' WHERE sdm_id = @sdm_id AND del_tag = '0'
+                                    AND ( SELECT ISNULL(SUM(payment_amount), 0) FROM StagnationDebt_D WHERE del_tag = '0' AND sdm_id = @sdm_id ) = total_bad_debt";
+                    var parameters_i = new List<SqlParameter>()
+                    {
+                        new SqlParameter("@sdm_id",model.sdm_id)
+                    };
+                    _adoData.ExecuteQuery(T_SQL_I, parameters_i);
+                    #endregion
                     resultClass.ResultCode = "000";
                     resultClass.ResultMsg = "儲存成功";
                     return Ok(resultClass);
@@ -345,6 +375,15 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
+                    #region 判定是否結清且修改狀態
+                    var T_SQL_I = @"UPDATE StagnationDebt_M SET is_close = 'Y', edit_date = GETDATE(),edit_num = 'sys',edit_ip = '::1' WHERE sdm_id = @sdm_id AND del_tag = '0'
+                                    AND ( SELECT ISNULL(SUM(payment_amount), 0) FROM StagnationDebt_D WHERE del_tag = '0' AND sdm_id = @sdm_id ) = total_bad_debt";
+                    var parameters_i = new List<SqlParameter>()
+                    {
+                        new SqlParameter("@sdm_id",model.sdm_id)
+                    };
+                    _adoData.ExecuteQuery(T_SQL_I, parameters_i);
+                    #endregion
                     resultClass.ResultCode = "000";
                     resultClass.ResultMsg = "儲存成功";
                     return Ok(resultClass);

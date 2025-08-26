@@ -1,10 +1,12 @@
 ﻿namespace KF_WebAPI.BaseClass.AE
 {
-    public class StagnationDebt_M : tbInfo
+    public class StagnationDebt_M
     {
         public tbInfo? tbInfo { get; set; }
         public int? sdm_id { get; set; }
-        public decimal rcm_id { get; set; }
+        public decimal RCM_id { get; set; }
+        public decimal? amount_total { get; set; }
+        public decimal? RemainingPrincipal { get; set; }
         public decimal? total_due_amount { get; set; }
         public decimal? total_paid_amount { get; set; }
         public decimal? total_bad_debt { get; set; }
@@ -15,6 +17,8 @@
     {
         public string SD_Name { get; set; }
         public string SD_CID { get; set;}
+        public string str_amount_total { get; set; }
+        public string str_RemainingPrincipal { get; set; }
         public string str_total_due_amount { get; set; }
         public string str_total_paid_amount { get; set; }
         public string str_total_bad_debt { get; set; }
