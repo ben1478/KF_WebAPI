@@ -230,8 +230,8 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var T_SQL = @"select SM.sdm_id,HA.CS_name,HA.CS_PID,SM.remarks
                               ,FORMAT(SM.total_due_amount,'N0') as str_total_due_amount
-                              ,FORMAT(SM.total_paid_amount+PD.total_payment,'N0') as str_total_paid_amount
-                              ,FORMAT(SM.total_bad_debt-PD.total_payment,'N0') as str_total_bad_debt
+                              ,FORMAT(SM.total_paid_amount + ISNULL(PD.total_payment,0),'N0') as str_total_paid_amount
+                              ,FORMAT(SM.total_bad_debt - ISNULL(PD.total_payment,0),'N0') as str_total_bad_debt
                               ,FORMAT(SM.amount_total,'N0') as str_amount_total
                               ,FORMAT(SM.RemainingPrincipal,'N0') as str_RemainingPrincipal
                               from StagnationDebt_M SM
