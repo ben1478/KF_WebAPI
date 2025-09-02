@@ -2649,6 +2649,7 @@ namespace KF_WebAPI.Controllers
         public ActionResult<ResultClass<string>> User_M_LQuery(Uesr_M_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
+            var _FuncHandler = new FuncHandler();
             try
             {
                 ADOData _adoData = new ADOData();
@@ -2662,8 +2663,7 @@ namespace KF_WebAPI.Controllers
                     ,Case When ISNULL(UM.U_leave_date,'')='' THEN '0' ELSE '1' END as del_tag
                     ,(select U_name FROM User_M where U_num = UM.U_leader_1_num AND del_tag='0') as U_leader_1_name
                     ,(select U_name FROM User_M where U_num = UM.U_leader_2_num AND del_tag='0') as U_leader_2_name
-                    ,(select U_name FROM User_M where U_num = UM.U_leader_3_num AND del_tag='0') as U_leader_3_name,
-                    Case When Rm.R_num='1003' Then N'國峯審查' When Rm.R_num='1011' Then N'國峯助理' Else Rm.R_name END as R_name,UM.U_Check_BC
+                    ,(select U_name FROM User_M where U_num = UM.U_leader_3_num AND del_tag='0') as U_leader_3_name,Rm.R_name,UM.U_Check_BC
                     ,(select item_sort from Item_list where item_M_code = 'branch_company' AND item_D_type='Y' AND item_D_code = UM.U_BC AND del_tag='0') as U_BC_sort,U_cknum
                     ,(select item_sort from Item_list where item_M_code = 'professional_title' AND item_D_type='Y' AND item_D_code = UM.U_PFT AND del_tag='0') as U_PFT_sort
                     ,case when exists (select 1 from User_Hday where User_Hday.U_num = UM.U_num) then 'Y' else 'N' end as has_hday                    
@@ -2717,7 +2717,7 @@ namespace KF_WebAPI.Controllers
                     ID_104 = row.Field<decimal?>("ID_104"),
                     U_BC_name = row.Field<string>("U_BC_name"),
                     U_PFT_name = row.Field<string>("U_PFT_name"),
-                    R_name = row.Field<string>("R_name"),
+                    R_name = _FuncHandler.DeCodeBig5Words(row.Field<string>("R_name")),
                     U_num = row.Field<string>("U_num"),
                     U_name = row.Field<string>("U_name"),
                     U_agent_name = row.Field<string>("U_agent_name"),
@@ -3515,7 +3515,7 @@ namespace KF_WebAPI.Controllers
         public ActionResult<ResultClass<string>> User_M_Shanges(string U_num)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
-
+            var _FuncHandler = new FuncHandler();
             try
             {
                 ADOData _adoData = new ADOData();
@@ -3525,7 +3525,7 @@ namespace KF_WebAPI.Controllers
                     select u_name, School_Name +'-'+School_Major +'-'+SG_NA+'('+SL_NA+')' student
                     ,convert(varchar(3), (year(U_arrive_date)-1911))+'-'+convert(varchar(2),month(U_arrive_date))+'-'+convert(varchar(2),Day(U_arrive_date)) U_arrive_date
                     ,convert(varchar(3), (year(U_Birthday)-1911))+'-'+convert(varchar(2),month(U_Birthday))+'-'+convert(varchar(2),Day(U_Birthday)) U_Birthday
-                    ,M.U_num, PFT_NA,B.BC_NA,N'國峯' as KFDesc FROM User_M M
+                    ,M.U_num, PFT_NA,B.BC_NA FROM User_M M
                     Left Join
                     (select item_D_code,item_D_name SL_NA from Item_list where item_M_code = 'school_level' AND item_D_type='Y' AND show_tag='0' AND del_tag='0') S1
                     on M.School_Level=S1.item_D_code
