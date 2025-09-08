@@ -1,18 +1,5 @@
 ﻿namespace KF_WebAPI.BaseClass.AE
 {
-    public class SettleInfo_Req
-    {
-        public string isSettle { get; set; }
-        public string RCM_id { get; set; }
-        public int sett_rate { get; set; }  
-        public string sett_date_s { get; set; }
-        public string sett_date_e { get; set; }
-
-    }
-    public class SettleInfo_Res
-    {
-        public decimal Break_AMT { get; set; }
-    }
     public class Receivable_M
     {
         public tbInfo? tbInfo { get; set; }
@@ -32,33 +19,6 @@
         public string? court_sale { get; set; }
 
         public string? interest_rate_pass { get; set; }
-    }
-    public class Receivable_D
-    {
-        public tbInfo? tbInfo { get; set; }
-        public decimal RCD_id { get; set; }
-        public string RCD_cknum { get; set; }
-        public decimal RCM_id { get; set; }
-        public int RC_count { get; set; }
-        public decimal RC_amount { get; set; }
-        public DateTime RC_date { get; set; }
-        public string? RC_type { get; set; }
-        public string? RC_note { get; set; }
-        public string check_pay_type { get; set; }
-        public DateTime? check_pay_date { get; set; }
-        public string? check_pay_num { get; set; }
-        public string bad_debt_type { get; set; }
-        public DateTime? bad_debt_date { get; set; }
-        public string? bad_debt_num { get; set; }
-        public string cancel_type { get; set; }
-        public DateTime? cancel_date { get; set; }
-        public string? cancel_num { get; set; }
-        public string? invoice_no { get; set; }
-        public DateTime? invoice_date { get; set; }
-        public decimal interest { get; set; }
-        public decimal Rmoney { get; set; }
-        public decimal? RemainingPrincipal { get; set; }
-        public decimal PartiallySettled { get; set; }
     }
     public class Receivable_D_check_req
     {
@@ -244,7 +204,6 @@
         public decimal RemainingPrincipal { get; set; }
         public int DelayDay { get; set; }
     }
-
     public class Receivable_Over_Rel_Excel
     {
         public string BC_name { get; set; }
@@ -255,7 +214,6 @@
         public decimal OV_total { get; set; }
         public string OV_Rate { get; set; }
     }
-
     public class Receivable_ROC_YYYMM_SE
     {
         public List<Receivable_ROC_YYYMM_S> ROC_Date_S { get; set; }
@@ -270,11 +228,6 @@
     {
         public string ROC_YYYMM { get; set; }
         public string Gre_YYYYMM { get; set; }
-    }
-    public class Receivable_Repay_req
-    {
-        public string Date_S { get; set; }
-        public string Date_E { get; set; }
     }
     public class Receivable_Repay_res
     {
@@ -336,7 +289,6 @@
         public decimal amount_total { get; set; }
         public string RCM_note { get;set; }
     }
-
     public class Receivable_Info_res 
     {
         public decimal RCM_id { get; set; }
@@ -345,5 +297,26 @@
         public int pay_money { get; set; }
         public string pay_text { get; set; }
         public string User { get; set; }
+    }
+    public class Receivable_Over
+    {
+        public string? u_name { get; set; }
+        public string? plan_num { get; set; }
+        public string? BC_name { get; set; }    
+        public string? U_BC { get; set; }   
+        public string? amount_type { get; set; }
+        public string? pro_name { get; set; }
+        public int TOT_Count { get; set; }
+        public decimal amount_total { get; set; }
+        public int OV_Count { get; set; }
+        public decimal OV_total { get; set; }
+        public decimal OV_Rate { get; set; }
+        public int SCount { get; set; }
+        public decimal RemainingPrincipal { get; set; }
+
+        public int TOT_bad_Count { get; set; }
+        public decimal TOT_bad_debt { get; set; }
+
+        public decimal OV_bad_Rate { get; set; }
     }
 }
