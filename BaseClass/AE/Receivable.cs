@@ -318,5 +318,6 @@
         public decimal TOT_bad_debt { get; set; }
 
         public decimal OV_bad_Rate { get; set; }
+        public decimal TOT_OV_Rate { get; set; }
     }
 }
