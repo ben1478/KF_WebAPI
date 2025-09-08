@@ -2862,6 +2862,7 @@ namespace KF_WebAPI.Controllers
                         OV_Rate = row.Field<decimal>("OV_Rate"),
                         SCount = row.Field<int>("SCount"),
                         RemainingPrincipal = row.Field<decimal>("RemainingPrincipal"),
+                        TOT_total = row.Field<decimal>("TOT_total"),
                         TOT_OV_Rate = Math.Round(row.Field<decimal>("OV_total") / row.Field<decimal>("TOT_total") * 100, 2),
                         TOT_bad_Count = 0,
                         TOT_bad_debt = 0,
@@ -2901,7 +2902,7 @@ namespace KF_WebAPI.Controllers
                         {
                             item.TOT_bad_Count = match.TOT_bad_Count;
                             item.TOT_bad_debt = match.TOT_bad_debt;
-                            item.OV_bad_Rate = item.amount_total == 0 ? 0 : Math.Round(item.TOT_bad_debt / item.amount_total * 100, 2);
+                            item.OV_bad_Rate = item.amount_total == 0 ? 0 : Math.Round(item.TOT_bad_debt / item.TOT_total * 100, 2);
                         }
                     }
                     #endregion
