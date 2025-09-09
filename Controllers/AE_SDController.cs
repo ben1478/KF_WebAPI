@@ -513,5 +513,42 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+        /// <summary>
+        /// 取得業務所有呆帳資料
+        /// </summary>
+        [HttpGet("SD_Plnum_LQuery")]
+        public ActionResult<ResultClass<string>> SD_Plnum_LQuery(string planNum)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"
+                    select HA.CS_name,SM.amount_total - ISNULL(SD.total_payment,0) AS amount_bad_total from StagnationDebt_M SM
+                    LEFT JOIN (SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0'GROUP BY sdm_id
+                    ) SD ON SD.sdm_id = SM.sdm_id
+                    Inner join Receivable_M RM on RM.RCM_id = SM.RCM_id
+                    Inner join House_apply HA on HA.HA_id = RM.HA_id
+                    Inner join House_sendcase HS on HS.HS_id = RM.HS_id
+                    where SM.del_tag='0' and HA.plan_num=@plan_num";
+                var parameters = new List<SqlParameter>()
+                {
+                    new SqlParameter("@plan_num",planNum)
+                };
+                #endregion
+                var dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
     }
 }

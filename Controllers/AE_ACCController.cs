@@ -2395,54 +2395,89 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"
-                        SELECT isnull(BC_name_SP,BC_name) BC_name,Tol.*,isnull(OV.OV_Count, 0)OV_Count,isnull(OV_total, 0)OV_total,M.u_name, 
-                             ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2)   OV_Rate FROM 
-                        (/*逾期案件-總件數,總金額*/  
-	                        SELECT plan_num,count(plan_num)TOT_Count,sum(amount_total)amount_total 
-                           FROM 
-                             ( 
-		                        SELECT HA.plan_num,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total FROM 
-                                ( 
-			                        SELECT RCM_id,min(RC_count) RC_count,min(RC_date) RC_date FROM Receivable_D 
-			                        WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N' 
-			                        GROUP BY RCM_id 
-		                        ) RD 
-		                        LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0' 
-		                        LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0' 
-		                        WHERE RM.RCM_id IS NOT NULL    
-	                          ) OV GROUP BY plan_num 
-                        ) Tol 
-                        LEFT JOIN 
-                          (/*逾期案件-總件數,總金額*/  
-	                        SELECT plan_num,count(plan_num)OV_Count,sum(amount_total)OV_total FROM 
-                             ( 
-		                        SELECT HA.plan_num,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total FROM 
-                                ( 
-			                        SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date FROM Receivable_D 
-			                        WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N' 
-			                        GROUP BY RCM_id 
-		                         ) RD 
-			                        LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0' 
-			                        LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0' 
-			                        WHERE RM.RCM_id IS NOT NULL AND (DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) >  @overDay ) 
-	                          ) OV GROUP BY plan_num 
-                           ) OV ON Tol.plan_num=OV.plan_num 
-                         Left Join User_M M on Tol.plan_num=M.u_num   
-                         LEFT JOIN 
-                          (SELECT a.item_D_name BC_name,a.item_D_code 
- 	                        FROM Item_list a  
- 	                        WHERE a.item_M_code = 'branch_company' AND a.item_D_type='Y' 
-                          ) U on M.U_BC =U.item_D_code 
-
-                          Left Join   
-                          (SELECT a.item_D_name BC_name_SP,a.item_D_code,G.U_num  
-                            FROM Item_list a Left Join User_Spec_Group G on a.item_D_code=G.Spec_Group  
-                           WHERE a.item_M_code = 'Spec_Group' AND a.item_D_type='Y' 
-   	                         ) Sp ON M.U_num =Sp.U_num 
-
-                         where isnull(OV.OV_Count, 0)<>0  
-                        ORDER BY M.U_BC,ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) desc ,Tol.plan_num 
-                        ";
+                    SELECT isnull(BC_name_SP, BC_name) BC_name,
+                           Tol.*,
+                           isnull(OV.OV_Count, 0)OV_Count,
+                           isnull(OV_total, 0)OV_total,
+                           M.u_name,
+                           ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) OV_Rate,TT.TOT_total
+                    FROM
+                      (/*逾期案件-總件數,總金額*/ SELECT plan_num,
+                                               count(plan_num)TOT_Count,
+                                               sum(amount_total)amount_total
+                       FROM
+                         (SELECT HA.plan_num,
+                                 DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,
+                                 RM.amount_total
+                          FROM
+                            (SELECT RCM_id,
+                                    min(RC_count) RC_count,
+                                    min(RC_date) RC_date
+                             FROM Receivable_D
+                             WHERE del_tag = '0'
+                               AND check_pay_type='N'
+                               AND bad_debt_type='N'
+                               AND cancel_type='N'
+                             GROUP BY RCM_id) RD
+                          LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id
+                          AND RM.del_tag='0'
+                          LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id
+                          AND HA.del_tag='0'
+                          WHERE RM.RCM_id IS NOT NULL) OV
+                       GROUP BY plan_num) Tol
+                    LEFT JOIN
+                      (/*逾期案件-總件數,總金額*/ SELECT plan_num,
+                                               count(plan_num)OV_Count,
+                                               sum(amount_total)OV_total
+                       FROM
+                         (SELECT HA.plan_num,
+                                 DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,
+                                 RM.amount_total
+                          FROM
+                            (SELECT RCM_id,
+                                    min(RC_count)RC_count,
+                                    min(RC_date)RC_date
+                             FROM Receivable_D
+                             WHERE del_tag = '0'
+                               AND check_pay_type='N'
+                               AND bad_debt_type='N'
+                               AND cancel_type='N'
+                             GROUP BY RCM_id) RD
+                          LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id
+                          AND RM.del_tag='0'
+                          LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id
+                          AND HA.del_tag='0'
+                          WHERE RM.RCM_id IS NOT NULL
+                            AND (DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) > @overDay)) OV
+                       GROUP BY plan_num) OV ON Tol.plan_num=OV.plan_num
+                    LEFT JOIN User_M M ON Tol.plan_num=M.u_num
+                    LEFT JOIN
+                      (SELECT a.item_D_name BC_name,
+                              a.item_D_code
+                       FROM Item_list a
+                       WHERE a.item_M_code = 'branch_company'
+                         AND a.item_D_type='Y') U ON M.U_BC =U.item_D_code
+                    LEFT JOIN
+                      (SELECT a.item_D_name BC_name_SP,
+                              a.item_D_code,
+                              G.U_num
+                       FROM Item_list a
+                       LEFT JOIN User_Spec_Group G ON a.item_D_code=G.Spec_Group
+                       WHERE a.item_M_code = 'Spec_Group'
+                         AND a.item_D_type='Y') Sp ON M.U_num =Sp.U_num
+                    LEFT JOIN
+                      (SELECT plan_num,
+                              sum(amount_total) AS TOT_total
+                       FROM Receivable_M RM
+                       LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id
+                       WHERE RM.RCM_id IS NOT NULL
+                         AND RM.del_tag='0'
+                         AND HA.del_tag='0'
+                       GROUP BY plan_num) TT ON TT.plan_num=Tol.plan_num
+                    WHERE isnull(OV.OV_Count, 0)<>0
+                    ORDER BY M.U_BC,
+                        ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) DESC ,Tol.plan_num
+                    ";
                 parameters.Add(new SqlParameter("@overDay", overDay));
                 #endregion
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
@@ -2458,12 +2493,14 @@ namespace KF_WebAPI.Controllers
                         OV_total = row.Field<decimal>("OV_total"),
                         OV_Rate = row.Field<decimal>("OV_Rate"),
                         plan_num = row.Field<string>("plan_num"),
+                        TOT_total = row.Field<decimal>("TOT_total"),
+                        TOT_OV_Rate = Math.Round(row.Field<decimal>("OV_total") / row.Field<decimal>("TOT_total") * 100, 2),
                         TOT_bad_Count = 0,
                         TOT_bad_debt = 0,
                         OV_bad_Rate = 0
                     }).ToList();
                     #region 呆帳資料處理
-                    var T_SQL_bad = @"SELECT HA.plan_num,COUNT(*) AS TOT_bad_Count,SUM(SM.total_bad_debt - ISNULL(SD.total_payment,0)) AS TOT_bad_debt 
+                    var T_SQL_bad = @"SELECT HA.plan_num,COUNT(*) AS TOT_bad_Count,SUM(SM.amount_total - ISNULL(SD.total_payment,0)) AS TOT_bad_debt 
                                       FROM StagnationDebt_M SM
                                       LEFT JOIN (SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id) SD 
                                       ON SD.sdm_id = SM.sdm_id
@@ -2484,7 +2521,7 @@ namespace KF_WebAPI.Controllers
                         {
                             item.TOT_bad_Count = match.TOT_bad_Count;
                             item.TOT_bad_debt = match.TOT_bad_debt;
-                            item.OV_bad_Rate = item.amount_total == 0 ? 0 : Math.Round(item.TOT_bad_debt / item.amount_total * 100, 2);
+                            item.OV_bad_Rate = item.amount_total == 0 ? 0 : Math.Round(item.TOT_bad_debt / item.TOT_total * 100, 2);
                         }
                     }
                     #endregion
@@ -2523,41 +2560,180 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"
-                    SELECT Tol.*,isnull(OV.OV_Count, 0) OV_Count,isnull(OV_total, 0)OV_total,ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) OV_Rate,
-                    isnull(SCount,0) SCount,isnull(RemainingPrincipal,0) RemainingPrincipal 
-                    FROM (/*逾期案件-總件數,總金額*/ SELECT pro_name,count(pro_name)TOT_Count,amount_type,sum(amount_total) amount_total 
-                    FROM (SELECT pro_name,DATEDIFF(DAY,RD.RC_date,SYSDATETIME()) DiffDay,RM.amount_total,case when amount_total > @Base_AMT then 'U' else 'D' end amount_type 
-                    FROM (SELECT RCM_id,min(RC_count) RC_count,min(RC_date) RC_date 
-                    FROM Receivable_D WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N' GROUP BY RCM_id) RD         
-                    LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id         
-                    LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id and  RM.HS_id = HS.HS_id          
-                    LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id     
-                    LEFT JOIN (SELECT HP_project_id,P.project_title,item_D_name pro_name FROM House_pre_project P 
-                    LEFT JOIN (SELECT item_D_code,item_D_name FROM Item_list WHERE item_M_code = 'project_title' AND item_D_type='Y') I 
-                    on case when P.project_title='PJ00001' then 'PJ00005'else P.project_title end=I.item_D_code WHERE P.del_tag='0') P on HS.HP_project_id=P.HP_project_id         
-                    WHERE RM.RCM_id IS NOT NULL AND RM.del_tag='0' AND HA.del_tag='0'  AND HS.del_tag='0') OV GROUP BY pro_name,amount_type) Tol   
-                    LEFT JOIN (/*逾期案件-總件數,總金額*/  SELECT pro_name,count(pro_name) OV_Count,sum(amount_total) OV_total,amount_type 
-                    FROM (SELECT case when amount_total > @Base_AMT then 'U' else 'D' end amount_type,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total,pro_name         
-                    FROM (SELECT RCM_id,min(RC_count) RC_count,min(RC_date) RC_date FROM Receivable_D 
-                    WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N' GROUP BY RCM_id) RD         
-                    LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id     
-                    LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id and  RM.HS_id = HS.HS_id          
-                    LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id         
-                    LEFT JOIN (SELECT HP_project_id,P.project_title,item_D_name pro_name FROM House_pre_project P   
-                    LEFT JOIN (SELECT item_D_code,item_D_name FROM Item_list WHERE item_M_code = 'project_title' AND item_D_type='Y') I 
-                    on case when P.project_title='PJ00001' then 'PJ00005'else P.project_title end=I.item_D_code WHERE P.del_tag='0') P on HS.HP_project_id=P.HP_project_id         
-                    WHERE RM.RCM_id IS NOT NULL AND RM.del_tag='0' AND HA.del_tag='0' AND HS.del_tag='0' 
-                    AND (DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) > @overDay)) OV group by  pro_name,amount_type) OV ON Tol.pro_name=OV.pro_name and Tol.amount_type=OV.amount_type    
-                    LEFT JOIN (select  pro_name, sum(SCount) SCount, sum(A.amount_total) RemainingPrincipal ,case when M.amount_total > @Base_AMT then 'U' else 'D' end amount_type    
-                    from view_Receivable_settle A     
-                    LEFT JOIN Receivable_M M ON M.RCM_id = A.RCM_id    
-                    LEFT JOIN House_apply HA ON HA.HA_id = M.HA_id    
-                    LEFT JOIN House_sendcase HS ON HS.HS_id = M.HS_id                                      
-                    LEFT JOIN (SELECT HP_project_id,P.project_title,item_D_name pro_name FROM House_pre_project P                                                                 
-                    LEFT JOIN (SELECT item_D_code,item_D_name FROM Item_list WHERE item_M_code = 'project_title' AND item_D_type='Y') I 
-                    ON CASE WHEN P.project_title='PJ00001' THEN 'PJ00005' ELSE P.project_title END=I.item_D_code WHERE P.del_tag='0') P ON HS.HP_project_id=P.HP_project_id                               
-                    group by pro_name, case when M.amount_total > @Base_AMT then 'U' else 'D' end) S  on Tol.pro_name=S.pro_name and Tol.amount_type=S.amount_type  
-                    ORDER BY Tol.amount_type, Tol.pro_name,ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) DESC    
+                    SELECT Tol.*,
+                           isnull(OV.OV_Count, 0) OV_Count,
+                           isnull(OV_total, 0)OV_total,
+                           ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) OV_Rate,
+                           isnull(SCount, 0) SCount,
+                           isnull(RemainingPrincipal, 0) RemainingPrincipal
+                           ,TT.TOT_total
+                    FROM
+                      (/*逾期案件-總件數,總金額*/ SELECT pro_name,
+                                               count(pro_name)TOT_Count,
+                                               amount_type,
+                                               sum(amount_total) amount_total
+                       FROM
+                         (SELECT pro_name,
+                                 DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,
+                                 RM.amount_total,
+                                 CASE
+                                     WHEN amount_total > @Base_AMT THEN 'U'
+                                     ELSE 'D'
+                                 END amount_type
+                          FROM
+                            (SELECT RCM_id,
+                                    min(RC_count) RC_count,
+                                    min(RC_date) RC_date
+                             FROM Receivable_D
+                             WHERE del_tag = '0'
+                               AND check_pay_type='N'
+                               AND bad_debt_type='N'
+                               AND cancel_type='N'
+                             GROUP BY RCM_id) RD
+                          LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id
+                          LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id
+                          AND RM.HS_id = HS.HS_id
+                          LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id
+                          LEFT JOIN
+                            (SELECT HP_project_id,
+                                    P.project_title,
+                                    item_D_name pro_name
+                             FROM House_pre_project P
+                             LEFT JOIN
+                               (SELECT item_D_code,
+                                       item_D_name
+                                FROM Item_list
+                                WHERE item_M_code = 'project_title'
+                                  AND item_D_type='Y') I ON CASE
+                                                                WHEN P.project_title='PJ00001' THEN 'PJ00005'
+                                                                ELSE P.project_title
+                                                            END=I.item_D_code
+                             WHERE P.del_tag='0') P ON HS.HP_project_id=P.HP_project_id
+                          WHERE RM.RCM_id IS NOT NULL
+                            AND RM.del_tag='0'
+                            AND HA.del_tag='0'
+                            AND HS.del_tag='0') OV
+                       GROUP BY pro_name,
+                                amount_type) Tol
+                    LEFT JOIN
+                      (/*逾期案件-總件數,總金額*/ SELECT pro_name,
+                                               count(pro_name) OV_Count,
+                                               sum(amount_total) OV_total,
+                                               amount_type
+                       FROM
+                         (SELECT CASE
+                                     WHEN amount_total > @Base_AMT THEN 'U'
+                                     ELSE 'D'
+                                 END amount_type,
+                                 DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,
+                                 RM.amount_total,
+                                 pro_name
+                          FROM
+                            (SELECT RCM_id,
+                                    min(RC_count) RC_count,
+                                    min(RC_date) RC_date
+                             FROM Receivable_D
+                             WHERE del_tag = '0'
+                               AND check_pay_type='N'
+                               AND bad_debt_type='N'
+                               AND cancel_type='N'
+                             GROUP BY RCM_id) RD
+                          LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id
+                          LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id
+                          AND RM.HS_id = HS.HS_id
+                          LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id
+                          LEFT JOIN
+                            (SELECT HP_project_id,
+                                    P.project_title,
+                                    item_D_name pro_name
+                             FROM House_pre_project P
+                             LEFT JOIN
+                               (SELECT item_D_code,
+                                       item_D_name
+                                FROM Item_list
+                                WHERE item_M_code = 'project_title'
+                                  AND item_D_type='Y') I ON CASE
+                                                                WHEN P.project_title='PJ00001' THEN 'PJ00005'
+                                                                ELSE P.project_title
+                                                            END=I.item_D_code
+                             WHERE P.del_tag='0') P ON HS.HP_project_id=P.HP_project_id
+                          WHERE RM.RCM_id IS NOT NULL
+                            AND RM.del_tag='0'
+                            AND HA.del_tag='0'
+                            AND HS.del_tag='0'
+                            AND (DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) > @overDay)) OV
+                       GROUP BY pro_name,
+                                amount_type) OV ON Tol.pro_name=OV.pro_name
+                    AND Tol.amount_type=OV.amount_type
+                    LEFT JOIN
+                      (SELECT pro_name,
+                              sum(SCount) SCount,
+                              sum(A.amount_total) RemainingPrincipal,
+                              CASE
+                                  WHEN M.amount_total > @Base_AMT THEN 'U'
+                                  ELSE 'D'
+                              END amount_type
+                       FROM view_Receivable_settle A
+                       LEFT JOIN Receivable_M M ON M.RCM_id = A.RCM_id
+                       LEFT JOIN House_apply HA ON HA.HA_id = M.HA_id
+                       LEFT JOIN House_sendcase HS ON HS.HS_id = M.HS_id
+                       LEFT JOIN
+                         (SELECT HP_project_id,
+                                 P.project_title,
+                                 item_D_name pro_name
+                          FROM House_pre_project P
+                          LEFT JOIN
+                            (SELECT item_D_code,
+                                    item_D_name
+                             FROM Item_list
+                             WHERE item_M_code = 'project_title'
+                               AND item_D_type='Y') I ON CASE
+                                                             WHEN P.project_title='PJ00001' THEN 'PJ00005'
+                                                             ELSE P.project_title
+                                                         END=I.item_D_code
+                          WHERE P.del_tag='0') P ON HS.HP_project_id=P.HP_project_id
+                       GROUP BY pro_name,
+                                CASE
+                                    WHEN M.amount_total > @Base_AMT THEN 'U'
+                                    ELSE 'D'
+                                END) S ON Tol.pro_name=S.pro_name
+                    AND Tol.amount_type=S.amount_type
+                    LEFT JOIN
+                      (SELECT pro_name,
+                              sum(amount_total) AS TOT_total,
+                              CASE
+                                  WHEN RM.amount_total > @Base_AMT THEN 'U'
+                                  ELSE 'D'
+                              END amount_type
+                       FROM Receivable_M RM
+                       LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id
+                       AND RM.HS_id = HS.HS_id
+                       LEFT JOIN
+                         (SELECT HP_project_id,
+                                 P.project_title,
+                                 item_D_name pro_name
+                          FROM House_pre_project P
+                          LEFT JOIN
+                            (SELECT item_D_code,
+                                    item_D_name
+                             FROM Item_list
+                             WHERE item_M_code = 'project_title'
+                               AND item_D_type='Y') I ON CASE
+                                                             WHEN P.project_title='PJ00001' THEN 'PJ00005'
+                                                             ELSE P.project_title
+                                                         END=I.item_D_code
+                          WHERE P.del_tag='0') P ON HS.HP_project_id=P.HP_project_id
+                       WHERE RM.RCM_id IS NOT NULL
+                         AND RM.del_tag='0'
+                       GROUP BY pro_name,
+                                CASE
+                                    WHEN RM.amount_total > @Base_AMT THEN 'U'
+                                    ELSE 'D'
+                                END) TT ON TT.amount_type = Tol.amount_type
+                    AND TT.pro_name = Tol.pro_name
+                    ORDER BY Tol.amount_type,
+                             Tol.pro_name,
+                             ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) DESC
                     ";
                 parameters.Add(new SqlParameter("@overDay", overDay));
                 parameters.Add(new SqlParameter("@Base_AMT", Base_AMT));
@@ -2576,6 +2752,8 @@ namespace KF_WebAPI.Controllers
                         OV_Rate = row.Field<decimal>("OV_Rate"),
                         SCount = row.Field<int>("SCount"),
                         RemainingPrincipal = row.Field<decimal>("RemainingPrincipal"),
+                        TOT_total = row.Field<decimal>("TOT_total"),
+                        TOT_OV_Rate = Math.Round(row.Field<decimal>("OV_total") / row.Field<decimal>("TOT_total") * 100, 2),
                         TOT_bad_Count = 0,
                         TOT_bad_debt = 0,
                         OV_bad_Rate = 0
@@ -2584,7 +2762,7 @@ namespace KF_WebAPI.Controllers
                     #region 呆帳資料處理
                     var T_SQL_bad = @"WITH ProjectCode AS ( SELECT HA_id,CASE WHEN project_title = 'PJ00001' THEN 'PJ00005' ELSE project_title END AS project_code,del_tag
                                       FROM House_pre_project ),
-                                      BaseData AS ( SELECT I.item_D_name AS pro_name,SM.total_bad_debt - ISNULL(SD.total_payment,0) AS total_bad_debt,
+                                      BaseData AS ( SELECT I.item_D_name AS pro_name,SM.amount_total - ISNULL(SD.total_payment,0) AS amount_bad_total,
                                       CASE WHEN RM.amount_total > 500000 THEN 'U' ELSE 'D' END AS amount_type
                                       FROM StagnationDebt_M SM
                                       LEFT JOIN (SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' 
@@ -2594,7 +2772,7 @@ namespace KF_WebAPI.Controllers
                                       JOIN ProjectCode P ON P.HA_id = RM.HA_id AND P.del_tag = '0'
                                       LEFT JOIN Item_list I ON I.item_D_code = P.project_code AND I.item_M_code = 'project_title' AND I.item_D_type = 'Y'
                                       WHERE SM.del_tag = '0' )
-                                      SELECT pro_name,amount_type,COUNT(*) AS TOT_bad_Count,SUM(total_bad_debt) AS TOT_bad_debt 
+                                      SELECT pro_name,amount_type,COUNT(*) AS TOT_bad_Count,SUM(amount_bad_total) AS TOT_bad_debt 
                                       FROM BaseData 
                                       GROUP BY pro_name, amount_type ORDER BY pro_name, amount_type";
                     var badResult = _adoData.ExecuteSQuery(T_SQL_bad).AsEnumerable().Select(row => new {
@@ -2611,7 +2789,7 @@ namespace KF_WebAPI.Controllers
                         {
                             item.TOT_bad_Count = match.TOT_bad_Count;
                             item.TOT_bad_debt = match.TOT_bad_debt;
-                            item.OV_bad_Rate = item.amount_total == 0 ? 0: Math.Round(item.TOT_bad_debt / item.amount_total * 100, 2);
+                            item.OV_bad_Rate = item.amount_total == 0 ? 0: Math.Round(item.TOT_bad_debt / item.TOT_total * 100, 2);
                         }
                     }
                     #endregion
@@ -2652,200 +2830,200 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"
-                              SELECT Tol.*,
-                                     isnull(OV.OV_Count, 0) OV_Count,
-                                     isnull(OV_total, 0) OV_total,
-                                     ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) OV_Rate,
-                                     isnull(SCount, 0) SCount,
-                                     isnull(RemainingPrincipal, 0) RemainingPrincipal
-                              	   ,TT.TOT_total
-                              FROM
-                                (/*逾期案件-總件數,總金額*/ SELECT pro_name,
-                                                         count(pro_name)TOT_Count,
-                                                         amount_type,
-                                                         sum(amount_total) amount_total
-                                 FROM
-                                   (SELECT pro_name,
-                                           DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,
-                                           RM.amount_total,
-                                           CASE
-                                               WHEN amount_total < 500000 THEN '050'
-                                               WHEN amount_total BETWEEN 500000 AND 1000000 THEN '100'
-                                               WHEN amount_total BETWEEN 1000001 AND 2000000 THEN '200'
-                                               WHEN amount_total BETWEEN 2000001 AND 3000000 THEN '300'
-                                               WHEN amount_total BETWEEN 3000001 AND 4000000 THEN '400'
-                                               WHEN amount_total BETWEEN 4000001 AND 5000000 THEN '500'
-                                               WHEN amount_total >= 5000000 THEN '501'
-                                           END amount_type
-                                    FROM
-                                      (SELECT RCM_id,
-                                              min(RC_count) RC_count,
-                                              min(RC_date) RC_date
-                                       FROM Receivable_D
-                                       WHERE del_tag = '0'
-                                         AND check_pay_type='N'
-                                         AND bad_debt_type='N'
-                                         AND cancel_type='N'
-                                       GROUP BY RCM_id) RD
-                                    LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id
-                                    LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id
-                                    AND RM.HS_id = HS.HS_id
-                                    LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id
-                                    LEFT JOIN
-                                      (SELECT HP_project_id,
-                                              P.project_title,
-                                              item_D_name pro_name
-                                       FROM House_pre_project P
-                                       LEFT JOIN
-                                         (SELECT item_D_code,
-                                                 item_D_name
-                                          FROM Item_list
-                                          WHERE item_M_code = 'project_title'
-                                            AND item_D_type='Y') I ON CASE
-                                                                          WHEN P.project_title='PJ00001' THEN 'PJ00005'
-                                                                          ELSE P.project_title
-                                                                      END=I.item_D_code
-                                       WHERE P.del_tag='0') P ON HS.HP_project_id=P.HP_project_id
-                                    WHERE RM.RCM_id IS NOT NULL
-                                      AND RM.del_tag='0'
-                                      AND HA.del_tag='0'
-                                      AND HS.del_tag='0') OV
-                                 GROUP BY pro_name,
-                                          amount_type) Tol
-                              LEFT JOIN
-                                (/*逾期案件-總件數,總金額*/ SELECT pro_name,
-                                                         count(pro_name) OV_Count,
-                                                         sum(amount_total) OV_total,
-                                                         amount_type
-                                 FROM
-                                   (SELECT CASE
-                                               WHEN amount_total < 500000 THEN '050'
-                                               WHEN amount_total BETWEEN 500000 AND 1000000 THEN '100'
-                                               WHEN amount_total BETWEEN 1000001 AND 2000000 THEN '200'
-                                               WHEN amount_total BETWEEN 2000001 AND 3000000 THEN '300'
-                                               WHEN amount_total BETWEEN 3000001 AND 4000000 THEN '400'
-                                               WHEN amount_total BETWEEN 4000001 AND 5000000 THEN '500'
-                                               WHEN amount_total >= 5000000 THEN '501'
-                                           END amount_type,
-                                           DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,
-                                           RM.amount_total,
-                                           pro_name
-                                    FROM
-                                      (SELECT RCM_id,
-                                              min(RC_count) RC_count,
-                                              min(RC_date) RC_date
-                                       FROM Receivable_D
-                                       WHERE del_tag = '0'
-                                         AND check_pay_type='N'
-                                         AND bad_debt_type='N'
-                                         AND cancel_type='N'
-                                       GROUP BY RCM_id) RD
-                                    LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id
-                                    LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id
-                                    AND RM.HS_id = HS.HS_id
-                                    LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id
-                                    LEFT JOIN
-                                      (SELECT HP_project_id,
-                                              P.project_title,
-                                              item_D_name pro_name
-                                       FROM House_pre_project P
-                                       LEFT JOIN
-                                         (SELECT item_D_code,
-                                                 item_D_name
-                                          FROM Item_list
-                                          WHERE item_M_code = 'project_title'
-                                            AND item_D_type='Y') I ON CASE
-                                                                          WHEN P.project_title='PJ00001' THEN 'PJ00005'
-                                                                          ELSE P.project_title
-                                                                      END=I.item_D_code
-                                       WHERE P.del_tag='0') P ON HS.HP_project_id=P.HP_project_id
-                                    WHERE RM.RCM_id IS NOT NULL
-                                      AND RM.del_tag='0'
-                                      AND HA.del_tag='0'
-                                      AND HS.del_tag='0'
-                                      AND (DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) > @overDay)) OV
-                                 GROUP BY pro_name,
-                                          amount_type) OV ON Tol.pro_name=OV.pro_name
-                              AND Tol.amount_type=OV.amount_type
-                              LEFT JOIN
-                                (SELECT pro_name,
-                                        sum(SCount) SCount,
-                                        sum(A.amount_total) RemainingPrincipal,
-                                        CASE
-                                            WHEN M.amount_total < 500000 THEN '050'
-                                            WHEN M.amount_total BETWEEN 500000 AND 1000000 THEN '100'
-                                            WHEN M.amount_total BETWEEN 1000001 AND 2000000 THEN '200'
-                                            WHEN M.amount_total BETWEEN 2000001 AND 3000000 THEN '300'
-                                            WHEN M.amount_total BETWEEN 3000001 AND 4000000 THEN '400'
-                                            WHEN M.amount_total BETWEEN 4000001 AND 5000000 THEN '500'
-                                            WHEN M.amount_total >= 5000000 THEN '501'
-                                        END amount_type
-                                 FROM view_Receivable_settle A
-                                 LEFT JOIN Receivable_M M ON M.RCM_id = A.RCM_id
-                                 LEFT JOIN House_apply HA ON HA.HA_id = M.HA_id
-                                 LEFT JOIN House_sendcase HS ON HS.HS_id = M.HS_id
-                                 LEFT JOIN
-                                   (SELECT HP_project_id,
-                                           P.project_title,
-                                           item_D_name pro_name
-                                    FROM House_pre_project P
-                                    LEFT JOIN
-                                      (SELECT item_D_code,
-                                              item_D_name
-                                       FROM Item_list
-                                       WHERE item_M_code = 'project_title'
-                                         AND item_D_type='Y') I ON CASE
-                                                                       WHEN P.project_title='PJ00001' THEN 'PJ00005'
-                                                                       ELSE P.project_title
-                                                                   END=I.item_D_code
-                                    WHERE P.del_tag='0') P ON HS.HP_project_id=P.HP_project_id
-                                 GROUP BY pro_name,
-                                          CASE
-                                              WHEN M.amount_total < 500000 THEN '050'
-                                              WHEN M.amount_total BETWEEN 500000 AND 1000000 THEN '100'
-                                              WHEN M.amount_total BETWEEN 1000001 AND 2000000 THEN '200'
-                                              WHEN M.amount_total BETWEEN 2000001 AND 3000000 THEN '300'
-                                              WHEN M.amount_total BETWEEN 3000001 AND 4000000 THEN '400'
-                                              WHEN M.amount_total BETWEEN 4000001 AND 5000000 THEN '500'
-                                              WHEN M.amount_total >= 5000000 THEN '501'
-                                          END) S ON Tol.pro_name=S.pro_name
-                              AND Tol.amount_type=S.amount_type
-                              LEFT JOIN (
-                              select pro_name,sum(amount_total) as TOT_total,
+                    SELECT Tol.*,
+                           isnull(OV.OV_Count, 0) OV_Count,
+                           isnull(OV_total, 0) OV_total,
+                           ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) OV_Rate,
+                           isnull(SCount, 0) SCount,
+                           isnull(RemainingPrincipal, 0) RemainingPrincipal
+                    	   ,TT.TOT_total
+                    FROM
+                      (/*逾期案件-總件數,總金額*/ SELECT pro_name,
+                                               count(pro_name)TOT_Count,
+                                               amount_type,
+                                               sum(amount_total) amount_total
+                       FROM
+                         (SELECT pro_name,
+                                 DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,
+                                 RM.amount_total,
+                                 CASE
+                                     WHEN amount_total < 500000 THEN '050'
+                                     WHEN amount_total BETWEEN 500000 AND 1000000 THEN '100'
+                                     WHEN amount_total BETWEEN 1000001 AND 2000000 THEN '200'
+                                     WHEN amount_total BETWEEN 2000001 AND 3000000 THEN '300'
+                                     WHEN amount_total BETWEEN 3000001 AND 4000000 THEN '400'
+                                     WHEN amount_total BETWEEN 4000001 AND 5000000 THEN '500'
+                                     WHEN amount_total >= 5000000 THEN '501'
+                                 END amount_type
+                          FROM
+                            (SELECT RCM_id,
+                                    min(RC_count) RC_count,
+                                    min(RC_date) RC_date
+                             FROM Receivable_D
+                             WHERE del_tag = '0'
+                               AND check_pay_type='N'
+                               AND bad_debt_type='N'
+                               AND cancel_type='N'
+                             GROUP BY RCM_id) RD
+                          LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id
+                          LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id
+                          AND RM.HS_id = HS.HS_id
+                          LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id
+                          LEFT JOIN
+                            (SELECT HP_project_id,
+                                    P.project_title,
+                                    item_D_name pro_name
+                             FROM House_pre_project P
+                             LEFT JOIN
+                               (SELECT item_D_code,
+                                       item_D_name
+                                FROM Item_list
+                                WHERE item_M_code = 'project_title'
+                                  AND item_D_type='Y') I ON CASE
+                                                                WHEN P.project_title='PJ00001' THEN 'PJ00005'
+                                                                ELSE P.project_title
+                                                            END=I.item_D_code
+                             WHERE P.del_tag='0') P ON HS.HP_project_id=P.HP_project_id
+                          WHERE RM.RCM_id IS NOT NULL
+                            AND RM.del_tag='0'
+                            AND HA.del_tag='0'
+                            AND HS.del_tag='0') OV
+                       GROUP BY pro_name,
+                                amount_type) Tol
+                    LEFT JOIN
+                      (/*逾期案件-總件數,總金額*/ SELECT pro_name,
+                                               count(pro_name) OV_Count,
+                                               sum(amount_total) OV_total,
+                                               amount_type
+                       FROM
+                         (SELECT CASE
+                                     WHEN amount_total < 500000 THEN '050'
+                                     WHEN amount_total BETWEEN 500000 AND 1000000 THEN '100'
+                                     WHEN amount_total BETWEEN 1000001 AND 2000000 THEN '200'
+                                     WHEN amount_total BETWEEN 2000001 AND 3000000 THEN '300'
+                                     WHEN amount_total BETWEEN 3000001 AND 4000000 THEN '400'
+                                     WHEN amount_total BETWEEN 4000001 AND 5000000 THEN '500'
+                                     WHEN amount_total >= 5000000 THEN '501'
+                                 END amount_type,
+                                 DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,
+                                 RM.amount_total,
+                                 pro_name
+                          FROM
+                            (SELECT RCM_id,
+                                    min(RC_count) RC_count,
+                                    min(RC_date) RC_date
+                             FROM Receivable_D
+                             WHERE del_tag = '0'
+                               AND check_pay_type='N'
+                               AND bad_debt_type='N'
+                               AND cancel_type='N'
+                             GROUP BY RCM_id) RD
+                          LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id
+                          LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id
+                          AND RM.HS_id = HS.HS_id
+                          LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id
+                          LEFT JOIN
+                            (SELECT HP_project_id,
+                                    P.project_title,
+                                    item_D_name pro_name
+                             FROM House_pre_project P
+                             LEFT JOIN
+                               (SELECT item_D_code,
+                                       item_D_name
+                                FROM Item_list
+                                WHERE item_M_code = 'project_title'
+                                  AND item_D_type='Y') I ON CASE
+                                                                WHEN P.project_title='PJ00001' THEN 'PJ00005'
+                                                                ELSE P.project_title
+                                                            END=I.item_D_code
+                             WHERE P.del_tag='0') P ON HS.HP_project_id=P.HP_project_id
+                          WHERE RM.RCM_id IS NOT NULL
+                            AND RM.del_tag='0'
+                            AND HA.del_tag='0'
+                            AND HS.del_tag='0'
+                            AND (DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) > @overDay)) OV
+                       GROUP BY pro_name,
+                                amount_type) OV ON Tol.pro_name=OV.pro_name
+                    AND Tol.amount_type=OV.amount_type
+                    LEFT JOIN
+                      (SELECT pro_name,
+                              sum(SCount) SCount,
+                              sum(A.amount_total) RemainingPrincipal,
                               CASE
-                                            WHEN RM.amount_total < 500000 THEN '050'
-                                            WHEN RM.amount_total BETWEEN 500000 AND 1000000 THEN '100'
-                                            WHEN RM.amount_total BETWEEN 1000001 AND 2000000 THEN '200'
-                                            WHEN RM.amount_total BETWEEN 2000001 AND 3000000 THEN '300'
-                                            WHEN RM.amount_total BETWEEN 3000001 AND 4000000 THEN '400'
-                                            WHEN RM.amount_total BETWEEN 4000001 AND 5000000 THEN '500'
-                                            WHEN RM.amount_total >= 5000000 THEN '501'
-                                        END amount_type
-                              from Receivable_M RM
-                              LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id AND RM.HS_id = HS.HS_id
-                              LEFT JOIN ( SELECT HP_project_id,P.project_title,item_D_name pro_name　
-                              　　　　　　  FROM House_pre_project P
-                                          LEFT JOIN ( SELECT item_D_code,item_D_name　
-                              			　　　　　　  FROM Item_list
-                              			　　　　　　　WHERE item_M_code = 'project_title'　AND item_D_type='Y') I 
-                              			ON CASE WHEN P.project_title='PJ00001' THEN 'PJ00005' ELSE P.project_title　END=I.item_D_code WHERE P.del_tag='0') P 
-                              ON HS.HP_project_id=P.HP_project_id
-                              WHERE RM.RCM_id IS NOT NULL and RM.del_tag='0'
-                              GROUP BY pro_name,
-                              CASE
-                                            WHEN RM.amount_total < 500000 THEN '050'
-                                            WHEN RM.amount_total BETWEEN 500000 AND 1000000 THEN '100'
-                                            WHEN RM.amount_total BETWEEN 1000001 AND 2000000 THEN '200'
-                                            WHEN RM.amount_total BETWEEN 2000001 AND 3000000 THEN '300'
-                                            WHEN RM.amount_total BETWEEN 3000001 AND 4000000 THEN '400'
-                                            WHEN RM.amount_total BETWEEN 4000001 AND 5000000 THEN '500'
-                                            WHEN RM.amount_total >= 5000000 THEN '501'
-                                        END 
-                              ) TT on TT.amount_type = Tol.amount_type and TT.pro_name = Tol.pro_name
-                              ORDER BY Tol.amount_type DESC,
-                                       Tol.pro_name,
-                                       ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) DESC
-                              ";
+                                  WHEN M.amount_total < 500000 THEN '050'
+                                  WHEN M.amount_total BETWEEN 500000 AND 1000000 THEN '100'
+                                  WHEN M.amount_total BETWEEN 1000001 AND 2000000 THEN '200'
+                                  WHEN M.amount_total BETWEEN 2000001 AND 3000000 THEN '300'
+                                  WHEN M.amount_total BETWEEN 3000001 AND 4000000 THEN '400'
+                                  WHEN M.amount_total BETWEEN 4000001 AND 5000000 THEN '500'
+                                  WHEN M.amount_total >= 5000000 THEN '501'
+                              END amount_type
+                       FROM view_Receivable_settle A
+                       LEFT JOIN Receivable_M M ON M.RCM_id = A.RCM_id
+                       LEFT JOIN House_apply HA ON HA.HA_id = M.HA_id
+                       LEFT JOIN House_sendcase HS ON HS.HS_id = M.HS_id
+                       LEFT JOIN
+                         (SELECT HP_project_id,
+                                 P.project_title,
+                                 item_D_name pro_name
+                          FROM House_pre_project P
+                          LEFT JOIN
+                            (SELECT item_D_code,
+                                    item_D_name
+                             FROM Item_list
+                             WHERE item_M_code = 'project_title'
+                               AND item_D_type='Y') I ON CASE
+                                                             WHEN P.project_title='PJ00001' THEN 'PJ00005'
+                                                             ELSE P.project_title
+                                                         END=I.item_D_code
+                          WHERE P.del_tag='0') P ON HS.HP_project_id=P.HP_project_id
+                       GROUP BY pro_name,
+                                CASE
+                                    WHEN M.amount_total < 500000 THEN '050'
+                                    WHEN M.amount_total BETWEEN 500000 AND 1000000 THEN '100'
+                                    WHEN M.amount_total BETWEEN 1000001 AND 2000000 THEN '200'
+                                    WHEN M.amount_total BETWEEN 2000001 AND 3000000 THEN '300'
+                                    WHEN M.amount_total BETWEEN 3000001 AND 4000000 THEN '400'
+                                    WHEN M.amount_total BETWEEN 4000001 AND 5000000 THEN '500'
+                                    WHEN M.amount_total >= 5000000 THEN '501'
+                                END) S ON Tol.pro_name=S.pro_name
+                    AND Tol.amount_type=S.amount_type
+                    LEFT JOIN (
+                    select pro_name,sum(amount_total) as TOT_total,
+                    CASE
+                                  WHEN RM.amount_total < 500000 THEN '050'
+                                  WHEN RM.amount_total BETWEEN 500000 AND 1000000 THEN '100'
+                                  WHEN RM.amount_total BETWEEN 1000001 AND 2000000 THEN '200'
+                                  WHEN RM.amount_total BETWEEN 2000001 AND 3000000 THEN '300'
+                                  WHEN RM.amount_total BETWEEN 3000001 AND 4000000 THEN '400'
+                                  WHEN RM.amount_total BETWEEN 4000001 AND 5000000 THEN '500'
+                                  WHEN RM.amount_total >= 5000000 THEN '501'
+                              END amount_type
+                    from Receivable_M RM
+                    LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id AND RM.HS_id = HS.HS_id
+                    LEFT JOIN ( SELECT HP_project_id,P.project_title,item_D_name pro_name　
+                    　　　　　　  FROM House_pre_project P
+                                LEFT JOIN ( SELECT item_D_code,item_D_name　
+                    			　　　　　　  FROM Item_list
+                    			　　　　　　　WHERE item_M_code = 'project_title'　AND item_D_type='Y') I 
+                    			ON CASE WHEN P.project_title='PJ00001' THEN 'PJ00005' ELSE P.project_title　END=I.item_D_code WHERE P.del_tag='0') P 
+                    ON HS.HP_project_id=P.HP_project_id
+                    WHERE RM.RCM_id IS NOT NULL and RM.del_tag='0'
+                    GROUP BY pro_name,
+                    CASE
+                                  WHEN RM.amount_total < 500000 THEN '050'
+                                  WHEN RM.amount_total BETWEEN 500000 AND 1000000 THEN '100'
+                                  WHEN RM.amount_total BETWEEN 1000001 AND 2000000 THEN '200'
+                                  WHEN RM.amount_total BETWEEN 2000001 AND 3000000 THEN '300'
+                                  WHEN RM.amount_total BETWEEN 3000001 AND 4000000 THEN '400'
+                                  WHEN RM.amount_total BETWEEN 4000001 AND 5000000 THEN '500'
+                                  WHEN RM.amount_total >= 5000000 THEN '501'
+                              END 
+                    ) TT on TT.amount_type = Tol.amount_type and TT.pro_name = Tol.pro_name
+                    ORDER BY Tol.amount_type DESC,
+                             Tol.pro_name,
+                             ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) DESC
+                    ";
                 parameters.Add(new SqlParameter("@overDay", overDay));
                 #endregion
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
@@ -2872,7 +3050,7 @@ namespace KF_WebAPI.Controllers
                     #region 呆帳資料處理
                     var T_SQL_bad = @"WITH ProjectCode AS ( SELECT HA_id,CASE WHEN project_title = 'PJ00001' THEN 'PJ00005' ELSE project_title END AS project_code,del_tag
                                       FROM House_pre_project ),
-                                      BaseData AS ( SELECT I.item_D_name AS pro_name,SM.total_bad_debt - ISNULL(SD.total_payment,0) AS total_bad_debt,
+                                      BaseData AS ( SELECT I.item_D_name AS pro_name,SM.amount_total - ISNULL(SD.total_payment,0) AS amount_bad_total,
                                       CASE WHEN RM.amount_total < 500000 THEN '050' WHEN RM.amount_total BETWEEN 500000 AND 1000000 THEN '100' 
                                       WHEN RM.amount_total BETWEEN 1000001 AND 2000000 THEN '200'
                                       WHEN RM.amount_total BETWEEN 2000001 AND 3000000 THEN '300' WHEN RM.amount_total BETWEEN 3000001 AND 4000000 THEN '400' 
@@ -2885,7 +3063,7 @@ namespace KF_WebAPI.Controllers
                                       JOIN ProjectCode P ON P.HA_id = RM.HA_id AND P.del_tag = '0'
                                       LEFT JOIN Item_list I ON I.item_D_code = P.project_code AND I.item_M_code = 'project_title' AND I.item_D_type = 'Y'
                                       WHERE SM.del_tag = '0' )
-                                      SELECT pro_name,amount_type,COUNT(*) AS TOT_bad_Count,SUM(total_bad_debt) AS TOT_bad_debt 
+                                      SELECT pro_name,amount_type,COUNT(*) AS TOT_bad_Count,SUM(amount_bad_total) AS TOT_bad_debt 
                                       FROM BaseData 
                                       GROUP BY pro_name, amount_type ORDER BY pro_name, amount_type";
                     var badResult = _adoData.ExecuteSQuery(T_SQL_bad).AsEnumerable().Select(row => new {
@@ -3024,64 +3202,102 @@ namespace KF_WebAPI.Controllers
                 var parameters = new List<SqlParameter>();
                 // 增加:結清件數	結清金額欄位
                 var T_SQL = @"
-                        SELECT BC_name,Tol.*,isnull(OV.OV_Count, 0)OV_Count,isnull(OV_total, 0)OV_total, 
-                        ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) OV_Rate, 
-                        isnull(SCount,0) SCount ,isnull(RemainingPrincipal,0)RemainingPrincipal
-                        FROM 
-                        (/*逾期案件-總件數,總金額*/ 
-                        SELECT U_BC,count(U_BC)TOT_Count,sum(amount_total)amount_total   
-                        FROM   
-                            (SELECT isnull(G.Spec_Group,M.U_BC)U_BC ,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,   
-                                    RM.amount_total   
-                            FROM   
-                                (SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date   
-                                FROM Receivable_D   
-                                WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N'   
-                                AND cancel_type='N'   
-                                GROUP BY RCM_id) RD   
-                            LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id   
-                            LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id AND RM.HS_id = HS.HS_id LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id    
- 	                        LEFT JOIN User_M M ON HA.plan_num=M.u_num 
-                        /*特殊組別*/  Left Join User_Spec_Group G on  HA.plan_num=G.u_num 
- 	                        WHERE RM.RCM_id IS NOT NULL AND RM.del_tag='0' AND HA.del_tag='0'   ) OV   
-                        GROUP BY U_BC) Tol   
-                        LEFT JOIN   
-                        (/*逾期案件-總件數,總金額*/    
-                        SELECT U_BC,count(U_BC)OV_Count,sum(amount_total)OV_total FROM   
-                            (SELECT isnull(G.Spec_Group,M.U_BC)U_BC ,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total FROM   
-                                (SELECT RCM_id,min(RC_count)RC_count,min(RC_date)RC_date   
-                                FROM Receivable_D   
-                                WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N'   
-                                GROUP BY RCM_id) RD   
-                            LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0'   
-                            LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0'   
- 	                        LEFT JOIN User_M M ON HA.plan_num=M.u_num 
-                        /*特殊組別*/  Left Join User_Spec_Group G on  HA.plan_num=G.u_num 
- 	                        WHERE RM.RCM_id IS NOT NULL   
-                                AND (DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) >  @overDay ) ) OV   
-                        GROUP BY U_BC) OV ON Tol.U_BC=OV.U_BC    
-                        LEFT JOIN    
-                        (SELECT a.item_D_name BC_name,a.item_D_code   
-                        FROM Item_list a    
-                        WHERE a.item_M_code = 'branch_company' AND a.item_D_type='Y'   
-                        union all  
-                        SELECT a.item_D_name BC_name,a.item_D_code 
-                        FROM Item_list a   
-                        WHERE a.item_M_code = 'Spec_Group' AND a.item_D_type='Y'  
-                        ) U on Tol.U_BC =U.item_D_code   
-                        LEFT JOIN 
-                        (  
-                        select  isnull(G.Spec_Group,U.U_BC)U_BC , sum(SCount)SCount, sum(A.amount_total)RemainingPrincipal  
-                        from view_Receivable_settle A 												 																																																																																					
-  	                        LEFT JOIN Receivable_M M ON M.RCM_id = A.RCM_id							 																																											
-  	                        LEFT JOIN House_apply HA ON HA.HA_id = M.HA_id							 																																											
-  	                        LEFT JOIN House_sendcase HS ON HS.HS_id = M.HS_id	                      
-  	                        LEFT JOIN User_M U ON HA.plan_num=U.U_num 	              
-  	                        Left Join User_Spec_Group G on  HA.plan_num=G.u_num           
-                        group by  isnull(G.Spec_Group,U.U_BC) 
-                        )	S  on Tol.U_BC=S.U_BC                                                         
-                        ORDER BY Tol.U_BC, ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) DESC 
-                        ";
+                    SELECT BC_name,
+                           Tol.*,
+                           isnull(OV.OV_Count, 0)OV_Count,
+                           isnull(OV_total, 0)OV_total,
+                           ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) OV_Rate,
+                           isnull(SCount, 0) SCount,
+                           isnull(RemainingPrincipal, 0)RemainingPrincipal
+                    	   ,TT.TOT_total
+                    FROM
+                      (/*逾期案件-總件數,總金額*/ SELECT U_BC,
+                                               count(U_BC)TOT_Count,
+                                               sum(amount_total)amount_total
+                       FROM
+                         (SELECT isnull(G.Spec_Group, M.U_BC)U_BC,
+                                 DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,
+                                 RM.amount_total
+                          FROM
+                            (SELECT RCM_id,
+                                    min(RC_count)RC_count,
+                                    min(RC_date)RC_date
+                             FROM Receivable_D
+                             WHERE del_tag = '0'
+                               AND check_pay_type='N'
+                               AND bad_debt_type='N'
+                               AND cancel_type='N'
+                             GROUP BY RCM_id) RD
+                          LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id
+                          LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id
+                          AND RM.HS_id = HS.HS_id
+                          LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id
+                          LEFT JOIN User_M M ON HA.plan_num=M.u_num /*特殊組別*/
+                          LEFT JOIN User_Spec_Group G ON HA.plan_num=G.u_num
+                          WHERE RM.RCM_id IS NOT NULL
+                            AND RM.del_tag='0'
+                            AND HA.del_tag='0') OV
+                       GROUP BY U_BC) Tol
+                    LEFT JOIN
+                      (/*逾期案件-總件數,總金額*/ SELECT U_BC,
+                                               count(U_BC)OV_Count,
+                                               sum(amount_total)OV_total
+                       FROM
+                         (SELECT isnull(G.Spec_Group, M.U_BC)U_BC,
+                                 DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,
+                                 RM.amount_total
+                          FROM
+                            (SELECT RCM_id,
+                                    min(RC_count)RC_count,
+                                    min(RC_date)RC_date
+                             FROM Receivable_D
+                             WHERE del_tag = '0'
+                               AND check_pay_type='N'
+                               AND bad_debt_type='N'
+                               AND cancel_type='N'
+                             GROUP BY RCM_id) RD
+                          LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id
+                          AND RM.del_tag='0'
+                          LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id
+                          AND HA.del_tag='0'
+                          LEFT JOIN User_M M ON HA.plan_num=M.u_num /*特殊組別*/
+                          LEFT JOIN User_Spec_Group G ON HA.plan_num=G.u_num
+                          WHERE RM.RCM_id IS NOT NULL
+                            AND (DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) > @overDay)) OV
+                       GROUP BY U_BC) OV ON Tol.U_BC=OV.U_BC
+                    LEFT JOIN
+                      (SELECT a.item_D_name BC_name,
+                              a.item_D_code
+                       FROM Item_list a
+                       WHERE a.item_M_code = 'branch_company'
+                         AND a.item_D_type='Y'
+                       UNION ALL SELECT a.item_D_name BC_name,
+                                        a.item_D_code
+                       FROM Item_list a
+                       WHERE a.item_M_code = 'Spec_Group'
+                         AND a.item_D_type='Y') U ON Tol.U_BC =U.item_D_code
+                    LEFT JOIN
+                      (SELECT isnull(G.Spec_Group, U.U_BC)U_BC,
+                              sum(SCount)SCount,
+                              sum(A.amount_total)RemainingPrincipal
+                       FROM view_Receivable_settle A
+                       LEFT JOIN Receivable_M M ON M.RCM_id = A.RCM_id
+                       LEFT JOIN House_apply HA ON HA.HA_id = M.HA_id
+                       LEFT JOIN House_sendcase HS ON HS.HS_id = M.HS_id
+                       LEFT JOIN User_M U ON HA.plan_num=U.U_num
+                       LEFT JOIN User_Spec_Group G ON HA.plan_num=G.u_num
+                       GROUP BY isnull(G.Spec_Group, U.U_BC)) S ON Tol.U_BC=S.U_BC
+                    LEFT JOIN (
+                      select isnull(G.Spec_Group, U.U_BC)U_BC,sum(amount_total) as TOT_total from Receivable_M RM
+                      LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id
+                      LEFT JOIN User_M U ON HA.plan_num=U.U_num
+                      LEFT JOIN User_Spec_Group G ON HA.plan_num=G.u_num
+                      WHERE RM.RCM_id IS NOT NULL AND RM.del_tag='0' AND HA.del_tag='0'
+                      group by isnull(G.Spec_Group, U.U_BC)
+                    ) TT on TT.U_BC=Tol.U_BC
+                    ORDER BY Tol.U_BC,
+                             ROUND(isnull(OV_total, 0)/isnull(Tol.amount_total, 0)*100, 2) DESC 
+                    ";
                 parameters.Add(new SqlParameter("@overDay", overDay));
                 #endregion
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
@@ -3098,12 +3314,14 @@ namespace KF_WebAPI.Controllers
                         OV_Rate = row.Field<decimal>("OV_Rate"),
                         SCount = row.Field<int>("SCount"),
                         RemainingPrincipal = row.Field<decimal>("RemainingPrincipal"),
+                        TOT_total = row.Field<decimal>("TOT_total"),
+                        TOT_OV_Rate = Math.Round(row.Field<decimal>("OV_total") / row.Field<decimal>("TOT_total") * 100, 2),
                         TOT_bad_Count = 0,
                         TOT_bad_debt = 0,
                         OV_bad_Rate = 0
                     }).ToList();
                     #region 呆帳資料處理
-                    var T_SQL_bad = @"WITH BaseData AS ( SELECT LI.item_D_name AS BC_name,SM.total_bad_debt - ISNULL(SD.total_payment,0) AS total_bad_debt 
+                    var T_SQL_bad = @"WITH BaseData AS ( SELECT LI.item_D_name AS BC_name,SM.amount_total - ISNULL(SD.total_payment,0) AS amount_bad_total 
                                       FROM StagnationDebt_M SM
                                       LEFT JOIN ( SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id ) SD 
                                       ON SD.sdm_id = SM.sdm_id
@@ -3115,7 +3333,7 @@ namespace KF_WebAPI.Controllers
                                       LEFT JOIN ( SELECT item_D_code,item_D_name FROM Item_list WHERE item_M_code IN ('branch_company','Spec_Group') and item_D_type ='Y' ) LI 
                                       ON LI.item_D_code = M.U_BC
                                       WHERE SM.del_tag='0' AND HA.del_tag='0')
-                                      SELECT BC_name,COUNT(*) AS TOT_bad_Count,SUM(total_bad_debt) AS TOT_bad_debt FROM BaseData GROUP BY BC_name";
+                                      SELECT BC_name,COUNT(*) AS TOT_bad_Count,SUM(amount_bad_total) AS TOT_bad_debt FROM BaseData GROUP BY BC_name";
                     #endregion
                     var badResult = _adoData.ExecuteSQuery(T_SQL_bad).AsEnumerable().Select(row => new {
                         BC_name = row.Field<string>("BC_name"),
@@ -3130,7 +3348,7 @@ namespace KF_WebAPI.Controllers
                         {
                             item.TOT_bad_Count = match.TOT_bad_Count;
                             item.TOT_bad_debt = match.TOT_bad_debt;
-                            item.OV_bad_Rate = item.amount_total == 0 ? 0 : Math.Round(item.TOT_bad_debt / item.amount_total * 100, 2);
+                            item.OV_bad_Rate = item.amount_total == 0 ? 0 : Math.Round(item.TOT_bad_debt / item.TOT_total * 100, 2);
                         }
                     }
                     resultClass.ResultCode = "000";
