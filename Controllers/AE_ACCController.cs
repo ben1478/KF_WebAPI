@@ -133,45 +133,46 @@ namespace KF_WebAPI.Controllers
                 isFirst = dtResult_f.Rows[0]["isFirst"].ToString();
                 if (isFirst == "Y")
                 {
-                    T_SQL = @"SELECT M.amount_total RP_AMT,isnull(M.Break_AMT,CEILING(M.amount_total * 0.13)) Break_AMT,
-                              convert(varchar(10),S.get_amount_date,111) RC_date,D1.RC_count,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111)OffDate,
-                              D1.interest,Case When DATEPART(Day,convert(varchar(10),S.get_amount_date,111)) = DATEPART(Day,isnull(M.date_begin_settle, SYSDATETIME())) and DATEDIFF(MONTH, convert(varchar(10),S.get_amount_date,111), isnull(M.date_begin_settle, SYSDATETIME())) = 1 
-                              THEN 30 When DATEDIFF(Day, convert(varchar(10),S.get_amount_date,111), isnull(M.date_begin_settle, SYSDATETIME())) > 0 THEN DATEDIFF(Day, convert(varchar(10),S.get_amount_date,111), isnull(M.date_begin_settle, SYSDATETIME())) ELSE 0 end interestDay,
-                              isnull(M.Interest_AMT,0) interest_AMT,
-                              0 as Delay_AMT,'Y' as isFirst,amount_per_month,H.CS_name,
-                              ISNULL((select SUM(ISNULL(RecPayAmt-RC_amount,0)) from Receivable_D where RCM_id=@RCM_ID and check_pay_type='Y' and RecPayAmt > 0),0) as OverAmt
-                              ,(select project_title from House_pre_project 
-                              inner join House_sendcase on House_sendcase.HP_project_id = House_pre_project.HP_project_id  
-                              where House_pre_project.HA_id = H.HA_id and M.HS_id = House_sendcase.HS_id) as project_title                              
-                              FROM Receivable_M M
-                              LEFT JOIN House_sendcase S ON M.HS_id=S.HS_id
-                              LEFT JOIN Receivable_D D1 ON M.RCM_id=D1.RCM_id
-                              LEFT JOIN House_apply H ON H.HA_id = M.HA_id
-                              WHERE M.RCM_id =　@RCM_id AND D1.RC_count=1";
+                    T_SQL = @"
+                    SELECT Case When P.project_title = 'PJ00099' Then M.amount_per_month*M.month_total Else M.amount_total END as RP_AMT,
+                    isnull(M.Break_AMT,CEILING(M.amount_total * 0.13)) Break_AMT,
+                    convert(varchar(10),S.get_amount_date,111) RC_date,D1.RC_count,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111) OffDate,
+                    D1.interest,Case When DATEPART(Day,convert(varchar(10),S.get_amount_date,111)) = DATEPART(Day,isnull(M.date_begin_settle, SYSDATETIME())) and DATEDIFF(MONTH, convert(varchar(10),S.get_amount_date,111), isnull(M.date_begin_settle, SYSDATETIME())) = 1 
+                    THEN 30 When DATEDIFF(Day, convert(varchar(10),S.get_amount_date,111), isnull(M.date_begin_settle, SYSDATETIME())) > 0 THEN DATEDIFF(Day, convert(varchar(10),S.get_amount_date,111), isnull(M.date_begin_settle, SYSDATETIME())) ELSE 0 end interestDay,
+                    isnull(M.Interest_AMT,0) interest_AMT,P.project_title,
+                    0 as Delay_AMT,'Y' as isFirst,amount_per_month,H.CS_name,
+                    ISNULL((select SUM(ISNULL(RecPayAmt-RC_amount,0)) from Receivable_D where RCM_id=@RCM_ID and check_pay_type='Y' and RecPayAmt > 0),0) as OverAmt
+                    FROM Receivable_M M
+                    LEFT JOIN House_sendcase S ON M.HS_id=S.HS_id
+                    LEFT JOIN Receivable_D D1 ON M.RCM_id=D1.RCM_id
+                    LEFT JOIN House_apply H ON H.HA_id = M.HA_id
+                    LEFT JOIN House_pre_project P ON S.HP_project_id = P.HP_project_id
+                    WHERE M.RCM_id =　@RCM_id AND D1.RC_count=1";
                 }
                 else
                 {
-                    T_SQL = @"SELECT D.Ex_RemainingPrincipal RP_AMT,isnull(M.Break_AMT,CEILING(D.Ex_RemainingPrincipal * 0.13)) Break_AMT,
-                              convert(varchar(10),D.RC_date,111) RC_date,D.RC_count,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111) OffDate,
-                              D1.interest,Case When DATEPART(Day,D.RC_date) = DATEPART(Day,isnull(M.date_begin_settle, SYSDATETIME())) and DATEDIFF(MONTH, D.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) = 1 
-                              THEN 30 ELSE DATEDIFF(Day, D.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) end interestDay,
-                              isnull(M.Interest_AMT,0) interest_AMT,
-                              (select dbo.GetTotalDelay_AMT(@RCM_ID,SYSDATETIME())) Delay_AMT,'N' as isFirst,M.amount_per_month,H.CS_name,
-                              ISNULL((select SUM(ISNULL(RecPayAmt-RC_amount,0)) from Receivable_D where RCM_id=@RCM_ID and check_pay_type='Y' and RecPayAmt > 0),0) as OverAmt
-                              ,(select project_title from House_pre_project 
-                              inner join House_sendcase on House_sendcase.HP_project_id = House_pre_project.HP_project_id  
-                              where House_pre_project.HA_id = H.HA_id and M.HS_id = House_sendcase.HS_id) as project_title                              
-                              FROM Receivable_D D
-                              LEFT JOIN Receivable_D D1 ON D.RCM_id=D1.RCM_id AND (D.RC_count+1) = D1.RC_count
-                              LEFT JOIN Receivable_M M ON D.RCM_id=M.RCM_id
-                              LEFT JOIN House_apply H ON H.HA_id = M.HA_id
-                              WHERE D.RCM_id = @RCM_ID
-                              AND D.RC_count IN
-                              ( SELECT MAX(RC_count ) FROM Receivable_D
-                              WHERE RCM_id = @RCM_ID
-                              AND RC_note not like '%清償%'
-                              AND check_pay_type <> 'S'
-                              AND check_pay_type='Y')";
+                    T_SQL = @"
+                    SELECT Case When P.project_title = 'PJ00099' THEN M.amount_per_month*(M.month_total-D.RC_count) ELSE D.Ex_RemainingPrincipal END as RP_AMT,
+                    isnull(M.Break_AMT,CEILING(D.Ex_RemainingPrincipal * 0.13)) Break_AMT,
+                    convert(varchar(10),D.RC_date,111) RC_date,D.RC_count,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111) OffDate,
+                    D1.interest,Case When DATEPART(Day,D.RC_date) = DATEPART(Day,isnull(M.date_begin_settle, SYSDATETIME())) and DATEDIFF(MONTH, D.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) = 1 
+                    THEN 30 ELSE DATEDIFF(Day, D.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) end interestDay,
+                    isnull(M.Interest_AMT,0) interest_AMT,(select dbo.GetTotalDelay_AMT(@RCM_ID,SYSDATETIME())) Delay_AMT,'N' as isFirst,
+                    M.amount_per_month,H.CS_name,P.project_title,
+                    ISNULL((select SUM(ISNULL(RecPayAmt-RC_amount,0)) from Receivable_D where RCM_id=@RCM_ID and check_pay_type='Y' and RecPayAmt > 0),0) as OverAmt
+                    FROM Receivable_D D
+                    LEFT JOIN Receivable_D D1 ON D.RCM_id=D1.RCM_id AND (D.RC_count+1) = D1.RC_count
+                    LEFT JOIN Receivable_M M ON D.RCM_id=M.RCM_id
+                    LEFT JOIN House_apply H ON H.HA_id = M.HA_id
+                    LEFT JOIN House_sendcase S ON S.HS_id = M.HS_id
+                    LEFT JOIN House_pre_project P ON S.HP_project_id = P.HP_project_id
+                    WHERE D.RCM_id = @RCM_ID
+                    AND D.RC_count IN
+                    ( SELECT MAX(RC_count ) FROM Receivable_D
+                    WHERE RCM_id = @RCM_ID
+                    AND RC_note not like '%清償%'
+                    AND check_pay_type <> 'S'
+                    AND check_pay_type='Y')";
                 }
 
                 var parameters = new List<SqlParameter>
