@@ -54,4 +54,12 @@
         public string FM_Source_ID { get; set; }
         public string User { get; set; }
     }
+
+    public class LF_AF_Confirm
+    {
+        public string Source_ID { get; set; }
+        public string FM_Step { get; set; }
+        public string Confirm { get; set; }
+        public string User { get; set; }
+    }
 }

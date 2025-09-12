@@ -4,10 +4,13 @@ using KF_WebAPI.FunctionHandler;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.Identity.Client;
+using Microsoft.SqlServer.Server;
 using Newtonsoft.Json;
 using OfficeOpenXml.ExternalReferences;
 using System;
 using System.Data;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -436,7 +439,6 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-               
                 var T_SQL = @"Update AuditFlow_D set FD_Step_desc=@FD_Step_desc,FD_Step_SignType=@FD_Step_SignType,FD_Step_date=GETDATE(),
                     edit_date=GETDATE(),edit_num=@User,edit_ip=@IP
                     where FM_Source_ID=@FM_Source_ID and FD_Step_num=@User and FD_Sign_Countersign=@FD_Sign_Countersign and FD_Step=@FD_Step";
@@ -613,6 +615,131 @@ namespace KF_WebAPI.Controllers
                     resultClass.ResultMsg = "查無資料";
                     return BadRequest(resultClass);
                 }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 從外部獲取待審核列表
+        /// </summary>
+        [HttpGet("LF_AF_LQuery")]
+        public ActionResult<ResultClass<string>> LF_AF_LQuery(string GUID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL_Token 確認GUID是否有效且抓取對應者
+                var T_SQL_T = @"select * from AE_WebToken where GUID=@GUID and GETDATE() between add_date and Effect_time";
+                var parameters_t = new List<SqlParameter>
+                {
+                    new SqlParameter("@GUID", GUID)
+                };
+                #endregion
+                var dtResult_t = _adoData.ExecuteQuery(T_SQL_T, parameters_t);
+                if (dtResult_t.Rows.Count > 0)
+                {
+                    var row = dtResult_t.Rows[0];
+                    var chkNumValue = row["chk_num"]?.ToString();
+                    #region SQL
+                    var T_SQL = @"SELECT AM.AF_ID,AM.FM_Source_ID,AM.FM_Step,CASE WHEN ISNULL(PM.PM_Caption, '') <> '' THEN PM.PM_Caption
+                                  ELSE ( SELECT STUFF((SELECT ',' + VD_Fee_Summary FROM InvPrepay_D ID WHERE ID.VP_ID = IM.VP_ID FOR XML PATH(''), TYPE)
+                                  .value('.', 'NVARCHAR(MAX)'), 1, 1, '')) END AS Summary,Case WHEN ISNULL(PM.PM_Amt,0) <> 0 THEN FORMAT(PM.PM_Amt,'N0')
+                                  ELSE FORMAT(IM.VP_Total_Money,'N0') END AS Total_Amt
+                                  FROM AuditFlow_M AM
+                                  INNER JOIN AuditFlow_D AD ON AM.AF_ID = AD.AF_ID AND AM.FM_Step = AD.FD_Step
+                                  LEFT JOIN Procurement_M PM ON AM.FM_Source_ID = PM.PM_ID
+                                  LEFT JOIN InvPrepay_M IM ON AM.FM_Source_ID = IM.VP_ID
+                                  WHERE FD_Step_num = @Num";
+                    var parameters = new List<SqlParameter>
+                    {
+                        new SqlParameter("@Num",chkNumValue)
+                    };
+                    #endregion
+                    var dtResult = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
+                    {
+                        AF_ID = row.Field<string>("AF_ID"),
+                        FM_Source_ID = row.Field<string>("FM_Source_ID"),
+                        FM_Step = row.Field<string>("FM_Step"),
+                        Summary = row.Field<string>("Summary"),
+                        Total_Amt = row.Field<string>("Total_Amt"),
+                        User = chkNumValue
+                    });
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "401";
+                    resultClass.ResultMsg = $"Token失效請重新抓取網址";
+                    return StatusCode(401, resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 外部審核
+        /// </summary>
+        [HttpPost("LF_AF_Upd")]
+        public ActionResult<ResultClass<string>> LF_AF_Upd(List<LF_AF_Confirm> list)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                foreach (var item in list)
+                {
+                    #region SQL
+                    var T_SQL = @"update AuditFlow_D set FD_Step_SignType=@FD_Step_SignType,FD_Step_date=GETDATE(),edit_date=GETDATE(),edit_num=@User,edit_ip=@IP
+                                  where FM_Source_ID=@Source_ID and FD_Step_num = @User";
+                    var parameters = new List<SqlParameter>()
+                    {
+                        new SqlParameter("@FD_Step_SignType",item.Confirm),
+                        new SqlParameter("@User",item.User),
+                        new SqlParameter("@IP",clientIp),
+                        new SqlParameter("@Source_ID",item.Source_ID)
+                    };
+                    #endregion
+                    int Result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                    if (Result == 0)
+                    {
+                        resultClass.ResultCode = "400";
+                        resultClass.ResultMsg = "審核失敗,請洽資訊人員";
+                        return BadRequest(resultClass);
+                    }
+                    else
+                    {
+                        var T_SQL_SP = @"exec UpdAuditFlowM @Form_ID,@FM_Step,@Signtype,@AF_Back_Reason";
+                        var parameters_sp = new List<SqlParameter>
+                        {
+                            new SqlParameter("@Form_ID", item.Source_ID),
+                            new SqlParameter("@FM_Step", item.FM_Step),
+                            new SqlParameter("@Signtype", item.Confirm),
+                            new SqlParameter("@AF_Back_Reason", DBNull.Value)
+                        };
+                        _adoData.ExecuteQuery(T_SQL_SP, parameters_sp);
+                    }
+
+                }
+
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "審核成功";
+                return Ok(resultClass);
             }
             catch (Exception ex)
             {
