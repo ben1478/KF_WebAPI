@@ -476,11 +476,11 @@ namespace KF_WebAPI.Controllers
                     resultClass.ResultMsg = "異動成功";
 
                     //通知文中傳票API
-                    if (model.FD_Step_SignType == "FSIGN002" && model.FM_Step == "2" && new[] { "PA", "PP" }.Any(p => model.FM_Source_ID.StartsWith(p)))
-                    {
-                        var _aWintonController = new A_WintonController();
-                        Task.Run(() => _aWintonController.SendSummons(model.FM_Source_ID));
-                    }
+                    //if (model.FD_Step_SignType == "FSIGN002" && model.FM_Step == "2" && new[] { "PA", "PP" }.Any(p => model.FM_Source_ID.StartsWith(p)))
+                    //{
+                    //    var _aWintonController = new A_WintonController();
+                    //    Task.Run(() => _aWintonController.SendSummons(model.FM_Source_ID));
+                    //}
                     return Ok(resultClass);
                 }
             }
