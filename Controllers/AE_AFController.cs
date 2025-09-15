@@ -748,5 +748,36 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+        /// <summary>
+        /// 外部未簽核財務表單列表
+        /// </summary>
+        [HttpGet("LF_Send_LQuery")]
+        public ActionResult<ResultClass<string>> LF_Send_LQuery()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"select UM.U_name,COUNT(*) as count,FD_Step_num from AuditFlow_M AM
+                              Inner join AuditFlow_D AD on AM.FM_Source_ID = AD.FM_Source_ID and AM.FM_Step = AD.FD_Step and FD_Step_SignType='FSIGN001'
+                              Left join User_M UM on UM.U_num = AD.FD_Step_num 
+                              where FD_Step_num IN ('K0000','K0001','K0002')
+                              GROUP by UM.U_name,FD_Step_num";
+                #endregion
+                var dtResult= _adoData.ExecuteSQuery(T_SQL);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
     }
 }

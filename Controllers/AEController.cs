@@ -764,6 +764,51 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+        /// <summary>
+        /// 取得GUID
+        /// </summary>
+        [HttpGet("GetWebToken")]
+        public ActionResult<ResultClass<string>> GetWebToken(string chknum,string Type,string user)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                string guid = Guid.NewGuid().ToString().ToUpper();
+                #region SQL
+                var T_SQL = @"Insert into AE_WebToken Values (@GUID,@chk_num,@TokenType,'N',DATEADD(MINUTE, 30, GETDATE()),@add_num,GETDATE(),@add_ip,0)";
+                var parameters = new List<SqlParameter> 
+                {
+                    new SqlParameter("@GUID",guid),
+                    new SqlParameter("@chk_num",chknum),
+                    new SqlParameter("@TokenType",Type),
+                    new SqlParameter("@add_num",user),
+                    new SqlParameter("@add_ip",clientIp)
+                };
+                #endregion
+                int Result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (Result == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "Token失敗,請洽資訊人員";
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = guid;
+                }
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
     }
 
 }
