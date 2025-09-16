@@ -303,13 +303,18 @@ namespace KF_WebAPI.Controllers
                     LEFT JOIN Item_list LI ON LI.item_D_code = AM.FM_Step_SignType AND LI.item_M_code = 'Flow_sign_type'
                     LEFT JOIN Procurement_M PM ON AM.FM_Source_ID = PM.PM_ID 
                     LEFT JOIN InvPrepay_M IM ON AM.FM_Source_ID = IM.VP_ID 
-                    WHERE (PM.PM_Cancel='N' OR IM.VP_Cancel='N') and AM.add_date BETWEEN @RF_Date_S AND @RF_Date_E
-                    order by AM.add_date desc,FD_Step";
+                    WHERE (PM.PM_Cancel='N' OR IM.VP_Cancel='N') and AM.add_date BETWEEN @RF_Date_S AND @RF_Date_E";
                 if (!string.IsNullOrEmpty(model.U_BC))
                 {
                     T_SQL += " and AM.FM_BC = @U_BC";
                     parameters.Add(new SqlParameter("@U_BC", model.U_BC));
                 }
+                if (!string.IsNullOrEmpty(model.User))
+                {
+                    T_SQL += " and (PM.PM_U_num = @User OR IM.VP_U_num = @User)";
+                    parameters.Add(new SqlParameter("@User", model.User));
+                }
+                T_SQL += " order by AM.add_date desc,FD_Step";
                 parameters.Add(new SqlParameter("@RF_Date_S", FuncHandler.ConvertROCToGregorian(model.RF_Date_S)));
                 parameters.Add(new SqlParameter("@RF_Date_E", FuncHandler.ConvertROCToGregorian(model.RF_Date_E)));
                 #endregion
@@ -628,27 +633,15 @@ namespace KF_WebAPI.Controllers
         /// 從外部獲取待審核列表
         /// </summary>
         [HttpGet("LF_AF_LQuery")]
-        public ActionResult<ResultClass<string>> LF_AF_LQuery(string GUID)
+        public ActionResult<ResultClass<string>> LF_AF_LQuery(string User)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
             try
             {
                 ADOData _adoData = new ADOData();
-                #region SQL_Token 確認GUID是否有效且抓取對應者
-                var T_SQL_T = @"select * from AE_WebToken where GUID=@GUID and GETDATE() between add_date and Effect_time";
-                var parameters_t = new List<SqlParameter>
-                {
-                    new SqlParameter("@GUID", GUID)
-                };
-                #endregion
-                var dtResult_t = _adoData.ExecuteQuery(T_SQL_T, parameters_t);
-                if (dtResult_t.Rows.Count > 0)
-                {
-                    var row = dtResult_t.Rows[0];
-                    var chkNumValue = row["chk_num"]?.ToString();
-                    #region SQL
-                    var T_SQL = @"SELECT AM.AF_ID,AM.FM_Source_ID,AM.FM_Step,CASE WHEN ISNULL(PM.PM_Caption, '') <> '' THEN PM.PM_Caption
+                #region SQL
+                var T_SQL = @"SELECT AM.AF_ID,AM.FM_Source_ID,AM.FM_Step,CASE WHEN ISNULL(PM.PM_Caption, '') <> '' THEN PM.PM_Caption
                                   ELSE ( SELECT STUFF((SELECT ',' + VD_Fee_Summary FROM InvPrepay_D ID WHERE ID.VP_ID = IM.VP_ID FOR XML PATH(''), TYPE)
                                   .value('.', 'NVARCHAR(MAX)'), 1, 1, '')) END AS Summary,Case WHEN ISNULL(PM.PM_Amt,0) <> 0 THEN FORMAT(PM.PM_Amt,'N0')
                                   ELSE FORMAT(IM.VP_Total_Money,'N0') END AS Total_Amt
@@ -657,30 +650,24 @@ namespace KF_WebAPI.Controllers
                                   LEFT JOIN Procurement_M PM ON AM.FM_Source_ID = PM.PM_ID
                                   LEFT JOIN InvPrepay_M IM ON AM.FM_Source_ID = IM.VP_ID
                                   WHERE FD_Step_num = @Num";
-                    var parameters = new List<SqlParameter>
-                    {
-                        new SqlParameter("@Num",chkNumValue)
-                    };
-                    #endregion
-                    var dtResult = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
-                    {
-                        AF_ID = row.Field<string>("AF_ID"),
-                        FM_Source_ID = row.Field<string>("FM_Source_ID"),
-                        FM_Step = row.Field<string>("FM_Step"),
-                        Summary = row.Field<string>("Summary"),
-                        Total_Amt = row.Field<string>("Total_Amt"),
-                        User = chkNumValue
-                    });
-                    resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
-                    return Ok(resultClass);
-                }
-                else
+                var parameters = new List<SqlParameter>
                 {
-                    resultClass.ResultCode = "401";
-                    resultClass.ResultMsg = $"Token失效請重新抓取網址";
-                    return StatusCode(401, resultClass);
-                }
+                    new SqlParameter("@Num",User)
+                };
+                #endregion
+
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
+                {
+                    AF_ID = row.Field<string>("AF_ID"),
+                    FM_Source_ID = row.Field<string>("FM_Source_ID"),
+                    FM_Step = row.Field<string>("FM_Step"),
+                    Summary = row.Field<string>("Summary"),
+                    Total_Amt = row.Field<string>("Total_Amt"),
+                    User = User
+                });
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
             }
             catch (Exception ex)
             {

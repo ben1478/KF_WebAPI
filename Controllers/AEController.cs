@@ -779,7 +779,8 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 string guid = Guid.NewGuid().ToString().ToUpper();
                 #region SQL
-                var T_SQL = @"Insert into AE_WebToken Values (@GUID,@chk_num,@TokenType,'N',DATEADD(MINUTE, 30, GETDATE()),@add_num,GETDATE(),@add_ip,0)";
+                var T_SQL = @"Insert into AE_WebToken(GUID,chk_num,TokenType,isConfirm,Effect_time,add_num,add_date,add_ip,ErrCount) 
+                              Values (@GUID,@chk_num,@TokenType,'N',DATEADD(MINUTE, 30, GETDATE()),@add_num,GETDATE(),@add_ip,0)";
                 var parameters = new List<SqlParameter> 
                 {
                     new SqlParameter("@GUID",guid),
