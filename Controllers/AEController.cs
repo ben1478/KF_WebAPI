@@ -841,6 +841,14 @@ namespace KF_WebAPI.Controllers
                     });
                     resultClass.ResultCode = "000";
                     resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    #region SQL_UPDATE
+                    var T_SQL_U = @"Update AE_WebToken set isConfirm='Y' where GUID=@GUID";
+                    var parameters_u = new List<SqlParameter> 
+                    {
+                        new SqlParameter("@GUID", GUID)
+                    };
+                    var dtResult_u = _adoData.ExecuteQuery(T_SQL_U, parameters_u);
+                    #endregion
                     return Ok(resultClass);
                 }
                 else
