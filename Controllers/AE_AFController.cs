@@ -628,7 +628,7 @@ namespace KF_WebAPI.Controllers
         /// 從外部獲取待審核列表
         /// </summary>
         [HttpGet("LF_AF_LQuery")]
-        public ActionResult<ResultClass<string>> LF_AF_LQuery(string userID)
+        public ActionResult<ResultClass<string>> LF_AF_LQuery(string User)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -646,9 +646,9 @@ namespace KF_WebAPI.Controllers
                                   LEFT JOIN InvPrepay_M IM ON AM.FM_Source_ID = IM.VP_ID
                                   WHERE FD_Step_num = @Num";
                 var parameters = new List<SqlParameter>
-                    {
-                        new SqlParameter("@Num",userID)
-                    };
+                {
+                    new SqlParameter("@Num",User)
+                };
                 #endregion
 
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
@@ -658,7 +658,7 @@ namespace KF_WebAPI.Controllers
                     FM_Step = row.Field<string>("FM_Step"),
                     Summary = row.Field<string>("Summary"),
                     Total_Amt = row.Field<string>("Total_Amt"),
-                    User = userID
+                    User = User
                 });
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(dtResult);
