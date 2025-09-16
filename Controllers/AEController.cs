@@ -809,6 +809,56 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+        /// <summary>
+        /// 驗證GUID
+        /// </summary>
+        [HttpGet("CheckWebToken")]
+        public ActionResult<ResultClass<string>> CheckWebToken(string GUID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL_Token 確認GUID是否有效且抓取對應者
+                var T_SQL = @" select 　chk_num [User],U_BC from AE_WebToken A Left Join User_M M on A.chk_num=M.U_num where GUID=@GUID and GETDATE() < Effect_time and isConfirm='N'";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@GUID", GUID)
+                };
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                   
+                    dtResult.AsEnumerable().Select(row => new
+                    {
+                        User = row.Field<string>("User"),
+                        U_BC = row.Field<string>("U_BC")
+                      
+                    });
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "401";
+                    resultClass.ResultMsg = $"Token失效請重新抓取網址";
+                    return StatusCode(401, resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+
+
     }
 
 }
