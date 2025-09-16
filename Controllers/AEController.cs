@@ -836,8 +836,8 @@ namespace KF_WebAPI.Controllers
                     dtResult.AsEnumerable().Select(row => new
                     {
                         User = row.Field<string>("User"),
-                        U_BC = row.Field<string>("U_BC")
-                      
+                        U_BC = row.Field<string>("U_BC"),
+                        isVerify = row.Field<string>("isVerify")
                     });
                     resultClass.ResultCode = "000";
                     resultClass.objResult = JsonConvert.SerializeObject(dtResult);
