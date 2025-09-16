@@ -779,8 +779,8 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 string guid = Guid.NewGuid().ToString().ToUpper();
                 #region SQL
-                var T_SQL = @"Insert into AE_WebToken(GUID,chk_num,TokenType,isConfirm,Effect_time,add_num,add_date,add_ip,ErrCount) 
-                              Values (@GUID,@chk_num,@TokenType,'N',DATEADD(MINUTE, 30, GETDATE()),@add_num,GETDATE(),@add_ip,0)";
+                var T_SQL = @"Insert into AE_WebToken(GUID,chk_num,TokenType,isConfirm,Effect_time,add_num,add_date,add_ip,ErrCount,isVerify) 
+                              Values (@GUID,@chk_num,@TokenType,'N',DATEADD(MINUTE, 30, GETDATE()),@add_num,GETDATE(),@add_ip,0,'N')";
                 var parameters = new List<SqlParameter> 
                 {
                     new SqlParameter("@GUID",guid),
@@ -823,7 +823,7 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL_Token 確認GUID是否有效且抓取對應者
-                var T_SQL = @" select 　chk_num [User],U_BC from AE_WebToken A Left Join User_M M on A.chk_num=M.U_num where GUID=@GUID and GETDATE() < Effect_time and isConfirm='N'";
+                var T_SQL = @" select 　chk_num [User],U_BC,isVerify from AE_WebToken A Left Join User_M M on A.chk_num=M.U_num where GUID=@GUID and GETDATE() < Effect_time and isConfirm='N'";
                 var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@GUID", GUID)
