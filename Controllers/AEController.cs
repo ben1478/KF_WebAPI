@@ -841,14 +841,19 @@ namespace KF_WebAPI.Controllers
                     });
                     resultClass.ResultCode = "000";
                     resultClass.objResult = JsonConvert.SerializeObject(dtResult);
-                    #region SQL_UPDATE
-                    var T_SQL_U = @"Update AE_WebToken set isConfirm='Y' where GUID=@GUID";
-                    var parameters_u = new List<SqlParameter> 
+                    /*不需要驗證的才可以直接更新isConfirm='Y'*/
+                    if (dtResult.Rows[0]["isVerify"].ToString() == "N")
                     {
-                        new SqlParameter("@GUID", GUID)
-                    };
-                    var dtResult_u = _adoData.ExecuteQuery(T_SQL_U, parameters_u);
-                    #endregion
+                        #region SQL_UPDATE
+                        var T_SQL_U = @"Update AE_WebToken set isConfirm='Y',Confirm_date=SYSDATETIME() where GUID=@GUID";
+                        var parameters_u = new List<SqlParameter>
+                        {
+                            new SqlParameter("@GUID", GUID)
+                        };
+                        _adoData.ExecuteNonQuery(T_SQL_U, parameters_u);
+                        #endregion
+                    }
+
                     return Ok(resultClass);
                 }
                 else
@@ -857,6 +862,38 @@ namespace KF_WebAPI.Controllers
                     resultClass.ResultMsg = $"Token失效請重新抓取網址";
                     return StatusCode(401, resultClass);
                 }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+
+        /// <summary>
+        /// 更新WebToken isConfirm By  GUID
+        /// </summary>
+        [HttpGet("UpdWebToken")]
+        public ActionResult<ResultClass<string>> UpdWebToken(string GUID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL_UPDATE
+                var T_SQL_U = @"Update AE_WebToken set isConfirm='Y',Confirm_date=SYSDATETIME() where GUID=@GUID";
+                var parameters_u = new List<SqlParameter>
+                        {
+                            new SqlParameter("@GUID", GUID)
+                        };
+                _adoData.ExecuteNonQuery(T_SQL_U, parameters_u);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = "更新成功";
+                return Ok(resultClass);
+
             }
             catch (Exception ex)
             {
