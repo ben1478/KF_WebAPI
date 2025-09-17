@@ -890,6 +890,7 @@ namespace KF_WebAPI.Controllers
                             new SqlParameter("@GUID", GUID)
                         };
                 _adoData.ExecuteNonQuery(T_SQL_U, parameters_u);
+                #endregion
                 resultClass.ResultCode = "000";
                 resultClass.objResult = "更新成功";
                 return Ok(resultClass);
