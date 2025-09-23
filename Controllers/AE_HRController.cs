@@ -2731,24 +2731,27 @@ namespace KF_WebAPI.Controllers
 
                 foreach (var item in modellist_M)
                 {
-                    var str_Bc = item.U_Check_BC.Split('#').Where(code => !string.IsNullOrEmpty(code)).ToArray();
-                    if (str_Bc.Length == 0)
-                        continue;
-                    #region SQL
-                    var parameters_bc = new List<SqlParameter>();
-                    var T_SQL_BC = "SELECT item_D_name FROM Item_list WHERE item_M_code = 'branch_company' AND item_D_type = 'Y'";
-                    var inClause = string.Join(", ", str_Bc.Select((code, index) => "@code" + index));
-                    T_SQL_BC = T_SQL_BC + " AND item_D_code IN (" + inClause + ")";
-                    for (int i = 0; i < str_Bc.Length; i++)
+                    if (item.U_Check_BC != null)
                     {
-                        parameters_bc.Add(new SqlParameter("@code" + i, str_Bc[i]));
+                        var str_Bc = item.U_Check_BC.Split('#').Where(code => !string.IsNullOrEmpty(code)).ToArray();
+                        if (str_Bc.Length == 0)
+                            continue;
+                        #region SQL
+                        var parameters_bc = new List<SqlParameter>();
+                        var T_SQL_BC = "SELECT item_D_name FROM Item_list WHERE item_M_code = 'branch_company' AND item_D_type = 'Y'";
+                        var inClause = string.Join(", ", str_Bc.Select((code, index) => "@code" + index));
+                        T_SQL_BC = T_SQL_BC + " AND item_D_code IN (" + inClause + ")";
+                        for (int i = 0; i < str_Bc.Length; i++)
+                        {
+                            parameters_bc.Add(new SqlParameter("@code" + i, str_Bc[i]));
+                        }
+                        #endregion
+                        DataTable result_bc = _adoData.ExecuteQuery(T_SQL_BC, parameters_bc);
+                        var values = result_bc.AsEnumerable()
+                             .Select(row => "#" + row.Field<string>("item_D_name"))
+                             .ToArray();
+                        item.U_Check_BC = string.Join("", values);
                     }
-                    #endregion
-                    DataTable result_bc = _adoData.ExecuteQuery(T_SQL_BC, parameters_bc);
-                    var values = result_bc.AsEnumerable()
-                         .Select(row => "#" + row.Field<string>("item_D_name"))
-                         .ToArray();
-                    item.U_Check_BC = string.Join("", values);
                 }
 
                 resultClass.ResultCode = "000";
