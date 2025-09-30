@@ -293,8 +293,13 @@ namespace KF_WebAPI.Controllers
                                     new SqlParameter("@IP",clientIp),
                                     new SqlParameter("@Map_id",item.Map_id)
                                 };
-
-                                _adoData.ExecuteNonQuery(updateSql, parameters_Upd);
+                                int result = _adoData.ExecuteNonQuery(updateSql, parameters_Upd);
+                                if (result == 0)
+                                {
+                                    resultClass.ResultCode = "400";
+                                    resultClass.ResultMsg = "修改失敗";
+                                    return BadRequest(resultClass);
+                                }
                             }
                         }
                     }
