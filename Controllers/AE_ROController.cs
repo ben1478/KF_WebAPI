@@ -35,7 +35,7 @@ namespace KF_WebAPI.Controllers
                 {
                     R_id = row.Field<decimal>("R_id"),
                     R_num = row.Field<string>("R_num"),
-                    R_name = _FuncHandler.DeCodeBig5Words(row.Field<string>("R_name")),
+                    R_name = _FuncHandler.DeCodeBNWords(row.Field<string>("R_name")),
                     del_tag = row.Field<string>("del_tag")
                 });
                 resultClass.ResultCode = "000";
@@ -207,7 +207,7 @@ namespace KF_WebAPI.Controllers
                     menu_id = row.IsNull("menu_id") ? (decimal?)null : row.Field<decimal>("menu_id"),
                     top_id = row.IsNull("top_id") ? null : row.Field<string>("top_id"),
                     sub_id = row.IsNull("sub_id") ? null : row.Field<string>("sub_id"),
-                    menu_name = row.IsNull("menu_name") ? null : _FuncHandler.DeCodeBig5Words(row.Field<string>("menu_name")),
+                    menu_name = row.IsNull("menu_name") ? null : _FuncHandler.DeCodeBNWords(row.Field<string>("menu_name")),
                     per_read = row.IsNull("per_read") ? null : row.Field<string>("per_read"),
                     per_add = row.IsNull("per_add") ? null : row.Field<string>("per_add"),
                     per_edit = row.IsNull("per_edit") ? null : row.Field<string>("per_edit"),

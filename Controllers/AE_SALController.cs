@@ -1081,11 +1081,11 @@ namespace KF_WebAPI.Controllers
                     var newdtResult = dtResult.AsEnumerable().Select(row => new
                     {
                         File_ID = row.Field<string>("File_ID"),
-                        U_BC_name = string.IsNullOrEmpty(row.Field<string>("U_BC_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("U_BC_name")),
+                        U_BC_name = string.IsNullOrEmpty(row.Field<string>("U_BC_name")) ? string.Empty : _FuncHandler.DeCodeBNWords(row.Field<string>("U_BC_name")),
                         Send_amount_date = row.Field<string>("Send_amount_date"),
-                        CS_name = string.IsNullOrEmpty(row.Field<string>("CS_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("CS_name")),
-                        CS_introducer = string.IsNullOrEmpty(row.Field<string>("CS_introducer")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("CS_introducer")),
-                        plan_name = string.IsNullOrEmpty(row.Field<string>("plan_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("plan_name")),
+                        CS_name = string.IsNullOrEmpty(row.Field<string>("CS_name")) ? string.Empty : _FuncHandler.DeCodeBNWords(row.Field<string>("CS_name")),
+                        CS_introducer = string.IsNullOrEmpty(row.Field<string>("CS_introducer")) ? string.Empty : _FuncHandler.DeCodeBNWords(row.Field<string>("CS_introducer")),
+                        plan_name = string.IsNullOrEmpty(row.Field<string>("plan_name")) ? string.Empty : _FuncHandler.DeCodeBNWords(row.Field<string>("plan_name")),
                         get_amount_date = row.Field<string>("get_amount_date"),
                         get_amount = row.Field<string>("get_amount"),
                         interest_rate_pass = row.Field<string>("interest_rate_pass"),
@@ -1245,13 +1245,13 @@ namespace KF_WebAPI.Controllers
                     var result = dtResult.AsEnumerable().Select(row => new
                     {
                         Comp_Id = row.Field<decimal>("Comp_Id"),
-                        CS_name = string.IsNullOrEmpty(row.Field<string>("CS_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("CS_name")),
-                        Sales_name = string.IsNullOrEmpty(row.Field<string>("Sales_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("Sales_name")),
+                        CS_name = string.IsNullOrEmpty(row.Field<string>("CS_name")) ? string.Empty : _FuncHandler.DeCodeBNWords(row.Field<string>("CS_name")),
+                        Sales_name = string.IsNullOrEmpty(row.Field<string>("Sales_name")) ? string.Empty : _FuncHandler.DeCodeBNWords(row.Field<string>("Sales_name")),
                         BC_name = row.Field<string>("BC_name"),
                         Complaint = row.Field<string>("Complaint"),
                         CompDate = row.Field<string>("CompDate"),
                         Remark = row.Field<string>("Remark"),
-                        add_name = string.IsNullOrEmpty(row.Field<string>("add_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("add_name"))
+                        add_name = string.IsNullOrEmpty(row.Field<string>("add_name")) ? string.Empty : _FuncHandler.DeCodeBNWords(row.Field<string>("add_name"))
                     }).ToList();
 
                     resultClass.ResultCode = "000";

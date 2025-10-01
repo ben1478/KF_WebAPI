@@ -18,6 +18,7 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Reflection.PortableExecutable;
@@ -2581,100 +2582,75 @@ namespace KF_WebAPI.FunctionHandler
 
         #region 難字相關處理
         /// <summary>
-        /// 取得HKSCS對應的Unicode字元
+        /// Big5跟NCR字串轉換
         /// </summary>
-        /// <param name="hkscs"></param>
-        /// <returns></returns>
-        public ResultClass<string> GetUniCode(string hkscs)
+        public string DeCodeBNWords(string strName)
         {
-            ResultClass<string> result = new ResultClass<string>();
-            try
-            {
-                ADOData _adoData = new ADOData(); // 測試:"Test" / 正式:""
-                #region SQL
-                var parameters = new List<SqlParameter>();
-                var T_SQL = @"select [ISO10646] from [HkscsMapping] where [hkscs2008] = @hkscs";
-                parameters.Add(new SqlParameter("@hkscs", hkscs));
-                #endregion
-                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
-
-                if (dtResult.Rows.Count > 0)
-                {
-                    result.ResultCode = "000";
-                    result.objResult = dtResult.AsEnumerable().ToList().Select(row => row.Field<string>("ISO10646")).FirstOrDefault();
-                }
-                else
-                {
-                    result.ResultCode = "400";
-                    result.ResultMsg = "查無資料";
-                }
-            }
-            catch (Exception ex)
-            {
-                result.ResultCode = "500";
-                result.ResultMsg = $" response: {ex.Message}";
-            }
-            return result;
-        }
-        public string DeCodeBig5Words(string strBig5)
-        {
-            if(string.IsNullOrEmpty(strBig5))
+            if (string.IsNullOrEmpty(strName))
             {
                 return string.Empty;
             }
             string decodeWords = string.Empty;
-            var words = CheckRareChineseCharacters(strBig5);
-            foreach (var word in words)
+            if (strName.Contains("&#"))
             {
-                if (word.IsRare)
+                string fixedCSName = FixNCRIfNeeded(strName);//為符合NCR格式
+                decodeWords = fromNCR(fixedCSName);
+            }
+            else
+            {
+                var words = CheckRareChineseCharacters(strName);
+                foreach (var word in words)
                 {
-                    string HtmlEncode = ConvertDecimalToUrlEncoded(word.Character);
-                    ResultClass<string> resUniCode = GetUniCode(HtmlEncode.Replace("%", ""));
-                    if (resUniCode.ResultCode != "000")
+                    if (word.IsRare)
                     {
-                        continue;
+                        string HtmlEncode = ConvertDecimalToUrlEncoded(word.Character);
+                        ResultClass<string> resUniCode = GetUniCode(HtmlEncode.Replace("%", ""));
+                        if (resUniCode.ResultCode != "000")
+                        {
+                            continue;
+                        }
+                        string result = ConvertHexToUnicodeChar(resUniCode.objResult);
+                        decodeWords += result; // 將解碼後的字元累加
                     }
-                    string result = ConvertHexToUnicodeChar(resUniCode.objResult);
-                    decodeWords += result; // 將解碼後的字元累加
-                }
-                else
-                {
-                    decodeWords += word.Character; // 將解碼後的字元累加
+                    else
+                    {
+                        decodeWords += word.Character; // 將解碼後的字元累加
+                    }
                 }
             }
             return decodeWords;
         }
-        public static string ConvertDecimalToUrlEncoded(string str)
-        {
-            StringBuilder sb = new StringBuilder();
 
-            for (int i = 0; i < str.Length; i += Char.IsSurrogatePair(str, i) ? 2 : 1)
+        /// <summary>
+        /// 補上分號
+        /// </summary>
+        public string FixNCRIfNeeded(string input)
+        {
+            // 判斷是否有 &# 後面跟著數字但沒分號的字串
+            var pattern = @"&#\d+(?!;)";
+            if (Regex.IsMatch(input, pattern))
             {
-                int codePoint = Char.ConvertToUtf32(str, i);
-                var decimalInput = Char.ConvertFromUtf32(codePoint); //Converts the specified Unicode code point into a UTF-16 encoded string
-                char c = (char)codePoint;                          // U+E1D0
-                Encoding big5 = Encoding.GetEncoding(950);         // Big5 編碼
-                byte[] bytes = big5.GetBytes(new[] { c });         // 取得原始 Big5 bytes
-
-                // 轉成 %XX%YY
-                foreach (byte b in bytes)
-                {
-                    sb.Append('%');
-                    sb.Append(b.ToString("X2"));
-                }
+                // 補上分號
+                input = Regex.Replace(input, pattern, m => m.Value + ";");
             }
-            return sb.ToString();
+            return input;
         }
-        public static string ConvertHexToUnicodeChar(string hex)
+
+        /// <summary>
+        /// NCR字元轉換為正常字元
+        /// </summary>
+        public string fromNCR(string value)
         {
-            // 將十六進位字串轉成整數
-            int codePoint = int.Parse(hex, System.Globalization.NumberStyles.HexNumber);
-
-            // 將 codePoint 轉為 Unicode 字元
-            string result = char.ConvertFromUtf32(codePoint);
-
-            return result;
+            return System.Text.RegularExpressions.Regex.Replace(
+                value,
+                @"&#(\d+);",  // 注意分號必須出現在pattern裡
+                m => char.ConvertFromUtf32(int.Parse(m.Groups[1].Value))
+            );
         }
+
+        /// <summary>
+        /// 判斷每個字元是否罕見字
+        /// </summary>
         public static List<(string Character, bool IsRare)> CheckRareChineseCharacters(string text)
         {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -2701,22 +2677,24 @@ namespace KF_WebAPI.FunctionHandler
                 {
                     isRare = IsRareChineseCodePoint(codePoint) || IsDifficultChineseChar(text[i].ToString());
                 }
-                //bool isRare = IsRareChineseCodePoint(codePoint) || IsDifficultChineseChar(text[i].ToString());
-                
-                
                 result.Add((text[i].ToString(), isRare));
             }
             return result;
         }
+
+        /// <summary>
+        /// 是否常見中文字
+        /// </summary>
         public static bool IsRareChineseCodePoint(int codePoint)
         {
-            // 常見中文字區：U+4E00 ~ U+9FFF
-            // 擴展A區：U+3400 ~ U+4DBF
-            // 超出這範圍的中文通常屬於難字
-
+            // 常見中文字區：U+4E00 ~ U+9FFF,擴展A區：U+3400 ~ U+4DBF,超出這範圍的中文通常屬於難字
             return !((codePoint >= 0x3400 && codePoint <= 0x4DBF) ||
                       (codePoint >= 0x4E00 && codePoint <= 0x9FFF));
         }
+
+        /// <summary>
+        /// 是否難字
+        /// </summary>
         public static bool IsDifficultChineseChar(string s)
         {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -2746,19 +2724,83 @@ namespace KF_WebAPI.FunctionHandler
 
             return false; // 全部是常用可編碼字
         }
+
         /// <summary>
-        /// 將NCR轉換為字串
+        /// 轉換為Big5 編碼
         /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public string fromNCR(string value)
+        public static string ConvertDecimalToUrlEncoded(string str)
         {
-            return System.Text.RegularExpressions.Regex.Replace(
-                value,
-                @"&#(\d+)",
-                m => char.ConvertFromUtf32(int.Parse(m.Groups[1].Value))
-            );
+            StringBuilder sb = new StringBuilder();
+            Encoding big5 = Encoding.GetEncoding(950); // Big5
+
+            for (int i = 0; i < str.Length; i += Char.IsSurrogatePair(str, i) ? 2 : 1)
+            {
+                int codePoint = Char.ConvertToUtf32(str, i);
+                string charStr = Char.ConvertFromUtf32(codePoint);
+
+                byte[] bytes = big5.GetBytes(charStr);
+
+                foreach (byte b in bytes)
+                {
+                    sb.Append('%');
+                    sb.Append(b.ToString("X2"));
+                }
+            }
+            return sb.ToString();
         }
+
+        /// <summary>
+        /// HKSCS 編碼轉換成 Unicode
+        /// </summary>
+        public ResultClass<string> GetUniCode(string hkscs)
+        {
+            ResultClass<string> result = new ResultClass<string>();
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"select [ISO10646] from [HkscsMapping] where [hkscs2008] = @hkscs";
+                parameters.Add(new SqlParameter("@hkscs", hkscs));
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+
+                if (dtResult.Rows.Count > 0)
+                {
+                    result.ResultCode = "000";
+                    result.objResult = dtResult.AsEnumerable().ToList().Select(row => row.Field<string>("ISO10646")).FirstOrDefault();
+                }
+                else
+                {
+                    result.ResultCode = "400";
+                    result.ResultMsg = "查無資料";
+                }
+            }
+            catch (Exception ex)
+            {
+                result.ResultCode = "500";
+                result.ResultMsg = $" response: {ex.Message}";
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Unicode 編碼轉成字元
+        /// </summary>
+        public static string ConvertHexToUnicodeChar(string hex)
+        {
+            // 將十六進位字串轉成整數
+            int codePoint = int.Parse(hex, System.Globalization.NumberStyles.HexNumber);
+
+            // 將 codePoint 轉為 Unicode 字元
+            string result = char.ConvertFromUtf32(codePoint);
+
+            return result;
+        }
+
+        /// <summary>
+        /// 轉換成NCR
+        /// </summary>
         public string toNCR(string rawString)
         {
             StringBuilder sb = new StringBuilder();
@@ -2777,6 +2819,7 @@ namespace KF_WebAPI.FunctionHandler
             return sb.ToString();
         }
         #endregion
+
         public List<Per_Achieve> GetTargetAchieveList(string YYYY,string? U_BC)
         {
             ADOData _adoData = new ADOData();

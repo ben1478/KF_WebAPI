@@ -152,10 +152,10 @@ namespace KF_WebAPI.DataLogic
                         interest_rate_pass_xls = string.IsNullOrEmpty(item["合約\r\n利率"]) ? 0 : Convert.ToDecimal(item["合約\r\n利率"])
                     };
 
-                    newXinChecklistD.CS_name = _FuncHandler.DeCodeBig5Words(matchItem.CS_name);
+                    newXinChecklistD.CS_name = _FuncHandler.DeCodeBNWords(matchItem.CS_name);
                     newXinChecklistD.U_BC_name = matchItem.U_BC_name;
-                    newXinChecklistD.plan_name = _FuncHandler.DeCodeBig5Words(matchItem.plan_name);
-                    newXinChecklistD.show_project_title = _FuncHandler.DeCodeBig5Words(matchItem.show_project_title);
+                    newXinChecklistD.plan_name = _FuncHandler.DeCodeBNWords(matchItem.plan_name);
+                    newXinChecklistD.show_project_title = _FuncHandler.DeCodeBNWords(matchItem.show_project_title);
                     newXinChecklistD.Loan_rate = matchItem.Loan_rate;
                     newXinChecklistD.interest_rate_pass = matchItem.interest_rate_pass;
                     newXinChecklistDs.Add(newXinChecklistD);
@@ -396,28 +396,25 @@ namespace KF_WebAPI.DataLogic
         {
             if (string.IsNullOrEmpty(CS_name))
                 return string.Empty;
-            // 將CS_name中的NCR字元轉換為正規表達式格式
+
             FuncHandler funcHandler = new FuncHandler();
-            string cs2_1 = funcHandler.fromNCR(CS_name); // 將NCR字元轉換為正常字元
-            var lsCs2_1 = FuncHandler.CheckRareChineseCharacters(cs2_1);
-            string regexCS = string.Empty;
-            foreach (var item in lsCs2_1)
+            string processedStr = CS_name;
+
+            //判定格式
+            if (CS_name.Contains("&#"))
             {
-                if (item.IsRare)
-                {
-                    regexCS += "."; // 難字用通配符替代
-                }
-                else
-                {
-                    regexCS += item.Character; // 常見字保留
-                }
+                string fixedCSName = funcHandler.FixNCRIfNeeded(CS_name);//補分號
+                processedStr = funcHandler.fromNCR(fixedCSName);//NCR字元轉換為正常字元
             }
-            if (string.IsNullOrEmpty(regexCS))
+            else
             {
-                regexCS = ".*"; // 如果沒有常見字，則匹配任意字元
+                processedStr = funcHandler.DeCodeBNWords(CS_name);
             }
-            return "^" + regexCS + "$"; // 添加開頭和結尾的錨點            
+
+            return processedStr;             
         }
+
+        
     }
     #endregion
     #region 新鑫已撥款明細表
@@ -545,9 +542,9 @@ namespace KF_WebAPI.DataLogic
                                          row.Field<string>("Send_amount_date"),
                         get_amount_date = row.IsNull("get_amount_date") ? "" :
                                          row.Field<string>("get_amount_date"),
-                        CS_name =  row.IsNull("CS_name") ? "" : _FuncHandler.DeCodeBig5Words(row.Field<string>("CS_name")),
+                        CS_name =  row.IsNull("CS_name") ? "" : _FuncHandler.DeCodeBNWords(row.Field<string>("CS_name")),
                         CS_ID = row.Field<string>("CS_ID"),
-                        show_project_title = row.IsNull("show_project_title") ? "" : _FuncHandler.DeCodeBig5Words(row.Field<string>("show_project_title")),
+                        show_project_title = row.IsNull("show_project_title") ? "" : _FuncHandler.DeCodeBNWords(row.Field<string>("show_project_title")),
                         get_amount = row.Field<string>("get_amount")
                     }).ToList();
                 }

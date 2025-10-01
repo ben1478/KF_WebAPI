@@ -55,12 +55,12 @@ namespace KF_WebAPI.DataLogic
                     foreach(var row in dtResult)
                     {
                         #region 難字
-                        row.CS_name = _FuncHandler.DeCodeBig5Words(row.CS_name);
-                        row.show_project_title = _FuncHandler.DeCodeBig5Words(row.show_project_title);
-                        row.show_fund_company = _FuncHandler.DeCodeBig5Words(row.show_fund_company);
-                        row.plan_name = _FuncHandler.DeCodeBig5Words(row.plan_name);
-                        row.CS_introducer = _FuncHandler.DeCodeBig5Words(row.CS_introducer);
-                        row.Comm_Remark = _FuncHandler.DeCodeBig5Words(row.Comm_Remark);
+                        row.CS_name = _FuncHandler.DeCodeBNWords(row.CS_name);
+                        row.show_project_title = _FuncHandler.DeCodeBNWords(row.show_project_title);
+                        row.show_fund_company = _FuncHandler.DeCodeBNWords(row.show_fund_company);
+                        row.plan_name = _FuncHandler.DeCodeBNWords(row.plan_name);
+                        row.CS_introducer = _FuncHandler.DeCodeBNWords(row.CS_introducer);
+                        row.Comm_Remark = _FuncHandler.DeCodeBNWords(row.Comm_Remark);
                         #endregion
                     }
 

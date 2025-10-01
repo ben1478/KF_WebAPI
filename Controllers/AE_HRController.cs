@@ -2717,7 +2717,7 @@ namespace KF_WebAPI.Controllers
                     ID_104 = row.Field<decimal?>("ID_104"),
                     U_BC_name = row.Field<string>("U_BC_name"),
                     U_PFT_name = row.Field<string>("U_PFT_name"),
-                    R_name = _FuncHandler.DeCodeBig5Words(row.Field<string>("R_name")),
+                    R_name = _FuncHandler.DeCodeBNWords(row.Field<string>("R_name")),
                     U_num = row.Field<string>("U_num"),
                     U_name = row.Field<string>("U_name"),
                     U_agent_name = row.Field<string>("U_agent_name"),

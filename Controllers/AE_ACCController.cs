@@ -2353,7 +2353,7 @@ namespace KF_WebAPI.Controllers
                     var newdtResult = dtResult.AsEnumerable().Select(row => new
                     {
                         RC_count = row.Field<int>("RC_count"),
-                        CS_name = string.IsNullOrEmpty(row.Field<string>("CS_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("CS_name")),
+                        CS_name = string.IsNullOrEmpty(row.Field<string>("CS_name")) ? string.Empty : _FuncHandler.DeCodeBNWords(row.Field<string>("CS_name")),
                         DelayDay = row.Field<int>("DelayDay"),
                         amount_total = row.Field<decimal>("amount_total"),
                         month_total = row.Field<int>("month_total"),
@@ -2487,7 +2487,7 @@ namespace KF_WebAPI.Controllers
                     var newdtResult = dtResult.AsEnumerable().Select(row => new Receivable_Over
                     {
                         BC_name = row.Field<string>("BC_name"),
-                        u_name = string.IsNullOrEmpty(row.Field<string>("u_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("u_name")),
+                        u_name = string.IsNullOrEmpty(row.Field<string>("u_name")) ? string.Empty : _FuncHandler.DeCodeBNWords(row.Field<string>("u_name")),
                         TOT_Count = row.Field<int>("TOT_Count"),
                         amount_total = row.Field<decimal>("amount_total"),
                         OV_Count = row.Field<int>("OV_Count"),
@@ -2745,7 +2745,7 @@ namespace KF_WebAPI.Controllers
                     var newdtResult = dtResult.AsEnumerable().Select(row => new Receivable_Over
                     {
                         amount_type = row.Field<string>("amount_type"),
-                        pro_name = string.IsNullOrEmpty(row.Field<string>("pro_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("pro_name")),
+                        pro_name = string.IsNullOrEmpty(row.Field<string>("pro_name")) ? string.Empty : _FuncHandler.DeCodeBNWords(row.Field<string>("pro_name")),
                         TOT_Count = row.Field<int>("TOT_Count"),
                         amount_total = row.Field<decimal>("amount_total"),
                         OV_Count = row.Field<int>("OV_Count"),
@@ -2778,7 +2778,7 @@ namespace KF_WebAPI.Controllers
                                       GROUP BY pro_name, amount_type ORDER BY pro_name, amount_type";
                     var badResult = _adoData.ExecuteSQuery(T_SQL_bad).AsEnumerable().Select(row => new {
                         amount_type = row.Field<string>("amount_type"),
-                        pro_name = string.IsNullOrEmpty(row.Field<string>("pro_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("pro_name")),
+                        pro_name = string.IsNullOrEmpty(row.Field<string>("pro_name")) ? string.Empty : _FuncHandler.DeCodeBNWords(row.Field<string>("pro_name")),
                         TOT_bad_Count = row.Field<int>("TOT_bad_Count"),
                         TOT_bad_debt = row.Field<decimal>("TOT_bad_debt")
                     });
@@ -3033,7 +3033,7 @@ namespace KF_WebAPI.Controllers
                     var newdtResult = dtResult.AsEnumerable().Select(row => new Receivable_Over
                     {
                         amount_type = row.Field<string>("amount_type"),
-                        pro_name = string.IsNullOrEmpty(row.Field<string>("pro_name"))? string.Empty: _FuncHandler.DeCodeBig5Words(row.Field<string>("pro_name")),
+                        pro_name = string.IsNullOrEmpty(row.Field<string>("pro_name"))? string.Empty: _FuncHandler.DeCodeBNWords(row.Field<string>("pro_name")),
                         TOT_Count = row.Field<int>("TOT_Count"),
                         amount_total = row.Field<decimal>("amount_total"),
                         OV_Count = row.Field<int>("OV_Count"),
@@ -3069,7 +3069,7 @@ namespace KF_WebAPI.Controllers
                                       GROUP BY pro_name, amount_type ORDER BY pro_name, amount_type";
                     var badResult = _adoData.ExecuteSQuery(T_SQL_bad).AsEnumerable().Select(row => new {
                         amount_type = row.Field<string>("amount_type"),
-                        pro_name = string.IsNullOrEmpty(row.Field<string>("pro_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("pro_name")),
+                        pro_name = string.IsNullOrEmpty(row.Field<string>("pro_name")) ? string.Empty : _FuncHandler.DeCodeBNWords(row.Field<string>("pro_name")),
                         TOT_bad_Count = row.Field<int>("TOT_bad_Count"),
                         TOT_bad_debt = row.Field<decimal>("TOT_bad_debt")
                     });
@@ -3157,7 +3157,7 @@ namespace KF_WebAPI.Controllers
                 var excelList = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Over_Rel_Excel
                 {
                     BC_name = row.Field<string>("BC_name"),
-                    u_name = string.IsNullOrEmpty(row.Field<string>("u_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("u_name")),
+                    u_name = string.IsNullOrEmpty(row.Field<string>("u_name")) ? string.Empty : _FuncHandler.DeCodeBNWords(row.Field<string>("u_name")),
                     ToT_Count = row.Field<int>("ToT_Count"),
                     amount_total = row.Field<decimal>("amount_total"),
                     OV_Count = row.Field<int>("OV_Count"),
@@ -3419,7 +3419,7 @@ namespace KF_WebAPI.Controllers
                 {
                     var newDtResult = dtResult.AsEnumerable().Select(row => new
                     {
-                        pro_name = string.IsNullOrEmpty(row.Field<string>("pro_name")) ? string.Empty : _FuncHandler.DeCodeBig5Words(row.Field<string>("pro_name")),
+                        pro_name = string.IsNullOrEmpty(row.Field<string>("pro_name")) ? string.Empty : _FuncHandler.DeCodeBNWords(row.Field<string>("pro_name")),
                         TOT_Count = row.Field<int>("TOT_Count") ,
                         amount_total = row.Field<decimal?>("amount_total") ?? 0,
                         OV_Count = row.Field<int>("OV_Count"),
@@ -4138,7 +4138,7 @@ namespace KF_WebAPI.Controllers
                 var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new Debt_Certificate_Lres
                 {
                     Debt_ID = row.Field<int>("Debt_ID"),
-                    cs_name = row.IsNull("cs_name") ? "" : _FuncHandler.DeCodeBig5Words(row.Field<string>("cs_name")),
+                    cs_name = row.IsNull("cs_name") ? "" : _FuncHandler.DeCodeBNWords(row.Field<string>("cs_name")),
                     CS_PID = row.Field<string>("CS_PID"),
                     str_loan_amount = row.Field<string>("loan_amount"),
                     str_certificate_date_S = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("certificate_date_S").ToString("yyyy/MM/dd")),

@@ -5265,7 +5265,7 @@ namespace KF_WebAPI.Controllers
                         U_leave_date = row.Field<string>("U_leave_date"),
                         U_BC_name = row.Field<string>("U_BC_name"),
                         title = row.Field<string>("title"),
-                        U_name = _FuncHandler.DeCodeBig5Words(row.Field<string>("U_name")),
+                        U_name = _FuncHandler.DeCodeBNWords(row.Field<string>("U_name")),
                         U_num = row.Field<string>("U_num"),
                         U_BC = row.Field<string>("U_BC"),
                         Cal_Arrive = row.IsNull("Cal_Arrive") ? "" : row.Field<DateTime>("Cal_Arrive").ToShortDateString(),
