@@ -22,8 +22,9 @@ namespace KF_WebAPI.Controllers
     [Route("[controller]")]
     public class AEController : ControllerBase
     {
-        private readonly string _storagePath = @"C:\UploadedFiles";
-
+        //private readonly string _storagePath = @"C:\UploadedFiles";
+        private readonly string _storagePath = @"D:\AE_Web_UpLoad"; //正式機路徑
+        
         [HttpPost("SendSMS")]
         public ActionResult<ResultClass<string>> SendSMS(string smbody, string dstaddr)
         {
@@ -177,21 +178,29 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
+                #region SQL
                 var T_SQL = @"select upload_name_show,FORMAT(add_date, 'yyyy/MM/dd', 'en-US') + ' ' + CASE WHEN DATEPART(HOUR, add_date) < 12 
                     THEN '上午' ELSE '下午' END + ' ' + FORMAT(add_date, 'hh:mm:ss', 'en-US') AS add_date,upload_id,Case When del_tag='1' 
                     Then FORMAT(del_date, 'yyyy/MM/dd', 'en-US') + ' ' + CASE WHEN DATEPART(HOUR, del_date) < 12 THEN '上午' 
                     ELSE '下午' END + ' ' + FORMAT(del_date, 'hh:mm:ss', 'en-US') else '0' end as del_tag 
-                    from ASP_UpLoad where cknum=@cknum order by upload_id";
-                var parameters = new List<SqlParameter> 
+                    from ASP_UpLoad where cknum=@cknum order by del_date,upload_id desc";
+                var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@cknum", cknum)
                 };
-
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
-                if (dtResult.Rows.Count > 0)
+                #endregion
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
+                {
+                    upload_name_show = _Fun.DeCodeBNWords(row.Field<string>("upload_name_show")),
+                    add_date = row.Field<string>("add_date"),
+                    upload_id = row.Field<decimal>("upload_id"),
+                    del_tag = row.Field<string>("del_tag"),
+                }).ToList();
+                if (result.Count() > 0)
                 {
                     resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    resultClass.objResult = JsonConvert.SerializeObject(result);
                 }
                 else
                 {
