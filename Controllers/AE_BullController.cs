@@ -151,7 +151,7 @@ namespace KF_WebAPI.Controllers
                     notice_mode = row.Field<string>("notice_mode"),
                     notice_type = row.Field<string>("notice_type"),
                     cknum = row.Field<string>("cknum"),
-                    content = row.Field<string>("content")
+                    content = _Fun.DeCodeBNWords(row.Field<string>("content"))
                 });
                 if (result.Count() > 0)
                 {
