@@ -298,6 +298,7 @@ namespace KF_WebAPI.Controllers
         {
             try
             {
+                var _Fun = new FuncHandler();
                 var T_SQL = "select upload_name_code,upload_name_show from ASP_UpLoad where upload_id=@upload_id";
                 var parameters = new List<SqlParameter> 
                 {
@@ -309,7 +310,7 @@ namespace KF_WebAPI.Controllers
                 {
                     DataRow row = dtResult.Rows[0];
                     var upload_name_code = (row["upload_name_code"]).ToString();
-                    var upload_name_show = (row["upload_name_show"]).ToString();
+                    var upload_name_show = _Fun.DeCodeBNWords((row["upload_name_show"]).ToString());
 
                     string _filePath = Path.Combine(_storagePath, upload_name_code.Substring(0, 6), upload_name_code.Substring(0, 8), upload_name_code);
                     if (!System.IO.File.Exists(_filePath))
