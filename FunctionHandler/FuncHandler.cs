@@ -2604,13 +2604,22 @@ namespace KF_WebAPI.FunctionHandler
                     if (word.IsRare)
                     {
                         string HtmlEncode = ConvertDecimalToUrlEncoded(word.Character);
-                        ResultClass<string> resUniCode = GetUniCode(HtmlEncode.Replace("%", ""));
-                        if (resUniCode.ResultCode != "000")
+                        //符合HKSCS編碼在處理
+                        if (HtmlEncode.Replace("%", "").Length == 4)
                         {
-                            continue;
+                            ResultClass<string> resUniCode = GetUniCode(HtmlEncode.Replace("%", ""));
+                            if (resUniCode.ResultCode != "000")
+                            {
+                                continue;
+                            }
+                            string result = ConvertHexToUnicodeChar(resUniCode.objResult);
+                            decodeWords += result; // 將解碼後的字元累加
                         }
-                        string result = ConvertHexToUnicodeChar(resUniCode.objResult);
-                        decodeWords += result; // 將解碼後的字元累加
+                        else
+                        {
+                            decodeWords += word.Character;
+                        }
+                       
                     }
                     else
                     {
