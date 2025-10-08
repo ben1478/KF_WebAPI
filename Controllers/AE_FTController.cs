@@ -1,4 +1,5 @@
-﻿using KF_WebAPI.BaseClass;
+﻿using Azure;
+using KF_WebAPI.BaseClass;
 using KF_WebAPI.BaseClass.AE;
 using KF_WebAPI.FunctionHandler;
 using Microsoft.AspNetCore.Http;
@@ -35,7 +36,7 @@ namespace KF_WebAPI.Controllers
                      new SqlParameter("@U_BC",bcType)
                 };
                 #endregion
-                var resultMList = _adoData.ExecuteQuery(T_SQL_M, parameters_m).AsEnumerable().Select(row => new Feat_M
+                var resultMList = _adoData.ExecuteQuery(T_SQL_M, parameters_m).AsEnumerable().Select(row => new Feat_M_res
                 {
                     FR_id = row.Field<decimal>("FR_id"),
                     FR_M_code = row.Field<string>("FR_M_code"),
@@ -181,7 +182,7 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
-                #region SQL_D
+                #region SQL
                 var T_SQL = @"select * from Feat_rule where del_tag = '0' AND FR_D_type = 'Y' AND FR_M_code = @FR_M_code and U_BC=@U_BC
                                 order by FR_D_ratio_A desc,FR_D_rate desc,FR_D_discount";
                 var parameters = new List<SqlParameter>()
@@ -212,6 +213,164 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-        //TODO儲存方案折扣設定
+        /// <summary>
+        /// 刪除單筆折扣
+        /// </summary>
+        [HttpGet("Feat_D_Del")]
+        public ActionResult<ResultClass<string>> Feat_D_Del(string FR_id, string user)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"Update Feat_rule Set del_tag = '1',del_date=Getdate(),del_num=@User,del_ip=@IP  where FR_id=@FR_id";
+                var parameters = new List<SqlParameter>()
+                {
+                    new SqlParameter("@User",user),
+                    new SqlParameter("@IP",clientIp),
+                    new SqlParameter("@FR_id",FR_id)
+                };
+                #endregion
+                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (result == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "刪除失敗";
+                    return BadRequest(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "刪除成功";
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 變更方案折扣設定
+        /// </summary>
+        [HttpPost("Feat_D_Upd")]
+        public ActionResult<ResultClass<string>> Feat_D_Upd(List<Feat_D> modelList)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL_OLD
+                var T_SQL_OLD = @"select * from Feat_rule where del_tag = '0' AND FR_D_type = 'Y' AND FR_M_code = @FR_M_code and U_BC=@U_BC
+                                order by FR_D_ratio_A desc,FR_D_rate desc,FR_D_discount";
+                var parameters_old = new List<SqlParameter>()
+                {
+                    new SqlParameter("@FR_M_code",modelList[0].FR_M_code),
+                    new SqlParameter("@U_BC",modelList[0].U_BC)
+                };
+                #endregion
+                var dbData = _adoData.ExecuteQuery(T_SQL_OLD, parameters_old).AsEnumerable().Select(row => new Feat_D
+                {
+                    FR_id = row.Field<decimal>("FR_id"),
+                    FR_D_ratio_A = row.Field<decimal>("FR_D_ratio_A"),
+                    FR_D_ratio_B = row.Field<decimal>("FR_D_ratio_B"),
+                    FR_D_rate = row.Field<string>("FR_D_rate"),
+                    FR_D_discount = row.Field<string>("FR_D_discount"),
+                    FR_D_replace = row.Field<string>("FR_D_replace")
+                }).ToList();
+
+                foreach (var item in modelList) 
+                {
+                    if (!item.FR_id.HasValue || item.FR_id == 0)
+                    {
+                        #region SQL_IN
+                        var T_SQL_IN = @"Insert into Feat_rule (FR_cknum,FR_M_type,FR_M_code,FR_M_name,FR_D_type,FR_D_code,FR_D_name,FR_D_ratio_A,FR_D_ratio_B,FR_D_rate,
+                                         FR_D_discount,FR_D_replace,FR_sort,del_tag,show_tag,add_date,add_num,add_ip,U_BC) 
+                                         Values (@FR_cknum,'N',@FR_M_code,@FR_M_name,'Y','','',@FR_D_ratio_A,@FR_D_ratio_B,@FR_D_rate,@FR_D_discount,
+                                         @FR_D_replace,99999,0,0,Getdate(),@add_num,@add_ip,@U_BC)";
+                        var parameters_in = new List<SqlParameter>() 
+                        {
+                            new SqlParameter("@FR_cknum",FuncHandler.GetCheckNum()),
+                            new SqlParameter("@FR_M_code",item.FR_M_code),
+                            new SqlParameter("@FR_M_name",item.FR_M_name),
+                            new SqlParameter("@FR_D_ratio_A",item.FR_D_ratio_A),
+                            new SqlParameter("@FR_D_ratio_B",item.FR_D_ratio_B),
+                            new SqlParameter("@FR_D_rate",item.FR_D_rate),
+                            new SqlParameter("@FR_D_discount",item.FR_D_discount),
+                            new SqlParameter("@FR_D_replace",item.FR_D_replace),
+                            new SqlParameter("@add_num",item.tbInfo.add_num),
+                            new SqlParameter("@add_ip",clientIp),
+                            new SqlParameter("@U_BC",item.U_BC)
+                        };
+                        #endregion
+                        int result_in = _adoData.ExecuteNonQuery(T_SQL_IN, parameters_in);
+                        if (result_in == 0)
+                        {
+                            resultClass.ResultCode = "400";
+                            resultClass.ResultMsg = "新增失敗";
+                            return BadRequest(resultClass);
+                        }
+                    }
+                    else
+                    {
+                        var dbDict = dbData.ToDictionary(x => x.FR_id, x => x);
+                        if (dbDict.TryGetValue(item.FR_id, out var existing))
+                        {
+                            bool isChanged =
+                                     item.FR_D_ratio_A != existing.FR_D_ratio_A ||
+                                     item.FR_D_ratio_B != existing.FR_D_ratio_B ||
+                                     item.FR_D_rate != existing.FR_D_rate ||
+                                     item.FR_D_discount != existing.FR_D_discount ||
+                                     item.FR_D_replace != existing.FR_D_replace;
+
+                            if (isChanged)
+                            {
+                                #region SQL_Upd
+                                var T_SQL = @"Update Feat_rule Set FR_D_ratio_A = @FR_D_ratio_A,FR_D_ratio_B = @FR_D_ratio_B,FR_D_rate = @FR_D_rate,
+                                              FR_D_discount = @FR_D_discount,FR_D_replace = @FR_D_replace,edit_date = Getdate(),
+                                              edit_num = @edit_num,edit_ip = @IP Where FR_id = @FR_id";
+                                var parameters = new List<SqlParameter>()
+                                {
+                                    new SqlParameter("@FR_D_ratio_A",item.FR_D_ratio_A),
+                                    new SqlParameter("@FR_D_ratio_B",item.FR_D_ratio_B),
+                                    new SqlParameter("@FR_D_rate",item.FR_D_rate),
+                                    new SqlParameter("@FR_D_discount",item.FR_D_discount),
+                                    new SqlParameter("@FR_D_replace",item.FR_D_replace),
+                                    new SqlParameter("@edit_num",item.tbInfo.edit_num),
+                                    new SqlParameter("@IP",clientIp),
+                                    new SqlParameter("@FR_id",item.FR_id)
+                                };
+                                #endregion
+                                int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                                if (result == 0)
+                                {
+                                    resultClass.ResultCode = "400";
+                                    resultClass.ResultMsg = "修改失敗";
+                                    return BadRequest(resultClass);
+                                }
+                            }
+                        }
+                    }
+                }
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "儲存成功";
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        
     }
 }
