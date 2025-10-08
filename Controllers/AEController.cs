@@ -1,20 +1,21 @@
 ﻿using KF_WebAPI.BaseClass;
 using KF_WebAPI.BaseClass.AE;
+using KF_WebAPI.BaseClass.Max104;
+using KF_WebAPI.DataLogic;
 using KF_WebAPI.FunctionHandler;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System;
 using System.Data;
-using Microsoft.Data.SqlClient;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Reflection;
 using System.Security.Claims;
 using System.Text;
-using System.Reflection;
-using KF_WebAPI.BaseClass.Max104;
-using Microsoft.AspNetCore.Http;
 
 namespace KF_WebAPI.Controllers
 {
@@ -23,7 +24,7 @@ namespace KF_WebAPI.Controllers
     public class AEController : ControllerBase
     {
         private readonly string _storagePath = @"C:\UploadedFiles";
-
+        private AEData _AEData = new();
         [HttpPost("SendSMS")]
         public ActionResult<ResultClass<string>> SendSMS(string smbody, string dstaddr)
         {
@@ -903,6 +904,63 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+
+
+        [Route("GetFileBySeq")]
+        [HttpPost]
+        public ActionResult<string> GetFileBySeq(string KeyID, string Type, string Index)
+        {
+            ResultClass<AE_Files> resultClass = new();
+            try
+            {
+                resultClass = _AEData.GetFile(KeyID, Type, Index);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "999";
+                resultClass.ResultMsg = ex.Message;
+            }
+            return Ok(resultClass);
+        }
+
+        [Route("GetFilesByKeyID")]
+        [HttpPost]
+        public ActionResult<string> GetFilesByKeyID(string KeyID, string Type)
+        {
+            ResultClass<AE_Files[]> resultClass = new();
+            try
+            {
+                resultClass = _AEData.GetFilesByKeyID(KeyID, Type);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "999";
+                resultClass.ResultMsg = ex.Message;
+            }
+            return Ok(resultClass);
+        }
+
+        [Route("InsertFile")]
+        [HttpPost]
+        public ActionResult<ResultClass<int>> InsertFile([FromBody] AE_Files[] AE_Files, string KeyID, string Type, string u_num)
+        {
+            ResultClass<int> resultClass = new();
+            try
+            {
+                resultClass = _AEData.InsertFile(AE_Files, KeyID, Type, u_num);
+
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "999";
+                resultClass.ResultMsg = ex.Message;
+            }
+            return Ok(resultClass);
+        }
+
+
+
 
 
 
