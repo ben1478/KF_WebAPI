@@ -255,7 +255,7 @@ namespace KF_WebAPI.DataLogic
                     new SqlParameter() {ParameterName = "@Key_Type", SqlDbType = SqlDbType.VarChar, Value= p_Key_Type},
                     new SqlParameter() {ParameterName = "@file_index", SqlDbType = SqlDbType.VarChar, Value= p_file_index}
                 };
-                m_Execut= _ADO.ExecuteNonQuery("Delete FROM dbo.AE_Files where KeyID=@KeyID and  Key_Type=@Key_Type and file_index=@file_index and  ", Params);
+                m_Execut= _ADO.ExecuteNonQuery("Delete FROM dbo.AE_Files where KeyID=@KeyID and  Key_Type=@Key_Type and file_index=@file_index ", Params);
             }
             catch (Exception ex)
             {
