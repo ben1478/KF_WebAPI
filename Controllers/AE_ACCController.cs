@@ -66,6 +66,7 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
                 var parameters = new List<SqlParameter>();
                 #region SQL
                 var T_SQL = @"select HA.CS_name,HA.CS_PID,RM.amount_total,RM.month_total,RM.amount_per_month,RM.RCM_id,HS.HS_id  
@@ -87,7 +88,6 @@ namespace KF_WebAPI.Controllers
                     T_SQL += " and CS_name=@CS_name ";
                     parameters.Add(new SqlParameter("@CS_name", CS_name));
                 }
-
                 if (!string.IsNullOrEmpty(CS_PID))
                 {
                     T_SQL += " and CS_PID=@CS_PID ";
@@ -95,9 +95,19 @@ namespace KF_WebAPI.Controllers
                 }
                 T_SQL += " ORDER BY RD.RC_date";
                 #endregion
-                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
+                {
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    amount_total = row.Field<decimal>("amount_total"),
+                    month_total = row.Field<int>("month_total"),
+                    amount_per_month = row.Field<decimal>("amount_per_month"),
+                    RCM_id = row.Field<decimal>("RCM_id"),
+                    HS_id = row.Field<decimal>("HS_id"),
+                    isNewFun = row.Field<string>("isNewFun")
+                }).ToList();
                 resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                resultClass.objResult = JsonConvert.SerializeObject(result);
                 return Ok(resultClass);
             }
             catch (Exception ex)
@@ -180,9 +190,26 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@RCM_ID",RCM_ID)
                 };
                 #endregion
-                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                var _Fun = new FuncHandler();
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
+                {
+                            RP_AMT = row.Field<decimal>("RP_AMT"),
+                            Break_AMT = row.Field<decimal>("Break_AMT"),
+                            RC_date = row.Field<string>("RC_date"),
+                            RC_count = row.Field<int>("RC_count"), 
+                            OffDate = row.Field<string>("OffDate"),
+                            interest = row.Field<decimal>("interest"),
+                            interestDay = row.Field<int>("interestDay"), 
+                            interest_AMT = row.Field<decimal>("interest_AMT"),
+                            isFirst = row.Field<string>("isFirst"),
+                            amount_per_month = row.Field<decimal>("amount_per_month"),
+                            CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                            project_title = row.Field<string>("project_title"),
+                            OverAmt = row.Field<decimal>("OverAmt")
+                }).ToList();
+
                 resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                resultClass.objResult = JsonConvert.SerializeObject(result);
                 return Ok(resultClass);
             }
             catch (Exception ex)
