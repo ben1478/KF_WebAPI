@@ -1,7 +1,9 @@
 ﻿
 using KF_WebAPI.BaseClass;
 using KF_WebAPI.BaseClass.AE;
+using KF_WebAPI.BaseClass.Max104;
 using KF_WebAPI.FunctionHandler;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
@@ -92,7 +94,7 @@ namespace KF_WebAPI.DataLogic
 
                     using (SqlCommand command = connection.CreateCommand())
                     {
-                        command.CommandText = "SELECT * FROM AE_Files WHERE KeyID = @KeyID  and Key_Type=@Key_Type";
+                        command.CommandText = "SELECT *,format(add_date,'yyyy/MM/dd')Add_YYMMDD FROM AE_Files WHERE KeyID = @KeyID  and Key_Type=@Key_Type";
                         command.Parameters.AddWithValue("@KeyID", p_Key);
                         command.Parameters.AddWithValue("@Key_Type", p_Key_Type);
 
@@ -111,6 +113,8 @@ namespace KF_WebAPI.DataLogic
                                     m_AE_File.file_index = reader["file_index"].ToString();
                                     m_AE_File.file_name = reader["file_name"].ToString();
                                     m_AE_File.content_type = reader["content_type"].ToString();
+                                    m_AE_File.add_date = reader["Add_YYMMDD"].ToString();
+                                    
                                     m_AE_Files[m_Count] = (m_AE_File);
                                     m_Count++;
                                 }
@@ -182,10 +186,10 @@ namespace KF_WebAPI.DataLogic
             return resultClass;
         }
 
-        public ResultClass<int> InsertFile( AE_Files[] p_attachmentFiles, string p_Key, string p_Key_Type, string p_User )
+        public int InsertFile( AE_Files[] p_attachmentFiles, string p_Key, string p_Key_Type, string p_User )
         {
             Common _Comm = new();
-            ResultClass<int> resultClass = new();
+          
             int m_Execut = 0;
             Int32 _MaxIndex = GetFilesMaxIndexByKeyID(p_Key, p_Key_Type);
 
@@ -222,26 +226,45 @@ namespace KF_WebAPI.DataLogic
                     transaction.Commit();
                     // 關閉資料庫連線
                     conn.Close();
-                    resultClass.ResultCode = "000";
-                    resultClass.ResultMsg = "";
-                    resultClass.objResult = m_Execut;
                 }
                 catch (Exception ex)
                 {
                     transaction.Rollback();
-                    resultClass.ResultCode = "999";
-                    resultClass.ResultMsg = ex.Message;
-                    resultClass.objResult = 0;
+                    throw new Exception("檔案上傳失敗!!"+ ex.Message);
                 }
             }
             catch (Exception ex)
             {
 
-                throw new Exception("檔案上傳失敗!!");
+                throw new Exception("檔案上傳失敗!!" + ex.Message);
             }
 
-            return resultClass;
+            return m_Execut;
         }
+
+        public int DeleteFile( string p_KeyID, string p_Key_Type, string p_file_index)
+        {
+            Common _Comm = new();
+            int m_Execut = 0;
+            try
+            {
+               
+                List<SqlParameter> Params = new List<SqlParameter>()
+                {
+                    new SqlParameter() {ParameterName = "@KeyID", SqlDbType = SqlDbType.VarChar, Value= p_KeyID},
+                    new SqlParameter() {ParameterName = "@Key_Type", SqlDbType = SqlDbType.VarChar, Value= p_Key_Type},
+                    new SqlParameter() {ParameterName = "@file_index", SqlDbType = SqlDbType.VarChar, Value= p_file_index}
+                };
+                m_Execut= _ADO.ExecuteNonQuery("Delete FROM dbo.AE_Files where KeyID=@KeyID and  Key_Type=@Key_Type and file_index=@file_index and  ", Params);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("刪除檔案失敗!!");
+            }
+
+            return m_Execut;
+        }
+
 
     }
 }
