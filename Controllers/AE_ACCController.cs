@@ -83,11 +83,6 @@ namespace KF_WebAPI.Controllers
                               LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0'
                               LEFT JOIN House_sendcase HS ON HS.HS_id = RM.HS_id
                               where RM.del_tag='0' AND RM.del_tag='0'";
-                if (!string.IsNullOrEmpty(CS_name))
-                {
-                    T_SQL += " and CS_name=@CS_name ";
-                    parameters.Add(new SqlParameter("@CS_name", CS_name));
-                }
                 if (!string.IsNullOrEmpty(CS_PID))
                 {
                     T_SQL += " and CS_PID=@CS_PID ";
@@ -106,6 +101,10 @@ namespace KF_WebAPI.Controllers
                     HS_id = row.Field<decimal>("HS_id"),
                     isNewFun = row.Field<string>("isNewFun")
                 }).ToList();
+                if(!string.IsNullOrEmpty(CS_name))
+                {
+                    result = result.Where(x=>x.CS_name == CS_name).ToList();    
+                }
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(result);
                 return Ok(resultClass);
