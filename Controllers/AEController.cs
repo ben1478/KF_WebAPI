@@ -958,8 +958,10 @@ namespace KF_WebAPI.Controllers
             ResultClass<int> resultClass = new();
             try
             {
-                resultClass = _AEData.InsertFile(AE_Files, KeyID, Type, u_num);
-
+                int m_Execut  = _AEData.InsertFile(AE_Files, KeyID, Type, u_num);
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "";
+                resultClass.objResult = m_Execut;
             }
             catch (Exception ex)
             {
@@ -970,6 +972,27 @@ namespace KF_WebAPI.Controllers
         }
 
 
+        [Route("DeleteFile")]
+        [HttpPost]
+        public ActionResult<ResultClass<int>> DeleteFile(string KeyID, string Type, string file_index)
+        {
+            ResultClass<int> resultClass = new();
+            try
+            {
+                int m_Execut  = _AEData.DeleteFile( KeyID, Type, file_index);
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "";
+                resultClass.objResult = m_Execut;
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "999";
+                resultClass.ResultMsg = ex.Message;
+            }
+            return Ok(resultClass);
+        }
+
+        
 
 
 

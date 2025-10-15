@@ -27,6 +27,8 @@
         /// </summary>
         public String? file_name { get; set; }
 
+        public String? add_date { get; set; }
+        
     }
 
 
