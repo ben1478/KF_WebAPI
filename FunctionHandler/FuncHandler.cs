@@ -3038,7 +3038,7 @@ namespace KF_WebAPI.FunctionHandler
                             Leader = g.Leader
                         };
                     }).ToList();
-                WriteRegionData(worksheet, newTaipeiList, 11, 1, "新北", headers, fieldsWithWan, percentFields);
+                WriteRegionData(worksheet, newTaipeiList, 4 + taipeiList.Count(), 1, "新北", headers, fieldsWithWan, percentFields);
                 #endregion
 
                 #region 台南
@@ -3064,7 +3064,7 @@ namespace KF_WebAPI.FunctionHandler
                             Leader = g.Leader
                         };
                     }).ToList();
-                WriteRegionData(worksheet, tainanList, 11, 8, "台南", headers, fieldsWithWan, percentFields);
+                WriteRegionData(worksheet, tainanList, 4 + taichungList.Count(), 8, "台南", headers, fieldsWithWan, percentFields);
                 #endregion
 
                 #region 台北二區(李詩慧)
@@ -3090,7 +3090,7 @@ namespace KF_WebAPI.FunctionHandler
                             Leader = g.Leader
                         };
                     }).ToList();
-                WriteRegionData(worksheet, taipei_2_List, 11, 15, "台北二區(李詩慧)", headers, fieldsWithWan, percentFields);
+                WriteRegionData(worksheet, taipei_2_List, 4 + taipei_1_List.Count(), 15, "台北二區(李詩慧)", headers, fieldsWithWan, percentFields);
                 #endregion
 
                 #region 桃園
@@ -3116,7 +3116,7 @@ namespace KF_WebAPI.FunctionHandler
                             Leader = g.Leader
                         };
                     }).ToList();
-                WriteRegionData(worksheet, taoyuanList, 21, 1, "桃園", headers, fieldsWithWan, percentFields);
+                WriteRegionData(worksheet, taoyuanList, 7 + taipeiList.Count() + newTaipeiList.Count(), 1, "桃園", headers, fieldsWithWan, percentFields);
                 #endregion
 
                 #region 高雄
@@ -3142,7 +3142,7 @@ namespace KF_WebAPI.FunctionHandler
                             Leader = g.Leader
                         };
                     }).ToList();
-                WriteRegionData(worksheet, kaohsiungList, 21, 8, "高雄", headers, fieldsWithWan, percentFields);
+                WriteRegionData(worksheet, kaohsiungList, 7 + taichungList.Count() + tainanList.Count(), 8, "高雄", headers, fieldsWithWan, percentFields);
                 #endregion
 
                 return package.GetAsByteArray();
