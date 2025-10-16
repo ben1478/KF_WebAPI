@@ -390,14 +390,18 @@ namespace KF_WebAPI.Controllers
             {
                 #region SQL
                 ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
                 var T_SQL = "select R_num,R_name from Role_M where del_tag = 0 order by r_id";
                 #endregion
-
-                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
-                if (dtResult.Rows.Count > 0)
+                var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new
+                {
+                    R_num = row.Field<string>("R_num"),
+                    R_name = _Fun.DeCodeBNWords(row.Field<string>("R_name"))
+                }).ToList();
+                if (result.Count > 0)
                 {
                     resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    resultClass.objResult = JsonConvert.SerializeObject(result);
                     return Ok(resultClass);
                 }
                 else
@@ -757,15 +761,20 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
                 var T_SQL = @"select item_D_code,item_D_name from Item_list 
                               where item_M_code=@item_M_code and item_D_type='Y' and del_tag='0' order by item_sort";
                 var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@item_M_code",item_M_code)
                 };
-                var dtresult = _adoData.ExecuteQuery(T_SQL, parameters);
+                var result = _adoData.ExecuteQuery(T_SQL,parameters).AsEnumerable().Select(row => new
+                {
+                    item_D_code = row.Field<string>("item_D_code"),
+                    item_D_name = _Fun.DeCodeBNWords(row.Field<string>("item_D_name"))
+                }).ToList();
                 resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(dtresult);
+                resultClass.objResult = JsonConvert.SerializeObject(result);
                 return Ok(resultClass);
             }
             catch (Exception ex)
