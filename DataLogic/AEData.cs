@@ -3,6 +3,7 @@ using KF_WebAPI.BaseClass;
 using KF_WebAPI.BaseClass.AE;
 using KF_WebAPI.BaseClass.Max104;
 using KF_WebAPI.FunctionHandler;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -263,6 +264,39 @@ namespace KF_WebAPI.DataLogic
             }
 
             return m_Execut;
+        }
+
+
+        public string GetWebsiteURL()
+        {
+            Common _Comm = new();
+            string m_URL = "";
+             AE_Files m_attachmentFile = new();
+            try
+            {
+                string m_Key = "websiteURL";
+
+                ADOData _adoData = new ADOData();
+                var parameters = new List<SqlParameter>();
+                #region SQL
+                var T_SQL = @"select item_D_name websiteURL  from Item_list where item_D_code=@Key";
+                #endregion
+
+                parameters.Add(new SqlParameter("@Key", m_Key));
+               
+
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    m_URL = dtResult.Rows[0]["websiteURL"].ToString();
+                }
+
+            }
+            catch (Exception ex)
+            {
+                m_URL = "";
+            }
+            return m_URL;
         }
 
 

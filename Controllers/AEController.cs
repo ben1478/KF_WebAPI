@@ -992,9 +992,27 @@ namespace KF_WebAPI.Controllers
             return Ok(resultClass);
         }
 
+        [Route("GetWebsiteURL")]
+        [HttpPost]
+        public ActionResult<ResultClass<string>> GetWebsiteURL()
+        {
+            ResultClass<string> resultClass = new();
+            try
+            {
+                string m_URL = _AEData.GetWebsiteURL();
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "";
+                resultClass.objResult = m_URL;
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "999";
+                resultClass.ResultMsg = ex.Message;
+            }
+            return Ok(resultClass);
+        }
+
         
-
-
 
 
     }
