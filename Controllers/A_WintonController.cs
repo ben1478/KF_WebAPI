@@ -24,16 +24,17 @@ namespace KF_WebAPI.Controllers
     {
         private readonly string urlBase = "http://192.168.1.244:49780/datasnap/";
         private readonly string AWintonCustID = "1112545";
-        private readonly string ACompNo = "52611690";
+        private string ACompNo = "52611690";
         private readonly string AUserId = "API";
         private readonly string APassword = "52611690";
         private readonly string apiCode = "Winton";
 
-        HttpClient _httpClient = new HttpClient();
+        private static readonly HttpClient _httpClient = new HttpClient();
+
         FuncHandler _fun = new FuncHandler();
 
         [HttpPost("eToken")]
-        public async Task<IActionResult> GetLoginToken()
+        public async Task<IActionResult> GetLoginToken(string vpCom)
         {
             var apiName = "rest/TdmServerMethodsSYS/eLoginToken";
             var url = urlBase + apiName;
@@ -41,7 +42,7 @@ namespace KF_WebAPI.Controllers
             var requestData = new
             {
                 AWintonCustID = AWintonCustID,
-                ACompNo = ACompNo,
+                ACompNo = vpCom,
                 AUserId = AUserId,
                 APassword = APassword,
                 AAB = "A",
@@ -72,12 +73,12 @@ namespace KF_WebAPI.Controllers
         }
 
         [HttpPost("SendSummons")]
-        public async Task<IActionResult> SendSummons(string Form_ID)
+        public async Task<IActionResult> SendSummons(string vpCom, string Form_ID)
         {
             var apiName = "rest/TdmServerMethodsTR/ImpWD4MFGL";
             var url = urlBase + apiName;
 
-            var result = await GetLoginToken() as OkObjectResult;
+            var result = await GetLoginToken(vpCom) as OkObjectResult;
             var token = result.Value.ToString();
 
             var jsonData = "";
@@ -226,7 +227,7 @@ namespace KF_WebAPI.Controllers
 
         private async Task<Manufacturer_req> Manufacturer_Map(string strType, string FormID)
         {
-            var result = await GetLoginToken();
+            var result = await GetLoginToken(ACompNo);
 
             if (result is OkObjectResult okResult)
             {

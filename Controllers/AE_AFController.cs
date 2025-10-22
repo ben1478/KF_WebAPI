@@ -481,11 +481,17 @@ namespace KF_WebAPI.Controllers
                     resultClass.ResultMsg = "異動成功";
 
                     //通知文中傳票API
-                    //if (model.FD_Step_SignType == "FSIGN002" && model.FM_Step == "2" && new[] { "PA", "PP" }.Any(p => model.FM_Source_ID.StartsWith(p)))
-                    //{
-                    //    var _aWintonController = new A_WintonController();
-                    //    Task.Run(() => _aWintonController.SendSummons(model.FM_Source_ID));
-                    //}
+                    if (model.FD_Step_SignType == "FSIGN002" && model.FM_Step == "2" && new[] { "PA", "PP" }.Any(p => model.FM_Source_ID.StartsWith(p)))
+                    {
+                        //抓出公司別
+                        var T_SQL_V = @"select VP_COM from InvPrepay_M where VP_ID = @VP_ID";
+                        var parameters_v = new List<SqlParameter> { new SqlParameter("@VP_ID", model.FM_Source_ID) };
+                        var result_v = _adoData.ExecuteQuery(T_SQL_V, parameters_v);
+                        string vpCom = result_v.Rows[0]["VP_COM"].ToString();
+
+                        var _aWintonController = new A_WintonController();
+                        Task.Run(() => _aWintonController.SendSummons(vpCom,model.FM_Source_ID));
+                    }
                     return Ok(resultClass);
                 }
             }

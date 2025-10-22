@@ -6,7 +6,8 @@ namespace KF_WebAPI.BaseClass.AE
     {
         public tbInfo? tbInfo { get; set; }
         public List<InvPrepay_D_Ins>? Ins_List { get; set; }
-        public string VP_ID { get; set; }   
+        public string VP_ID { get; set; }
+        public string VP_COM { get; set; }
         public string VP_BC { get; set; }
         public string[]? VP_type { get; set; }
         public string VP_Pay_Type { get; set; }

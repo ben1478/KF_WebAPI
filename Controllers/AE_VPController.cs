@@ -103,14 +103,15 @@ namespace KF_WebAPI.Controllers
 
                 var result_id = _adoData.ExecuteQuery(T_SQL_ID, parameters_id);
                 var VP_ID = newIdParameter.Value.ToString();
-                var T_SQL_M = @"Insert into InvPrepay_M (VP_ID,VP_type,VP_BC,VP_Pay_Type,VP_AppDate,VP_U_num,VP_Total_Money,bank_code,bank_name,
+                var T_SQL_M = @"Insert into InvPrepay_M (VP_ID,VP_type,VP_COM,VP_BC,VP_Pay_Type,VP_AppDate,VP_U_num,VP_Total_Money,bank_code,bank_name,
                     branch_name,bank_account,payee_name,VP_Summary,VP_MFG_Date,VP_Nsummary,VP_cknum,add_date,add_num,add_ip,edit_date,edit_num,edit_ip) 
-                    Values (@VP_ID,@VP_type,@VP_BC,@VP_Pay_Type,FORMAT(GETDATE(),'yyyy/MM/dd'),@VP_U_num,@VP_Total_Money,@bank_code,@bank_name,@branch_name,
+                    Values (@VP_ID,@VP_type,@VP_COM,@VP_BC,@VP_Pay_Type,FORMAT(GETDATE(),'yyyy/MM/dd'),@VP_U_num,@VP_Total_Money,@bank_code,@bank_name,@branch_name,
                     @bank_account,@payee_name,@VP_Summary,@VP_MFG_Date,@VP_Nsummary,@VP_cknum,GETDATE(),@add_num,@add_ip,GETDATE(),@edit_num,@edit_ip)";
                 var parameters_m = new List<SqlParameter> 
                 {
                     new SqlParameter("@VP_ID", VP_ID),
                     new SqlParameter("@VP_type", str_type),
+                    new SqlParameter("@VP_COM", model.VP_COM),
                     new SqlParameter("@VP_BC", model.VP_BC),
                     new SqlParameter("@VP_Pay_Type", model.VP_Pay_Type),
                     new SqlParameter("@VP_U_num", model.User),
@@ -279,7 +280,7 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"select VP_type,VP_BC,VP_Pay_Type,VP_Total_Money,bank_code,bank_name,branch_name,bank_account,
+                var T_SQL = @"select VP_type,VP_COM,VP_BC,VP_Pay_Type,VP_Total_Money,bank_code,bank_name,branch_name,bank_account,
                     payee_name,VP_Summary,VP_MFG_Date,VP_Nsummary 
                     from InvPrepay_M where VP_ID=@VP_ID ";
                 var parameters = new List<SqlParameter> 
@@ -294,6 +295,7 @@ namespace KF_WebAPI.Controllers
                     var model = dtResult.AsEnumerable().Select(row => new InvPrepay_Ins
                     {
                         VP_type = new string[] { row.Field<string>("VP_type") },
+                        VP_COM = row.Field<string>("VP_COM"),
                         VP_BC = row.Field<string>("VP_BC"),
                         VP_Pay_Type = row.Field<string>("VP_Pay_Type"),
                         VP_Total_Money = row.Field<int>("VP_Total_Money").ToString(),
@@ -367,11 +369,12 @@ namespace KF_WebAPI.Controllers
                     if (model.VP_type.Contains("PS"))
                         str_type = "PS";
                 }
-                var T_SQL_M = @"Update InvPrepay_M set VP_type=@VP_type,VP_Pay_Type=@VP_Pay_Type,VP_Total_Money=@VP_Total_Money,bank_code=@bank_code,bank_name=@bank_name, 
-                branch_name=@branch_name,bank_account=@bank_account,payee_name=@payee_name,VP_Summary=@VP_Summary,VP_MFG_Date=@VP_MFG_Date,
-                VP_Nsummary=@VP_Nsummary,edit_date=GETDATE(),edit_num=@edit_num,edit_ip=@edit_ip where VP_ID=@VP_ID";
+                var T_SQL_M = @"Update InvPrepay_M set VP_COM=@VP_COM,VP_type=@VP_type,VP_Pay_Type=@VP_Pay_Type,VP_Total_Money=@VP_Total_Money,bank_code=@bank_code,
+                                bank_name=@bank_name,branch_name=@branch_name,bank_account=@bank_account,payee_name=@payee_name,VP_Summary=@VP_Summary,VP_MFG_Date=@VP_MFG_Date,
+                                VP_Nsummary=@VP_Nsummary,edit_date=GETDATE(),edit_num=@edit_num,edit_ip=@edit_ip where VP_ID=@VP_ID";
                 var parameters_m = new List<SqlParameter> 
                 {
+                    new SqlParameter("@VP_COM",model.VP_COM),
                     new SqlParameter("@VP_type",str_type),
                     new SqlParameter("@VP_Pay_Type", model.VP_Pay_Type),
                     new SqlParameter("@VP_Total_Money", model.VP_Total_Money),
