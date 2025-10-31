@@ -52,44 +52,46 @@
     public class Receivable_req
     {
         public string name { get; set; }
-        public string str_Date_S { get; set; }
-        public string str_Date_E { get; set; }
-        public string check_type { get; set; }
+        public string RC_Date_S { get; set; }
+        public string RC_Date_E { get; set; }
+        public string? check_type { get; set; }
         public string? NS_type { get; set; }
-        public string bad_type { get; set; }
-        public string RC_count { get; set; }
+        public string? bad_type { get; set; }
+        public string? RC_count { get; set; }
+        public string? invoice_no { get; set; } 
+        public string? invoice_date_S { get; set; }
+        public string? invoice_date_E { get; set; }
+        public string? pay_date_S { get; set; }
+        public string? pay_date_E { get; set; }
     }
     public class Receivable_res
     {
         public decimal RCM_id { get; set; }
         public decimal RCD_id { get; set; }
         public string CS_name { get; set; }
-        public string str_amount_total { get; set; }
+        public string CS_PID { get; set; }
+        public decimal amount_total { get; set; }
         public int month_total { get; set; }
         public int RC_count { get; set; }
-        public string RC_date { get; set; }
-        public string str_RC_amount { get; set; }
-        public string? str_interest { get; set; }
-        public string? str_Rmoney { get; set; }
-        public string str_RemainingAmount { get; set; }
-        public string str_PartiallySettled { get; set; }
+        public string roc_RC_date { get; set; }
+        public decimal amount_per_month { get; set; }
+        public decimal interest { get; set; }
+        public decimal Rmoney { get; set; }
+        public int? HFees { get; set; }
+        public decimal Ex_RemainingPrincipal { get; set; }
+        public string RecPayAmt { get; set; }
+        public string diffAMT { get; set; }
         public int? DelayDay { get; set; }
+        public decimal? Delaymoney { get; set; }
+        public string RC_Note { get; set; }
         public string check_pay_type { get; set; }
         public string? check_pay_date { get; set; }
         public string check_pay_name { get; set; }
-        public string RC_note { get; set; }
         public string bad_debt_type { get; set; }
         public string? bad_debt_date { get; set; }
         public string bad_debt_name { get; set; }
         public string? invoice_no { get; set; }
         public string? invoice_date { get; set; }
-        public string interest_rate_pass { get; set; }
-        public string isOver_RC { get; set; }
-        public string isNewFun { get; set; }
-        public decimal? RemainingPrincipal { get; set; }
-        public decimal? Fee { get; set; }
-        public decimal? EXrate { get; set; }
-        public decimal? Delaymoney { get; set; }
     }
     public class Receivable_Excel
     {
