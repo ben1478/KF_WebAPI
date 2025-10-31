@@ -2790,7 +2790,7 @@ namespace KF_WebAPI.Controllers
                     #region 呆帳資料處理
                     var T_SQL_bad = @"WITH ProjectCode AS ( SELECT HA_id,CASE WHEN project_title = 'PJ00001' THEN 'PJ00005' ELSE project_title END AS project_code,del_tag
                                       FROM House_pre_project ),
-                                      BaseData AS ( SELECT I.item_D_name AS pro_name,SM.amount_total - ISNULL(SD.total_payment,0) AS amount_bad_total,
+                                      BaseData AS ( SELECT distinct RM.RCM_id, I.item_D_name AS pro_name,SM.amount_total - ISNULL(SD.total_payment,0) AS amount_bad_total,
                                       CASE WHEN RM.amount_total > 500000 THEN 'U' ELSE 'D' END AS amount_type
                                       FROM StagnationDebt_M SM
                                       LEFT JOIN (SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' 
