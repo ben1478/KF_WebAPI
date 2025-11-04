@@ -25,6 +25,7 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
                 #region SQL
                 var T_SQL = @"select distinct H.CS_name,H.CS_PID,M.RCM_id,M.sett_AMT,M.amount_total,RD.RemainingPrincipal 
                               from Receivable_M M
@@ -35,9 +36,17 @@ namespace KF_WebAPI.Controllers
                               where D.bad_debt_type='Y' and D.check_pay_type='N' and D.cancel_type='N'
                               and not exists(select 1 from StagnationDebt_M where rcm_id = M.RCM_id and del_tag='0')";
                 #endregion
-                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+                var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new
+                {
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    RCM_id = row.Field<decimal>("RCM_id"),
+                    sett_AMT = row.Field<int>("sett_AMT"),
+                    amount_total = row.Field<decimal>("amount_total"),
+                    RemainingPrincipal = row.Field<decimal>("RemainingPrincipal")
+                }).ToList();
                 resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                resultClass.objResult = JsonConvert.SerializeObject(result);
                 return Ok(resultClass);
             }
             catch (Exception ex)
@@ -107,6 +116,7 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
                 #region SQL
                 var T_SQL = @"SELECT SM.sdm_id,HA.CS_name,HA.CS_PID,
                               FORMAT(SM.total_bad_debt - ISNULL(PD.total_payment, 0), 'N0') AS str_total_bad_debt,SM.remarks,
@@ -126,9 +136,20 @@ namespace KF_WebAPI.Controllers
                               ) MAX_SD ON MAX_SD.sdm_id = SM.sdm_id
                               WHERE SM.del_tag = '0'";
                 #endregion
-                var dtResult = _adoData.ExecuteSQuery(T_SQL);
+                var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new
+                {
+                    sdm_id = row.Field<int>("sdm_id"),
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    str_total_bad_debt = row.Field<string>("str_total_bad_debt"),
+                    remarks = row.Field<string>("remarks"),
+                    collection_date_roc = row.Field<string>("collection_date_roc"),
+                    str_amount_total = row.Field<string>("str_amount_total"),
+                    str_RemainingPrincipal = row.Field<string>("str_RemainingPrincipal"),
+                    str_close = row.Field<string>("str_close")
+                }).ToList();
                 resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                resultClass.objResult = JsonConvert.SerializeObject(result);
                 return Ok(resultClass);
             }
             catch (Exception ex)
@@ -149,6 +170,7 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
                 #region SQL
                 var T_SQL = @"select HA.CS_name,SM.* from StagnationDebt_M SM
                               left join Receivable_M RM on RM.RCM_id = SM.rcm_id
@@ -158,9 +180,16 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@sdm_id",sdm_id)
                 };
                 #endregion
-                var dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
+                var result = _adoData.ExecuteQuery(T_SQL,parameters).AsEnumerable().Select(row => new
+                {
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    total_due_amount = row.Field<decimal>("total_due_amount"),
+                    total_paid_amount = row.Field<decimal>("total_paid_amount"),
+                    total_bad_debt = row.Field<decimal>("total_bad_debt"),
+                    remarks = row.Field<string>("remarks")
+                }).ToList();
                 resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                resultClass.objResult = JsonConvert.SerializeObject(result);
                 return Ok(resultClass);
             }
             catch (Exception ex)
@@ -227,6 +256,7 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
                 #region SQL
                 var T_SQL = @"select SM.sdm_id,HA.CS_name,HA.CS_PID,SM.remarks
                               ,FORMAT(SM.total_due_amount,'N0') as str_total_due_amount
@@ -261,7 +291,7 @@ namespace KF_WebAPI.Controllers
                     str_total_due_amount = row.Field<string>("str_total_due_amount"),
                     str_total_paid_amount = row.Field<string>("str_total_paid_amount"),
                     str_total_bad_debt = row.Field<string>("str_total_bad_debt"),
-                    SD_Name = row.Field<string>("CS_name"),
+                    SD_Name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
                     remarks = row.Field<string>("remarks"),
                     SD_CID = row.Field<string>("CS_PID")
                 }).FirstOrDefault();

@@ -2527,16 +2527,73 @@ namespace KF_WebAPI.Controllers
                         OV_bad_Rate = 0
                     }).ToList();
                     #region 呆帳資料處理
-                    var T_SQL_bad = @"SELECT HA.plan_num,COUNT(*) AS TOT_bad_Count,
+                    var T_SQL_bad = @"SELECT isnull(BC_name_SP, BC_name) BC_name,M.u_name,0 as OV_Count,0 as OV_total,0 as OV_Rate,TT.TOT_total,
+                                      Tol.amount_total,Tol.TOT_Count, HA.plan_num,COUNT(*) AS TOT_bad_Count,
                                       SUM(SM.amount_total - ISNULL(SD.total_payment,0)) AS TOT_bad_debt 
                                       FROM StagnationDebt_M SM
                                       LEFT JOIN (SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id) SD 
                                       ON SD.sdm_id = SM.sdm_id
                                       LEFT JOIN Receivable_M RM ON RM.RCM_id = SM.RCM_id
                                       LEFT JOIN House_apply HA ON RM.HA_id = HA.HA_id
+                                      LEFT JOIN User_M M ON HA.plan_num=M.u_num
+                                      LEFT JOIN
+                                               (
+                                      		   SELECT a.item_D_name BC_name,a.item_D_code
+                                                 FROM Item_list a
+                                                 WHERE a.item_M_code = 'branch_company'
+                                                 AND a.item_D_type='Y'
+                                      		 ) U ON M.U_BC =U.item_D_code
+                                      LEFT JOIN
+                                               (
+                                      		   SELECT a.item_D_name BC_name_SP,a.item_D_code,G.U_num
+                                                 FROM Item_list a
+                                                 LEFT JOIN User_Spec_Group G ON a.item_D_code=G.Spec_Group
+                                                 WHERE a.item_M_code = 'Spec_Group'
+                                                 AND a.item_D_type='Y'
+                                      		 ) Sp ON M.U_num =Sp.U_num
+                                      LEFT JOIN
+                                      ( /*逾期案件-總件數,總金額*/ 
+                                      	  SELECT plan_num,count(plan_num)TOT_Count,sum(amount_total)amount_total
+                                            FROM
+                                                (
+                                      		    SELECT HA.plan_num,DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total
+                                                  FROM
+                                                      (
+                                      				  SELECT RCM_id,min(RC_count) RC_count,min(RC_date) RC_date
+                                                        FROM Receivable_D
+                                                        WHERE del_tag = '0'
+                                                        AND check_pay_type='N'
+                                                        AND bad_debt_type='N'
+                                                        AND cancel_type='N'
+                                                        GROUP BY RCM_id
+                                      				) RD
+                                                  LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id AND RM.del_tag='0'
+                                                  LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id AND HA.del_tag='0'
+                                                  WHERE RM.RCM_id IS NOT NULL
+                                      	      ) OV
+                                            GROUP BY plan_num
+                                      	) Tol ON Tol.plan_num = M.u_num
+                                      LEFT JOIN
+                                               (
+                                      		   SELECT plan_num,sum(amount_total) AS TOT_total
+                                                 FROM Receivable_M RM
+                                                 LEFT JOIN House_apply HA ON HA.HA_id = RM.HA_id
+                                                 WHERE RM.RCM_id IS NOT NULL
+                                                 AND RM.del_tag='0'
+                                                 AND HA.del_tag='0'
+                                                 GROUP BY plan_num
+                                      		 ) TT ON TT.plan_num=Tol.plan_num
                                       WHERE SM.del_tag='0' AND HA.del_tag='0'
-                                      GROUP BY HA.plan_num";
+                                      GROUP BY HA.plan_num,isnull(BC_name_SP, BC_name),M.u_name,Tol.amount_total,Tol.TOT_Count,TOT_total";
                     var badResult = _adoData.ExecuteSQuery(T_SQL_bad).AsEnumerable().Select(row => new {
+                        BC_name = row.Field<string>("BC_name"),
+                        u_name = row.Field<string>("u_name"),
+                        OV_Count = row.Field<int>("OV_Count"),
+                        OV_total = Convert.ToDecimal(row["OV_total"]),
+                        OV_Rate = Convert.ToDecimal(row["OV_Rate"]),
+                        TOT_total = Convert.ToDecimal(row["TOT_total"]),
+                        amount_total = row.Field<decimal>("amount_total"),
+                        TOT_Count = row.Field<int>("TOT_Count"),
                         plan_num = row.Field<string>("plan_num"),
                         TOT_bad_Count = row.Field<int>("TOT_bad_Count"),
                         TOT_bad_debt = row.Field<decimal>("TOT_bad_debt")
@@ -2552,6 +2609,26 @@ namespace KF_WebAPI.Controllers
                             item.OV_bad_Rate = item.amount_total == 0 ? 0 : Math.Round(item.TOT_bad_debt / item.TOT_total * 100, 2);
                         }
                     }
+                    // 新增缺少的項目
+                    var missingItems = badResult
+                    .Where(b => !newdtResult.Any(n => n.plan_num == b.plan_num))
+                    .Select(b => new Receivable_Over
+                    {
+                        BC_name = b.BC_name,
+                        u_name = b.u_name,
+                        plan_num = b.plan_num,
+                        TOT_Count = b.TOT_Count,
+                        amount_total = b.amount_total,
+                        OV_Count = b.OV_Count,
+                        OV_total = b.OV_total,
+                        OV_Rate = b.OV_Rate,
+                        TOT_total = b.TOT_total,
+                        TOT_OV_Rate = Math.Round(b.OV_total / (b.TOT_total == 0 ? 1 : b.TOT_total) * 100, 2),
+                        TOT_bad_Count = b.TOT_bad_Count,
+                        TOT_bad_debt = b.TOT_bad_debt,
+                        OV_bad_Rate = b.TOT_total == 0 ? 0 : Math.Round(b.TOT_bad_debt / b.TOT_total * 100, 2)
+                    }).ToList();
+                    newdtResult.AddRange(missingItems);
                     #endregion
                     resultClass.ResultCode = "000";
                     resultClass.objResult = JsonConvert.SerializeObject(newdtResult);
