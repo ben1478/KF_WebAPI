@@ -1,4 +1,5 @@
 ﻿
+using Azure.Core;
 using KF_WebAPI.BaseClass;
 using KF_WebAPI.BaseClass.WebRobot;
 using KF_WebAPI.DataLogic;
@@ -19,7 +20,9 @@ namespace KF_WebAPI.Controllers
         [HttpPost]
         public ActionResult<ResultClass<BaseResult>> InsertWebRobot_M([FromBody] WebRobot_M objects)
         {
+           
             ResultClass<string> resultClass = new ResultClass<string>();
+           
             try
             {
                 _WebRobot.InsertWebRobot_M(objects);
