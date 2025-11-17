@@ -1,4 +1,5 @@
 using KF_WebAPI.Controllers;
+using KF_WebAPI.Service;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
 using OfficeOpenXml;
@@ -11,11 +12,6 @@ ExcelPackage.LicenseContext = LicenseContext.Commercial;
 // Add services to the container.
 
 builder.Services.AddControllers();
-/*builder.Services.AddControllers().AddJsonOptions(x =>
-{
-    x.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowReadingFromString;
-    x.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-});*/
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
@@ -33,6 +29,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddHttpClient<YuRichAPIController>();
+builder.Services.AddScoped<IWebRobotService, WebRobotService>();
 
 var app = builder.Build();
 
@@ -57,11 +54,7 @@ app.UseCors(builder =>
     builder.WithOrigins(
         "http://erp",
         "http://192.168.1.240",
-        "http://192.168.1.27/KF_Web/",
-        "http://192.168.1.27/KF_WebAPI/",
         "https://www.kuofongweb.com.tw/",
-        "http://localhost:7135",
-        "http://localhost:8080",
         "http://192.168.1.240:8080",
          "http://192.168.1.240:8088",
         "http://192.168.1.240:8081"
@@ -70,6 +63,9 @@ app.UseCors(builder =>
            .AllowAnyHeader()
            .WithExposedHeaders("Content-Disposition")
            .AllowCredentials(); // 允許發送憑證（包括 Cookies）
+
+
+
 });
 
 app.UseHttpsRedirection();

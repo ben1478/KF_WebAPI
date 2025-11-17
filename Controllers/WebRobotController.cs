@@ -4,6 +4,7 @@ using KF_WebAPI.BaseClass;
 using KF_WebAPI.BaseClass.WebRobot;
 using KF_WebAPI.DataLogic;
 using KF_WebAPI.FunctionHandler;
+using KF_WebAPI.Service;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
@@ -15,17 +16,18 @@ namespace KF_WebAPI.Controllers
     {
         private Common _Comm = new();
         private WebRobot _WebRobot = new();
+      
 
         [Route("InsertWebRobot_M")]
         [HttpPost]
         public ActionResult<ResultClass<BaseResult>> InsertWebRobot_M([FromBody] WebRobot_M objects)
         {
-           
-            ResultClass<string> resultClass = new ResultClass<string>();
-           
+
+            ResultClass<int> resultClass = new ResultClass<int>();
+
             try
             {
-                _WebRobot.InsertWebRobot_M(objects);
+                resultClass= _WebRobot.InsertWebRobot_M(objects);
             }
             catch (Exception ex)
             {
@@ -40,10 +42,10 @@ namespace KF_WebAPI.Controllers
         [HttpPost]
         public ActionResult<ResultClass<BaseResult>> InsertWebRobot_D([FromBody] WebRobot_D objects)
         {
-            ResultClass<string> resultClass = new ResultClass<string>();
+            ResultClass<int> resultClass = new ResultClass<int>();
             try
             {
-                _WebRobot.InsertWebRobot_D(objects);
+                resultClass= _WebRobot.InsertWebRobot_D(objects);
             }
             catch (Exception ex)
             {
@@ -52,6 +54,19 @@ namespace KF_WebAPI.Controllers
             }
             return Ok(resultClass);
         }
+
+        [HttpPost("GetProxyFlowAsync")]
+        public async Task<ActionResult<ResultClass<List<string>>>> GetProxyFlowAsync()
+        {
+            var result = await _WebRobot.GetProxyFlowAsync();
+
+            if (result.ResultCode == "000")
+                return Ok(result);
+            else
+                return BadRequest(result);
+        }
+
+
 
 
     }

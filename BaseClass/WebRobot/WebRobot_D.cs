@@ -8,5 +8,8 @@
         public string? UserAgentInfo { get; set; }
         public string? KeyWord { get; set; }
         public string? Run_Result { get; set; }
+        public string? Position { get; set; }
+
+        
     }
 }

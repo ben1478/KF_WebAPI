@@ -52,7 +52,7 @@ namespace KF_WebAPI.DataLogic
                 m_Execut= _ADO.ExecuteNonQuery(m_SQL, parameters);
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "";
-                resultClass.objResult = 0;
+                resultClass.objResult = m_Execut;
             }
             catch (Exception ex)
             {
@@ -71,8 +71,8 @@ namespace KF_WebAPI.DataLogic
             int m_Execut = 0;
             try
             {
-                string m_SQL = "insert into WebRobot_D ([ComputerInfo],[Run_num],[Run_DateTime],[UserAgentInfo],[KeyWord],[Run_Result],edit_date)" +
-                " values(@ComputerInfo,@Run_num,SYSDATETIME(),@UserAgentInfo,@KeyWord,@Run_Result,SYSDATETIME())  ";
+                string m_SQL = "insert into WebRobot_D ([ComputerInfo],[Run_num],[Run_DateTime],[UserAgentInfo],[KeyWord],[Run_Result],[Position],edit_date)" +
+                " values(@ComputerInfo,@Run_num,SYSDATETIME(),@UserAgentInfo,@KeyWord,@Run_Result,@Position,SYSDATETIME())  ";
                 
 
                 var parameters = new List<SqlParameter>();
@@ -81,12 +81,13 @@ namespace KF_WebAPI.DataLogic
                 parameters.Add(new SqlParameter("@UserAgentInfo", p_WebRobot_D.UserAgentInfo));
                 parameters.Add(new SqlParameter("@KeyWord", p_WebRobot_D.KeyWord));
                 parameters.Add(new SqlParameter("@Run_Result", p_WebRobot_D.Run_Result));
+                parameters.Add(new SqlParameter("@Position", p_WebRobot_D.Position));
 
 
                 m_Execut = _ADO.ExecuteNonQuery(m_SQL, parameters);
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "";
-                resultClass.objResult = 0;
+                resultClass.objResult = m_Execut;
             }
             catch (Exception ex)
             {
@@ -98,6 +99,54 @@ namespace KF_WebAPI.DataLogic
 
             return resultClass;
         }
+
+        private const string API_LINK_TEMPLATE = "https://tq.lunaproxy.com/getflowip?neek=1807058&num=30&regions=tw&ip_si=1&level=1&sb=";
+        public async Task<ResultClass<List<string>>> GetProxyFlowAsync()
+        {
+            ResultClass<List<string>> resultClass = new();
+           
+            try
+            {
+                string json = "";
+                using (HttpClient client = new HttpClient())
+                {
+                    json = await client.GetStringAsync(API_LINK_TEMPLATE);
+                }
+                List<string> proxies = new List<string>();
+
+                try
+                {
+                    var result = JsonConvert.DeserializeObject<ProxyResponse>(json);
+                    string ErrMessage = "";
+                    if (result != null)
+                    {
+                        ErrMessage = "ErrorCode：" + result.code.ToString() + ";ErrMsg" + result.msg;
+                    }
+                    resultClass.ResultCode = "999";
+                    resultClass.ResultMsg = ErrMessage;
+                    resultClass.objResult = null;
+                }
+                catch (Newtonsoft.Json.JsonException)
+                {
+                    proxies = json.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                }
+
+
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "";
+                resultClass.objResult = proxies;
+            }
+            catch (Exception ex)
+            {
+
+                resultClass.ResultCode = "999";
+                resultClass.ResultMsg = ex.Message;
+                resultClass.objResult = null;
+            }
+
+            return resultClass;
+        }
+
 
     }
 }
