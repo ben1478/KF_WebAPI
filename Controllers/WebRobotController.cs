@@ -15,8 +15,13 @@ namespace KF_WebAPI.Controllers
     public class WebRobotController : ControllerBase
     {
         private Common _Comm = new();
-        private WebRobot _WebRobot = new();
-      
+        private readonly IWebRobotService _webRobotService;
+       
+        // 透過建構子注入介面
+        public WebRobotController(IWebRobotService webRobotService)
+        {
+            _webRobotService = webRobotService;
+        }
 
         [Route("InsertWebRobot_M")]
         [HttpPost]
@@ -27,7 +32,7 @@ namespace KF_WebAPI.Controllers
 
             try
             {
-                resultClass= _WebRobot.InsertWebRobot_M(objects);
+                resultClass= _webRobotService.InsertWebRobot_M(objects);
             }
             catch (Exception ex)
             {
@@ -37,7 +42,6 @@ namespace KF_WebAPI.Controllers
             return Ok(resultClass);
         }
 
-
         [Route("InsertWebRobot_D")]
         [HttpPost]
         public ActionResult<ResultClass<BaseResult>> InsertWebRobot_D([FromBody] WebRobot_D objects)
@@ -45,7 +49,7 @@ namespace KF_WebAPI.Controllers
             ResultClass<int> resultClass = new ResultClass<int>();
             try
             {
-                resultClass= _WebRobot.InsertWebRobot_D(objects);
+                resultClass= _webRobotService.InsertWebRobot_D(objects);
             }
             catch (Exception ex)
             {
@@ -56,14 +60,27 @@ namespace KF_WebAPI.Controllers
         }
 
         [HttpPost("GetProxyFlowAsync")]
-        public async Task<ActionResult<ResultClass<List<string>>>> GetProxyFlowAsync()
+        public async Task<ActionResult<List<string>>> GetProxyFlowAsync()
         {
-            var result = await _WebRobot.GetProxyFlowAsync();
+            var result = await _webRobotService.GetProxyFlowAsync();
 
-            if (result.ResultCode == "000")
-                return Ok(result);
-            else
-                return BadRequest(result);
+            return Ok(result);
+        }
+
+        [HttpPost("GetRemoteAction")]
+        public  ActionResult<ResultClass<BaseResult>> GetRemoteAction([FromBody] string objects)
+        {
+            var result =  _webRobotService.GetRemoteAction(objects);
+
+            return Ok(result);
+        }
+
+        [HttpPost("GetSysKeyWords")]
+        public ActionResult<ResultClass<List<string>>> GetSysKeyWords()
+        {
+            var result =  _webRobotService.GetSysKeyWords();
+
+            return Ok(result);
         }
 
 

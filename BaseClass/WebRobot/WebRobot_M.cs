@@ -8,6 +8,8 @@
         public decimal? RunTime_E { get; set; }/*執行時間訖*/
         public decimal? numDelay { get; set; }/*多少秒執行一次*/
         public string? RunStatus { get; set; }/*目前執行狀態*/
-
+        public string? RunTime { get; set; }/*執行時間起*/
+        public string? Version { get; set; }/*執行時間起*/
+        
     }
 }
