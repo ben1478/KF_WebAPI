@@ -6532,6 +6532,20 @@ namespace KF_WebAPI.Controllers
             }
         }
         #endregion
+
+        #region 國峯案件核對表
+        [HttpPost("NewKFUpload_LQuery")]
+        public async Task<IActionResult> NewKFUpload_LQuery([FromForm] NewKFChecklistRequest req)
+        {
+            KFCaseUpload _KFCaseUpload = new KFCaseUpload();
+            ResultClass<string> result = await _KFCaseUpload.GetNewKFChecklistDs(req);
+            if (result.ResultCode != "000")
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
+        }
+        #endregion
     }
 }
 

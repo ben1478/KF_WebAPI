@@ -292,6 +292,9 @@ namespace KF_WebAPI.Controllers
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
+                string[] str = new string[] { "7054" };
+                SpecialClass specialClass = FuncHandler.CheckSpecial(str, model.WebUser);
+
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
@@ -304,15 +307,20 @@ namespace KF_WebAPI.Controllers
                     LEFT JOIN Procurement_M PM ON AM.FM_Source_ID = PM.PM_ID 
                     LEFT JOIN InvPrepay_M IM ON AM.FM_Source_ID = IM.VP_ID 
                     WHERE (PM.PM_Cancel='N' OR IM.VP_Cancel='N') and AM.add_date BETWEEN @RF_Date_S AND @RF_Date_E";
+                if (specialClass.special_check == "N")
+                {
+                    T_SQL += " and exists (select 1 from AuditFlow_D where FD_Step_num = @WebUser and AuditFlow_D.AF_ID = AM.AF_ID)";
+                    parameters.Add(new SqlParameter("@WebUser", model.WebUser));
+                }
                 if (!string.IsNullOrEmpty(model.U_BC))
                 {
                     T_SQL += " and AM.FM_BC = @U_BC";
                     parameters.Add(new SqlParameter("@U_BC", model.U_BC));
                 }
-                if (!string.IsNullOrEmpty(model.User))
+                if (!string.IsNullOrEmpty(model.ApprUser))
                 {
-                    T_SQL += " and (PM.PM_U_num = @User OR IM.VP_U_num = @User)";
-                    parameters.Add(new SqlParameter("@User", model.User));
+                    T_SQL += " and (PM.PM_U_num = @ApprUser OR IM.VP_U_num = @ApprUser)";
+                    parameters.Add(new SqlParameter("@ApprUser", model.ApprUser));
                 }
                 T_SQL += " order by AM.add_date desc,FD_Step";
                 parameters.Add(new SqlParameter("@RF_Date_S", FuncHandler.ConvertROCToGregorian(model.RF_Date_S)));
