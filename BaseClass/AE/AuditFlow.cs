@@ -22,9 +22,10 @@
     public class RevFlow_Req
     {
         public string? U_BC { get; set; }
-        public string? User { get; set; }
+        public string? ApprUser { get; set; }
         public string? RF_Date_S { get; set; }
         public string? RF_Date_E { get; set; }
+        public string WebUser { get; set; } 
     }
 
     public class AuditFlow_D_Upd
