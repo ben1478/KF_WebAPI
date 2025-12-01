@@ -266,7 +266,6 @@ namespace KF_WebAPI.DataLogic
             return m_Execut;
         }
 
-
         public string GetWebsiteURL()
         {
             Common _Comm = new();
@@ -297,6 +296,36 @@ namespace KF_WebAPI.DataLogic
                 m_URL = "";
             }
             return m_URL;
+        }
+
+
+
+        public Int32 GetLineInfoByPID(string PID, string PW_Line)
+        {
+            Common _Comm = new();
+            Int32 m_Count = 0;
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var parameters = new List<SqlParameter>();
+                #region SQL
+                var T_SQL = @"select count(*)LineCount from Introducer_Comm where Introducer_PID = @PID AND PW_Line = @PW_Line AND del_tag='0'";
+                #endregion
+
+                parameters.Add(new SqlParameter("@PID", PID));
+                parameters.Add(new SqlParameter("@PW_Line", PW_Line));
+
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    m_Count = Convert.ToInt32(dtResult.Rows[0]["LineCount"]);
+                }
+            }
+            catch 
+            {
+                throw;
+            }
+            return m_Count;
         }
 
 

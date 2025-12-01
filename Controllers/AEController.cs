@@ -1021,6 +1021,26 @@ namespace KF_WebAPI.Controllers
             return Ok(resultClass);
         }
 
+        [Route("GetLineInfoByPID")]
+        [HttpPost]
+        public ActionResult<ResultClass<Int32>> GetLineInfoByPID(string PID, string PW_Line)
+        {
+            ResultClass<Int32> resultClass = new();
+            try
+            {
+                Int32 m_Count = _AEData.GetLineInfoByPID(PID, PW_Line);
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "";
+                resultClass.objResult = m_Count;
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "999";
+                resultClass.ResultMsg = ex.Message;
+            }
+            return Ok(resultClass);
+        }
+
         
 
 
