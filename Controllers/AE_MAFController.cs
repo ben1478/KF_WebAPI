@@ -129,11 +129,12 @@ namespace KF_WebAPI.Controllers
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
 
-                if (!string.IsNullOrEmpty(model.MF_ID))
-                {
-                    var _aWintonController = new A_WintonController();
-                    Task.Run(() => _aWintonController.SendManufacturer("1", model.MF_ID));
-                }
+                // 2025.12.3 取消新增文中廠商資料
+                //if (!string.IsNullOrEmpty(model.MF_ID))
+                //{
+                //    var _aWintonController = new A_WintonController();
+                //    Task.Run(() => _aWintonController.SendManufacturer("1", model.MF_ID));
+                //}
 
                 if (result == 0)
                 {
@@ -189,11 +190,12 @@ namespace KF_WebAPI.Controllers
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
 
-                if (!string.IsNullOrEmpty(model.MF_ID))
-                {
-                    var _aWintonController = new A_WintonController();
-                    Task.Run(() => _aWintonController.SendManufacturer("1", model.MF_ID));
-                }
+                // 2025.12.3 取消新增文中廠商資料
+                //if (!string.IsNullOrEmpty(model.MF_ID))
+                //{
+                //    var _aWintonController = new A_WintonController();
+                //    Task.Run(() => _aWintonController.SendManufacturer("1", model.MF_ID));
+                //}
 
                 if (result == 0)
                 {
