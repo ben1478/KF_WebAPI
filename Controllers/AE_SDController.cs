@@ -580,5 +580,104 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+        /// <summary>
+        /// 裕富機車貸款查詢
+        /// </summary>
+        /// <param name="get_amount_date_S"></param>
+        /// <param name="get_amount_date_E"></param>
+        /// <returns></returns>
+        [HttpGet("SD_MotoList_LQuery")]
+        public ActionResult<ResultClass<string>> SD_MotoList_LQuery(string get_amount_date_S, string get_amount_date_E)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"
+                   select  HA.ha_id,R.rcm_id, ,LEFT(HA.cs_name, 1) + 'XX' AS cs_name,pro_name, HS.interest_rate_pass+'%' rate, isnull(HS.get_amount,'')+'萬'get_amount,isnull(format(HS.get_amount_date,'yyyy/MM/dd'),'')get_amount_date
+                    ,R.month_total,R.amount_per_month
+                    from House_sendcase HS
+                    LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id　LEFT JOIN House_pre_project HP ON HP.HP_project_id = HS.HP_project_id
+                    Left Join ( SELECT item_D_name pro_name ,item_D_code FROM Item_list WHERE item_M_code = 'project_title'　AND item_D_type='Y' AND del_tag='0'
+                    ) P on P.item_D_code = HP.project_title
+                    left join Receivable_M R on HA.HA_id=R.HA_id
+                    where HS.del_tag='0'and HA.del_tag='0'and R.del_tag='0'and get_amount_type='GTAT002'
+                    AND HP.project_title IN('PJ00046','PJ00047') and format(HS.get_amount_date,'yyyy/MM/dd') between @get_amount_date_S and @get_amount_date_E  order by get_amount_date";
+                var parameters = new List<SqlParameter>()
+                {
+                    new SqlParameter("@get_amount_date_S",get_amount_date_S),
+                    new SqlParameter("@get_amount_date_E",get_amount_date_E)
+                };
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+
+        /// <summary>
+        /// 機車貸款繳款明細
+        /// </summary>
+        /// <param name="RCM_id"></param>
+        /// <returns></returns>
+        [HttpGet("SD_MotoRC_LQuery")]
+        public ActionResult<ResultClass<string>> SD_MotoRC_LQuery(string RCM_id)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"
+                  select *,
+                        case when delayday >= 3 And delayday <= 6  then 
+		                        100+CEILING( RC_amount *0.16/365*delayday)
+	                        when delayday >= 7 And delayday <= 14  then 
+		                        200+CEILING( RC_amount *0.16/365*delayday)
+	                        when delayday > 14  then 
+		                        300+CEILING( RC_amount *0.16/365*delayday)
+	                        else 0
+	                        end Delaymoney
+                        from (
+                        SELECT M.amount_total,RC_amount ,D.rc_count,format(D.RC_date,'yyyy/MM/dd')rc_date
+                        ,isnull(format(D.check_pay_date,'yyyy/MM/dd'),'')check_pay_date 
+                        ,CASE WHEN RecPayAmt IS NULL THEN ''
+                              ELSE convert(varchar, RecPayAmt)
+                         END recpayamt,CASE WHEN RC_date < SYSDATETIME() AND check_pay_date IS NULL THEN 
+                        isnull(DATEDIFF(DAY, RC_date, SYSDATETIME()), 0)
+	                        ELSE isnull(DATEDIFF(DAY, RC_date, check_pay_date), 0)
+                        END delayday,D.ex_remainingPrincipal,D.rc_note                                                                                                 
+                        FROM Receivable_M M left join Receivable_D D on M.RCM_id=D.RCM_id
+                        where M.del_tag='0' and D.del_tag='0' and  M.RCM_id=@RCM_id ) M";
+                var parameters = new List<SqlParameter>()
+                {
+                    new SqlParameter("@RCM_id",RCM_id)
+                };
+                #endregion
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+
     }
 }
