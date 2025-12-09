@@ -465,7 +465,7 @@ namespace KF_WebAPI.Controllers
                 #endregion
 
                 #region Proc_Print_File
-                var T_SQL_FI = @"select upload_name_show from ASP_UpLoad where cknum=@cknum";
+                var T_SQL_FI = @"select upload_name_show from ASP_UpLoad where cknum=@cknum and del_tag='0' ";
                 var parameters_fi = new List<SqlParameter> 
                 {
                     new SqlParameter("@cknum", resultModel.PM_cknum)
