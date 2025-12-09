@@ -309,7 +309,7 @@ namespace KF_WebAPI.Controllers
                     WHERE (PM.PM_Cancel='N' OR IM.VP_Cancel='N') and AM.add_date BETWEEN @RF_Date_S AND @RF_Date_E";
                 if (specialClass.special_check == "N")
                 {
-                    T_SQL += " and exists (select 1 from AuditFlow_D where FD_Step_num = @WebUser and AuditFlow_D.AF_ID = AM.AF_ID)";
+                    T_SQL += " and exists (select 1 from AuditFlow_D where FD_Step_num = @WebUser and AuditFlow_D.AF_ID = AM.AF_ID AND AuditFlow_D.FM_Source_ID = AM.FM_Source_ID)";
                     parameters.Add(new SqlParameter("@WebUser", model.WebUser));
                 }
                 if (!string.IsNullOrEmpty(model.U_BC))
