@@ -595,8 +595,7 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"
-                   select  HA.ha_id,R.rcm_id, ,LEFT(HA.cs_name, 1) + 'XX' AS cs_name,pro_name, HS.interest_rate_pass+'%' rate, isnull(HS.get_amount,'')+'萬'get_amount,isnull(format(HS.get_amount_date,'yyyy/MM/dd'),'')get_amount_date
+                var T_SQL = @"select  HA.ha_id,R.rcm_id,LEFT(HA.cs_name, 1) + 'XX' AS cs_name,pro_name, HS.interest_rate_pass+'%' rate, isnull(HS.get_amount,'')+'萬'get_amount,isnull(format(HS.get_amount_date,'yyyy/MM/dd'),'')get_amount_date
                     ,R.month_total,R.amount_per_month
                     from House_sendcase HS
                     LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id　LEFT JOIN House_pre_project HP ON HP.HP_project_id = HS.HP_project_id
@@ -639,8 +638,7 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"
-                  select *,
+                var T_SQL = @"select *,
                         case when delayday >= 3 And delayday <= 6  then 
 		                        100+CEILING( RC_amount *0.16/365*delayday)
 	                        when delayday >= 7 And delayday <= 14  then 

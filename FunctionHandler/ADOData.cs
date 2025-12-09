@@ -120,7 +120,7 @@ namespace KF_WebAPI.FunctionHandler
             try
             {
                 using SqlConnection conn = new(ConnStr);
-                using (SqlCommand cmd = new SqlCommand(strSQL, conn))
+                using (SqlCommand cmd = new SqlCommand(strSQL.Replace("\r\n", " ").Replace("\r", " ").Replace("\n", " "), conn))
                 {
                     if (Param != null)
                     {
