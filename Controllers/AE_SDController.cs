@@ -587,7 +587,7 @@ namespace KF_WebAPI.Controllers
         /// <param name="get_amount_date_E"></param>
         /// <returns></returns>
         [HttpGet("SD_MotoList_LQuery")]
-        public ActionResult<ResultClass<string>> SD_MotoList_LQuery(string get_amount_date_S, string get_amount_date_E)
+        public ActionResult<ResultClass<string>> SD_MotoList_LQuery(string get_amount_date_S, string get_amount_date_E, string PayStatus)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -595,20 +595,43 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"select  HA.ha_id,R.rcm_id,LEFT(HA.cs_name, 1) + 'XX' AS cs_name,pro_name, HS.interest_rate_pass+'%' rate, isnull(HS.get_amount,'')+'萬'get_amount,isnull(format(HS.get_amount_date,'yyyy/MM/dd'),'')get_amount_date
-                    ,R.month_total,R.amount_per_month
-                    from House_sendcase HS
-                    LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id　LEFT JOIN House_pre_project HP ON HP.HP_project_id = HS.HP_project_id
-                    Left Join ( SELECT item_D_name pro_name ,item_D_code FROM Item_list WHERE item_M_code = 'project_title'　AND item_D_type='Y' AND del_tag='0'
-                    ) P on P.item_D_code = HP.project_title
-                    left join Receivable_M R on HA.HA_id=R.HA_id
-                    where HS.del_tag='0'and HA.del_tag='0'and R.del_tag='0'and get_amount_type='GTAT002'
-                    AND HP.project_title IN('PJ00046','PJ00047') and format(HS.get_amount_date,'yyyy/MM/dd') between @get_amount_date_S and @get_amount_date_E  order by get_amount_date";
+                var T_SQL = @"select HA.ha_id,R.rcm_id,LEFT(HA.cs_name, 1) + 'XX' AS cs_name,pro_name, HS.interest_rate_pass+'%' rate, isnull(HS.get_amount,'')+'萬'get_amount
+,isnull(format(HS.get_amount_date,'yyyy/MM/dd'),'')get_amount_date
+,R.month_total,R.amount_per_month,R.amount_total,isnull(OVCount,0)ov_count
+,case when  isnull(OVCount,0)=0 then 'N' else 
+   case when isnull(R.Expe_note,'') <>'' then 'Y'else 'N' end
+end isExpe
+from House_sendcase HS
+LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id　LEFT JOIN House_pre_project HP ON HP.HP_project_id = HS.HP_project_id
+Left Join ( SELECT item_D_name pro_name ,item_D_code FROM Item_list WHERE item_M_code = 'project_title'　AND item_D_type='Y' AND del_tag='0'
+) P on P.item_D_code = HP.project_title
+left join Receivable_M R on HA.HA_id=R.HA_id
+left join
+(select  RCM_id,count(RC_count)OVCount from Receivable_D where CASE WHEN RC_date < SYSDATETIME() AND check_pay_date IS NULL THEN 
+isnull(DATEDIFF(DAY, RC_date, SYSDATETIME()), 0)
+	ELSE isnull(DATEDIFF(DAY, RC_date, check_pay_date), 0)
+END >0 group by RCM_id
+) RD on R.RCM_id=RD.RCM_id
+where HS.del_tag='0'and HA.del_tag='0'and R.del_tag='0'and get_amount_type='GTAT002'
+AND HP.project_title IN('PJ00046','PJ00047') and format(HS.get_amount_date,'yyyy/MM/dd') between @get_amount_date_S and @get_amount_date_E ";
                 var parameters = new List<SqlParameter>()
                 {
                     new SqlParameter("@get_amount_date_S",get_amount_date_S),
                     new SqlParameter("@get_amount_date_E",get_amount_date_E)
                 };
+                if (PayStatus != "A")
+                {
+                    if (PayStatus == "Y")
+                    {
+                        T_SQL += " and isnull(OVCount,0) = 0 ";
+                    }
+                    else if (PayStatus == "N")
+                    {
+                        T_SQL += " and isnull(OVCount,0) <> 0 ";
+                    }
+                }
+                T_SQL += " order by HS.get_amount_date ";
+
                 #endregion
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 resultClass.ResultCode = "000";
@@ -630,7 +653,7 @@ namespace KF_WebAPI.Controllers
         /// <param name="RCM_id"></param>
         /// <returns></returns>
         [HttpGet("SD_MotoRC_LQuery")]
-        public ActionResult<ResultClass<string>> SD_MotoRC_LQuery(string RCM_id)
+        public ActionResult<ResultClass<string>> SD_MotoRC_LQuery(string RCM_id,string GetType)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -648,7 +671,7 @@ namespace KF_WebAPI.Controllers
 	                        else 0
 	                        end Delaymoney
                         from (
-                        SELECT M.amount_total,RC_amount ,D.rc_count,format(D.RC_date,'yyyy/MM/dd')rc_date
+                        SELECT REPLACE(REPLACE(M.Expe_note, CHAR(13), ''), CHAR(10), '<br>')disExpe_note,M.amount_total,RC_amount ,D.rc_count,format(D.RC_date,'yyyy/MM/dd')rc_date
                         ,isnull(format(D.check_pay_date,'yyyy/MM/dd'),'')check_pay_date 
                         ,CASE WHEN RecPayAmt IS NULL THEN ''
                               ELSE convert(varchar, RecPayAmt)
@@ -657,13 +680,20 @@ namespace KF_WebAPI.Controllers
 	                        ELSE isnull(DATEDIFF(DAY, RC_date, check_pay_date), 0)
                         END delayday,D.ex_remainingPrincipal,D.rc_note                                                                                                 
                         FROM Receivable_M M left join Receivable_D D on M.RCM_id=D.RCM_id
-                        where M.del_tag='0' and D.del_tag='0' and  M.RCM_id=@RCM_id ) M";
+                        where M.del_tag='0' and D.del_tag='0' and  M.RCM_id=@RCM_id ";
                 var parameters = new List<SqlParameter>()
                 {
                     new SqlParameter("@RCM_id",RCM_id)
                 };
+                if (GetType == "EX")
+                {
+                    T_SQL += " and RC_date < SYSDATETIME()  ";
+                }
+
+                T_SQL += " ) M ";
+
                 #endregion
-                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+               var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(dtResult);
                 return Ok(resultClass);
