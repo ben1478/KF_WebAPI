@@ -7,78 +7,71 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 設定 EPPlus 授權上下文
+// Excel 授權設定
 ExcelPackage.LicenseContext = LicenseContext.Commercial;
-// Add services to the container.
 
+// 加入服務
 builder.Services.AddControllers();
-
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-
-// Add Session services
-builder.Services.AddDistributedMemoryCache(); 
+builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromHours(8); // 設置 Session 過期時間
-    options.Cookie.HttpOnly = true; 
-    options.Cookie.IsEssential = true; 
+    options.IdleTimeout = TimeSpan.FromHours(8);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
 });
-builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
 builder.Services.AddHttpClient<YuRichAPIController>();
 builder.Services.AddScoped<IWebRobotService, WebRobotService>();
 
+
+
+// CORS 設定
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontendOrigins", policy =>
+    {
+        policy.WithOrigins(
+            "https://kuofongserver.ngrok.pro",
+            "https://kfserver-jwt.ngrok.pro",
+            "http://192.168.1.240:8080",
+            "http://192.168.1.240:8081",
+            "http://localhost:5000"
+        )
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .WithExposedHeaders("Content-Disposition")
+        .AllowCredentials();
+    });
+});
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Swagger (僅在開發環境)
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-else 
-{
-
-        app.UseExceptionHandler("/Error");
-        // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-        app.UseHsts();
-
-}
-
-
-app.UseCors(builder =>
-{
-    builder.WithOrigins(
-        "http://erp",
-        "http://192.168.1.240",
-        "https://www.kuofongweb.com.tw/",
-        "http://192.168.1.240:8080",
-         "http://192.168.1.240:8088",
-        "http://192.168.1.240:8081"
-        )
-           .AllowAnyMethod()
-           .AllowAnyHeader()
-           .WithExposedHeaders("Content-Disposition")
-           .AllowCredentials(); // 允許發送憑證（包括 Cookies）
-
-
-
-});
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 app.UseRouting();
 
-// 啟用 Session 支援
+// Session
 app.UseSession();
 
+// CORS 必須在 Routing 後、Auth 前
+app.UseCors("AllowFrontendOrigins");
+
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
 
-app.UseCors("AllowAll");
+
+// 套用 CORS 到所有 Controller
+app.MapControllers().RequireCors("AllowFrontendOrigins");
 
 app.Run();

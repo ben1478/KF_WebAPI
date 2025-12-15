@@ -1,4 +1,5 @@
-﻿using KF_WebAPI.BaseClass;
+﻿using Azure.Core;
+using KF_WebAPI.BaseClass;
 using KF_WebAPI.BaseClass.AE;
 using KF_WebAPI.BaseClass.Max104;
 using KF_WebAPI.DataLogic;
@@ -16,6 +17,7 @@ using System.Net;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 
 namespace KF_WebAPI.Controllers
 {
@@ -26,6 +28,89 @@ namespace KF_WebAPI.Controllers
        // private readonly string _storagePath = @"C:\UploadedFiles";
         private readonly string _storagePath = @"D:\AE_Web_UpLoad";
         private AEData _AEData = new();
+
+
+
+        private async Task<string> GetAuth0Token()
+        {
+            using var client = new HttpClient();
+            var tokenUrl = "https://dev-w2i1f18es2hyq1d0.us.auth0.com/oauth/token";
+
+            var payload = new
+            {
+                grant_type = "client_credentials",
+                audience = "https://kfserver-jwt.ngrok.pro",
+                client_id = "zps7NYeeone2Pg0GVPyW4Td76ehbbQes",
+                client_secret = "XVs63ogE2aadtO7geH1URKVtda6Rg_6ezVQxs_Zpr9ZTdToCPnXsL05L7RQ-4fc2"
+            };
+
+            // 修正 Serialize：明確指定類型，或用匿名物件字串
+            var jsonPayload = System.Text.Json.JsonSerializer.Serialize(payload);  // 這行現在正確
+            var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+            var response = await client.PostAsync(tokenUrl, content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseJson = await response.Content.ReadAsStringAsync();
+                using JsonDocument doc = JsonDocument.Parse(responseJson);  // 現在可以用了
+                return doc.RootElement.GetProperty("access_token").GetString();
+            }
+
+            Console.WriteLine("Auth0 錯誤: " + await response.Content.ReadAsStringAsync());
+            return null;
+        }
+        // 接收模型
+        public class LoginModel
+        {
+            public string user { get; set; }
+            public string password { get; set; }
+        }
+        [HttpPost("Login_EXT")]
+        public ActionResult<ResultClass<string>> Login_EXT([FromBody] LoginModel model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            ADOData _adoData = new ADOData();
+            var T_SQL = "SELECT * FROM USER_EXT WHERE USER_ID = @USER_ID AND USER_PW = @USER_PW";
+            var parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@USER_ID", model.user),
+                new SqlParameter("@USER_PW", model.password)
+            };
+
+            try
+            {
+                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                if (dtResult.Rows.Count > 0)
+                {
+                    var USER_NAME = dtResult.Rows[0]["USER_NAME"].ToString();
+
+                    string accessToken  = GetAuth0Token().Result; ;
+                   
+                    return Ok(new
+                    {
+                        success = true,
+                        token = accessToken,
+                        USER_NAME= USER_NAME
+                    });
+                }
+                else
+                {
+                    resultClass.ResultCode = "401";
+                    resultClass.ResultMsg = "用戶名或密碼不正確";
+                    return Unauthorized(resultClass);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
         [HttpPost("SendSMS")]
         public ActionResult<ResultClass<string>> SendSMS(string smbody, string dstaddr)
         {
