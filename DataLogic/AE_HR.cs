@@ -316,7 +316,7 @@ namespace KF_WebAPI.DataLogic
         }
 
 
-        public void InsertAE_Calendar_day(arrResultClass_104<calendar_day> APIResult,string m_Year)
+        public void InsertAE_Calendar_day(arrResultClass_104<calendar_day> APIResult,string m_Year, string UserID)
         {
             
             try
@@ -328,13 +328,63 @@ namespace KF_WebAPI.DataLogic
                 };
                 _ADO.ExecuteNonQuery("Delete FROM dbo.calendar_day_104 where year([CALENDAR_DATE])=@Year ", Params);
                 _ADO.DataTableToSQL(TableName, ((calendar_day[])APIResult.data), _ADO.ConnStr);
+                InsertHolidays(m_Year, UserID);
+
             }
             catch
             {
                 throw;
             }
-           
         }
+
+
+        public void InsertHolidays( string m_Year, string UserID)
+        {
+
+            try
+            {
+                //Holidays
+                List<SqlParameter> Params = new List<SqlParameter>()
+                {
+                    new SqlParameter() {ParameterName = "@Year", SqlDbType = SqlDbType.VarChar, Value= m_Year}
+                };
+                _ADO.ExecuteNonQuery("delete Holidays where [HDate] in (SELECT [HDate] FROM Holidays_D where year(convert(datetime,[HDate]))=@Year and [Influence] is null) ", Params);
+
+                Params = new List<SqlParameter>()
+                {
+                    new SqlParameter() {ParameterName = "@Year", SqlDbType = SqlDbType.VarChar, Value= m_Year},
+                    new SqlParameter() {ParameterName = "@UserID", SqlDbType = SqlDbType.VarChar, Value= UserID}
+                };
+                string SQL = " INSERT INTO[Holidays] ";
+                SQL += " SELECT format([CALENDAR_DATE],'yyyy/MM/dd'),SYSDATETIME(),@UserID ";
+                SQL += " FROM calendar_day_104 where format([CALENDAR_DATE],'yyyy')= @Year and[CALENDAR_LEAVE_ID] <> 1 ";
+                _ADO.ExecuteNonQuery(SQL, Params);
+
+                //Holidays_D
+                 Params = new List<SqlParameter>()
+                {
+                    new SqlParameter() {ParameterName = "@Year", SqlDbType = SqlDbType.VarChar, Value= m_Year}
+                };
+                _ADO.ExecuteNonQuery("delete Holidays_D where year(convert(datetime,[HDate]))=@Year and [Influence] is null ", Params);
+
+                Params = new List<SqlParameter>()
+                {
+                    new SqlParameter() {ParameterName = "@Year", SqlDbType = SqlDbType.VarChar, Value= m_Year},
+                    new SqlParameter() {ParameterName = "@UserID", SqlDbType = SqlDbType.VarChar, Value= UserID}
+                };
+
+                SQL = " INSERT INTO[Holidays_D]([HDate],[CreateDate],[CreateUser]) ";
+                SQL += " SELECT format([CALENDAR_DATE],'yyyy/MM/dd'),SYSDATETIME(),@UserID ";
+                SQL += " FROM calendar_day_104 where format([CALENDAR_DATE],'yyyy')= @Year and[CALENDAR_LEAVE_ID] <> 1 ";
+                _ADO.ExecuteNonQuery(SQL, Params);
+
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
 
         public void InsertExternal_API_Log(External_API_Log p_External_API_Log)
         {

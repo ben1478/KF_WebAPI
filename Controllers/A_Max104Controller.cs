@@ -11,6 +11,8 @@ using Microsoft.Data.SqlClient;
 using System;
 using Azure.Core;
 using KF_WebAPI.BaseClass.AE;
+using System.Net.Http;
+using ProtoBuf.Grpc.Configuration;
 
 namespace KF_WebAPI.Controllers
 {
@@ -29,9 +31,12 @@ namespace KF_WebAPI.Controllers
         private KFData _KFData = new();
         private readonly string g_CO_CODE = "52611690";
         private readonly string g_CO_ID = "1";
-        public A_Max104Controller(IHttpClientFactory httpClientFactory)
+        private readonly IHttpClientFactory _clientFactory;
+        public A_Max104Controller(IHttpClientFactory clientFactory)
         {
-            _httpClient = httpClientFactory.CreateClient();
+            _clientFactory = clientFactory;
+
+            _httpClient = _clientFactory.CreateClient();
           
         }
 
@@ -616,27 +621,49 @@ namespace KF_WebAPI.Controllers
         /// <returns></returns>
         [Route("calendar_day")]
         [HttpPost]
-        public async Task<ActionResult<string>> calendar_day(string UserID, string ACCESS_TOKEN,string CALENDAR_YEAR)
+        public async Task<ActionResult<string>> calendar_day(string UserID, string CALENDAR_YEAR)
         {
             string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
             ResultClass_104<string> resultClass = new ResultClass_104<string>();
+            ResultClass_104<signIn> resultTOKEN = new ResultClass_104<signIn>();
             try
             {
-                string p_JSON = "{ \"ACCESS_TOKEN\": \"" + ACCESS_TOKEN + "\",\"CO_ID\": 1,\"CALENDAR_BASIC_ID\": 1,\"CALENDAR_YEAR\": " + CALENDAR_YEAR + "}";
-                ResultClass<string> APIResult = new();
-                APIResult = await _Comm.Call_104API(UserID, "am/calendar_day", p_JSON, TransactionId, _httpClient, ACCESS_TOKEN);
-              
-                if (APIResult.ResultCode == "200")
+
+                string USER_ACCOUNT = "KF_ERP";
+                string USER_PWD = "Kf52611690";
+                string p_JSON = "{ \"USER_ACCOUNT\": \"" + USER_ACCOUNT + "\", \"USER_PWD\": \"" + USER_PWD + "\"}";
+                string ACCESS_TOKEN = "";
+                ResultClass<string> APIResult_TOKEN = new();
+                APIResult_TOKEN = await _Comm.Call_104API(UserID, "auth/signIn", p_JSON, TransactionId, _httpClient);
+
+                if (APIResult_TOKEN.ResultCode == "200")
                 {
-                    arrResultClass_104<calendar_day> objResult = JsonConvert.DeserializeObject<arrResultClass_104<calendar_day>>(APIResult.objResult);
-                    AE_HR m_hr = new AE_HR();
-                    m_hr.InsertAE_Calendar_day(objResult, CALENDAR_YEAR);
-                    resultClass.code = "200";
+                    resultTOKEN = JsonConvert.DeserializeObject<ResultClass_104<signIn>>(APIResult_TOKEN.objResult);
+                    ACCESS_TOKEN = resultTOKEN.data.ACCESS_TOKEN;
+
+                    p_JSON = "{ \"ACCESS_TOKEN\": \"" + ACCESS_TOKEN + "\",\"CO_ID\": 1,\"CALENDAR_BASIC_ID\": 1,\"CALENDAR_YEAR\": " + CALENDAR_YEAR + "}";
+                    ResultClass<string> APIResult = new();
+                    HttpClient New_httpClient = _clientFactory.CreateClient();
+                   
+                    APIResult = await _Comm.Call_104API(UserID, "am/calendar_day", p_JSON, TransactionId, New_httpClient, ACCESS_TOKEN);
+
+                    if (APIResult.ResultCode == "200")
+                    {
+                        arrResultClass_104<calendar_day> objResult = JsonConvert.DeserializeObject<arrResultClass_104<calendar_day>>(APIResult.objResult);
+                        AE_HR m_hr = new AE_HR();
+                        m_hr.InsertAE_Calendar_day(objResult, CALENDAR_YEAR, UserID);
+                        resultClass.code = "200";
+                    }
+                    else
+                    {
+                        resultClass.code = "999";
+                        resultClass.msg = $"{APIResult.ResultMsg}";
+                    }
                 }
                 else
                 {
                     resultClass.code = "999";
-                    resultClass.msg = $"{APIResult.ResultMsg}";
+                    resultClass.msg = $"{APIResult_TOKEN.ResultMsg}";
                 }
             }
             catch (Exception ex)
