@@ -158,6 +158,30 @@ namespace KF_WebAPI.FunctionHandler
             }
             return dtResult;
         }
+        public object ExecuteScalar(string strSQL, List<SqlParameter> Param)
+        {
+            object result = null;
+            try
+            {
+                using SqlConnection conn = new(ConnStr);
+                using SqlCommand cmd = new SqlCommand(strSQL, conn);
+                if (Param != null)
+                {
+                    foreach (DbParameter param in Param)
+                    {
+                        cmd.Parameters.Add(param);
+                    }
+                    conn.Open();
+                    result = cmd.ExecuteScalar();
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+            return result;
+        }
 
     }
 }
