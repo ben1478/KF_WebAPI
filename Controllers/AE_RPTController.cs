@@ -33,6 +33,8 @@ namespace KF_WebAPI.Controllers
     [Route("[controller]")]
     public class AE_RPTController : Controller
     {
+        AE_Rpt _Rpt = new AE_Rpt();
+
         #region 業績報表_業務
         /// <summary>
         /// 取得show_more_type判定是否為7011權限
@@ -6599,6 +6601,51 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
           
+        }
+        #endregion
+
+        #region 機車貸專案總表
+        /// <summary>
+        /// 取得機車分期總表
+        /// </summary>
+        [HttpPost("GetMotoSummaryList")]
+        public ActionResult<ResultClass<string>> GetMotoSummaryList()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var result = _Rpt.GetMotoSummaryList();
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 匯出機車分期總表
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetMotoSummaryExcel")]
+        public IActionResult GetMotoSummaryExcel()
+        {
+            try
+            {
+                var fileBytes = _Rpt.GetMotoSummaryExcel();
+                var fileName = "機車貸分期貸款總表" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
         }
         #endregion
     }

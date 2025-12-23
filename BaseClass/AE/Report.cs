@@ -7,4 +7,21 @@
         public string? Fin_type { get; set; }
     }
 
+    public class MotocaseSummary
+    {
+        public string YYYYMM { get; set; }
+        public int SendCount { get; set; }
+        public int PassCount { get; set; }
+        public int GetCount { get; set; }
+        public decimal PassAmount { get; set; }
+        public decimal GetAmount { get; set; }
+        public decimal PerAmount { get; set; }
+        public decimal RemAmount { get; set; }
+        public int SettCount { get; set; }
+        public decimal SettAmount { get; set; }
+        public int BadCount { get; set; }
+        public decimal BadAmount { get; set; }
+        public string PassRate { get; set; }
+        public string GetRate { get; set; }
+    }
 }
