@@ -6628,7 +6628,7 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
-        /// 匯出機車分期總表
+        /// 匯出機車分期Excel
         /// </summary>
         /// <returns></returns>
         [HttpPost("GetMotoSummaryExcel")]
@@ -6643,6 +6643,28 @@ namespace KF_WebAPI.Controllers
             catch (Exception ex)
             {
                 ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 匯出機車各專案總表
+        /// </summary>
+        [HttpPost("GetProjectMotoList")]
+        public ActionResult<ResultClass<string>> GetProjectMotoList(string project)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var result = _Rpt.GetProjectMoto(project);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
