@@ -1107,7 +1107,7 @@ namespace KF_WebAPI.FunctionHandler
             using (var package = new ExcelPackage())
             {
                 #region 各公司打卡資料
-                var bcOrder = new List<string> { "BC0800", "BC0801", "BC0802", "BC0803", "BC0900", "BC0100", "BC0200", "BC0600", "BC0300", "BC0500", "BC0400", "BC0700" };
+                var bcOrder = new List<string> { "BC0800", "BC0801", "BC0802", "BC0803", "BC0804", "BC0900", "BC0100", "BC0200", "BC0600", "BC0300", "BC0500", "BC0400", "BC0700" };
                 var bcGroups = modelList.GroupBy(x => x.U_BC).OrderBy(g => bcOrder.IndexOf(g.Key)).ToList();
                 string[] headers = { "名稱", "日期", "上班", "下班", "遲到", "外出時間" };
 
@@ -1127,6 +1127,9 @@ namespace KF_WebAPI.FunctionHandler
                             break;
                         case "BC0803":
                             worksheet = package.Workbook.Worksheets.Add("財會部");
+                            break;
+                        case "BC0804":
+                            worksheet = package.Workbook.Worksheets.Add("企劃部");
                             break;
                         case "BC0900":
                             worksheet = package.Workbook.Worksheets.Add("行銷部");
@@ -1282,7 +1285,7 @@ namespace KF_WebAPI.FunctionHandler
                                 if (!isRest)
                                 {
                                     #region 因為消毒所以12/19 5F人員提早下班不算曠職
-                                    if (bcGroup.Key == "BC0800" || bcGroup.Key == "BC0801" || bcGroup.Key == "BC0802" || bcGroup.Key == "BC0803"
+                                    if (bcGroup.Key == "BC0800" || bcGroup.Key == "BC0801" || bcGroup.Key == "BC0802" || bcGroup.Key == "BC0803" || bcGroup.Key == "BC0804"
                                         || bcGroup.Key == "BC0100")
                                     {
                                         if (items[j].attendance_week == "12/19 (五)")
