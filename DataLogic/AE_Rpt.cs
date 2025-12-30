@@ -15,6 +15,8 @@ namespace KF_WebAPI.DataLogic
     {
         ADOData _adoData = new ADOData();
 
+
+
         /// <summary>
         /// 取得機車分期總表
         /// </summary>

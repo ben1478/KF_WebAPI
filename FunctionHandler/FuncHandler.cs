@@ -30,6 +30,161 @@ namespace KF_WebAPI.FunctionHandler
 {
     public class FuncHandler
     {
+
+
+
+        public static DataRow AddTitleByTable(DataTable dt, string TbName)
+        {
+            DataRow m_dr = dt.NewRow();
+            if (TbName == "Totle")
+            {
+                m_dr["SEQ"] = "";
+                m_dr["U_PFT_name"] = "職位";
+                m_dr["plan_name"] = "業務";
+                m_dr["day_incase_num_FDCOM001"] = "新鑫日進件數";
+                m_dr["month_incase_num_FDCOM001"] = "新鑫累積進件";
+                m_dr["day_incase_num_FDCOM003"] = "國峯日進件數";
+                m_dr["month_incase_num_FDCOM003"] = "國峯累積進件";
+                m_dr["day_get_amount_num"] = "日撥件數";
+                m_dr["day_get_amount"] = "日撥金額";
+                m_dr["month_pass_num"] = "核准件數";
+                m_dr["month_get_amount_num"] = "累積撥款件數";
+                m_dr["month_get_amount_FDCOM001"] = "新鑫-撥款金額(萬)";
+                m_dr["month_get_amount_FDCOM003"] = "國峯-撥款金額(萬)    ";
+                m_dr["month_pass_amount_FDCOM001"] = "新鑫已核未撥";
+                m_dr["month_pass_amount_FDCOM003"] = "國峯已核未撥";
+                m_dr["target_quota"] = "目標";
+                m_dr["target_perc"] = "達成率";
+                m_dr["PE_target"] = "責任額";
+            }
+            if (TbName == "Engine")
+            {
+                m_dr["SEQ"] = "";
+                m_dr["U_PFT_name"] = "職位";
+                m_dr["plan_name"] = "業務";
+                m_dr["day_incase_num_PJ00046"] = "機車貸A日進件數";
+                m_dr["month_incase_num_PJ00046"] = "機車貸A累積進件";
+                m_dr["day_incase_num_PJ00047"] = "機車貸B日進件數";
+                m_dr["month_incase_num_PJ00047"] = "機車貸B累積進件";
+                m_dr["day_get_amount_num_engine"] = "日撥件數";
+                m_dr["day_get_amount_engine"] = "日撥金額";
+                m_dr["month_pass_num_engine"] = "核准件數";
+                m_dr["month_get_amount_num_engine"] = "累積撥款件數";
+                m_dr["month_get_amount_PJ00046"] = "機車貸A撥款金額(萬)";
+                m_dr["month_get_amount_PJ00047"] = "機車貸B撥款金額(萬)";
+                m_dr["month_pass_amount_PJ00046"] = "機車貸款A 已核未撥";
+                m_dr["month_pass_amount_PJ00047"] = "機車貸款B 已核未撥";
+                m_dr["sum_amount"] = "累計業績";
+
+            }
+            return m_dr;
+        }
+
+
+        /// <summary>
+        /// 將 DataSet 轉成 Excel 檔案，每個 DataTable 對應一個 Sheet
+        /// </summary>
+        /// <param name="dataSet">包含多個 DataTable 的 DataSet</param>
+        /// <param name="sheetNames">ArrayList，紀錄每個 Sheet 的名稱</param>
+        /// <returns>Excel 檔案的 byte[]，可用於下載</returns>
+        public static byte[] ExportDataSetToExcel(DataSet dataSet, ArrayList sheetNames)
+        {
+            if (dataSet == null || dataSet.Tables.Count == 0)
+                throw new ArgumentException("DataSet 不可為空");
+
+            if (sheetNames == null || sheetNames.Count < dataSet.Tables.Count)
+                throw new ArgumentException("Sheet 名稱數量不足");
+
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial; // 必須設定 LicenseContext
+
+            using (var package = new ExcelPackage())
+            {
+                for (int i = 0; i < dataSet.Tables.Count; i++)
+                {
+                    var table = dataSet.Tables[i];
+                    string sheetName = sheetNames[i].ToString();
+                    ArrayList arrFromRow = new ArrayList();
+                    ArrayList arrToRow = new ArrayList();
+                    var worksheet = package.Workbook.Worksheets.Add(sheetName);
+
+                    // 輸出資料列
+                    for (int row = 0; row < table.Rows.Count; row++)
+                    {
+                        if (table.Rows[row]["U_PFT_name"].ToString() == "" && table.Rows[row]["plan_name"].ToString() != "" && table.Rows[row]["plan_name"].ToString() != "合計" && table.Rows[row]["plan_name"].ToString() != "總計")
+                        {
+                            arrFromRow.Add(row + 2);
+                        }
+                        if (table.Rows[row]["U_PFT_name"].ToString() == "" && table.Rows[row]["plan_name"].ToString() != "" && table.Rows[row]["plan_name"].ToString() == "合計")
+                        {
+                            arrToRow.Add(row + 1);
+                        }
+                        for (int col = 0; col < table.Columns.Count; col++)
+                        {
+                            var cellValue = table.Rows[row][col];
+
+                            var cell = worksheet.Cells[row + 1, col + 1];
+
+                            if (cellValue != DBNull.Value)
+                            {
+                                // 嘗試轉成數字
+                                if (double.TryParse(cellValue.ToString(), out double numericValue))
+                                {
+                                    cell.Value = numericValue;
+
+                                    // 如果大於 1000 → 套用三位一撇格式
+                                    if (numericValue >= 1000)
+                                    {
+                                        cell.Style.Numberformat.Format = "#,##0"; // 整數三位一撇
+                                    }
+                                    else
+                                    {
+                                        cell.Style.Numberformat.Format = "0"; // 一般數字格式
+                                    }
+                                }
+                                else
+                                {
+                                    // 非數字 → 原樣輸出
+                                    cell.Value = cellValue;
+                                }
+                            }
+                            else
+                            {
+                                cell.Value = null;
+                            }
+
+
+                        }
+                    }
+
+                    foreach (Int32 FromRow in arrFromRow)
+                    {//FromRow , FromCol,ToRow , ToCol
+                        var range = worksheet.Cells[FromRow, 1, FromRow, table.Columns.Count];
+                        range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                        range.Style.Border.Top.Style = ExcelBorderStyle.Medium;
+                        range = worksheet.Cells[FromRow - 1, 1, FromRow, table.Columns.Count];
+                        range.Style.Font.Bold = true;
+                    }
+                    foreach (Int32 ToRow in arrToRow)
+                    {//FromRow , FromCol,ToRow , ToCol
+                        var range = worksheet.Cells[ToRow, 1, ToRow, table.Columns.Count];
+                        range.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+                        range.Style.Border.Bottom.Style = ExcelBorderStyle.Medium;
+                        range.Style.Font.Bold = true;
+                    }
+
+                    var rangeEnd = worksheet.Cells[table.Rows.Count, 1, table.Rows.Count, table.Columns.Count];
+                    rangeEnd.Style.Border.Top.Style = ExcelBorderStyle.Medium;
+                    rangeEnd.Style.Font.Bold = true;
+
+
+                    worksheet.Cells.AutoFitColumns();
+                }
+
+                return package.GetAsByteArray();
+            }
+        }
+
+
         /// <summary>
         /// DataTable分頁
         /// </summary>
