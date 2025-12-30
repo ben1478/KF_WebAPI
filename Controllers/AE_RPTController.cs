@@ -63,8 +63,7 @@ namespace KF_WebAPI.Controllers
             byte[] fileBytes = FuncHandler.ExportDataSetToExcel(ds, sheetNames);
 
             return File(fileBytes,
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        "Report.xlsx");
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Base_Date+ "-業績報表_日報表.xlsx");
         }
         #endregion
 
