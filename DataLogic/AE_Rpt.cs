@@ -433,7 +433,7 @@ namespace KF_WebAPI.DataLogic
         /// <param name="Base_Date"></param>
         /// <param name="isPreDay"></param>
         /// <returns></returns>
-        public DataSet GetDailyReportByDate(string Base_Date, Boolean isPreDay)
+        public DataSet GetDailyReportByDate(string Base_Date, string U_BC, Boolean isPreDay)
         {
             DataSet DsResult = new DataSet();
 
@@ -493,7 +493,9 @@ namespace KF_WebAPI.DataLogic
             ADOData _adoData = new ADOData();
             #region SQL-各區人員
             var parameters = new List<SqlParameter>();
-            T_SQL = @"select isnull(G.Spec_Group, U_BC)U_BC,BC_Name,bc_sort,count(*) PelCount
+            if (U_BC == "")
+            {
+                T_SQL = @"select isnull(G.Spec_Group, U_BC)U_BC,BC_Name,bc_sort,count(*) PelCount
                          from (select U_num,U_BC from User_M where U_leave_date is null or convert(varchar, U_arrive_date, 112) = @ThisMon ) U
                         Left join  User_Spec_Group G  on U.U_num=G.U_num 
                         Left join
@@ -515,8 +517,30 @@ namespace KF_WebAPI.DataLogic
                         select 'BC0901','增便利','999',1
                         order by bc_sort,isnull(G.Spec_Group, U_BC) ";
 
-            parameters.Add(new SqlParameter("@ThisMon", ThisMon));
-            parameters.Add(new SqlParameter("@PE_Date", PE_Date));
+                parameters.Add(new SqlParameter("@ThisMon", ThisMon));
+                parameters.Add(new SqlParameter("@PE_Date", PE_Date));
+            }
+            else
+            {
+                T_SQL = @"select isnull(G.Spec_Group, U_BC)U_BC,BC_Name,bc_sort,count(*) PelCount
+                         from (select U_num,U_BC from User_M where U_BC=@U_BC and U_leave_date is null or convert(varchar, U_arrive_date, 112) = @ThisMon ) U
+                        Left join  User_Spec_Group G  on U.U_num=G.U_num 
+                        Left join
+                        (SELECT PE_num,PE_target FROM Person_target WHERE PE_Date=@PE_Date) P on U.U_num=P.PE_num
+                        left join (
+                        select item_D_code,item_D_name BC_Name,0 bc_sort from Item_list where item_M_code = 'Spec_Group' and item_M_type='N'
+                        union all
+                        select  item_D_code,item_D_name BC_Name,item_sort bc_sort from Item_list  where item_M_code = 'branch_company' and item_M_type='N'
+                        ) BC on isnull(G.Spec_Group, U_BC)=BC.item_D_code where PE_target is not null and PE_target > 0
+                        group by isnull(G.Spec_Group, U_BC),BC_Name,bc_sort
+                       
+                        order by bc_sort,isnull(G.Spec_Group, U_BC) ";
+
+                parameters.Add(new SqlParameter("@ThisMon", ThisMon));
+                parameters.Add(new SqlParameter("@PE_Date", PE_Date));
+                parameters.Add(new SqlParameter("@U_BC", U_BC));
+            }
+            
            
             DataTable dtBCResult = _adoData.ExecuteQuery(T_SQL, parameters);
             ArrayList arrTitle = new ArrayList();
@@ -913,8 +937,15 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
     select  item_D_code,item_D_name BC_Name from Item_list  where item_M_code = 'branch_company' and item_M_type='N'
     ) BC on isnull(SG.Spec_Group, U_BC)=BC.item_D_code
     WHERE  (isnull(is_susp, 'N')='N'
-           OR  convert(varchar, U_susp_date, 112) >=@Base_date)
-    ORDER BY bc_sort,isnull(SG.Spec_Group, A.U_BC),
+           OR  convert(varchar, U_susp_date, 112) >=@Base_date)";
+            if (U_BC != "")
+            {
+                T_SQL += @" and U_BC=@U_BC ";
+            }
+            
+
+
+            T_SQL += @"ORDER BY bc_sort,isnull(SG.Spec_Group, A.U_BC),
              A.leader_name,
              CASE
                  WHEN plan_num='K9999'THEN 999
@@ -925,9 +956,12 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             parameters.Add(new SqlParameter("@PreMon", PreMon));
             parameters.Add(new SqlParameter("@PreMon1", PreMon1));
             parameters.Add(new SqlParameter("@PE_Date", PE_Date));
-
-            #endregion
-            DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+            if (U_BC != "")
+            {
+                parameters.Add(new SqlParameter("@U_BC", U_BC));
+            }
+           #endregion
+           DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
 
             //總計
             DataTable dtTotle = new DataTable();
@@ -1600,12 +1634,22 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             }
             else
             {
-                DsResult.Tables.Add(dtTotle);
-                DsResult.Tables.Add(dtTotle_T);
-                DsResult.Tables.Add(dtEngine);
-                DsResult.Tables.Add(dtEngine_T);
-                DsResult.Tables.Add(dtCar);
-                DsResult.Tables.Add(dtCar_T);
+                if (U_BC == "")
+                {
+                    DsResult.Tables.Add(dtTotle);
+                    DsResult.Tables.Add(dtTotle_T);
+                    DsResult.Tables.Add(dtEngine);
+                    DsResult.Tables.Add(dtEngine_T);
+                    DsResult.Tables.Add(dtCar);
+                    DsResult.Tables.Add(dtCar_T);
+                }
+                else
+                {
+                    DsResult.Tables.Add(dtTotle);
+                    DsResult.Tables.Add(dtTotle_T);
+                    DsResult.Tables.Add(dtEngine);
+                    DsResult.Tables.Add(dtEngine_T);
+                }
             }
 
             return DsResult;

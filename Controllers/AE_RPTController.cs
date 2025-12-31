@@ -43,27 +43,46 @@ namespace KF_WebAPI.Controllers
         /// <param name="Base_Date"></param>
         /// <returns></returns>
         [HttpPost("GetDailyReport")]
-        public IActionResult GetDailyReport(string Base_Date)
+        public IActionResult GetDailyReport(string Base_Date, string U_BC)
         {
-            DataSet ds = _Rpt.GetDailyReportByDate(Base_Date, false);
-
-            DataSet ds_Pre = _Rpt.GetDailyReportByDate(Base_Date, true);
-            foreach (DataTable dt in ds_Pre.Tables)
+            if (U_BC == "ALL")
             {
-                DataTable dtCopy = dt.Copy();
-                dtCopy.TableName = "Pre" + dtCopy.TableName;
-
-                ds.Tables.Add(dtCopy);
+                U_BC = "";
             }
-            string AddDate = (Convert.ToInt16(Base_Date.Split("/")[0]) + 1911).ToString() + "/" + Base_Date.Split("/")[1] + "/" + Base_Date.Split("/")[2];
-            AddDate = Convert.ToDateTime(AddDate).AddDays(-1).ToString("yyyyMMdd");
+            DataSet ds = _Rpt.GetDailyReportByDate(Base_Date, U_BC, false);
+            if (U_BC == "")
+            {
+                DataSet ds_Pre = _Rpt.GetDailyReportByDate(Base_Date, U_BC, true);
+                foreach (DataTable dt in ds_Pre.Tables)
+                {
+                    DataTable dtCopy = dt.Copy();
+                    dtCopy.TableName = "Pre" + dtCopy.TableName;
 
-            ArrayList sheetNames = new ArrayList { "各區房貸", "各區房貸總計", "各區機車貸", "各區機車貸總計", "汽車貸", "汽車貸總計", AddDate + "房貸", AddDate + "車貸", AddDate + "汽車貸" };
+                    ds.Tables.Add(dtCopy);
+                }
+                string AddDate = (Convert.ToInt16(Base_Date.Split("/")[0]) + 1911).ToString() + "/" + Base_Date.Split("/")[1] + "/" + Base_Date.Split("/")[2];
+                AddDate = Convert.ToDateTime(AddDate).AddDays(-1).ToString("yyyyMMdd");
 
-            byte[] fileBytes = FuncHandler.ExportDataSetToExcel(ds, sheetNames);
+                ArrayList sheetNames = new ArrayList { "各區房貸", "各區房貸總計", "各區機車貸", "各區機車貸總計", "汽車貸", "汽車貸總計", AddDate + "房貸", AddDate + "車貸", AddDate + "汽車貸" };
 
-            return File(fileBytes,
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Base_Date+ "-業績報表_日報表.xlsx");
+                byte[] fileBytes = FuncHandler.ExportDataSetToExcel(ds, sheetNames);
+
+                return File(fileBytes,
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Base_Date + "-業績報表_日報表.xlsx");
+            }
+            else
+            {
+               
+
+                ArrayList sheetNames = new ArrayList { "房貸", "房貸總計", "機車貸", "機車貸總計" };
+
+                byte[] fileBytes = FuncHandler.ExportDataSetToExcel(ds, sheetNames);
+
+                return File(fileBytes,
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Base_Date + "-業績報表_日報表.xlsx");
+            }
+           
+            
         }
         #endregion
 
