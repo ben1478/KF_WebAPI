@@ -5111,7 +5111,7 @@ namespace KF_WebAPI.Controllers
                            ELSE ROUND(replace(ISNULL(YearAvg, 0), ',', ''), 0)
                        END AS cal_yearAvg
                 FROM (
-                    SELECT 
+                    SELECT ub.item_sort,
                         isnull(is_susp, 'N') AS is_susp,
                         U_susp_date,
                         U_num,
@@ -5207,7 +5207,7 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
-                    sqlBuilder.Append(" ORDER BY User_M.U_BC, User_M.U_PFT, User_M.U_arrive_date ");
+                    sqlBuilder.Append(" ORDER BY User_M.item_sort, User_M.U_PFT, User_M.U_arrive_date ");
                 }
                 #endregion
 
