@@ -75,7 +75,21 @@ namespace KF_WebAPI.FunctionHandler
                 m_dr["month_pass_amount_PJ00046"] = "機車貸款A 已核未撥";
                 m_dr["month_pass_amount_PJ00047"] = "機車貸款B 已核未撥";
                 m_dr["sum_amount"] = "累計業績";
-
+            }
+            if (TbName == "Car")
+            {
+                m_dr["SEQ"] = "";
+                m_dr["U_PFT_name"] = "職位";
+                m_dr["plan_name"] = "業務";
+                m_dr["day_incase_num_PJ00048"] = "日進件數";
+                m_dr["month_incase_num_PJ00048"] = "累積進件";
+                m_dr["day_get_amount_num_Car"] = "日撥件數";
+                m_dr["day_get_amount_Car"] = "日撥金額";
+                m_dr["month_pass_num_Car"] = "核准件數";
+                m_dr["month_get_amount_num_Car"] = "累積撥款件數";
+                m_dr["month_get_amount_PJ00048"] = "撥款金額(萬)";
+                m_dr["month_pass_amount_PJ00048"] = "已核未撥";
+               
             }
             return m_dr;
         }

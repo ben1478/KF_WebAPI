@@ -491,7 +491,7 @@ namespace KF_WebAPI.DataLogic
 
             }
             ADOData _adoData = new ADOData();
-            #region SQL1
+            #region SQL-各區人員
             var parameters = new List<SqlParameter>();
             T_SQL = @"select isnull(G.Spec_Group, U_BC)U_BC,BC_Name,bc_sort,count(*) PelCount
                          from (select U_num,U_BC from User_M where U_leave_date is null or convert(varchar, U_arrive_date, 112) = @ThisMon ) U
@@ -517,7 +517,7 @@ namespace KF_WebAPI.DataLogic
 
             parameters.Add(new SqlParameter("@ThisMon", ThisMon));
             parameters.Add(new SqlParameter("@PE_Date", PE_Date));
-            #endregion
+           
             DataTable dtBCResult = _adoData.ExecuteQuery(T_SQL, parameters);
             ArrayList arrTitle = new ArrayList();
             foreach (DataRow dr in dtBCResult.Rows)
@@ -531,16 +531,104 @@ namespace KF_WebAPI.DataLogic
                     arrTitle.Add("國峯租賃 (" + dr["BC_Name"].ToString() + ") " + dr["PelCount"].ToString() + "人");
                 }
             }
+            #endregion
 
 
-            #region SQL2
+            #region SQL-汽車貸人員
+             parameters = new List<SqlParameter>();
+            T_SQL = @"select M.u_num,U_name,M.U_PFT,BC_Name+PFT_Name PFT_Name from 
+                    Item_list I
+                    left join USER_M M on I.item_D_code=M.U_num
+                    left join (select item_D_code U_BC,item_D_name BC_Name,item_sort BC_Sort from Item_list 
+                    where item_M_code='branch_company'  and item_D_type='Y') BC on M.U_BC=BC.U_BC
+                    left join  (select item_D_code U_PFT,item_D_name PFT_Name from Item_list 
+                    where item_M_code='professional_title'  and item_D_type='Y')PFT on M.U_PFT=PFT.U_PFT
+                    where item_M_code=@Car_Sales and item_D_type='Y'
+                    order by BC_Sort ";
+            parameters.Add(new SqlParameter("@Car_Sales", "Car_Sales"));
+
+            DataTable dtCarResult = _adoData.ExecuteQuery(T_SQL, parameters);
+            string CarTitle= "汽車購車改裝分期 " + dtCarResult.Rows.Count.ToString() + "人";
+            ArrayList arrCar = new ArrayList();
+           
+            foreach (DataRow dr in dtCarResult.Rows)
+            {
+                arrCar.Add(dr["u_num"].ToString());
+            }
+            #endregion
+
+
+            #region SQL-業績相關
             parameters = new List<SqlParameter>();
             T_SQL = @"
-WITH A (bc_sort, U_BC, U_susp_date, is_susp, leader_name, plan_name, plan_num, group_id, group_M_id, group_M_title, U_PFT_sort, U_PFT_name, day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_incase_num_PJ00047, day_get_amount_num_engine, day_get_amount_engine, month_pass_num_engine, month_get_amount_num_engine, month_get_amount_PJ00046, month_get_amount_PJ00047, month_pass_amount_PJ00046, month_pass_amount_PJ00047, day_incase_num_FDCOM001, month_incase_num_FDCOM001, day_incase_num_FDCOM003, month_incase_num_FDCOM003, day_incase_num_FDCOM003_1, month_incase_num_FDCOM003_1, day_incase_num_FDCOM004, month_incase_num_FDCOM004, day_incase_num_FDCOM005, month_incase_num_FDCOM005, day_get_amount_num, day_get_amount, month_pass_num, month_get_amount_num, month_get_amount_FDCOM001, month_get_amount_FDCOM003, month_get_amount_FDCOM003_1, month_get_amount_FDCOM004, month_get_amount_FDCOM005, month_pass_amount_FDCOM001, month_pre_amount_FDCOM001, month_pass_amount_FDCOM003, month_pass_amount_FDCOM003_1, month_pass_amount_FDCOM004, month_pass_amount_FDCOM005, advance_payment_AE) AS
+WITH A (bc_sort, U_BC, U_susp_date, is_susp, leader_name, plan_name, plan_num, group_id, group_M_id, group_M_title, U_PFT_sort, U_PFT_name,
+day_incase_num_PJ00048,month_incase_num_PJ00048,day_get_amount_num_Car,day_get_amount_Car,month_pass_num_Car,month_get_amount_num_Car,month_get_amount_PJ00048,month_pass_amount_PJ00048,
+day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_incase_num_PJ00047, day_get_amount_num_engine, day_get_amount_engine, month_pass_num_engine, month_get_amount_num_engine, month_get_amount_PJ00046, month_get_amount_PJ00047, month_pass_amount_PJ00046, month_pass_amount_PJ00047, day_incase_num_FDCOM001, month_incase_num_FDCOM001, day_incase_num_FDCOM003, month_incase_num_FDCOM003, day_incase_num_FDCOM003_1, month_incase_num_FDCOM003_1, day_incase_num_FDCOM004, month_incase_num_FDCOM004, day_incase_num_FDCOM005, month_incase_num_FDCOM005, day_get_amount_num, day_get_amount, month_pass_num, month_get_amount_num, month_get_amount_FDCOM001, month_get_amount_FDCOM003, month_get_amount_FDCOM003_1, month_get_amount_FDCOM004, month_get_amount_FDCOM005, month_pass_amount_FDCOM001, month_pre_amount_FDCOM001, month_pass_amount_FDCOM003, month_pass_amount_FDCOM003_1, month_pass_amount_FDCOM004, month_pass_amount_FDCOM005, advance_payment_AE) AS
   (SELECT leader.bc_sort,leader.U_BC,sa.U_susp_date,sa.is_susp,
           isnull(ug.group_M_name, '未分組') leader_name,
           ug.group_D_name,ug.group_D_code,ug.group_id,ug.group_M_id,
-          ug.group_M_title,sa.U_PFT_sort,sa.U_PFT_name 
+          ug.group_M_title,sa.U_PFT_sort,sa.U_PFT_name
+        /* 汽車-日進件數 */ 
+			 ,sum(CASE
+                  WHEN project_title = 'PJ00048'
+                       AND convert(varchar, Send_amount_date, 112) = @Base_date THEN 1
+                  ELSE 0
+              END) AS day_incase_num_PJ00048 
+			  
+			/* 汽車-月進件數*/ 
+			 ,sum(CASE
+                  WHEN project_title = 'PJ00048'
+                       AND left(convert(varchar, Send_amount_date, 112), 6) = @ThisMon
+                       AND convert(varchar, Send_amount_date, 112) <= @Base_date THEN 1
+                  ELSE 0
+              END) AS month_incase_num_PJ00048 
+			/* 汽車-日撥款數*/ 
+			  ,sum(CASE
+                  WHEN project_title IN('PJ00048')
+                       AND convert(varchar,get_amount_date, 112) = @Base_date THEN 1
+                  ELSE 0
+              END) AS day_get_amount_num_Car
+			/* 汽車-日撥款額*/ 
+			  ,sum(CASE
+                  WHEN project_title IN('PJ00048')
+                       AND convert(varchar,get_amount_date, 112) = @Base_date THEN get_amount
+                  ELSE 0
+              END) AS day_get_amount_Car
+			/* 汽車-月核准數*/ 
+              ,sum(CASE
+                  WHEN project_title IN ('PJ00048')
+                       AND left(convert(varchar, Send_amount_date, 112), 6)=@ThisMon
+                       AND convert(varchar,Send_result_date, 112) <= @Base_date
+                       AND Send_result_type IN ('SRT002', 'SRT005') THEN 1
+                  ELSE 0
+              END) AS month_pass_num_Car
+			/* 汽車-月撥款數*/ 
+              ,sum(CASE
+                  WHEN project_title IN ('PJ00048')
+                       AND left(convert(varchar, get_amount_date, 112), 6) = @ThisMon
+                       AND convert(varchar,get_amount_date, 112) <= @Base_date
+                       AND get_amount_type IN ('GTAT002') THEN 1
+                  ELSE 0
+              END) AS month_get_amount_num_Car
+			/* 汽車-月撥款額*/ 
+              ,sum(CASE
+                  WHEN 'FDCOM003'=fund_company
+                       AND project_title IN ('PJ00048')
+                       AND left(convert(varchar, get_amount_date, 112), 6) = @ThisMon
+                       AND convert(varchar,get_amount_date, 112) <= @Base_date THEN get_amount
+                  ELSE 0
+              END) AS month_get_amount_PJ00048
+			/* 汽車-已核未撥*/ 
+			  ,sum(CASE
+                  WHEN 'FDCOM003'=fund_company
+                       AND project_title IN ('PJ00048')
+                       AND left(convert(varchar, Send_amount_date, 112), 6) IN (@ThisMon, @PreMon, @PreMon1)
+                       AND convert(varchar,Send_result_date, 112) <= @Base_date
+                       AND Send_result_type = 'SRT002'
+                       AND isnull(check_amount_type, '') NOT IN ('CKAT003')
+                       AND isnull(get_amount_type, '') NOT IN ('GTAT002', 'GTAT003') THEN pass_amount
+                  ELSE 0
+              END) AS month_pass_amount_PJ00048	
         /* 機車貸款A 日進件數 */ ,
           sum(CASE
                   WHEN project_title = 'PJ00046'
@@ -635,13 +723,13 @@ WITH A (bc_sort, U_BC, U_susp_date, is_susp, leader_name, plan_name, plan_num, g
               END) AS month_incase_num_FDCOM001 /* 國&#23791; 日進件數*/ ,
           sum(CASE
                   WHEN 'FDCOM003'=fund_company
-                       AND project_title NOT IN ('PJ00046', 'PJ00047')
+                       AND project_title NOT IN ('PJ00046', 'PJ00047', 'PJ00048')
                        AND convert(varchar, Send_amount_date, 112) = @Base_date THEN 1
                   ELSE 0
               END) AS day_incase_num_FDCOM003 /* 國&#23791; 月進件數*/ ,
           sum(CASE
                   WHEN 'FDCOM003'=fund_company
-                       AND project_title NOT IN ('PJ00046', 'PJ00047')
+                       AND project_title NOT IN ('PJ00046', 'PJ00047', 'PJ00048')
                        AND left(convert(varchar, Send_amount_date, 112), 6) = @ThisMon
                        AND convert(varchar, Send_amount_date, 112) <= @Base_date THEN 1
                   ELSE 0
@@ -680,24 +768,24 @@ WITH A (bc_sort, U_BC, U_susp_date, is_susp, leader_name, plan_name, plan_num, g
                   ELSE 0
               END) AS month_incase_num_FDCOM005 /* 日撥款數*/ ,
           sum(CASE
-                  WHEN project_title NOT IN ('PJ00046', 'PJ00047')
+                  WHEN project_title NOT IN ('PJ00046', 'PJ00047', 'PJ00048')
                        AND convert(varchar,get_amount_date, 112) = @Base_date THEN 1
                   ELSE 0
               END) AS day_get_amount_num /* 日撥款額*/ ,
           sum(CASE
-                  WHEN project_title NOT IN ('PJ00046', 'PJ00047')
+                  WHEN project_title NOT IN ('PJ00046', 'PJ00047', 'PJ00048')
                        AND convert(varchar,get_amount_date, 112) = @Base_date THEN get_amount
                   ELSE 0
               END) AS day_get_amount /* 月核准數*/ ,
           sum(CASE
-                  WHEN project_title NOT IN ('PJ00046', 'PJ00047')
+                  WHEN project_title NOT IN ('PJ00046', 'PJ00047', 'PJ00048')
                        AND left(convert(varchar, Send_result_date, 112), 6)=@ThisMon
                        AND convert(varchar, Send_result_date, 112) <= @Base_date
                        AND Send_result_type IN ('SRT002', 'SRT005') THEN 1
                   ELSE 0
               END) AS month_pass_num /* 月撥款數*/ ,
           sum(CASE
-                  WHEN project_title NOT IN ('PJ00046', 'PJ00047')
+                  WHEN project_title NOT IN ('PJ00046', 'PJ00047', 'PJ00048')
                        AND left(convert(varchar, get_amount_date, 112), 6) = @ThisMon
                        AND convert(varchar,get_amount_date, 112) <= @Base_date
                        AND get_amount_type IN ('GTAT002') THEN 1
@@ -711,7 +799,7 @@ WITH A (bc_sort, U_BC, U_susp_date, is_susp, leader_name, plan_name, plan_num, g
               END) AS month_get_amount_FDCOM001 /* 國&#23791; 月撥款額*/ ,
           sum(CASE
                   WHEN 'FDCOM003'=fund_company
-                       AND project_title NOT IN ('PJ00046', 'PJ00047')
+                       AND project_title NOT IN ('PJ00046', 'PJ00047', 'PJ00048')
                        AND left(convert(varchar, get_amount_date, 112), 6) = @ThisMon
                        AND convert(varchar,get_amount_date, 112) <= @Base_date THEN get_amount
                   ELSE 0
@@ -752,7 +840,7 @@ WITH A (bc_sort, U_BC, U_susp_date, is_susp, leader_name, plan_name, plan_num, g
               END) AS month_pre_amount_FDCOM001 /* 國&#23791; 已核未撥*/ ,
           sum(CASE
                   WHEN 'FDCOM003'=fund_company
-                       AND project_title NOT IN ('PJ00046', 'PJ00047')
+                       AND project_title NOT IN ('PJ00046', 'PJ00047', 'PJ00048')
                        AND left(convert(varchar, Send_amount_date, 112), 6) IN (@ThisMon, @PreMon, @PreMon1)
                        AND convert(varchar,Send_result_date, 112) <= @Base_date
                        AND Send_result_type = 'SRT002'
@@ -789,7 +877,7 @@ WITH A (bc_sort, U_BC, U_susp_date, is_susp, leader_name, plan_name, plan_num, g
               END) AS month_pass_amount_FDCOM005 /* 國&#23791; 代墊款(萬)*/ ,
           sum(CASE
                   WHEN 'FDCOM003'=fund_company
-                       AND project_title NOT IN ('PJ00046', 'PJ00047')
+                       AND project_title NOT IN ('PJ00046', 'PJ00047', 'PJ00048')
                        AND left(convert(varchar, get_amount_date, 112), 6) = @ThisMon
                        AND convert(varchar,get_amount_date, 112) <= @Base_date THEN advance_payment_AE
                   ELSE 0
@@ -884,15 +972,34 @@ WITH A (bc_sort, U_BC, U_susp_date, is_susp, leader_name, plan_name, plan_num, g
             dtEngine.Columns.Add("month_pass_amount_PJ00047");//機車貸款B; 已核未撥 
             dtEngine.Columns.Add("sum_amount");//累計業績
 
-
             //機車_T
             DataTable dtEngine_T = new DataTable();
-            //前一天
+            //房貸前一天
             DataTable dtPreTotle_T = new DataTable();
-            //前一天
+            //機車前一天
             DataTable dtPreEngine_T = new DataTable();
+
+            //汽車
+            DataTable dtCar = new DataTable();
+            dtCar.Columns.Add("SEQ");//職位
+            dtCar.Columns.Add("U_PFT_name");//職位
+            dtCar.Columns.Add("plan_name");//業務
+            dtCar.Columns.Add("day_incase_num_PJ00048");//汽車-日進件數
+            dtCar.Columns.Add("month_incase_num_PJ00048");// 汽車-月進件數
+            dtCar.Columns.Add("day_get_amount_num_Car");//汽車-日撥款數
+            dtCar.Columns.Add("day_get_amount_Car");//汽車-日撥款額
+            dtCar.Columns.Add("month_pass_num_Car");//汽車-月核准數
+            dtCar.Columns.Add("month_get_amount_num_Car");//汽車-月撥款數
+            dtCar.Columns.Add("month_get_amount_PJ00048");//汽車-月撥款額
+            dtCar.Columns.Add("month_pass_amount_PJ00048");//汽車-已核未撥
+            //汽車_T
+            DataTable dtCar_T = new DataTable();
+            //汽車_T前一天
+            DataTable dtPreCar_T = new DataTable();
+
+
             /*房貸欄位*/
-            string U_PFT_name, plan_name, day_incase_num_FDCOM001, month_incase_num_FDCOM001, day_incase_num_FDCOM003, month_incase_num_FDCOM003;
+            string U_PFT_name, plan_num, BC_Name, plan_name, day_incase_num_FDCOM001, month_incase_num_FDCOM001, day_incase_num_FDCOM003, month_incase_num_FDCOM003;
             string day_get_amount_num, day_get_amount, month_pass_num, month_get_amount_num, month_get_amount_FDCOM001, month_get_amount_FDCOM003, month_pass_amount_FDCOM001;
             string month_pass_amount_FDCOM003, PE_target, target_perc, target_quota;
             Int32 iday_incase_num_FDCOM001 = 0, imonth_incase_num_FDCOM001 = 0, iday_incase_num_FDCOM003 = 0, imonth_incase_num_FDCOM003 = 0, iday_get_amount_num = 0, iday_get_amount = 0, imonth_pass_num = 0;
@@ -900,7 +1007,7 @@ WITH A (bc_sort, U_BC, U_susp_date, is_susp, leader_name, plan_name, plan_num, g
             Int32 iday_incase_num_FDCOM001_T = 0, imonth_incase_num_FDCOM001_T = 0, iday_incase_num_FDCOM003_T = 0, imonth_incase_num_FDCOM003_T = 0, iday_get_amount_num_T = 0, iday_get_amount_T = 0, imonth_pass_num_T = 0;
             Int32 imonth_get_amount_num_T = 0, imonth_get_amount_FDCOM001_T = 0, imonth_get_amount_FDCOM003_T = 0, imonth_pass_amount_FDCOM001_T = 0, imonth_pass_amount_FDCOM003_T = 0, iPE_target_T = 0, itarget_quota_T = 0;
             Int32 BC_Count = 0;
-            /*車貸欄位*/
+            /*機車貸欄位*/
             string day_incase_num_PJ00046, month_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00047, day_get_amount_num_engine, day_get_amount_engine;
             string month_pass_num_engine, month_get_amount_num_engine, month_get_amount_PJ00046, month_get_amount_PJ00047, month_pass_amount_PJ00046, month_pass_amount_PJ00047, sum_amount;
             Int32 iday_incase_num_PJ00046 = 0, imonth_incase_num_PJ00046 = 0, iday_incase_num_PJ00047 = 0, imonth_incase_num_PJ00047 = 0, iday_get_amount_num_engine = 0, iday_get_amount_engine = 0;
@@ -909,9 +1016,12 @@ WITH A (bc_sort, U_BC, U_susp_date, is_susp, leader_name, plan_name, plan_num, g
             Int32 imonth_pass_num_engine = 0, imonth_get_amount_num_engine = 0, imonth_get_amount_PJ00046 = 0, imonth_get_amount_PJ00047 = 0, imonth_pass_amount_PJ00046 = 0, imonth_pass_amount_PJ00047 = 0, isum_amount = 0;
             Int32 imonth_pass_num_engine_T = 0, imonth_get_amount_num_engine_T = 0, imonth_get_amount_PJ00046_T = 0, imonth_get_amount_PJ00047_T = 0, imonth_pass_amount_PJ00046_T = 0, imonth_pass_amount_PJ00047_T = 0, isum_amount_T = 0;
 
+            /*汽車貸欄位*/
+            string day_incase_num_PJ00048, month_incase_num_PJ00048, day_get_amount_num_Car, day_get_amount_Car, month_pass_num_Car, month_get_amount_num_Car, month_get_amount_PJ00048, month_pass_amount_PJ00048;
+            Int32 iday_incase_num_PJ00048 = 0, imonth_incase_num_PJ00048 = 0, iday_get_amount_num_Car = 0, iday_get_amount_Car = 0, imonth_pass_num_Car = 0, imonth_get_amount_num_Car = 0, imonth_get_amount_PJ00048 = 0, imonth_pass_amount_PJ00048 = 0;
+           
 
-
-            Int32 m_RowIdx = 0, BC0900Count = 0, iSEQ = 1; ;
+            Int32 m_RowIdx = 0, BC0900Count = 0, iSEQ = 1, iCar_SEQ = 1; 
             foreach (DataRow dr in dtResult.Rows)
             {
 
@@ -919,6 +1029,9 @@ WITH A (bc_sort, U_BC, U_susp_date, is_susp, leader_name, plan_name, plan_num, g
 
                 U_PFT_name = dr["U_PFT_name"].ToString();
                 plan_name = dr["plan_name"].ToString();
+                plan_num = dr["plan_num"].ToString();
+                BC_Name = dr["BC_Name"].ToString();
+
 
                 /*房貸欄位*/
                 day_incase_num_FDCOM001 = dr["day_incase_num_FDCOM001"].ToString();
@@ -969,7 +1082,7 @@ WITH A (bc_sort, U_BC, U_susp_date, is_susp, leader_name, plan_name, plan_num, g
                 imonth_pass_amount_FDCOM003 += Convert.ToInt32(dr["month_pass_amount_FDCOM003"].ToString());
                 imonth_pass_amount_FDCOM003_T += Convert.ToInt32(dr["month_pass_amount_FDCOM003"].ToString());
                 target_perc = "";
-                /*車貸欄位*/
+                /*機車貸欄位*/
                 day_incase_num_PJ00046 = dr["day_incase_num_PJ00046"].ToString();
                 iday_incase_num_PJ00046 += Convert.ToInt32(dr["day_incase_num_PJ00046"].ToString());
                 iday_incase_num_PJ00046_T += Convert.ToInt32(dr["day_incase_num_PJ00046"].ToString());
@@ -1105,7 +1218,6 @@ WITH A (bc_sort, U_BC, U_susp_date, is_susp, leader_name, plan_name, plan_num, g
                             dtEngine.Rows.Add(FuncHandler.AddTitleByTable(dtEngine, "Engine"));
                             BC_Count++;
                         }
-
                     }
                 }
                 DataRow DaRow = dtTotle.NewRow();
@@ -1383,21 +1495,108 @@ WITH A (bc_sort, U_BC, U_susp_date, is_susp, leader_name, plan_name, plan_num, g
                     TotRow_E_T["sum_amount"] = isum_amount_T;
                     dtEngine.Rows.Add(TotRow_E_T);
                 }
+
+                //符合汽車再新增
+                if (arrCar.Contains(plan_num))
+                {
+                    /*汽車貸欄位*/
+                    day_incase_num_PJ00048 = dr["day_incase_num_PJ00048"].ToString();
+                    iday_incase_num_PJ00048 += Convert.ToInt32(dr["day_incase_num_PJ00048"].ToString());
+
+                    month_incase_num_PJ00048 = dr["month_incase_num_PJ00048"].ToString();
+                    imonth_incase_num_PJ00048 += Convert.ToInt32(dr["month_incase_num_PJ00048"].ToString());
+
+                    day_get_amount_num_Car = dr["day_get_amount_num_Car"].ToString();
+                    iday_get_amount_num_Car += Convert.ToInt32(dr["day_get_amount_num_Car"].ToString());
+
+                    day_get_amount_Car = dr["day_get_amount_Car"].ToString();
+                    iday_get_amount_Car += Convert.ToInt32(dr["day_get_amount_Car"].ToString());
+
+                    month_pass_num_Car = dr["month_pass_num_Car"].ToString();
+                    imonth_pass_num_Car += Convert.ToInt32(dr["month_pass_num_Car"].ToString());
+
+                    month_get_amount_num_Car = dr["month_get_amount_num_Car"].ToString();
+                    imonth_get_amount_num_Car += Convert.ToInt32(dr["month_get_amount_num_Car"].ToString());
+
+                    month_get_amount_PJ00048 = dr["month_get_amount_PJ00048"].ToString();
+                    imonth_get_amount_PJ00048 += Convert.ToInt32(dr["month_get_amount_PJ00048"].ToString());
+
+                    month_pass_amount_PJ00048 = dr["month_pass_amount_PJ00048"].ToString();
+                    imonth_pass_amount_PJ00048 += Convert.ToInt32(dr["month_pass_amount_PJ00048"].ToString());
+                    
+                    if (iCar_SEQ == 1)
+                    {
+                        DataRow drCar_tit = dtCar.NewRow();
+                        drCar_tit["SEQ"] = "";
+                        drCar_tit["U_PFT_name"] = "";
+                        drCar_tit["plan_name"] = CarTitle;
+                        drCar_tit["day_get_amount_Car"] = AddDate;
+                        dtCar.Rows.Add(drCar_tit);
+                        dtCar.Rows.Add(FuncHandler.AddTitleByTable(dtCar, "Car"));
+
+                        DataRow drCar = dtCar.NewRow();
+                        drCar["SEQ"] = iCar_SEQ.ToString();
+                        drCar["U_PFT_name"] = BC_Name+U_PFT_name;
+                        drCar["plan_name"] = plan_name;
+                        drCar["day_incase_num_PJ00048"] = day_incase_num_PJ00048;
+                        drCar["month_incase_num_PJ00048"] = month_incase_num_PJ00048;
+                        drCar["day_get_amount_num_Car"] = day_get_amount_num_Car;
+                        drCar["day_get_amount_Car"] = day_get_amount_Car;
+                        drCar["month_pass_num_Car"] = month_pass_num_Car;
+                        drCar["month_get_amount_num_Car"] = month_get_amount_num_Car;
+                        drCar["month_get_amount_PJ00048"] = month_get_amount_PJ00048;
+                        drCar["month_pass_amount_PJ00048"] = month_pass_amount_PJ00048;
+                        dtCar.Rows.Add(drCar);
+                    }
+                    else
+                    {
+                        DataRow drCar1 = dtCar.NewRow();
+                        drCar1["SEQ"] = iCar_SEQ.ToString();
+                        drCar1["U_PFT_name"] = BC_Name + U_PFT_name;
+                        drCar1["plan_name"] =  plan_name;
+                        drCar1["day_incase_num_PJ00048"] = day_incase_num_PJ00048;
+                        drCar1["month_incase_num_PJ00048"] = month_incase_num_PJ00048;
+                        drCar1["day_get_amount_num_Car"] = day_get_amount_num_Car;
+                        drCar1["day_get_amount_Car"] = day_get_amount_Car;
+                        drCar1["month_pass_num_Car"] = month_pass_num_Car;
+                        drCar1["month_get_amount_num_Car"] = month_get_amount_num_Car;
+                        drCar1["month_get_amount_PJ00048"] = month_get_amount_PJ00048;
+                        drCar1["month_pass_amount_PJ00048"] = month_pass_amount_PJ00048;
+                        dtCar.Rows.Add(drCar1);
+                    }
+                    iCar_SEQ++;
+                }
                 m_RowIdx++;
             }
-
-
+            //汽車貸合計
+            DataRow drCar_T = dtCar.NewRow();
+            drCar_T["SEQ"] = "";
+            drCar_T["U_PFT_name"] = "";
+            drCar_T["plan_name"] = "合計";
+            drCar_T["day_incase_num_PJ00048"] = iday_incase_num_PJ00048;
+            drCar_T["month_incase_num_PJ00048"] = imonth_incase_num_PJ00048;
+            drCar_T["day_get_amount_num_Car"] = iday_get_amount_num_Car;
+            drCar_T["day_get_amount_Car"] = iday_get_amount_Car;
+            drCar_T["month_pass_num_Car"] = imonth_pass_num_Car;
+            drCar_T["month_get_amount_num_Car"] = imonth_get_amount_num_Car;
+            drCar_T["month_get_amount_PJ00048"] = imonth_get_amount_PJ00048;
+            drCar_T["month_pass_amount_PJ00048"] = imonth_pass_amount_PJ00048;
+            dtCar.Rows.Add(drCar_T);
+            //只有合計的sheet-房貸
             DataRow[] filteredRows = dtTotle.Select("SEQ = ''");
             dtTotle_T = filteredRows.CopyToDataTable();
-
-
+            //只有合計的sheet-機車貸
             DataRow[] filteredRows_E = dtEngine.Select("SEQ = ''");
             dtEngine_T = filteredRows_E.CopyToDataTable();
+            //只有合計的sheet-汽車貸
+            DataRow[] filteredRows_C = dtCar.Select("SEQ = ''");
+            dtCar_T = filteredRows_C.CopyToDataTable();
             //前一天只要總和
             if (isPreDay)
             {
                 DsResult.Tables.Add(dtTotle_T);
                 DsResult.Tables.Add(dtEngine_T);
+                DsResult.Tables.Add(dtCar_T);
             }
             else
             {
@@ -1405,10 +1604,9 @@ WITH A (bc_sort, U_BC, U_susp_date, is_susp, leader_name, plan_name, plan_num, g
                 DsResult.Tables.Add(dtTotle_T);
                 DsResult.Tables.Add(dtEngine);
                 DsResult.Tables.Add(dtEngine_T);
-
+                DsResult.Tables.Add(dtCar);
+                DsResult.Tables.Add(dtCar_T);
             }
-
-
 
             return DsResult;
         }

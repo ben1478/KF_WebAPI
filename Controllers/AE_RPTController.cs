@@ -58,7 +58,7 @@ namespace KF_WebAPI.Controllers
             string AddDate = (Convert.ToInt16(Base_Date.Split("/")[0]) + 1911).ToString() + "/" + Base_Date.Split("/")[1] + "/" + Base_Date.Split("/")[2];
             AddDate = Convert.ToDateTime(AddDate).AddDays(-1).ToString("yyyyMMdd");
 
-            ArrayList sheetNames = new ArrayList { "各區房貸", "各區房貸總計", "各區機車貸", "各區機車貸總計", AddDate + "房貸", AddDate + "車貸" };
+            ArrayList sheetNames = new ArrayList { "各區房貸", "各區房貸總計", "各區機車貸", "各區機車貸總計", "汽車貸", "汽車貸總計", AddDate + "房貸", AddDate + "車貸", AddDate + "汽車貸" };
 
             byte[] fileBytes = FuncHandler.ExportDataSetToExcel(ds, sheetNames);
 
