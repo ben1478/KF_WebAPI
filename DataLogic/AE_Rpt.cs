@@ -542,7 +542,7 @@ namespace KF_WebAPI.DataLogic
             }
             
            
-            DataTable dtBCResult = _adoData.ExecuteQuery(T_SQL, parameters);
+            DataTable dtBCResult = _adoData.ExecuteQuery(T_SQL, parameters, true);
             ArrayList arrTitle = new ArrayList();
             foreach (DataRow dr in dtBCResult.Rows)
             {
@@ -961,7 +961,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 parameters.Add(new SqlParameter("@U_BC", U_BC));
             }
            #endregion
-           DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+           DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters,true);
 
             //總計
             DataTable dtTotle = new DataTable();
