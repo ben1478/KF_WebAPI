@@ -470,7 +470,7 @@ namespace KF_WebAPI.DataLogic
             {
                 if (isPreDay)
                 {
-                    AddDate = (Convert.ToInt16(Base_Date.Split("/")[0]) + 1911).ToString() + "/" + Base_Date.Split("/")[1] + "/" + Base_Date.Split("/")[2];
+                    AddDate = (Convert.ToInt16(Base_Date.Split("/")[0]) + 1911).ToString() + "/" + Base_Date.Split("/")[1].ToString().PadLeft(2, '0') + "/" + Base_Date.Split("/")[2].ToString().PadLeft(2, '0');
                     AddDate = Convert.ToDateTime(AddDate).AddDays(-1).ToString("yyyy/MM/dd");
 
                     PreMon = Convert.ToDateTime(AddDate).AddMonths(-1).ToString("yyyyMM");
@@ -481,10 +481,10 @@ namespace KF_WebAPI.DataLogic
                 }
                 else
                 {
-                    AddDate = (Convert.ToInt16(Base_Date.Split("/")[0]) + 1911).ToString() + "/" + Base_Date.Split("/")[1] + "/" + Base_Date.Split("/")[2];
+                    AddDate = (Convert.ToInt16(Base_Date.Split("/")[0]) + 1911).ToString() + "/" + Base_Date.Split("/")[1].ToString().PadLeft(2, '0') + "/" + Base_Date.Split("/")[2].ToString().PadLeft(2, '0');
                     PreMon = Convert.ToDateTime(AddDate).AddMonths(-1).ToString("yyyyMM");
                     PreMon1 = Convert.ToDateTime(AddDate).AddMonths(-2).ToString("yyyyMM");
-                    Base_Date = (Convert.ToInt16(Base_Date.Split("/")[0]) + 1911).ToString() + Base_Date.Split("/")[1] + Base_Date.Split("/")[2];
+                    Base_Date = (Convert.ToInt16(Base_Date.Split("/")[0]) + 1911).ToString() + Base_Date.Split("/")[1].ToString().PadLeft(2, '0') + Base_Date.Split("/")[2].ToString().PadLeft(2, '0');
                     ThisMon = Base_Date.Substring(0, 6);
                     PE_Date = Base_Date.Substring(0, 4) + "-" + Base_Date.Substring(4, 2);
                 }
@@ -496,48 +496,43 @@ namespace KF_WebAPI.DataLogic
             if (U_BC == "")
             {
                 T_SQL = @"select isnull(G.Spec_Group, U_BC)U_BC,BC_Name,bc_sort,count(*) PelCount
-                         from (select U_num,U_BC from User_M where U_leave_date is null or convert(varchar, U_arrive_date, 112) = @ThisMon ) U
+                         from (select U_num,U_BC from User_M where U_BC between 'BC0100' and 'BC0600' and  U_leave_date is null or convert(varchar, U_arrive_date, 112) =@ThisMon ) U
                         Left join  User_Spec_Group G  on U.U_num=G.U_num 
-                        Left join
-                        (SELECT PE_num,PE_target FROM Person_target WHERE PE_Date=@PE_Date) P on U.U_num=P.PE_num
                         left join (
                         select item_D_code,item_D_name BC_Name,0 bc_sort from Item_list where item_M_code = 'Spec_Group' and item_M_type='N'
                         union all
                         select  item_D_code,item_D_name BC_Name,item_sort bc_sort from Item_list  where item_M_code = 'branch_company' and item_M_type='N'
-                        ) BC on isnull(G.Spec_Group, U_BC)=BC.item_D_code where PE_target is not null and PE_target > 0
+                        ) BC on isnull(G.Spec_Group, U_BC)=BC.item_D_code  where isnull(G.Spec_Group, U_BC) <> 'BC0100'
                         group by isnull(G.Spec_Group, U_BC),BC_Name,bc_sort
                         union all 
                         select U_BC,BC_Name,bc_sort,count(*)PelCount  from USER_M M Left Join
                         (select  item_D_code,item_D_name BC_Name,item_sort bc_sort from Item_list  where item_M_code = 'branch_company' and item_M_type='N' )
                         D on M.U_BC=D.item_D_code
                         where U_BC='BC0900' and U_num <> 'K9999' and U_PFT in( 'PFT300','PFT060') and U_susp_date is null 
-                        and U_leave_date is null or convert(varchar, U_arrive_date, 112) = @ThisMon
+                        and U_leave_date is null or convert(varchar, U_arrive_date, 112) =@ThisMon
                         group by  U_BC,BC_Name,bc_sort 
                         union all 
                         select 'BC0901','增便利','999',1
                         order by bc_sort,isnull(G.Spec_Group, U_BC) ";
 
                 parameters.Add(new SqlParameter("@ThisMon", ThisMon));
-                parameters.Add(new SqlParameter("@PE_Date", PE_Date));
+               
             }
             else
             {
                 T_SQL = @"select isnull(G.Spec_Group, U_BC)U_BC,BC_Name,bc_sort,count(*) PelCount
                          from (select U_num,U_BC from User_M where U_BC=@U_BC and U_leave_date is null or convert(varchar, U_arrive_date, 112) = @ThisMon ) U
                         Left join  User_Spec_Group G  on U.U_num=G.U_num 
-                        Left join
-                        (SELECT PE_num,PE_target FROM Person_target WHERE PE_Date=@PE_Date) P on U.U_num=P.PE_num
                         left join (
                         select item_D_code,item_D_name BC_Name,0 bc_sort from Item_list where item_M_code = 'Spec_Group' and item_M_type='N'
                         union all
                         select  item_D_code,item_D_name BC_Name,item_sort bc_sort from Item_list  where item_M_code = 'branch_company' and item_M_type='N'
-                        ) BC on isnull(G.Spec_Group, U_BC)=BC.item_D_code where PE_target is not null and PE_target > 0
+                        ) BC on isnull(G.Spec_Group, U_BC)=BC.item_D_code 
                         group by isnull(G.Spec_Group, U_BC),BC_Name,bc_sort
-                       
                         order by bc_sort,isnull(G.Spec_Group, U_BC) ";
 
                 parameters.Add(new SqlParameter("@ThisMon", ThisMon));
-                parameters.Add(new SqlParameter("@PE_Date", PE_Date));
+              
                 parameters.Add(new SqlParameter("@U_BC", U_BC));
             }
             
@@ -1053,14 +1048,14 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             /*汽車貸欄位*/
             string day_incase_num_PJ00048, month_incase_num_PJ00048, day_get_amount_num_Car, day_get_amount_Car, month_pass_num_Car, month_get_amount_num_Car, month_get_amount_PJ00048, month_pass_amount_PJ00048;
             Int32 iday_incase_num_PJ00048 = 0, imonth_incase_num_PJ00048 = 0, iday_get_amount_num_Car = 0, iday_get_amount_Car = 0, imonth_pass_num_Car = 0, imonth_get_amount_num_Car = 0, imonth_get_amount_PJ00048 = 0, imonth_pass_amount_PJ00048 = 0;
-           
 
+            string U_PFT_sort = "";
             Int32 m_RowIdx = 0, BC0900Count = 0, iSEQ = 1, iCar_SEQ = 1; 
             foreach (DataRow dr in dtResult.Rows)
             {
 
                 string Dis_BC = dr["Dis_BC"].ToString();
-
+                U_PFT_sort = dr["U_PFT_sort"].ToString();
                 U_PFT_name = dr["U_PFT_name"].ToString();
                 plan_name = dr["plan_name"].ToString();
                 plan_num = dr["plan_num"].ToString();
@@ -1172,13 +1167,21 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 if (Dis_BC != "BC0900" && Dis_BC != "BC0901")
                 {
                     PE_target = dr["PE_target"].ToString();
-                    iPE_target += Convert.ToInt32(dr["PE_target"].ToString());
-                    iPE_target_T += Convert.ToInt32(dr["PE_target"].ToString());
+                    if (PE_target != "")
+                    {
+                        iPE_target += Convert.ToInt32(dr["PE_target"].ToString());
+                        iPE_target_T += Convert.ToInt32(dr["PE_target"].ToString());
+                    }
+                    
 
                     target_perc = dr["target_perc"].ToString();
                     target_quota = dr["target_quota"].ToString();
-                    itarget_quota += Convert.ToInt32(dr["target_quota"].ToString());
-                    itarget_quota_T += Convert.ToInt32(dr["target_quota"].ToString());
+                    if (target_quota != "")
+                    {
+                        itarget_quota += Convert.ToInt32(dr["target_quota"].ToString());
+                        itarget_quota_T += Convert.ToInt32(dr["target_quota"].ToString());
+                    }
+                    
                 }
                 else
                 {
@@ -1187,26 +1190,28 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                     target_quota = "--";
                 }
 
-                if ((PE_target == "0" || PE_target == "--"))
-                {
+                
                     if (Dis_BC != "BC0900" && Dis_BC != "BC0901")
                     {
-                        DataRow TotRow = dtTotle.NewRow();
-                        TotRow["SEQ"] = "";
-                        TotRow["U_PFT_name"] = "";
-                        TotRow["plan_name"] = arrTitle[BC_Count];
-                        TotRow["month_get_amount_FDCOM001"] = AddDate;
-                        dtTotle.Rows.Add(TotRow);
-                        dtTotle.Rows.Add(FuncHandler.AddTitleByTable(dtTotle, "Totle"));
+                        if ((U_PFT_sort == "120" || U_PFT_sort == "130"))
+                        {
+                            DataRow TotRow = dtTotle.NewRow();
+                            TotRow["SEQ"] = "";
+                            TotRow["U_PFT_name"] = "";
+                            TotRow["plan_name"] = arrTitle[BC_Count];
+                            TotRow["month_get_amount_FDCOM001"] = AddDate;
+                            dtTotle.Rows.Add(TotRow);
+                            dtTotle.Rows.Add(FuncHandler.AddTitleByTable(dtTotle, "Totle"));
 
-                        DataRow TotRow_E = dtEngine.NewRow();
-                        TotRow_E["SEQ"] = "";
-                        TotRow_E["U_PFT_name"] = "";
-                        TotRow_E["plan_name"] = arrTitle[BC_Count];
-                        TotRow_E["month_get_amount_PJ00046"] = AddDate;
-                        dtEngine.Rows.Add(TotRow_E);
-                        dtEngine.Rows.Add(FuncHandler.AddTitleByTable(dtEngine, "Engine"));
-                        BC_Count++;
+                            DataRow TotRow_E = dtEngine.NewRow();
+                            TotRow_E["SEQ"] = "";
+                            TotRow_E["U_PFT_name"] = "";
+                            TotRow_E["plan_name"] = arrTitle[BC_Count];
+                            TotRow_E["month_get_amount_PJ00046"] = AddDate;
+                            dtEngine.Rows.Add(TotRow_E);
+                            dtEngine.Rows.Add(FuncHandler.AddTitleByTable(dtEngine, "Engine"));
+                            BC_Count++;
+                        }
                     }
                     else
                     {
@@ -1253,7 +1258,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                             BC_Count++;
                         }
                     }
-                }
+               
                 DataRow DaRow = dtTotle.NewRow();
                 DaRow = dtTotle.NewRow();
                 DaRow["U_PFT_name"] = U_PFT_name;
