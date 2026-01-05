@@ -3577,7 +3577,7 @@ namespace KF_WebAPI.Controllers
             ADOData _adoData = new ADOData();
             var SQL = @"SELECT U_num emp_id,U_name emp_name,U_BC_name dep_na,FORMAT(U_arrive_date, 'yyyy-MM-dd')U_arrive_date,
                         CASE WHEN U_PFT ='PFE831' THEN 'N' ELSE 'Y' END isHit,
-                        CASE WHEN FORMAT(U_arrive_date, 'yyyy-MM-dd')>'2024-01-02' THEN 'Y' ELSE 'N' END isJunior
+                        CASE WHEN FORMAT(U_arrive_date, 'yyyy-MM-dd')>'2025-01-01' THEN 'Y' ELSE 'N' END isJunior
                         FROM User_M UM
                         LEFT JOIN (SELECT item_sort U_BC_sort,item_D_name U_BC_name,* FROM Item_list WHERE item_M_code = 'branch_company' AND item_D_type='Y' AND del_tag='0') U ON UM.U_BC=U.item_D_code
                         LEFT JOIN (SELECT item_sort U_PFT_sort,item_D_name U_PFT_name,* FROM Item_list WHERE item_M_code = 'professional_title' AND item_D_type='Y' AND del_tag='0') P ON UM.U_PFT=P.item_D_code
