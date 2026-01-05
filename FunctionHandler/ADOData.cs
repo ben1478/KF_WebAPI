@@ -114,13 +114,17 @@ namespace KF_WebAPI.FunctionHandler
             return m_Execut;
         }
 
-        public DataTable ExecuteQuery(string strSQL, List<SqlParameter> Param)
+        public DataTable ExecuteQuery(string strSQL, List<SqlParameter> Param, Boolean isTrim = false)
         {
             DataTable dtResult = new DataTable();
             try
             {
                 using SqlConnection conn = new(ConnStr);
-                using (SqlCommand cmd = new SqlCommand(strSQL.Replace("\r\n", " ").Replace("\r", " ").Replace("\n", " "), conn))
+                if (isTrim)
+                {
+                    strSQL = strSQL.Replace("\r\n", " ").Replace("\r", " ").Replace("\n", " ");
+                }
+                using (SqlCommand cmd = new SqlCommand(strSQL, conn))
                 {
                     if (Param != null)
                     {

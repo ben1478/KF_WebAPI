@@ -26,6 +26,7 @@ using Azure.Core;
 using KF_WebAPI.DataLogic;
 using Microsoft.Extensions.Configuration;
 using System.Runtime.InteropServices;
+using System.Collections;
 
 namespace KF_WebAPI.Controllers
 {
@@ -34,6 +35,56 @@ namespace KF_WebAPI.Controllers
     public class AE_RPTController : Controller
     {
         AE_Rpt _Rpt = new AE_Rpt();
+
+        #region 業績報表_日報表
+        /// <summary>
+        /// 業績報表_日報表
+        /// </summary>
+        /// <param name="Base_Date"></param>
+        /// <returns></returns>
+        [HttpPost("GetDailyReport")]
+        public IActionResult GetDailyReport(string Base_Date, string U_BC)
+        {
+            if (U_BC == "ALL")
+            {
+                U_BC = "";
+            }
+            DataSet ds = _Rpt.GetDailyReportByDate(Base_Date, U_BC, false);
+            if (U_BC == "")
+            {
+                DataSet ds_Pre = _Rpt.GetDailyReportByDate(Base_Date, U_BC, true);
+                foreach (DataTable dt in ds_Pre.Tables)
+                {
+                    DataTable dtCopy = dt.Copy();
+                    dtCopy.TableName = "Pre" + dtCopy.TableName;
+
+                    ds.Tables.Add(dtCopy);
+                }
+                string AddDate = (Convert.ToInt16(Base_Date.Split("/")[0]) + 1911).ToString() + "/" + Base_Date.Split("/")[1] + "/" + Base_Date.Split("/")[2];
+                AddDate = Convert.ToDateTime(AddDate).AddDays(-1).ToString("yyyyMMdd");
+
+                ArrayList sheetNames = new ArrayList { "各區房貸", "各區房貸總計", "各區機車貸", "各區機車貸總計", "汽車貸", "汽車貸總計", AddDate + "房貸", AddDate + "車貸", AddDate + "汽車貸" };
+
+                byte[] fileBytes = FuncHandler.ExportDataSetToExcel(ds, sheetNames);
+
+                return File(fileBytes,
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Base_Date + "-業績報表_日報表.xlsx");
+            }
+            else
+            {
+               
+
+                ArrayList sheetNames = new ArrayList { "房貸", "房貸總計", "機車貸", "機車貸總計" };
+
+                byte[] fileBytes = FuncHandler.ExportDataSetToExcel(ds, sheetNames);
+
+                return File(fileBytes,
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Base_Date + "-業績報表_日報表.xlsx");
+            }
+           
+            
+        }
+        #endregion
 
         #region 業績報表_業務
         /// <summary>
@@ -5079,7 +5130,7 @@ namespace KF_WebAPI.Controllers
                            ELSE ROUND(replace(ISNULL(YearAvg, 0), ',', ''), 0)
                        END AS cal_yearAvg
                 FROM (
-                    SELECT 
+                    SELECT ub.item_sort,
                         isnull(is_susp, 'N') AS is_susp,
                         U_susp_date,
                         U_num,
@@ -5175,7 +5226,7 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
-                    sqlBuilder.Append(" ORDER BY User_M.U_BC, User_M.U_PFT, User_M.U_arrive_date ");
+                    sqlBuilder.Append(" ORDER BY User_M.item_sort, User_M.U_PFT, User_M.U_arrive_date ");
                 }
                 #endregion
 

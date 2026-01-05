@@ -141,13 +141,13 @@ namespace KF_WebAPI.FunctionHandler
             var parameters = new List<SqlParameter>();
             var T_SQL = @"
                     SELECT
-                        REPLACE(RTRIM(CS_name), '	', '') CS_name, -- 申請人:用來比對Key
-                        ub.item_D_name U_BC_name, -- 區
-                        U_name plan_name, --業務
-                        ip.item_D_name show_project_title, -- 專案
-                        Loan_rate , -- 成數
-                        interest_rate_pass,  -- 合約利率
-                        H.get_amount --金額
+                        REPLACE(RTRIM(CS_name), '	', '') CS_name, /* 申請人:用來比對Key*/
+                        ub.item_D_name U_BC_name, /* 區*/
+                        U_name plan_name, /*業務*/
+                        ip.item_D_name show_project_title, /* 專案*/
+                        Loan_rate , /* 成數*/
+                        interest_rate_pass,  /* 合約利率*/
+                        H.get_amount /*金額*/
                     FROM House_sendcase as H
                     LEFT JOIN Item_list I ON fund_company = item_D_code and item_M_code = 'fund_company' AND item_D_type = 'Y'
                     LEFT JOIN House_apply A ON A.HA_id = H.HA_id AND A.del_tag = '0'          
