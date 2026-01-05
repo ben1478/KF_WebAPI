@@ -61,16 +61,32 @@ namespace KF_WebAPI.DataLogic
                 {
                     new SqlParameter("@project",project)
                 };
-                var result = _adoData.ExecuteQuery(T_SQL_SP,parameters).AsEnumerable().Select(row => new MotocaseSummary
+                var result = _adoData.ExecuteQuery(T_SQL_SP, parameters).AsEnumerable().Select(row =>
                 {
-                    YYYYMM = row.Field<string>("YYYYMM"),
-                    SendCount = row.Field<int>("SendCount"),
-                    PassCount = row.Field<int>("PassCount"),
-                    GetCount = row.Field<int>("GetCount"),
-                    PassAmount = row.Field<decimal>("PassAmount"),
-                    GetAmount = row.Field<decimal>("GetAmount"),
-                    PassRate = ((decimal)row.Field<int>("PassCount") / row.Field<int>("SendCount")).ToString("0.00%"),
-                    GetRate = ((decimal)row.Field<int>("GetCount") / row.Field<int>("PassCount")).ToString("0.00%")
+                    int sendCount = row.Field<int?>("SendCount") ?? 0;
+                    int passCount = row.Field<int?>("PassCount") ?? 0;
+                    int getCount = row.Field<int?>("GetCount") ?? 0;
+                    decimal passAmount = row.Field<decimal?>("PassAmount") ?? 0;
+                    decimal getAmount = row.Field<decimal?>("GetAmount") ?? 0;
+                    return new MotocaseSummary
+                    {
+                        YYYYMM = row.Field<string>("YYYYMM"),
+                
+                        SendCount = sendCount,
+                        PassCount = passCount,
+                        GetCount = getCount,
+                
+                        PassAmount = passAmount,
+                        GetAmount = getAmount,
+                
+                        PassRate = sendCount == 0
+                            ? "0.00%"
+                            : ((decimal)passCount / sendCount).ToString("0.00%"),
+                
+                        GetRate = passCount == 0
+                            ? "0.00%"
+                            : ((decimal)getCount / passCount).ToString("0.00%")
+                    };
                 }).ToList();
 
                 return result;
