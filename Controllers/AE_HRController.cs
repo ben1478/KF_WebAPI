@@ -3575,14 +3575,16 @@ namespace KF_WebAPI.Controllers
         public IActionResult GetEmpJson()
         {
             ADOData _adoData = new ADOData();
-            var SQL = @"SELECT U_num emp_id,U_name emp_name,U_BC_name dep_na,FORMAT(U_arrive_date, 'yyyy-MM-dd')U_arrive_date,
+            var SQL = @"SELECT UM.is_susp, U_num emp_id,U_name emp_name,U_BC_name dep_na,FORMAT(U_arrive_date, 'yyyy-MM-dd')U_arrive_date,
                         CASE WHEN U_PFT ='PFE831' THEN 'N' ELSE 'Y' END isHit,
                         CASE WHEN FORMAT(U_arrive_date, 'yyyy-MM-dd')>'2025-01-02' THEN 'Y' ELSE 'N' END isJunior
                         FROM User_M UM
                         LEFT JOIN (SELECT item_sort U_BC_sort,item_D_name U_BC_name,* FROM Item_list WHERE item_M_code = 'branch_company' AND item_D_type='Y' AND del_tag='0') U ON UM.U_BC=U.item_D_code
                         LEFT JOIN (SELECT item_sort U_PFT_sort,item_D_name U_PFT_name,* FROM Item_list WHERE item_M_code = 'professional_title' AND item_D_type='Y' AND del_tag='0') P ON UM.U_PFT=P.item_D_code
                         WHERE ISNULL(UM.U_leave_date, '')='' AND U_num NOT IN ('AA999','K9999','K0999','K0000','N0001')
-                        AND U_BC NOT IN ('BC0700') and UM.is_susp is null ORDER BY U_PFT_sort,U_arrive_date,U_BC_sort,U_id";
+                        AND U_BC NOT IN ('BC0700') 
+						and UM.is_susp is null and U_name not in ('何宜學','黃培英','許朝筌','張邑如','吳惠玉')/*缺席人員*/
+						 ORDER BY U_PFT_sort,U_arrive_date,U_BC_sort,U_id";
             DataTable dtResult = _adoData.ExecuteSQuery(SQL);
             var result = new List<object>();
 
