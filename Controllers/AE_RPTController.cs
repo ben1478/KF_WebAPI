@@ -6660,12 +6660,12 @@ namespace KF_WebAPI.Controllers
         /// 取得機車分期總表
         /// </summary>
         [HttpPost("GetMotoSummaryList")]
-        public ActionResult<ResultClass<string>> GetMotoSummaryList()
+        public ActionResult<ResultClass<string>> GetMotoSummaryList(Motocase_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
-                var result = _Rpt.GetMotoSummaryList();
+                var result = _Rpt.GetMotoSummaryList(model);
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(result);
                 return Ok(resultClass);
@@ -6683,11 +6683,11 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPost("GetMotoSummaryExcel")]
-        public IActionResult GetMotoSummaryExcel()
+        public IActionResult GetMotoSummaryExcel(Motocase_req model)
         {
             try
             {
-                var fileBytes = _Rpt.GetMotoSummaryExcel();
+                var fileBytes = _Rpt.GetMotoSummaryExcel(model);
                 var fileName = "機車貸分期貸款總表" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx";
                 return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
             }
@@ -6700,15 +6700,15 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
-        /// 匯出機車各專案總表
+        /// 匯出各專案總表(進件數、核准數、撥款數等)
         /// </summary>
         [HttpPost("GetProjectMotoList")]
-        public ActionResult<ResultClass<string>> GetProjectMotoList(string project)
+        public ActionResult<ResultClass<string>> GetProjectMotoList(Motocase_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
-                var result = _Rpt.GetProjectMoto(project);
+                var result = _Rpt.GetProjectMoto(model);
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(result);
                 return Ok(resultClass);

@@ -7,6 +7,13 @@
         public string? Fin_type { get; set; }
     }
 
+    public class Motocase_req
+    {
+        public string? checkDateS { get; set; }
+        public string? checkDateE { get; set; }
+        public string? project { get; set; }
+    }
+
     public class MotocaseSummary
     {
         public string YYYYMM { get; set; }

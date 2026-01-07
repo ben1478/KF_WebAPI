@@ -20,12 +20,17 @@ namespace KF_WebAPI.DataLogic
         /// <summary>
         /// 取得機車分期總表
         /// </summary>
-        public List<MotocaseSummary> GetMotoSummaryList()
+        public List<MotocaseSummary> GetMotoSummaryList(Motocase_req model)
         {
             try
             {
-                var T_SQL_SP = @"exec GetMotocaseSummary ";
-                var result = _adoData.ExecuteSQuery(T_SQL_SP).AsEnumerable().Select(row => new MotocaseSummary
+                var T_SQL_SP = @"exec GetMotocaseSummary @checkDateS,@checkDateE";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@checkDateS",model.checkDateS),
+                    new SqlParameter("@checkDateE",model.checkDateE)
+                };
+                var result = _adoData.ExecuteQuery(T_SQL_SP,parameters).AsEnumerable().Select(row => new MotocaseSummary
                 {
                     YYYYMM = row.Field<string>("YYYYMM"),
                     SendCount = row.Field<int>("SendCount"),
@@ -55,14 +60,16 @@ namespace KF_WebAPI.DataLogic
         /// <summary>
         /// 取得各項機車專案分期總表
         /// </summary>
-        public List<MotocaseSummary> GetProjectMoto(string project)
+        public List<MotocaseSummary> GetProjectMoto(Motocase_req model)
         {
             try
             {
-                var T_SQL_SP = @"exec GetProjectMonthlyReport @project";
+                var T_SQL_SP = @"exec GetProjectMonthlyReport @project,@checkDateS,@checkDateE";
                 var parameters = new List<SqlParameter>
                 {
-                    new SqlParameter("@project",project)
+                    new SqlParameter("@project",model.project),
+                    new SqlParameter("@checkDateS",model.checkDateS),
+                    new SqlParameter("@checkDateE",model.checkDateE)
                 };
                 var result = _adoData.ExecuteQuery(T_SQL_SP, parameters).AsEnumerable().Select(row =>
                 {
@@ -103,7 +110,7 @@ namespace KF_WebAPI.DataLogic
         /// <summary>
         /// 匯出機車分期總表EXCEL
         /// </summary>
-        public byte[] GetMotoSummaryExcel()
+        public byte[] GetMotoSummaryExcel(Motocase_req model)
         {
             try
             {
@@ -112,7 +119,7 @@ namespace KF_WebAPI.DataLogic
                     var worksheet = package.Workbook.Worksheets.Add("總表");
 
                     #region 機車貸A&B彙總
-                    var mtoSummaryList = GetMotoSummaryList();
+                    var mtoSummaryList = GetMotoSummaryList(model);
 
                     string[] headers = { "進件數", "核准數", "撥款數", "核准總額", "撥款總額", "呆帳準備金", "目前月付金總額", "本金餘額", "已清償"
                             , "已清償金額", "呆帳", "呆帳金額", "核准率", "動撥率" };
@@ -264,7 +271,8 @@ namespace KF_WebAPI.DataLogic
                     string[] headersAB = { "進件數", "核准數", "撥款數", "核准總額", "撥款總額", "核准率", "動撥率" };
 
                     #region 機車貸A
-                    var mtoSummaryListA = GetProjectMoto("PJ00046");
+                    model.project = "PJ00046";
+                    var mtoSummaryListA = GetProjectMoto(model);
                     int rowIndexA = rowIndex;
                     // 添加合併標題
                     worksheet.Cells[rowIndex, 1].Value = "機車A專案彙整表";
@@ -348,7 +356,8 @@ namespace KF_WebAPI.DataLogic
                     rowIndex += 2;
 
                     #region 機車貸B
-                    var mtoSummaryListB = GetProjectMoto("PJ00047");
+                    model.project = "PJ00047";
+                    var mtoSummaryListB = GetProjectMoto(model);
                     int rowIndexB = rowIndex;
                     // 添加合併標題
                     worksheet.Cells[rowIndex, 1].Value = "機車B專案彙整表";
