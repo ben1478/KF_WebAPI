@@ -521,7 +521,7 @@ namespace KF_WebAPI.DataLogic
             if (U_BC == "")
             {
                 T_SQL = @"select isnull(G.Spec_Group, U_BC)U_BC,BC_Name,bc_sort,count(*) PelCount
-                         from (select U_num,U_BC from User_M where U_BC between 'BC0100' and 'BC0600' and  U_leave_date is null or convert(varchar, U_arrive_date, 112) =@ThisMon ) U
+                         from (select U_num,U_BC from User_M where U_BC between 'BC0100' and 'BC0600' and U_PFT in('PFT050','PFT030','PFT060','PFT300')  and  U_leave_date is null or convert(varchar, U_arrive_date, 112) =@ThisMon ) U
                         Left join  User_Spec_Group G  on U.U_num=G.U_num 
                         left join (
                         select item_D_code,item_D_name BC_Name,0 bc_sort from Item_list where item_M_code = 'Spec_Group' and item_M_type='N'
@@ -533,7 +533,7 @@ namespace KF_WebAPI.DataLogic
                         select U_BC,BC_Name,bc_sort,count(*)PelCount  from USER_M M Left Join
                         (select  item_D_code,item_D_name BC_Name,item_sort bc_sort from Item_list  where item_M_code = 'branch_company' and item_M_type='N' )
                         D on M.U_BC=D.item_D_code
-                        where U_BC='BC0900' and U_num <> 'K9999' and U_PFT in( 'PFT300','PFT060') and U_susp_date is null 
+                        where U_BC='BC0900' and U_num <> 'K9999' and U_PFT in('PFT050','PFT030','PFT060','PFT300')  and U_susp_date is null 
                         and U_leave_date is null or convert(varchar, U_arrive_date, 112) =@ThisMon
                         group by  U_BC,BC_Name,bc_sort 
                         union all 
