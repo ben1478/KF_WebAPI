@@ -120,7 +120,7 @@ namespace KF_WebAPI.DataLogic
             return resultClass;
         }
 
-        private const string API_LINK_TEMPLATE = "https://tq.lunaproxy.com/getflowip?neek=1807058&num=30&regions=tw&ip_si=1&level=1&sb=";
+        private const string API_LINK_TEMPLATE = "https://tq.lunaproxy.com/getflowip?neek=1807058&num=20&regions=tw&ip_si=2&level=1&sb=";
         //舊帳號
         //private const string API_LINK_TEMPLATE = "https://tq.lunaproxy.com/getflowip?neek=1804199&num=1&regions=tw&ip_si=1&level=1&sb=";
         public async Task<ResultClass<List<string>>> GetProxyFlowAsync()
