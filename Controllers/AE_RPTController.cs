@@ -6721,6 +6721,51 @@ namespace KF_WebAPI.Controllers
             }
         }
         #endregion
+
+        #region 汽車貸專案總表
+        /// <summary>
+        /// 取得汽車分期總表
+        /// </summary>
+        [HttpPost("GetCarSummaryList")]
+        public ActionResult<ResultClass<string>> GetCarSummaryList(Carcase_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var result = _Rpt.GetCarSummaryList(model);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 匯出汽車分期Excel
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetCarSummaryExcel")]
+        public IActionResult GetCarSummaryExcel(Carcase_req model)
+        {
+            try
+            {
+                var fileBytes = _Rpt.GetCarSummaryExcel(model);
+                var fileName = "機車貸分期貸款總表" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
     }
 }
 
