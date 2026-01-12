@@ -3598,6 +3598,7 @@ namespace KF_WebAPI.Controllers
                     isJunior = row["isJunior"].ToString(),
                     isHit = row["isHit"].ToString(),
                     U_arrive_date = row["U_arrive_date"].ToString(),
+                    arrive_Year = row["arrive_Year"].ToString(),
                     emp_name = row["emp_name"].ToString()
                 });
             }
