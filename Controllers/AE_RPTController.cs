@@ -6611,36 +6611,7 @@ namespace KF_WebAPI.Controllers
 
             try
             {
-                ADOData _adoData = new ADOData();
-                var parameters = new List<SqlParameter>();
-                #region SQL
-                var T_SQL = @"SELECT InTime,COUNT(*) as _count FROM TelemarketingCSList tc
-                              LEFT JOIN Telemarketing_M tm ON tm.HA_id = tc.TC_id AND tm.TM_type = 2
-                              OUTER APPLY ( SELECT TOP 1 * FROM Telemarketing_D td WHERE td.TM_id = tm.TM_id AND tm.TM_type = 2 ORDER BY td.add_date DESC ) td
-                              where ISNULL(InTime,'') <> '' ";
-                if (!string.IsNullOrEmpty(model.TelAsk))
-                {
-                    T_SQL += " and TelAsk = @TelAsk";
-                    parameters.Add(new SqlParameter("@TelAsk", model.TelAsk));
-                }
-                if (!string.IsNullOrEmpty(model.TelSour))
-                {
-                    T_SQL += " and TelSour = @TelSour";
-                    parameters.Add(new SqlParameter("@TelSour", model.TelSour));
-                }
-                if (!string.IsNullOrEmpty(model.Fin_type))
-                {
-                    T_SQL += " and td.Fin_type = @Fin_type";
-                    parameters.Add(new SqlParameter("@Fin_type", model.Fin_type));
-                }
-                T_SQL += " group by InTime order by InTime";
-                #endregion
-                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
-                {
-                    InTime = row.Field<string>("InTime"),
-                    Count = row.Field<int>("_count")
-                });
-
+                var result = _Rpt.GetIncoming(model);
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(result);
                 return Ok(resultClass);

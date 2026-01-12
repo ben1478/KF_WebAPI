@@ -7,6 +7,7 @@ using OfficeOpenXml;
 using System.Collections;
 using System.Data;
 using System.Drawing;
+using System.Reflection;
 using System.Reflection.PortableExecutable;
 
 namespace KF_WebAPI.DataLogic
@@ -14,8 +15,6 @@ namespace KF_WebAPI.DataLogic
     public class AE_Rpt
     {
         ADOData _adoData = new ADOData();
-
-
 
         /// <summary>
         /// 取得機車分期總表
@@ -1895,6 +1894,51 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             }
 
             return DsResult;
+        }
+
+        /// <summary>
+        /// 取得客戶來電資料
+        /// </summary>
+        public IEnumerable<dynamic> GetIncoming(Incoming_req model)
+        {
+            
+            #region SQL
+            var T_SQL = @"SELECT InTime,COUNT(*) as _count FROM TelemarketingCSList tc
+                          LEFT JOIN Telemarketing_M tm ON tm.HA_id = tc.TC_id AND tm.TM_type = 2
+                          OUTER APPLY ( SELECT TOP 1 * FROM Telemarketing_D d WHERE d.TM_id = tm.TM_id AND tm.TM_type = 2 ORDER BY d.add_date DESC ) td
+                          where ISNULL(InTime,'') <> '' and ISNULL(InDate,'') <> '' 
+                          AND CONVERT(date, CAST(CAST(LEFT(InDate, CHARINDEX('/', InDate)-1) AS int) + 1911 AS varchar(4)) + '/' + 
+                          SUBSTRING(InDate, CHARINDEX('/', InDate)+1, CHARINDEX('/', InDate, CHARINDEX('/', InDate)+1) - CHARINDEX('/', InDate) - 1) + '/' + 
+                          RIGHT(InDate, LEN(InDate) - CHARINDEX('/', InDate, CHARINDEX('/', InDate)+1)), 111 ) 
+                          BETWEEN @checkDateS AND @checkDateE ";
+            var parameters = new List<SqlParameter> 
+            {
+                new SqlParameter("@checkDateS", model.checkDateS),
+                new SqlParameter("@checkDateE", model.checkDateE)
+            };
+            if (!string.IsNullOrEmpty(model.TelAsk))
+            {
+                T_SQL += " and TelAsk = @TelAsk";
+                parameters.Add(new SqlParameter("@TelAsk", model.TelAsk));
+            }
+            if (!string.IsNullOrEmpty(model.TelSour))
+            {
+                T_SQL += " and TelSour = @TelSour";
+                parameters.Add(new SqlParameter("@TelSour", model.TelSour));
+            }
+            if (!string.IsNullOrEmpty(model.Fin_type))
+            {
+                T_SQL += " and td.Fin_type = @Fin_type";
+                parameters.Add(new SqlParameter("@Fin_type", model.Fin_type));
+            }
+            T_SQL += " group by InTime order by InTime";
+            #endregion
+            var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
+            {
+                InTime = row.Field<string>("InTime"),
+                Count = row.Field<int>("_count")
+            });
+            return result;  
         }
 
     }

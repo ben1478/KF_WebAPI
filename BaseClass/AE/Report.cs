@@ -5,6 +5,8 @@
         public string? TelAsk { get; set; }
         public string? TelSour { get; set; }
         public string? Fin_type { get; set; }
+        public string? checkDateS { get; set; }
+        public string? checkDateE { get; set; }
     }
 
     public class Motocase_req
