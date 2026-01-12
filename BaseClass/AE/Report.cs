@@ -31,4 +31,28 @@
         public string PassRate { get; set; }
         public string GetRate { get; set; }
     }
+
+    public class Carcase_req
+    {
+        public string? checkDateS { get; set; }
+        public string? checkDateE { get; set; }
+    }
+
+    public class CarcaseSummary
+    {
+        public string YYYYMM { get; set; }
+        public int SendCount { get; set; }
+        public int PassCount { get; set; }
+        public int GetCount { get; set; }
+        public decimal PassAmount { get; set; }
+        public decimal GetAmount { get; set; }
+        public decimal PerAmount { get; set; }
+        public decimal RemAmount { get; set; }
+        public int SettCount { get; set; }
+        public decimal SettAmount { get; set; }
+        public int BadCount { get; set; }
+        public decimal BadAmount { get; set; }
+        public string PassRate { get; set; }
+        public string GetRate { get; set; }
+    }
 }
