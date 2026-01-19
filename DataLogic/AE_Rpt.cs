@@ -777,14 +777,7 @@ namespace KF_WebAPI.DataLogic
             ArrayList arrTitle = new ArrayList();
             foreach (DataRow dr in dtBCResult.Rows)
             {
-                if (dr["U_BC"].ToString() != "BC0900" && dr["U_BC"].ToString() != "BC0901")
-                {
-                    arrTitle.Add("國峯租賃 (" + dr["BC_Name"].ToString() + ") 1 + " + dr["PelCount"].ToString() + "人");
-                }
-                else
-                {
-                    arrTitle.Add("國峯租賃 (" + dr["BC_Name"].ToString() + ") " + dr["PelCount"].ToString() + "人");
-                }
+                arrTitle.Add("國峯租賃 (" + dr["BC_Name"].ToString() + ") 1 + " + dr["PelCount"].ToString() + "人");
             }
             #endregion
 
