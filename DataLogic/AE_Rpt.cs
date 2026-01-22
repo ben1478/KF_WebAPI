@@ -738,7 +738,7 @@ namespace KF_WebAPI.DataLogic
                         select item_D_code,item_D_name BC_Name,0 bc_sort from Item_list where item_M_code = 'Spec_Group' and item_M_type='N'
                         union all
                         select  item_D_code,item_D_name BC_Name,item_sort bc_sort from Item_list  where item_M_code = 'branch_company' and item_M_type='N'
-                        ) BC on isnull(G.Spec_Group, U_BC)=BC.item_D_code  where isnull(G.Spec_Group, U_BC) <> 'BC0100'
+                        ) BC on isnull(G.Spec_Group, U_BC)=BC.item_D_code  where isnull(G.Spec_Group, U_BC) <> 'BC0100' and isnull(G.Spec_Group, U_BC)<>'BC_CAR'
                         group by isnull(G.Spec_Group, U_BC),BC_Name,bc_sort
                         union all 
                         select U_BC,BC_Name,bc_sort,count(*)PelCount  from USER_M M Left Join
