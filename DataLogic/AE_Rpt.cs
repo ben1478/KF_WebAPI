@@ -4,9 +4,11 @@ using KF_WebAPI.FunctionHandler;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using OfficeOpenXml;
+using System;
 using System.Collections;
 using System.Data;
 using System.Drawing;
+using System.Dynamic;
 using System.Reflection;
 using System.Reflection.PortableExecutable;
 
@@ -1933,6 +1935,305 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             });
             return result;  
         }
+
+
+
+       
+
+        /// <summary>
+        /// 取得客戶來電資料
+        /// </summary>
+        public DataTable GetSalesDataByDate(string BaseDate)
+        {
+           
+            // 1. 解析傳入的字串 (建議使用 ParseExact 確保格式正確)
+            // 假設輸入格式為 "yyyy/MM/dd" 或 "yyyy-MM-dd"
+            if (!DateTime.TryParse(BaseDate, out DateTime parsedDate))
+            {
+                throw new ArgumentException("日期格式錯誤，請輸入 yyyy/MM/dd");
+            }
+
+            // 2. 計算 SQL 所需的四個日期標記
+            // BaseDate: 設為該日的最後一秒 23:59:59
+            DateTime baseDate = parsedDate.Date.AddDays(1).AddSeconds(-1);
+            // StartDate: 該月 1 號 00:00:00
+            DateTime startDate = new DateTime(baseDate.Year, baseDate.Month, 1);
+            // PreBaseDate: 上個月的同一天
+            DateTime preBaseDate = baseDate.AddMonths(-1);
+            // PreStartDate: 上個月 1 號
+            DateTime preStartDate = startDate.AddMonths(-1);
+
+            #region SQL
+            var T_SQL = @"
+                    /*declare @BaseDate as Datetime,@StartDate as Datetime,@Pre_BaseDate as Datetime,@Pre_StartDate as Datetime
+                    set @BaseDate=CAST('2026/1/20 23:59:59'as datetime)
+                    set @StartDate=CAST(FORMAT(@BaseDate,'yyyy/MM')+'/01 00:00:00'as datetime)
+                    set @Pre_BaseDate=DATEADD(month,-1,@BaseDate)
+                    set @Pre_StartDate=DATEADD(month,-1,@StartDate)
+                    select @BaseDate,@StartDate,@Pre_BaseDate,@Pre_StartDate*/
+                    select u_bc,UC_Na,
+                    sum(case when project_title='House' and add_date >=  @StartDate AND add_date <=  @BaseDate
+                    then 1 else 0 end) Rate,
+                    sum(case when project_title='House' and add_date >=  @Pre_StartDate AND add_date <=  @Pre_BaseDate
+                    then 1 else 0 end) Pre_Rate,
+                    sum(case when project_title='PJ00048' and add_date >=  @StartDate AND add_date <=  @BaseDate then 1 else 0 end) Car_Rate,
+                    sum(case when project_title='PJ00048' and add_date >=  @Pre_StartDate AND add_date <=  @Pre_BaseDate then 1 else 0 end) Car_Pre_Rate,
+                    sum(case when project_title in('PJ00046','PJ00047')  and add_date >=  @StartDate AND add_date <=  @BaseDate then 1 else 0 end) Engine_Rate, 
+                    sum(case when project_title in('PJ00046','PJ00047')  and add_date >=  @Pre_StartDate AND add_date <=  @Pre_BaseDate then 1 else 0 end) Engine_Pre_Rate 
+                    from(
+                    select 'House' CaseKind,'House' project_title , ha.HA_id, case when ha.plan_num<>'N0001' then um.u_bc else 'BC0901' end u_bc,  ha.plan_num, um.U_name,  hp.pre_address,ha.add_date
+	                    from User_M um
+	                    left join House_apply ha on um.U_num = ha.plan_num
+	                    left join house_pre hp on ha.HA_id = hp.HA_id
+	                    Left Join (select H.HA_id,project_title from 
+	                    House_sendcase H LEFT JOIN House_pre_project PP ON PP.HP_project_id = H.HP_project_id
+	                    where H.del_tag='0' AND PP.del_tag='0'
+	                    ) H on hp.HA_id=H.HA_id
+	                    WHERE um.del_tag = '0'and hp.del_tag = '0' and ha.del_tag = '0' 
+		                      AND hp.pre_process_type IN ( 'PRCT0002', 'PRCT0003', 'PRCT0005' )
+		                      AND (ha.add_date >=  @Pre_StartDate AND ha.add_date <=  @BaseDate )
+		                      AND (project_title not in ('PJ00048','PJ00047','PJ00046')or project_title is null)
+	                    group by ha.HA_id, um.u_bc,  ha.plan_num, um.U_name,  hp.pre_address ,ha.add_date
+                    union all
+                    select 'Other' CaseKind,project_title, ha.HA_id, case when ha.plan_num<>'N0001' then um.u_bc else 'BC0901' end u_bc,  ha.plan_num, um.U_name,  hp.pre_address,ha.add_date
+	                    from User_M um
+	                    left join House_apply ha on um.U_num = ha.plan_num
+	                    left join house_pre hp on ha.HA_id = hp.HA_id
+	                    Left Join (select H.HA_id,project_title from 
+	                    House_sendcase H LEFT JOIN House_pre_project PP ON PP.HP_project_id = H.HP_project_id
+	                    where H.del_tag='0' AND PP.del_tag='0'
+	                    ) H on hp.HA_id=H.HA_id
+	                    WHERE um.del_tag = '0'and hp.del_tag = '0' and ha.del_tag = '0' 
+		                      AND hp.pre_process_type IN ('PRCT0002','PRCT0003','PRCT0005')
+		                      AND (ha.add_date >=  @Pre_StartDate AND ha.add_date <=  @BaseDate )
+		                      AND (project_title in ('PJ00048','PJ00047','PJ00046'))
+	                    group by project_title,ha.HA_id, um.u_bc,  ha.plan_num, um.U_name,  hp.pre_address ,ha.add_date) A
+	                    Left join 
+                     (
+                    select item_D_code,item_D_name UC_Na,item_sort from Item_list  where item_M_code = 'branch_company' AND item_D_type='Y' AND show_tag='0' AND del_tag='0'
+                    union all
+	                select 'BC0901','湧立',1104
+                    )U on A.u_bc=U.item_D_code
+	                    Group by u_bc,UC_Na,item_sort order by item_sort
+                     ";
+            #endregion
+
+            var parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@BaseDate", baseDate),
+                new SqlParameter("@StartDate", startDate),
+                new SqlParameter("@Pre_BaseDate", preBaseDate),
+                new SqlParameter("@Pre_StartDate", preStartDate)
+               
+            };
+            DataTable dt = _adoData.ExecuteQuery(T_SQL, parameters);
+
+            #region SQL
+            T_SQL = @"
+                        /*declare @BaseDate as Datetime,@Pre_BaseDate as Datetime
+                    set @BaseDate=CAST('2026/1/26 23:59:59'as datetime)
+                    set @Pre_BaseDate=DATEADD(month,-1,@BaseDate)*/
+
+                    select u_bc,UC_Na
+                    ,/*===========機車==============*/
+                    /*月進件數*/
+                     sum(CASE WHEN project_title  IN ('PJ00046','PJ00047')
+		                      AND left(convert(varchar, Send_amount_date, 112), 6) = left(convert(varchar, @BaseDate, 112), 6)
+                              AND convert(varchar, Send_amount_date, 112) <= convert(varchar, @BaseDate, 112) THEN 1
+                              ELSE 0
+                         END) AS Engine_month_incase,
+                     /*前一個月進件數*/
+                    sum(CASE WHEN  project_title   IN ('PJ00046','PJ00047')
+                             AND left(convert(varchar, Send_amount_date, 112), 6) = left(convert(varchar, @Pre_BaseDate, 112), 6)
+                             AND convert(varchar, Send_amount_date, 112) <= convert(varchar, @Pre_BaseDate, 112) THEN 1
+                             ELSE 0
+                        END) AS Engine_Pre_month_incase,
+                     /*月撥款數*/
+                     sum(CASE WHEN project_title  IN ('PJ00046','PJ00047')
+                              AND left(convert(varchar, get_amount_date, 112), 6) = left(convert(varchar, @BaseDate, 112), 6)
+                              AND convert(varchar, get_amount_date, 112) <=convert(varchar, @BaseDate, 112)
+                              AND get_amount_type IN ('GTAT002') THEN 1
+                              ELSE 0
+                          END) AS Engine_month_get_amount_num,
+                    /*前一個月撥款數*/
+                    sum(CASE WHEN project_title IN ('PJ00046','PJ00047')
+                             AND left(convert(varchar, get_amount_date, 112), 6) = left(convert(varchar, @Pre_BaseDate, 112), 6)
+                             AND convert(varchar, get_amount_date, 112) <=convert(varchar, @Pre_BaseDate, 112)
+                             AND get_amount_type IN ('GTAT002') THEN 1
+	                         ELSE 0
+                         END) AS Engine_Pre_month_get_amount_num,
+                    /*月撥款額*/
+                    sum(CASE WHEN project_title  IN ('PJ00046','PJ00047')
+                               AND left(convert(varchar, get_amount_date, 112), 6) = left(convert(varchar, @BaseDate, 112), 6)
+                               AND convert(varchar, get_amount_date, 112) <= convert(varchar, @BaseDate, 112) THEN get_amount
+                               ELSE 0
+                           END) AS Engine_month_get_amount,
+                    /* 前一個月撥款額*/
+                    sum(CASE WHEN project_title  IN ('PJ00046','PJ00047')
+                             AND left(convert(varchar, get_amount_date, 112), 6) = left(convert(varchar, @Pre_BaseDate, 112), 6)
+                             AND convert(varchar, get_amount_date, 112) <= convert(varchar, @Pre_BaseDate, 112) THEN get_amount
+                             ELSE 0
+                         END) AS Engine_Pre_month_get_amount ,
+                    /* 已核未撥*/
+                     sum(CASE WHEN  project_title IN ('PJ00046','PJ00047')
+                              AND left(convert(varchar, Send_result_date, 112), 6) IN (left(convert(varchar, @BaseDate, 112), 6), left(convert(varchar,DATEADD(month,-1, @BaseDate), 112), 6),    left(convert(varchar,DATEADD(month,-2, @BaseDate), 112), 6))
+                              AND convert(varchar, Send_result_date, 112) <=  convert(varchar, @BaseDate, 112)
+                              AND Send_result_type = 'SRT002' AND isnull(check_amount_type, '') NOT IN ('CKAT003')
+                              AND isnull(get_amount_type, '') NOT IN ('GTAT002', 'GTAT003') THEN pass_amount
+                              ELSE 0
+                          END) AS Engine_month_pass_amount,
+                    /*前一個月 已核未撥*/
+                    sum(CASE WHEN  project_title IN ('PJ00046','PJ00047')
+                             AND left(convert(varchar, Send_result_date, 112), 6) IN (left(convert(varchar, @Pre_BaseDate, 112), 6), left(convert(varchar,DATEADD(month,-1, @Pre_BaseDate), 112), 6),    left(convert(varchar,DATEADD(month,-2, @Pre_BaseDate), 112), 6))
+                             AND convert(varchar, Send_result_date, 112) <=  convert(varchar, @Pre_BaseDate, 112)
+                             AND Send_result_type = 'SRT002'AND isnull(check_amount_type, '') NOT IN ('CKAT003')
+                             AND isnull(get_amount_type, '') NOT IN ('GTAT002', 'GTAT003') THEN pass_amount
+                             ELSE 0
+                         END) AS Engine_Pre_month_pass_amount,
+                    /*===========汽車==============*/
+                     /*月進件數*/
+                     sum(CASE WHEN project_title  IN ('PJ00048')
+		                      AND left(convert(varchar, Send_amount_date, 112), 6) = left(convert(varchar, @BaseDate, 112), 6)
+                              AND convert(varchar, Send_amount_date, 112) <= convert(varchar, @BaseDate, 112) THEN 1
+                              ELSE 0
+                         END) AS Car_month_incase,
+                     /*前一個月進件數*/
+                    sum(CASE WHEN  project_title   IN ('PJ00048')
+                             AND left(convert(varchar, Send_amount_date, 112), 6) = left(convert(varchar, @Pre_BaseDate, 112), 6)
+                             AND convert(varchar, Send_amount_date, 112) <= convert(varchar, @Pre_BaseDate, 112) THEN 1
+                             ELSE 0
+                        END) AS Car_Pre_month_incase,
+                     /*月撥款數*/
+                     sum(CASE WHEN project_title  IN ('PJ00048')
+                              AND left(convert(varchar, get_amount_date, 112), 6) = left(convert(varchar, @BaseDate, 112), 6)
+                              AND convert(varchar, get_amount_date, 112) <=convert(varchar, @BaseDate, 112)
+                              AND get_amount_type IN ('GTAT002') THEN 1
+                              ELSE 0
+                          END) AS Car_month_get_amount_num,
+                    /*前一個月撥款數*/
+                    sum(CASE WHEN project_title IN ('PJ00048')
+                             AND left(convert(varchar, get_amount_date, 112), 6) = left(convert(varchar, @Pre_BaseDate, 112), 6)
+                             AND convert(varchar, get_amount_date, 112) <=convert(varchar, @Pre_BaseDate, 112)
+                             AND get_amount_type IN ('GTAT002') THEN 1
+	                         ELSE 0
+                         END) AS Car_Pre_month_get_amount_num,
+                    /*月撥款額*/
+                    sum(CASE WHEN project_title  IN ('PJ00048')
+                               AND left(convert(varchar, get_amount_date, 112), 6) = left(convert(varchar, @BaseDate, 112), 6)
+                               AND convert(varchar, get_amount_date, 112) <= convert(varchar, @BaseDate, 112) THEN get_amount
+                               ELSE 0
+                           END) AS Car_month_get_amount,
+                    /* 前一個月撥款額*/
+                    sum(CASE WHEN project_title  IN ('PJ00048')
+                             AND left(convert(varchar, get_amount_date, 112), 6) = left(convert(varchar, @Pre_BaseDate, 112), 6)
+                             AND convert(varchar, get_amount_date, 112) <= convert(varchar, @Pre_BaseDate, 112) THEN get_amount
+                             ELSE 0
+                         END) AS Car_Pre_month_get_amount ,
+                    /* 已核未撥*/
+                     sum(CASE WHEN  project_title IN ('PJ00048')
+                              AND left(convert(varchar, Send_result_date, 112), 6) IN (left(convert(varchar, @BaseDate, 112), 6), left(convert(varchar,DATEADD(month,-1, @BaseDate), 112), 6),    left(convert(varchar,DATEADD(month,-2, @BaseDate), 112), 6))
+                              AND convert(varchar, Send_result_date, 112) <=  convert(varchar, @BaseDate, 112)
+                              AND Send_result_type = 'SRT002' AND isnull(check_amount_type, '') NOT IN ('CKAT003')
+                              AND isnull(get_amount_type, '') NOT IN ('GTAT002', 'GTAT003') THEN pass_amount
+                              ELSE 0
+                          END) AS Car_month_pass_amount,
+                    /*前一個月 已核未撥*/
+                    sum(CASE WHEN  project_title IN ('PJ00048')
+                             AND left(convert(varchar, Send_result_date, 112), 6) IN (left(convert(varchar, @Pre_BaseDate, 112), 6), left(convert(varchar,DATEADD(month,-1, @Pre_BaseDate), 112), 6),    left(convert(varchar,DATEADD(month,-2, @Pre_BaseDate), 112), 6))
+                             AND convert(varchar, Send_result_date, 112) <=  convert(varchar, @Pre_BaseDate, 112)
+                             AND Send_result_type = 'SRT002'AND isnull(check_amount_type, '') NOT IN ('CKAT003')
+                             AND isnull(get_amount_type, '') NOT IN ('GTAT002', 'GTAT003') THEN pass_amount
+                             ELSE 0
+                         END) AS Car_Pre_month_pass_amount,
+                    /*===========房貸==============*/
+                     /*月進件數*/
+                     sum(CASE WHEN project_title not IN ('PJ00046','PJ00047','PJ00048')
+		                      AND left(convert(varchar, Send_amount_date, 112), 6) = left(convert(varchar, @BaseDate, 112), 6)
+                              AND convert(varchar, Send_amount_date, 112) <= convert(varchar, @BaseDate, 112) THEN 1
+                              ELSE 0
+                         END) AS month_incase,
+                     /*前一個月進件數*/
+                    sum(CASE WHEN  project_title not IN ('PJ00046','PJ00047','PJ00048')
+                             AND left(convert(varchar, Send_amount_date, 112), 6) = left(convert(varchar, @Pre_BaseDate, 112), 6)
+                             AND convert(varchar, Send_amount_date, 112) <= convert(varchar, @Pre_BaseDate, 112) THEN 1
+                             ELSE 0
+                        END) AS Pre_month_incase,
+                     /*月撥款數*/
+                     sum(CASE WHEN project_title not IN ('PJ00046','PJ00047','PJ00048')
+                              AND left(convert(varchar, get_amount_date, 112), 6) = left(convert(varchar, @BaseDate, 112), 6)
+                              AND convert(varchar, get_amount_date, 112) <=convert(varchar, @BaseDate, 112)
+                              AND get_amount_type IN ('GTAT002') THEN 1
+                              ELSE 0
+                          END) AS month_get_amount_num,
+                    /*前一個月撥款數*/
+                    sum(CASE WHEN project_title not IN ('PJ00046','PJ00047','PJ00048')
+                             AND left(convert(varchar, get_amount_date, 112), 6) = left(convert(varchar, @Pre_BaseDate, 112), 6)
+                             AND convert(varchar, get_amount_date, 112) <=convert(varchar, @Pre_BaseDate, 112)
+                             AND get_amount_type IN ('GTAT002') THEN 1
+	                         ELSE 0
+                         END) AS Pre_month_get_amount_num,
+                    /*月撥款額*/
+                    sum(CASE WHEN project_title not IN ('PJ00046','PJ00047','PJ00048')
+                               AND left(convert(varchar, get_amount_date, 112), 6) = left(convert(varchar, @BaseDate, 112), 6)
+                               AND convert(varchar, get_amount_date, 112) <= convert(varchar, @BaseDate, 112) THEN get_amount
+                               ELSE 0
+                           END) AS month_get_amount,
+                    /* 前一個月撥款額*/
+                    sum(CASE WHEN project_title not IN ('PJ00046','PJ00047','PJ00048')
+                             AND left(convert(varchar, get_amount_date, 112), 6) = left(convert(varchar, @Pre_BaseDate, 112), 6)
+                             AND convert(varchar, get_amount_date, 112) <= convert(varchar, @Pre_BaseDate, 112) THEN get_amount
+                             ELSE 0
+                         END) AS Pre_month_get_amount ,
+                    /* 已核未撥*/
+                     sum(CASE WHEN  project_title not IN ('PJ00046','PJ00047','PJ00048')
+                              AND left(convert(varchar, Send_result_date, 112), 6) IN (left(convert(varchar, @BaseDate, 112), 6), left(convert(varchar,DATEADD(month,-1, @BaseDate), 112), 6),    left(convert(varchar,DATEADD(month,-2, @BaseDate), 112), 6))
+                              AND convert(varchar, Send_result_date, 112) <=  convert(varchar, @BaseDate, 112)
+                              AND Send_result_type = 'SRT002' AND isnull(check_amount_type, '') NOT IN ('CKAT003')
+                              AND isnull(get_amount_type, '') NOT IN ('GTAT002', 'GTAT003') THEN pass_amount
+                              ELSE 0
+                          END) AS month_pass_amount,
+                    /*前一個月 已核未撥*/
+                    sum(CASE WHEN  project_title not IN ('PJ00046','PJ00047','PJ00048')
+                             AND left(convert(varchar, Send_result_date, 112), 6) IN (left(convert(varchar, @Pre_BaseDate, 112), 6), left(convert(varchar,DATEADD(month,-1, @Pre_BaseDate), 112), 6),    left(convert(varchar,DATEADD(month,-2, @Pre_BaseDate), 112), 6))
+                             AND convert(varchar, Send_result_date, 112) <=  convert(varchar, @Pre_BaseDate, 112)
+                             AND Send_result_type = 'SRT002'AND isnull(check_amount_type, '') NOT IN ('CKAT003')
+                             AND isnull(get_amount_type, '') NOT IN ('GTAT002', 'GTAT003') THEN pass_amount
+                             ELSE 0
+                         END) AS Pre_month_pass_amount
+                    from(
+                    select  project_title , ha.HA_id, case when ha.plan_num<>'N0001' then um.u_bc else 'BC0901' end u_bc,  ha.plan_num, um.U_name,ha.add_date
+                    ,Send_result_date,get_amount_date,Send_result_type,get_amount_type,check_amount_type,pass_amount,get_amount,Send_amount_date
+	                    from User_M um
+	                    left join House_apply ha on um.U_num = ha.plan_num
+	                    left join House_sendcase hs on ha.HA_id = hs.HA_id
+	                    LEFT JOIN House_pre_project hpp ON hpp.HP_project_id = hs.HP_project_id
+	                    WHERE  ha.del_tag = '0' and hs.del_tag = '0' 
+		                      AND (left(convert(varchar, Send_amount_date, 112), 6) IN( left(convert(varchar, @BaseDate, 112), 6),left(convert(varchar, @Pre_BaseDate, 112), 6))
+                            OR left(convert(varchar, Send_result_date, 112), 6) between left(convert(varchar,DATEADD(month,-3, @BaseDate), 112), 6) and left(convert(varchar, @BaseDate, 112), 6)
+                            OR left(convert(varchar, get_amount_date, 112), 6) IN( left(convert(varchar, @BaseDate, 112), 6),left(convert(varchar, @Pre_BaseDate, 112), 6)) )
+	                    ) A
+	                    Left join (
+                    select item_D_code,item_D_name UC_Na,item_sort from Item_list  where item_M_code = 'branch_company' AND item_D_type='Y' AND show_tag='0' AND del_tag='0'
+                    union all
+	                select 'BC0901','湧立',1104
+                    )U on A.u_bc=U.item_D_code
+                    Group by u_bc,UC_Na,item_sort order by item_sort
+
+
+                     ";
+            #endregion
+            var parameters1 = new List<SqlParameter>
+            {
+                new SqlParameter("@BaseDate", baseDate),
+                new SqlParameter("@Pre_BaseDate", preBaseDate)
+              
+            };
+            DataTable dt1 = _adoData.ExecuteQuery(T_SQL, parameters1);
+            FuncHandler func =new FuncHandler();
+            
+            return func.MergeSalesDataToDataTable(dt, dt1); 
+        }
+
 
     }
 }

@@ -15,6 +15,7 @@ using System.Collections;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.Dynamic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -31,6 +32,49 @@ namespace KF_WebAPI.FunctionHandler
     public class FuncHandler
     {
 
+
+        public DataTable MergeSalesDataToDataTable(DataTable dtA, DataTable dtB)
+        {
+            // 1. 建立新的結果 DataTable 並初始化結構
+            DataTable dtResult = dtA.Clone(); // 複製 Dt_A 的架構 (包含 DataColumn 的名稱與型別)
+
+            // 2. 動態追加 Dt_B 的欄位 (排除已存在的欄位如 u_bc, UC_Na)
+            var bColumns = dtB.Columns.Cast<DataColumn>()
+                            .Where(c => !dtResult.Columns.Contains(c.ColumnName))
+                            .ToList();
+
+            foreach (var col in bColumns)
+            {
+                dtResult.Columns.Add(col.ColumnName, col.DataType);
+            }
+
+            // 3. 使用 LINQ Join 合併資料並填入 dtResult
+            // LINQ Join 效能優於傳統雙層迴圈，適合 20 年開發經驗追求的簡潔與效能
+            var query = from a in dtA.AsEnumerable()
+                        join b in dtB.AsEnumerable()
+                        on a.Field<string>("u_bc") equals b.Field<string>("u_bc")
+                        select new { rowA = a, rowB = b };
+
+            dtResult.BeginLoadData(); // 暫停索引更新與約束檢查以提升填充效能
+            foreach (var item in query)
+            {
+                DataRow newRow = dtResult.NewRow();
+
+                // 填入 A 欄位
+                newRow.ItemArray = item.rowA.ItemArray;
+
+                // 填入 B 欄位 (只填入後來追加的那些欄位)
+                foreach (var col in bColumns)
+                {
+                    newRow[col.ColumnName] = item.rowB[col.ColumnName];
+                }
+
+                dtResult.Rows.Add(newRow);
+            }
+            dtResult.EndLoadData();
+
+            return dtResult;
+        }
 
 
         public static DataRow AddTitleByTable(DataTable dt, string TbName)
@@ -93,6 +137,79 @@ namespace KF_WebAPI.FunctionHandler
             }
             return m_dr;
         }
+
+
+        public static byte[] ExportDataTableToExcel(DataTable p_DataTable)
+        {
+            if (p_DataTable == null)
+                throw new ArgumentException("DataTable 不可為空");
+
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial; // 必須設定 LicenseContext
+
+            using (var package = new ExcelPackage())
+            {
+               
+                    var table = p_DataTable;
+                    string sheetName = "環比工作日業務進度表";
+                    ArrayList arrFromRow = new ArrayList();
+                    ArrayList arrToRow = new ArrayList();
+                    var worksheet = package.Workbook.Worksheets.Add(sheetName);
+
+                    // 輸出資料列
+                    for (int row = 0; row < table.Rows.Count; row++)
+                    {
+                       
+                        for (int col = 0; col < table.Columns.Count; col++)
+                        {
+                            var cellValue = table.Rows[row][col];
+
+                            var cell = worksheet.Cells[row + 1, col + 1];
+
+                            if (cellValue != DBNull.Value)
+                            {
+                                // 嘗試轉成數字
+                                if (double.TryParse(cellValue.ToString(), out double numericValue))
+                                {
+                                    cell.Value = numericValue;
+
+                                    // 如果大於 1000 → 套用三位一撇格式
+                                    if (numericValue >= 1000)
+                                    {
+                                        cell.Style.Numberformat.Format = "#,##0"; // 整數三位一撇
+                                    }
+                                    else
+                                    {
+                                        cell.Style.Numberformat.Format = "0"; // 一般數字格式
+                                    }
+                                }
+                                else
+                                {
+                                    // 非數字 → 原樣輸出
+                                    cell.Value = cellValue;
+                                }
+                            }
+                            else
+                            {
+                                cell.Value = null;
+                            }
+                        }
+                    }
+
+                  
+
+                    var rangeEnd = worksheet.Cells[table.Rows.Count, 1, table.Rows.Count, table.Columns.Count];
+                    rangeEnd.Style.Border.Top.Style = ExcelBorderStyle.Medium;
+                    rangeEnd.Style.Font.Bold = true;
+
+
+                    worksheet.Cells.AutoFitColumns();
+                
+
+                return package.GetAsByteArray();
+            }
+        }
+
+
 
 
         /// <summary>

@@ -6600,6 +6600,54 @@ namespace KF_WebAPI.Controllers
         }
         #endregion
 
+
+        #region 環比工作日業務進度表
+        /// <summary>
+        /// 環比工作日業務進度表
+        /// </summary>
+        [HttpPost("GetSalesDataByDate")]
+        public ActionResult<ResultClass<string>> GetSalesDataByDate(string BaseDate)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var result = _Rpt.GetSalesDataByDate(BaseDate);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+
+        }
+
+
+        /// <summary>
+        /// 環比工作日業務進度表Excel
+        /// </summary>
+        /// <param name="Base_Date"></param>
+        /// <returns></returns>
+        [HttpPost("GetSalesDataByDate_Excel")]
+        public IActionResult GetSalesDataByDate_Excel(string BaseDate)
+        {
+
+            DataTable dt = _Rpt.GetSalesDataByDate(BaseDate);
+           
+
+            byte[] fileBytes = FuncHandler.ExportDataTableToExcel(dt);
+
+            return File(fileBytes,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", BaseDate + "-環比工作日業務進度表.xlsx");
+
+        }
+
+
+        #endregion
+
         #region 客戶來電分析表
         /// <summary>
         /// 取得客戶來電資料
