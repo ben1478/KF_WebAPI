@@ -32,7 +32,7 @@ namespace KF_WebAPI.Controllers
                               + '/' + RIGHT('0' + CAST(MONTH(isnull(M.group_end_day,getdate()+1)) AS VARCHAR), 2) 
                               + '/' + RIGHT('0' + CAST(DAY(isnull(M.group_end_day,getdate()+1)) AS VARCHAR), 2) AS group_end_day_minguo,
                               STUFF((SELECT ' || ' + ISNULL(Li.item_D_name,d.group_D_name) From User_group d LEFT JOIN Item_list Li ON Li.item_D_txt_A = d.group_D_code 
-                              where d.group_D_type = 'Y' and d.del_tag <> '1'
+                              where d.group_D_type = 'Y' and d.del_tag <> '1' and M.group_M_code = d.group_M_code
                               and d.group_M_id = M.group_id FOR XML PATH(''), TYPE ).value('.', 'NVARCHAR(MAX)'), 1, 4, '') AS show_U_name
                               from User_group M
                               where M.del_tag <> '1' AND M.group_M_type = 'Y'
@@ -161,7 +161,7 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@edit_ip",clientIp),
                     new SqlParameter("@group_start_day",FuncHandler.ConvertROCToGregorian(model.str_group_start_day)),
                     new SqlParameter("@group_end_day",FuncHandler.ConvertROCToGregorian(model.str_group_end_day)),
-                     new SqlParameter("@group_id",model.group_id)
+                    new SqlParameter("@group_id",model.group_id)
                 };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
@@ -173,6 +173,16 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
+                    #region 修改組員
+                    var T_SQL_D = @"Update User_group set group_M_code = @group_M_code,group_M_name=@group_M_name  where group_M_id=@group_id and del_tag <> '1' and group_D_type = 'Y'";
+                    var parameters_d = new List<SqlParameter>()
+                    {
+                         new SqlParameter("@group_M_code",model.group_M_code),
+                         new SqlParameter("@group_M_name",model.group_M_name),
+                         new SqlParameter("@group_id",model.group_id)
+                    };
+                    _adoData.ExecuteNonQuery(T_SQL_D, parameters_d);
+                    #endregion
                     resultClass.ResultCode = "000";
                     resultClass.ResultMsg = "修改成功";
                     return Ok(resultClass);
