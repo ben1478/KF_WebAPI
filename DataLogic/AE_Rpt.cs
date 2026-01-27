@@ -1289,6 +1289,10 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 U_PFT_sort = dr["U_PFT_sort"].ToString();
                 U_PFT_name = dr["U_PFT_name"].ToString();
                 plan_name = dr["plan_name"].ToString();
+                if (plan_name.IndexOf("許彥") != -1)
+                {
+                    plan_name = "許彥珉";
+                }
                 plan_num = dr["plan_num"].ToString();
                 BC_Name = dr["BC_Name"].ToString();
 
