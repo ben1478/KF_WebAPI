@@ -65,7 +65,7 @@ namespace KF_WebAPI.Controllers
 
                 ArrayList sheetNames = new ArrayList { "各區房貸", "各區房貸總計", "各區機車貸", "各區機車貸總計", "汽車貸", "汽車貸總計", AddDate + "房貸", AddDate + "車貸", AddDate + "汽車貸" };
 
-                byte[] fileBytes = FuncHandler.ExportDataSetToExcel(ds, sheetNames);
+                byte[] fileBytes = ExcelExportHelper.ExportDailyReportToExcel(ds, sheetNames);
 
                 return File(fileBytes,
                             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Base_Date + "-業績報表_日報表.xlsx");
@@ -76,7 +76,7 @@ namespace KF_WebAPI.Controllers
 
                 ArrayList sheetNames = new ArrayList { "房貸", "房貸總計", "機車貸", "機車貸總計" };
 
-                byte[] fileBytes = FuncHandler.ExportDataSetToExcel(ds, sheetNames);
+                byte[] fileBytes = ExcelExportHelper.ExportDailyReportToExcel(ds, sheetNames);
 
                 return File(fileBytes,
                             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", Base_Date + "-業績報表_日報表.xlsx");
@@ -6608,6 +6608,8 @@ namespace KF_WebAPI.Controllers
         [HttpPost("GetSalesDataByDate")]
         public ActionResult<ResultClass<string>> GetSalesDataByDate(string BaseDate)
         {
+            BaseDate = (Convert.ToInt16(BaseDate.Split("/")[0]) + 1911).ToString() + "/" + BaseDate.Split("/")[1] + "/" + BaseDate.Split("/")[2];
+
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
@@ -6631,16 +6633,21 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         /// <param name="Base_Date"></param>
         /// <returns></returns>
-        [HttpPost("GetSalesDataByDate_Excel")]
-        public IActionResult GetSalesDataByDate_Excel(string BaseDate)
+        [HttpPost("GetSalesDataToExcel")]
+        public IActionResult GetSalesDataToExcel(string BaseDate)
         {
-
-            DataTable dt = _Rpt.GetSalesDataByDate(BaseDate);
+             BaseDate = (Convert.ToInt16(BaseDate.Split("/")[0]) + 1911).ToString() + "/" + BaseDate.Split("/")[1] + "/" + BaseDate.Split("/")[2];
            
 
-            byte[] fileBytes = FuncHandler.ExportDataTableToExcel(dt);
+            DataTable dtSalesData = _Rpt.GetSalesDataByDate(BaseDate);
 
-            return File(fileBytes,
+            
+            ArrayList sheetNames = new ArrayList { "房貸", "機車貸",  "汽車貸" };
+
+            byte[] fileContent = ExcelExportHelper.ExportSalesDataToExcel(BaseDate, dtSalesData, sheetNames);
+
+
+            return File(fileContent,
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", BaseDate + "-環比工作日業務進度表.xlsx");
 
         }
