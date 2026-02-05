@@ -243,6 +243,64 @@ namespace KF_WebAPI.DataLogic
             return m_Execut;
         }
 
+        public int BatchInsertFile(AE_Files[] p_attachmentFiles)
+        {
+            Common _Comm = new();
+
+            int m_Execut = 0;
+           
+
+            try
+            {
+                using SqlConnection conn = new SqlConnection(_ADO.GetConnStr());
+                // 開啟資料庫連線
+                conn.Open();
+                SqlTransaction transaction = conn.BeginTransaction();
+                try
+                {
+                    foreach (AE_Files file in p_attachmentFiles)
+                    {
+                        // 建立 SQL 命令
+                        string m_SQL = " INSERT INTO AE_Files (KeyID,Key_Type,file_index,file_body_encode,file_size,content_type,file_name,add_date,add_num)  ";
+                        m_SQL += "  VALUES (@KeyID,@Key_Type,@file_index,@file_body_encode,@file_size,@content_type,@file_name,@add_date,@add_num)  ";
+                        using SqlCommand command = new SqlCommand(m_SQL, conn, transaction);
+                        // 設定參數
+                        string base64String = _Comm.CompressFile(file.file_body_encode);
+                        byte[] imageBytes = Convert.FromBase64String(base64String);
+                        command.Parameters.AddWithValue("@KeyID", file.KeyID);
+                        command.Parameters.AddWithValue("@Key_Type", file.Key_Type);
+
+                        command.Parameters.AddWithValue("@file_index", Convert.ToInt32(file.file_index));
+                        command.Parameters.AddWithValue("@file_body_encode", imageBytes);
+                        command.Parameters.AddWithValue("@file_size", file.file_size);
+                        command.Parameters.AddWithValue("@content_type", file.content_type);
+                        command.Parameters.AddWithValue("@file_name", file.file_name);
+                        command.Parameters.AddWithValue("@add_date", file.add_date);
+                        command.Parameters.AddWithValue("@add_num", file.add_num);
+
+                        // 執行 SQL 命令
+                        m_Execut += command.ExecuteNonQuery();
+                    }
+                    transaction.Commit();
+                    // 關閉資料庫連線
+                    conn.Close();
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    throw new Exception("檔案上傳失敗!!" + ex.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+
+                throw new Exception("檔案上傳失敗!!" + ex.Message);
+            }
+
+            return m_Execut;
+        }
+
+
         public int DeleteFile( string p_KeyID, string p_Key_Type, string p_file_index)
         {
             Common _Comm = new();

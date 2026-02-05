@@ -3,6 +3,11 @@
 
     public class AE_Files
     {
+
+
+        public String? KeyID { get; set; }
+        public String? Key_Type { get; set; }
+        
         /// <summary>
         /// 檔案編碼索引
         /// </summary>
@@ -27,6 +32,7 @@
         /// </summary>
         public String? file_name { get; set; }
 
+        public String? add_num { get; set; }
         public String? add_date { get; set; }
         
     }

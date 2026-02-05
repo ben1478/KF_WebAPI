@@ -1065,6 +1065,28 @@ namespace KF_WebAPI.Controllers
             return Ok(resultClass);
         }
 
+        [Route("InsertFile_date")]
+        [HttpPost]
+        public ActionResult<ResultClass<int>> InsertFile_date([FromBody] AE_Files[] AE_Files)
+        {
+            ResultClass<int> resultClass = new();
+            try
+            {
+                int m_Execut = _AEData.BatchInsertFile(AE_Files);
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "";
+                
+                resultClass.objResult = m_Execut;
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "999";
+                resultClass.ResultMsg = ex.Message;
+            }
+            return Ok(resultClass);
+        }
+
+
 
         [Route("DeleteFile")]
         [HttpPost]

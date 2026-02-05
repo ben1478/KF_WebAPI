@@ -715,7 +715,43 @@ namespace KF_WebAPI.Controllers
             return Ok(resultClass);
         }
 
+        /// <summary>
+        /// 取得員工薪資帳戶
+        /// </summary>
+        /// <param name="ACCESS_TOKEN"></param>
+        /// <returns></returns>
+        [Route("GetEmpBankInfo")]
+        [HttpPost]
+        public async Task<ActionResult<string>> GetEmpBankInfo(string UserID, string ACCESS_TOKEN)
+        {
+            string TransactionId = DateTime.Now.ToString("yyyyMMddhhmmssffff");
+            arrResultClass_104<emp_bank> resultClass = new arrResultClass_104<emp_bank>();
+            try
+            {
+                string p_JSON = "{ \"ACCESS_TOKEN\": \"" + ACCESS_TOKEN + "\",\"CO_ID\": 1}";
+                ResultClass<string> APIResult = new();
+                APIResult = await _Comm.Call_104API(UserID, "pb/emp_bank", p_JSON, TransactionId, _httpClient, ACCESS_TOKEN);
 
+                if (APIResult.ResultCode == "200")
+                {
+                    arrResultClass_104<emp_bank> objResult = JsonConvert.DeserializeObject<arrResultClass_104<emp_bank>>(APIResult.objResult);
+                    AE_HR m_hr = new AE_HR();
+                    m_hr.InsertBankInfom(objResult);
+                    resultClass.code = "200";
+                }
+                else
+                {
+                    resultClass.code = "999";
+                    resultClass.msg = $"{APIResult.ResultMsg}";
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.code = "999";
+                resultClass.msg = $" response: {ex.Message}";
+            }
+            return Ok(resultClass);
+        }
 
 
 
