@@ -423,5 +423,23 @@ namespace KF_WebAPI.DataLogic
 
         }
 
+
+        public void InsertBankInfom(arrResultClass_104<emp_bank> APIResult)
+        {
+
+            try
+            {
+                string TableName = "BankInfo_104";
+
+                _ADO.ExecuteNonQuery("Delete FROM dbo.BankInfo_104 ", new List<SqlParameter>());
+                _ADO.DataTableToSQL(TableName, ((emp_bank[])APIResult.data), _ADO.ConnStr);
+            }
+            catch
+            {
+                throw;
+            }
+
+        }
+
     }
 }
