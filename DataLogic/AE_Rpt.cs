@@ -31,25 +31,35 @@ namespace KF_WebAPI.DataLogic
                     new SqlParameter("@checkDateS",model.checkDateS),
                     new SqlParameter("@checkDateE",model.checkDateE)
                 };
-                var result = _adoData.ExecuteQuery(T_SQL_SP,parameters).AsEnumerable().Select(row => new MotocaseSummary
+
+                var result = _adoData.ExecuteQuery(T_SQL_SP, parameters).AsEnumerable().Select(row =>
                 {
-                    YYYYMM = row.Field<string>("YYYYMM"),
-                    SendCount = row.Field<int>("SendCount"),
-                    PassCount = row.Field<int>("PassCount"),
-                    GetCount = row.Field<int>("GetCount"),
-                    PassAmount = row.Field<decimal>("PassAmount"),
-                    GetAmount = row.Field<decimal>("GetAmount"),
-                    PerAmount = row.Field<decimal>("PerAmount"),
-                    RemAmount = row.Field<decimal>("RemAmount"),
-                    SettCount = row.Field<int>("SettCount"),
-                    SettAmount = row.Field<decimal>("SettAmount"),
-                    BadCount = row.Field<int>("BadCount"),
-                    BadAmount = row.Field<decimal>("BadAmount"),
-                    PassRate = ((decimal)row.Field<int>("PassCount") / row.Field<int>("SendCount")).ToString("0.00%"),
-                    GetRate = ((decimal)row.Field<int>("GetCount") / row.Field<int>("PassCount")).ToString("0.00%")
+                    int sendCount = row.Field<int?>("SendCount") ?? 0;
+                    int passCount = row.Field<int?>("PassCount") ?? 0;
+                    int getCount = row.Field<int?>("GetCount") ?? 0;
+                    return new MotocaseSummary
+                    {
+                        YYYYMM = row.Field<string>("YYYYMM"),
+                        SendCount = sendCount,
+                        PassCount = passCount,
+                        GetCount = getCount,
+                        PassAmount = row.Field<decimal>("PassAmount"),
+                        GetAmount = row.Field<decimal>("GetAmount"),
+                        PerAmount = row.Field<decimal>("PerAmount"),
+                        RemAmount = row.Field<decimal>("RemAmount"),
+                        SettCount = row.Field<int>("SettCount"),
+                        SettAmount = row.Field<decimal>("SettAmount"),
+                        BadCount = row.Field<int>("BadCount"),
+                        BadAmount = row.Field<decimal>("BadAmount"),
+                        PassRate = sendCount == 0
+                            ? "0.00%"
+                            : ((decimal)passCount / sendCount).ToString("0.00%"),
+
+                        GetRate = passCount == 0
+                            ? "0.00%"
+                            : ((decimal)getCount / passCount).ToString("0.00%")
+                    };
                 }).ToList();
-
-
                 return result;
             }
             catch
