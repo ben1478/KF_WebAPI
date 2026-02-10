@@ -58,7 +58,7 @@ namespace KF_WebAPI.DataLogic
                 ADOData _adoData = new ADOData();
                 var parameters = new List<SqlParameter>();
                 #region SQL
-                var T_SQL = @"SELECT max(cast(file_index as decimal)) MaxIdx FROM AE_Files WHERE KeyID = @KeyID  and Key_Type=@Key_Type";
+                var T_SQL = @"SELECT isnull(max(cast(file_index as decimal)),0) MaxIdx FROM AE_Files WHERE KeyID = @KeyID  and Key_Type=@Key_Type";
                 #endregion
 
 
@@ -109,7 +109,7 @@ namespace KF_WebAPI.DataLogic
                                     byte[] blob = (byte[])reader["file_body_encode"];
                                     string base64String = Convert.ToBase64String(blob);
                                     AE_Files m_AE_File = new();
-                                    m_AE_File.file_body_encode = _Comm.DecompressFile(base64String);
+                                   // m_AE_File.file_body_encode = _Comm.DecompressFile(base64String);
                                     m_AE_File.file_size = reader["file_size"].ToString();
                                     m_AE_File.file_index = reader["file_index"].ToString();
                                     m_AE_File.file_name = reader["file_name"].ToString();
@@ -142,8 +142,6 @@ namespace KF_WebAPI.DataLogic
             AE_Files m_attachmentFile = new();
             try
             {
-                string m_TypeName = "";
-
                 using (SqlConnection connection = new SqlConnection(_ADO.GetConnStr()))
                 {
                     connection.Open();
@@ -152,7 +150,7 @@ namespace KF_WebAPI.DataLogic
                     {
                         command.CommandText = "SELECT * FROM AE_Files WHERE KeyID = @KeyID and  Key_Type = @Key_Type and file_index=@file_index ";
                         command.Parameters.AddWithValue("@KeyID", Key);
-                        command.Parameters.AddWithValue("@Key_Type", m_TypeName);
+                        command.Parameters.AddWithValue("@Key_Type", Key_Type);
 
                         if (file_index != "")
                         {
