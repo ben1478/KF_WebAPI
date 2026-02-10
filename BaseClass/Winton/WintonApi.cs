@@ -177,7 +177,7 @@ namespace KF_WebAPI.BaseClass.Winton
         public string? SU01116 { get; set; }
         public string? SU01117 { get; set; }
         public string? SU01119 { get; set; }
-        public bool? SU01123 { get; set; }
+        public int? SU01123 { get; set; }
         public string? SU01124 { get; set; }
         public string? SU01125 { get; set; }
         public string? SU01126 { get; set; }

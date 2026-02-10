@@ -188,7 +188,7 @@ namespace KF_WebAPI.Controllers
         /// strType:來源 FormID:PKey
         /// </summary>
         [HttpPost("SendManufacturer")]
-        public async Task<IActionResult> SendManufacturer(string strType, string FormID)
+        public async Task<IActionResult> SendManufacturer(string strType, string FormID,string User)
         {
             var apiName = "rest/TdmServerMethodsOT/ImpWD2SU01";
             var url = urlBase + apiName;
@@ -209,12 +209,12 @@ namespace KF_WebAPI.Controllers
 
                 if (responseObject.Status == "200" && responseObject.Error == null)
                 {
-                    _fun.ExtAPILogIns(apiCode, apiName, model.ADataSet.SU01001, model.AToken, jsonData, "200", JsonConvert.SerializeObject(responseObject));
+                    _fun.ExtAPILogIns(apiCode, apiName, model.ADataSet.SU01001, model.AToken, jsonData, "200", JsonConvert.SerializeObject(responseObject), User);
                     return Ok();
                 }
                 else
                 {
-                    _fun.ExtAPILogIns(apiCode, apiName, model.ADataSet.SU01001, model.AToken, jsonData, "500", JsonConvert.SerializeObject(responseObject));
+                    _fun.ExtAPILogIns(apiCode, apiName, model.ADataSet.SU01001, model.AToken, jsonData, "500", JsonConvert.SerializeObject(responseObject), User);
                     return BadRequest();
                 }
             }
@@ -251,6 +251,7 @@ namespace KF_WebAPI.Controllers
                     var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
 
                     model.ADataSet.SU01001 = dtResult.Rows[0]["MF_ID"].ToString();
+                    model.ADataSet.SU01002 = strType;
                     model.ADataSet.SU01082 = dtResult.Rows[0]["MF_ID"].ToString();
                     model.ADataSet.SU01004 = dtResult.Rows[0]["Company_name"].ToString();
                     model.ADataSet.SU01003 = dtResult.Rows[0]["Company_name"].ToString();
@@ -261,6 +262,45 @@ namespace KF_WebAPI.Controllers
                     model.ADataSet.SU01016 = dtResult.Rows[0]["Company_fax"] != DBNull.Value ? dtResult.Rows[0]["Company_fax"].ToString() : null;
                 }
 
+                //來源為客戶資料
+                if(strType == "2")
+                {
+                    #region SQL
+                    var T_SQL = @"select Item_list.item_D_code as U_BC_Show,* from House_apply 
+                                  left join User_M on House_apply.plan_num = User_M.U_num
+                                  left join User_Spec_Group on House_apply.plan_num = User_Spec_Group.U_num
+                                  left join Item_list on item_M_code='winton_company' and item_D_txt_A = ISNULL(User_Spec_Group.Spec_Group,User_M.U_BC)
+                                  where HA_id=@HA_id";
+                    var parameters = new List<SqlParameter>
+                    {
+                        new SqlParameter("@HA_id", FormID)
+                    };
+                    #endregion
+                    var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                    model.ADataSet.SU01001 = dtResult.Rows[0]["CS_PID"].ToString();
+                    model.ADataSet.SU01002 = strType;
+                    model.ADataSet.SU01003 = dtResult.Rows[0]["CS_name"].ToString();
+                    model.ADataSet.SU01004 = dtResult.Rows[0]["CS_name"].ToString();
+
+                    model.ADataSet.SU01011 = dtResult.Rows[0]["CS_register_address"].ToString();
+                    model.ADataSet.SU01019 = dtResult.Rows[0]["CS_MTEL1"].ToString();
+                    model.ADataSet.SU01029 = dtResult.Rows[0]["U_BC_Show"].ToString();
+                    model.ADataSet.SU01038 = "2";
+
+                    model.ADataSet.SU01076 = 1;
+                    model.ADataSet.SU01082 = dtResult.Rows[0]["CS_PID"].ToString();
+                    model.ADataSet.SU01096 = dtResult.Rows[0]["CS_EMAIL"].ToString();
+                    model.ADataSet.SU01110 = "1";
+                    model.ADataSet.SU01112 = "Y";
+
+                    //存入載具
+                    if (dtResult.Rows[0]["IsVehicle"].ToString() == "Y")
+                    {
+                        model.ADataSet.SU01123 = 1;
+                        model.ADataSet.SU01124 = "EJ0110";
+                        model.ADataSet.SU01125 = dtResult.Rows[0]["Vehicle"].ToString();
+                    }
+                }
                 return model;
             }
             else
