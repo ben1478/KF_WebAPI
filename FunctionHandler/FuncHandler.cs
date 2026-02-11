@@ -1404,7 +1404,12 @@ namespace KF_WebAPI.FunctionHandler
                                         }
                                     }
                                     #endregion
-
+                                    #region 年假提早走
+                                    if (items[j].attendance_week == "02/13 (五)")
+                                    {
+                                        items[j].early = 0;
+                                    }
+                                    #endregion
                                     if (items[j].early > 0)
                                     {
                                         decimal earlyHour = Convert.ToInt32(items[j].early) / 60m;
