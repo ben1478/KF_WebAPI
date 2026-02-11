@@ -1950,10 +1950,6 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             return result;  
         }
 
-
-
-       
-
         /// <summary>
         /// 取得客戶來電資料
         /// </summary>
@@ -2246,6 +2242,85 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             FuncHandler func =new FuncHandler();
             
             return func.MergeSalesDataToDataTable(dt, dt1); 
+        }
+
+
+        /// <summary>
+        ///汽機車逾期資訊
+        /// </summary>
+        public DataTable GetOverdueRate(string BaseDate, string Project_title)
+        {
+            if (!DateTime.TryParse(BaseDate, out DateTime parsedDate))
+            {
+                throw new ArgumentException("日期格式錯誤，請輸入 yyyy/MM/dd");
+            }
+            #region SQL
+            var T_SQL = @"
+                    select *, case when DiffDay between 30 and 60 then 'M1' 
+			   when DiffDay between 61 and 90 then 'M2' 
+			   when DiffDay >90 then 'M3'end DiffType
+ from (
+	SELECT project_title,substring(HA.CS_name,1,1)+'XX' CS_name,format(RC_date,'yyyy/MM/dd')RC_date,
+             pro_name, DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total
+      FROM
+      (SELECT RCM_id,min(RC_count) RC_count,min(RC_date) RC_date
+         FROM Receivable_D WHERE del_tag = '0' AND check_pay_type='N'AND bad_debt_type='N'
+           AND cancel_type='N'GROUP BY RCM_id) RD
+      LEFT JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id
+      LEFT JOIN House_sendcase HS ON RM.HA_id = HS.HA_id AND RM.HS_id = HS.HS_id
+      LEFT JOIN House_apply HA ON HS.HA_id = HA.HA_id
+      LEFT JOIN
+		  (	SELECT HP_project_id,P.project_title,item_D_name pro_name
+			FROM House_pre_project P
+			LEFT JOIN
+			(SELECT item_D_code,item_D_name FROM Item_list WHERE item_M_code = 'project_title'
+			AND item_D_type='Y') I ON 
+			CASE WHEN P.project_title='PJ00001' THEN 'PJ00005'
+				 ELSE P.project_title
+				 END=I.item_D_code WHERE P.del_tag='0') P ON HS.HP_project_id=P.HP_project_id
+      WHERE RM.RCM_id IS NOT NULL AND RM.del_tag='0'AND HA.del_tag='0'
+        AND HS.del_tag='0' AND (DATEDIFF(DAY, RD.RC_date, @BaseDate) > 30) ";
+            if (Project_title == "")//汽機車
+            {
+                T_SQL += " and project_title in ('PJ00046','PJ00047','PJ00048') ";
+            }
+            else if (Project_title == "Car")//汽車
+            {
+                T_SQL += " and project_title in ('PJ00048') ";
+            }
+            else//機車
+            {
+                T_SQL += " and project_title in ('PJ00046','PJ00047') ";
+            }
+
+            T_SQL += "  ) A where DiffDay >=30 order by DiffDay desc,pro_name ";
+
+            #endregion
+
+            var parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@BaseDate", BaseDate),
+            };
+            DataTable dt = _adoData.ExecuteQuery(T_SQL, parameters);
+            return dt;
+        }
+
+        /// <summary>
+        ///匯出汽機車逾期資訊Excel
+        /// </summary>
+        public DataSet GetOverdueRateExcel(string BaseDate, string Project_title)
+        {
+            try
+            {
+                DataTable ds =  GetOverdueRate(BaseDate, Project_title);
+                DataSet dt = new DataSet();
+                dt.Tables.Add(ds);
+                return dt;
+            }
+            catch
+            {
+                throw;
+            }
         }
 
 
