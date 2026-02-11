@@ -6792,6 +6792,61 @@ namespace KF_WebAPI.Controllers
             }
         }
         #endregion
+
+
+        /// <summary>
+        /// 取得汽機車逾期資訊
+        /// </summary>
+        [HttpPost("GetOverdueRate")]
+        public ActionResult<ResultClass<string>> GetOverdueRate(string BaseDate, string Project_title)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var result = _Rpt.GetOverdueRate(BaseDate, Project_title);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 匯出汽機車逾期資訊Excel
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetOverdueRateExcel")]
+        public IActionResult GetOverdueRateExcel(string BaseDate, string Project_title)
+        {
+            try
+            {
+                var result = _Rpt.GetOverdueRateExcel(BaseDate, Project_title);
+
+                ArrayList sheetNames = new ArrayList { "機車貸", "汽車貸"};
+              
+
+                byte[] fileBytes = ExcelExportHelper.ExportDailyReportToExcel(result, sheetNames);
+                var fileName = "汽機車逾期資訊" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx";
+                return File(fileBytes,
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+
+
+
+       
     }
 }
 

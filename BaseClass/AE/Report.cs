@@ -57,4 +57,15 @@
         public string PassRate { get; set; }
         public string GetRate { get; set; }
     }
+    public class OverdueRate
+    {
+        public string CS_name { get; set; }
+        public string RC_date { get; set; }
+        public string pro_name { get; set; }
+        public int DiffDay { get; set; }
+        public decimal amount_total { get; set; }
+        public string DiffType { get; set; }
+        
+    }
+    
 }
