@@ -290,6 +290,7 @@ namespace KF_WebAPI.Controllers
                     model.ADataSet.SU01076 = 1;
                     model.ADataSet.SU01082 = dtResult.Rows[0]["CS_PID"].ToString();
                     model.ADataSet.SU01096 = dtResult.Rows[0]["CS_EMAIL"].ToString();
+                    model.ADataSet.SU01107 = "B";
                     model.ADataSet.SU01110 = "1";
                     model.ADataSet.SU01112 = "Y";
 
