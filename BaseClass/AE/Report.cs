@@ -61,9 +61,9 @@
     {
         public string CS_name { get; set; }
         public string RC_date { get; set; }
-        public string pro_name { get; set; }
+        public string Pro_name { get; set; }
         public int DiffDay { get; set; }
-        public decimal amount_total { get; set; }
+        public decimal Amount_total { get; set; }
         public string DiffType { get; set; }
         
     }

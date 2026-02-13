@@ -2308,21 +2308,89 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
         /// <summary>
         ///匯出汽機車逾期資訊Excel
         /// </summary>
-        public DataSet GetOverdueRateExcel(string BaseDate, string Project_title)
+        public DataSet GetOverdueRateExcel(string BaseDate)
         {
             try
             {
-                DataTable ds =  GetOverdueRate(BaseDate, Project_title);
-                DataSet dt = new DataSet();
-                dt.Tables.Add(ds);
-                return dt;
+                DataTable dtCar = GetOverdueRate(BaseDate, "Car");
+                DataTable dtMoto = GetOverdueRate(BaseDate, "MoTo");
+
+                DataTable dtNew_Car = new DataTable();
+                dtNew_Car.Columns.Add("SEQ");//序
+                dtNew_Car.Columns.Add("CS_name");//申請人
+                dtNew_Car.Columns.Add("Pro_name");//專案名稱
+                dtNew_Car.Columns.Add("Amount_total");//申貸金額
+                dtNew_Car.Columns.Add("RC_date");//應繳日期
+                dtNew_Car.Columns.Add("DiffDay");//延滯天數
+                dtNew_Car.Columns.Add("DiffType");//逾期類別
+                DataRow dtNew_CarRow = dtNew_Car.NewRow();
+                dtNew_CarRow["SEQ"] = "序";
+                dtNew_CarRow["CS_name"] = "申請人";
+                dtNew_CarRow["Pro_name"] = "專案名稱";
+                dtNew_CarRow["Amount_total"] = "申貸金額";
+                dtNew_CarRow["RC_date"] = "應繳日期";
+                dtNew_CarRow["DiffDay"] = "延滯天數";
+                dtNew_CarRow["DiffType"] = "逾期類別";
+                dtNew_Car.Rows.Add(dtNew_CarRow);
+                DataTable dtNew_Moto = dtNew_Car.Copy();
+               
+
+                int iSEQ = 1;
+                if (dtCar.Rows.Count == 0)
+                {
+                    DataRow drNew_Car = dtNew_Car.NewRow();
+                    drNew_Car["SEQ"] = "無逾期資料!";
+                    dtNew_Car.Rows.Add(drNew_Car);
+                }
+                else
+                {
+                    foreach (DataRow dr in dtCar.Rows)
+                    {
+                        DataRow drNew_Car = dtNew_Car.NewRow();
+                        drNew_Car["SEQ"] = iSEQ.ToString();
+                        drNew_Car["CS_name"] = dr["CS_name"].ToString();
+                        drNew_Car["Pro_name"] = dr["Pro_name"].ToString();
+                        drNew_Car["Amount_total"] = dr["Amount_total"].ToString();
+                        drNew_Car["RC_date"] = dr["RC_date"].ToString();
+                        drNew_Car["DiffDay"] = dr["DiffDay"].ToString();
+                        drNew_Car["DiffType"] = dr["DiffType"].ToString();
+                        dtNew_Car.Rows.Add(drNew_Car);
+                        iSEQ++;
+                    }
+                }
+
+                if (dtMoto.Rows.Count == 0)
+                {
+                    DataRow drNew_Moto = dtNew_Moto.NewRow();
+                    drNew_Moto["SEQ"] = "無逾期資料!";
+                    dtNew_Moto.Rows.Add(drNew_Moto);
+                }
+                else
+                {
+                    iSEQ = 1;
+                    foreach (DataRow dr in dtMoto.Rows)
+                    {
+                        DataRow drNew_Moto = dtNew_Moto.NewRow();
+                        drNew_Moto["SEQ"] = iSEQ.ToString();
+                        drNew_Moto["CS_name"] = dr["CS_name"].ToString();
+                        drNew_Moto["Pro_name"] = dr["Pro_name"].ToString();
+                        drNew_Moto["Amount_total"] = dr["Amount_total"].ToString();
+                        drNew_Moto["RC_date"] = dr["RC_date"].ToString();
+                        drNew_Moto["DiffDay"] = dr["DiffDay"].ToString();
+                        drNew_Moto["DiffType"] = dr["DiffType"].ToString();
+                        dtNew_Moto.Rows.Add(drNew_Moto);
+                        iSEQ++;
+                    }
+                }
+                DataSet ds = new DataSet();
+                ds.Tables.Add(dtNew_Moto);
+                ds.Tables.Add(dtNew_Car);
+                return ds;
             }
             catch
             {
                 throw;
             }
         }
-
-
     }
 }

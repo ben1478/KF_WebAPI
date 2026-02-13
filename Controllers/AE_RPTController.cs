@@ -6798,14 +6798,23 @@ namespace KF_WebAPI.Controllers
         /// 取得汽機車逾期資訊
         /// </summary>
         [HttpPost("GetOverdueRate")]
-        public ActionResult<ResultClass<string>> GetOverdueRate(string BaseDate, string Project_title)
+        public ActionResult<ResultClass<string>> GetOverdueRate(string BaseDate)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
-                var result = _Rpt.GetOverdueRate(BaseDate, Project_title);
+              
+                DataTable  dtCar = _Rpt.GetOverdueRate(BaseDate, "Car");
+                dtCar.TableName = "Car";
+               
+                DataTable dtMoto = _Rpt.GetOverdueRate(BaseDate, "MoTo");
+                dtMoto.TableName = "MoTo";
+                DataSet ds = new DataSet();
+                ds.Tables.Add(dtCar);
+                ds.Tables.Add(dtMoto);
+                
                 resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(result);
+                resultClass.objResult = JsonConvert.SerializeObject(ds);
                 return Ok(resultClass);
             }
             catch (Exception ex)
@@ -6821,16 +6830,15 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPost("GetOverdueRateExcel")]
-        public IActionResult GetOverdueRateExcel(string BaseDate, string Project_title)
+        public IActionResult GetOverdueRateExcel(string BaseDate)
         {
             try
             {
-                var result = _Rpt.GetOverdueRateExcel(BaseDate, Project_title);
+                var result = _Rpt.GetOverdueRateExcel(BaseDate);
 
                 ArrayList sheetNames = new ArrayList { "機車貸", "汽車貸"};
-              
 
-                byte[] fileBytes = ExcelExportHelper.ExportDailyReportToExcel(result, sheetNames);
+                byte[] fileBytes = ExcelExportHelper.ExportDailyReportToExcel(result, sheetNames,false);
                 var fileName = "汽機車逾期資訊" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx";
                 return File(fileBytes,
                             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
