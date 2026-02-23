@@ -3943,9 +3943,9 @@ namespace KF_WebAPI.Controllers
                     T_SQL = @"select V.diffType,AmtTypeDesc,AmtType,count(V.diffType) Count,Format(sum(amount_total),'N0') amount_total,Tot_Amt,rowspan,
                     Format(convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)),'N2') + '%' Rate
                     from view_excess_base V
-                    left join (select sum(isnull(case when try_convert(int, get_amount) is NULL
+                    left join (select sum(isnull(case when try_convert(decimal, get_amount) is NULL
                         then 0
-                        else convert(int, get_amount)
+                        else convert(decimal, get_amount)
                         end,0)*10000) Tot_Amt
                     from House_sendcase H
                     left join House_apply A ON A.HA_id = H.HA_id
@@ -3968,9 +3968,9 @@ namespace KF_WebAPI.Controllers
                     T_SQL = @"select V.diffType,AmtTypeDesc,AmtType,count(V.diffType) Count,Format(sum(amount_total),'N0') amount_total,Tot_Amt,rowspan,
                     Format(convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)),'N2') + '%' Rate
                     from view_excess_base V
-                    left join (select sum(isnull(case when try_convert(int, get_amount) is NULL
+                    left join (select sum(isnull(case when try_convert(decimal, get_amount) is NULL
                         then 0
-                        else convert(int, get_amount)
+                        else convert(decimal, get_amount)
                         end,0)*10000) Tot_Amt
                     from House_sendcase H
                     left join House_apply A ON A.HA_id = H.HA_id
