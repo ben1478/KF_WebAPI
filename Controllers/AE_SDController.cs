@@ -183,6 +183,7 @@ namespace KF_WebAPI.Controllers
                 var result = _adoData.ExecuteQuery(T_SQL,parameters).AsEnumerable().Select(row => new
                 {
                     CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    RemainingPrincipal = row.Field<decimal>("RemainingPrincipal"),
                     total_due_amount = row.Field<decimal>("total_due_amount"),
                     total_paid_amount = row.Field<decimal>("total_paid_amount"),
                     total_bad_debt = row.Field<decimal>("total_bad_debt"),
@@ -211,11 +212,12 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"Update StagnationDebt_M set total_due_amount=@total_due_amount,total_paid_amount=@total_paid_amount,total_bad_debt=@total_bad_debt,
+                var T_SQL = @"Update StagnationDebt_M set RemainingPrincipal=@RemainingPrincipal, total_due_amount=@total_due_amount,total_paid_amount=@total_paid_amount,total_bad_debt=@total_bad_debt,
                              remarks=@remarks,edit_date=getdate(),edit_num=@edit_num,edit_ip=@edit_ip where sdm_id=@sdm_id";
                 var parameters = new List<SqlParameter>()
                 {
                     new SqlParameter("@sdm_id",model.sdm_id),
+                    new SqlParameter("@RemainingPrincipal",model.RemainingPrincipal),
                     new SqlParameter("@total_due_amount",model.total_due_amount),
                     new SqlParameter("@total_paid_amount",model.total_paid_amount),
                     new SqlParameter("@total_bad_debt",model.total_bad_debt),
@@ -264,9 +266,12 @@ namespace KF_WebAPI.Controllers
                               ,FORMAT(SM.total_bad_debt - ISNULL(PD.total_payment,0),'N0') as str_total_bad_debt
                               ,FORMAT(SM.amount_total,'N0') as str_amount_total
                               ,FORMAT(SM.RemainingPrincipal,'N0') as str_RemainingPrincipal
+                              ,HG.HG_name,HG.HG_PID
                               from StagnationDebt_M SM
                               left join Receivable_M RM on RM.RCM_id = SM.rcm_id
                               left join House_apply HA on HA.HA_id=RM.HA_id
+                              left join House_sendcase HS on HS.HA_id = RM.HA_id and HS.HS_id = RM.HS_id
+                              left join House_guarantor HG on HG.HA_id = RM.HA_id and HS.appraise_company = HG.appraise_company
                               LEFT JOIN (SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id
                               ) PD ON PD.sdm_id = SM.sdm_id
                               where SM.sdm_id=@sdm_id and SM.del_tag ='0'";
@@ -293,7 +298,9 @@ namespace KF_WebAPI.Controllers
                     str_total_bad_debt = row.Field<string>("str_total_bad_debt"),
                     SD_Name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
                     remarks = row.Field<string>("remarks"),
-                    SD_CID = row.Field<string>("CS_PID")
+                    SD_CID = row.Field<string>("CS_PID"),
+                    HG_Name = _Fun.DeCodeBNWords(row.Field<string>("HG_name")),
+                    HG_PID = row.Field<string>("HG_PID")
                 }).FirstOrDefault();
 
                 model.SDList = _adoData.ExecuteQuery(T_SQL_D, parameters_d).AsEnumerable().Select(row => new StagnationDebt_D 
@@ -706,6 +713,55 @@ AND HP.project_title IN('PJ00046','PJ00047') and format(HS.get_amount_date,'yyyy
             }
         }
 
+        /// <summary>
+        /// 指定尚未列入呆帳清單的呆帳資料
+        /// </summary>
+        [HttpGet("Fina_BDebt_Spec_SQuery")]
+        public ActionResult<ResultClass<string>> Fina_BDebt_Spec_SQuery(string? Name, string? FID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
 
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
+                #region SQL
+                var T_SQL = @"select distinct H.CS_name,H.CS_PID,M.RCM_id,M.sett_AMT,M.amount_total,null as RemainingPrincipal 
+                              from Receivable_M M
+                              Inner join Receivable_D D on M.RCM_id = D.RCM_id
+                              Inner join House_apply H on H.HA_id = M.HA_id
+                              where not exists(select 1 from StagnationDebt_M where rcm_id = M.RCM_id and del_tag='0')";
+                var parameters = new List<SqlParameter>();
+                if (!string.IsNullOrEmpty(Name))
+                {
+                    T_SQL += " AND H.CS_name LIKE '%' + @Name + '%'  ";
+                    parameters.Add(new SqlParameter("@Name", Name));
+                }
+                if (!string.IsNullOrEmpty(FID))
+                {
+                    T_SQL += " AND H.CS_PID=@FID";
+                    parameters.Add(new SqlParameter("@FID", FID));
+                }
+                #endregion
+                var result = _adoData.ExecuteQuery(T_SQL,parameters).AsEnumerable().Select(row => new
+                {
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    RCM_id = row.Field<decimal>("RCM_id"),
+                    sett_AMT = row.Field<int?>("sett_AMT") ?? 0,
+                    amount_total = row.Field<decimal?>("amount_total") ?? 0,
+                    RemainingPrincipal = row.Field<decimal?>("RemainingPrincipal") ?? 0
+                }).ToList();
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
     }
 }

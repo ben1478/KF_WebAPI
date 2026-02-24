@@ -22,6 +22,8 @@
         public string str_total_due_amount { get; set; }
         public string str_total_paid_amount { get; set; }
         public string str_total_bad_debt { get; set; }
+        public string? HG_Name { get; set; }
+        public string? HG_PID { get; set; }
         public List<StagnationDebt_D>? SDList { get; set; }
     }
 
