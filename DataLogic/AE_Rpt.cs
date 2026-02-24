@@ -2260,8 +2260,8 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 			   when DiffDay between 61 and 90 then 'M2' 
 			   when DiffDay >90 then 'M3'end DiffType
  from (
-	SELECT project_title,substring(HA.CS_name,1,1)+'XX' CS_name,format(RC_date,'yyyy/MM/dd')RC_date,
-             pro_name, DATEDIFF(DAY, RD.RC_date, SYSDATETIME()) DiffDay,RM.amount_total
+	SELECT project_title,HA.CS_name,format(RC_date,'yyyy/MM/dd')RC_date,
+             pro_name, DATEDIFF(DAY, RD.RC_date, @BaseDate) DiffDay,RM.amount_total
       FROM
       (SELECT RCM_id,min(RC_count) RC_count,min(RC_date) RC_date
          FROM Receivable_D WHERE del_tag = '0' AND check_pay_type='N'AND bad_debt_type='N'
