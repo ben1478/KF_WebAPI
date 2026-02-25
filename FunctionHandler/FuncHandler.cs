@@ -1392,6 +1392,13 @@ namespace KF_WebAPI.FunctionHandler
                                     }
                                 }
                                 //早退
+                                #region 年假提早走
+                                if (items[j].attendance_week == "02/13 (五)")
+                                {
+                                    items[j].early = 0;
+                                }
+                                #endregion
+
                                 if (!isRest)
                                 {
                                     #region 因為消毒所以12/19 5F人員提早下班不算曠職
@@ -1404,12 +1411,6 @@ namespace KF_WebAPI.FunctionHandler
                                         }
                                     }
                                     #endregion
-                                    #region 年假提早走
-                                    if (items[j].attendance_week == "02/13 (五)")
-                                    {
-                                        items[j].early = 0;
-                                    }
-                                    #endregion
                                     if (items[j].early > 0)
                                     {
                                         decimal earlyHour = Convert.ToInt32(items[j].early) / 60m;
@@ -1420,6 +1421,7 @@ namespace KF_WebAPI.FunctionHandler
                                     }
 
                                 }
+                                
                                 //到職日
                                 if (items[j].arrive_date.HasValue && items[j].attendance_date == items[j].arrive_date.Value.ToString("yyyy/MM/dd"))
                                 {
