@@ -22,7 +22,7 @@ namespace KF_WebAPI.BaseClass.AE
         public decimal FR_D_ratio_B { get; set; }
         public string FR_D_rate { get; set; }
         public string FR_D_discount { get; set; } 
-        public string FR_D_replace { get; set; }    
+        public string? FR_D_replace { get; set; }    
     }
 
     public class Feat_M_req
