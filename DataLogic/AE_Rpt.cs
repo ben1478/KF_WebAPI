@@ -1,5 +1,6 @@
 ﻿using KF_WebAPI.BaseClass;
 using KF_WebAPI.BaseClass.AE;
+using KF_WebAPI.Controllers;
 using KF_WebAPI.FunctionHandler;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
@@ -17,6 +18,7 @@ namespace KF_WebAPI.DataLogic
     public class AE_Rpt
     {
         ADOData _adoData = new ADOData();
+        FuncHandler _Fun = new FuncHandler();
 
         /// <summary>
         /// 取得機車分期總表
@@ -2392,5 +2394,100 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 throw;
             }
         }
+
+        public List<Receivable_Win_Inv> GetRecForWin (IFormFile file)
+        {
+            List<Receivable_Win_Inv> ReceivableWinList = new List<Receivable_Win_Inv>();
+            try
+            {
+                using (var stream = new MemoryStream())
+                {
+                    file.CopyToAsync(stream);
+                    stream.Position = 0;
+
+                    using (var package = new ExcelPackage(stream))
+                    {
+                        var worksheet = package.Workbook.Worksheets[0];
+                        var rowCount = worksheet.Dimension.Rows;
+
+                        for (int row = 2; row <= rowCount; row++)
+                        {
+                            var item = new
+                            {
+                                Col1 = worksheet.Cells[row, 1].Text,
+                                Col2 = worksheet.Cells[row, 2].Text,
+                                Col3 = worksheet.Cells[row, 3].Text
+                            };
+
+                            var T_SQL = "";
+                            if (!string.IsNullOrEmpty(item.Col1))
+                            {
+                                if (string.IsNullOrEmpty(item.Col3))
+                                {
+                                    T_SQL = @"select top 1  * 
+                                          from Receivable_M RM
+                                          inner join Receivable_D RD ON RD.RCM_id = RM.RCM_id and RD.del_tag = 0
+                                          inner join House_apply HA ON HA.HA_id = RM.HA_id
+                                          where RM.del_tag = 0 and check_pay_type = 'N' and cancel_type <> 'Y' and bad_debt_type = 'N'
+                                          and HA.CS_PID = @CS_PID
+                                          order by RC_date,RC_count";
+                                }
+                                else
+                                {
+                                    T_SQL = @"select H.*,D.*,M.amount_per_month,M.HS_id,amount_total,month_total from (select HA_id,CS_Name,CS_PID from House_apply where CS_PID= @CS_PID) H
+                                          left join House_sendcase S on H.HA_id=S.HA_id                                           
+                                          left join Receivable_M M on H.HA_id=M.HA_id 
+                                          left join (
+                                          select * from Receivable_D where cast(RCM_id as varchar)+'-'+ cast( (RC_count) as varchar) in 
+                                          (/*抓出最近一期沒繳款的資料*/
+                                          select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) as varchar)RC_count 
+                                          from Receivable_D where check_pay_type ='N' group by RCM_id
+                                          union all
+                                          select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) +1 as varchar)RC_count 
+                                          from Receivable_D where check_pay_type ='N' group by RCM_id)
+                                          ) D on M.RCM_id=D.RCM_id
+                                          where RCM_note not like '%清償%' and D.check_pay_type ='N' and M.del_tag='0' and D.del_tag='0' 
+                                          and S.del_tag='0' and fund_company='FDCOM003'
+                                          order by RC_date";
+                                }
+
+                                var parameters = new List<SqlParameter>
+                                {
+                                    new SqlParameter("@CS_PID",item.Col1)
+                                };
+                                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Win_Inv
+                                {
+                                    HS_id = row.Field<decimal>("HS_id"),
+                                    RCD_id = row.Field<decimal>("RCD_id"),
+                                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                                    CS_PID = row.Field<string>("CS_PID"),
+                                    RC_count = row.Field<int>("RC_count"),
+                                    roc_RC_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("RC_date").ToString("yyyy/MM/dd")),
+                                    amount_per_month = row.Field<decimal>("amount_per_month"),
+                                    interest = row.Field<decimal>("interest"),
+                                    Rmoney = row.Field<decimal>("Rmoney"),
+                                    HFees = 20,
+                                    Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
+                                    amount_total = row.Field<decimal>("amount_total"),
+                                    month_total = row.Field<int>("month_total")
+                                }).ToList();
+                                ReceivableWinList.AddRange(result);
+                            }
+                            
+                        }
+                    }
+                }
+                
+                return ReceivableWinList;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+            
+        }
+
+       
     }
 }

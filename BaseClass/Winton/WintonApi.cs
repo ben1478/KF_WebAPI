@@ -195,4 +195,40 @@ namespace KF_WebAPI.BaseClass.Winton
         public double? SU01812 { get; set; }
     }
 
+    public class ReceivableForInv_req
+    {
+        public string AToken { get; set; }
+        public string ADocType { get; set; }
+        public int AUpdateType { get; set; }
+        public string InvoiceGroup { get; set; }
+        public List<ReceivableForInv_M_req> ADataSetMaster { get; set; }
+
+        public List<ReceivableForInv_D_req> ADataSetDetail { get; set; }
+    }
+
+    public class ReceivableForInv_M_req
+    {
+        public string MF10003 { get; set; }
+        public string MF10004 { get; set; }
+        public string MF10008 { get; set; }
+        public string MF10010 { get; set; }
+        public string MF10011 { get; set; }
+        public string MF10012 { get; set; }
+        public string MF10018 { get; set; }
+        public string MF10022 { get; set; }
+        public string MF10059 { get; set; }
+        public string MF10066 { get; set; }
+        public string MF10091 { get; set; }
+        public string MF10093 { get; set; }
+        public string MF10094 { get; set; }
+    }
+
+    public class ReceivableForInv_D_req
+    {
+        public string DT10004 { get; set; }
+        public string DT10006 { get; set; }
+        public int DT10030 { get; set; }
+        public decimal DT10040 { get; set; }
+        public string DT10021 { get; set; }
+    }
 }

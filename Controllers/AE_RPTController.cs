@@ -35,7 +35,7 @@ namespace KF_WebAPI.Controllers
     public class AE_RPTController : Controller
     {
         AE_Rpt _Rpt = new AE_Rpt();
-
+        
         #region 業績報表_日報表
         /// <summary>
         /// 業績報表_日報表
@@ -6793,6 +6793,26 @@ namespace KF_WebAPI.Controllers
         }
         #endregion
 
+        #region 上傳文中發票
+        [HttpPost("GetRecForWin")]
+        public async Task<IActionResult> GetRecForWin(IFormFile file)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var result = _Rpt.GetRecForWin(file);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
 
         /// <summary>
         /// 取得汽機車逾期資訊

@@ -16,6 +16,7 @@ using System.Reflection;
 using OfficeOpenXml.FormulaParsing.LexicalAnalysis;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
+using static OfficeOpenXml.ExcelErrorValue;
 
 namespace KF_WebAPI.Controllers
 {
@@ -309,6 +310,103 @@ namespace KF_WebAPI.Controllers
                 _fun.ExtAPILogIns(apiCode, "eToken", FormID, "", "", "500", $" error: Failed to get token");
                 throw new Exception("Failed to get token.");
             }
+        }
+
+        [HttpPost("SendReceivableForInv")]
+        public async Task<ResultClass<string>> SendReceivableForInv([FromBody] List<Receivable_Win_Inv> List)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var result = await GetLoginToken(ACompNo);
+
+                if (result is OkObjectResult okResult)
+                {
+                    var apiName = "rest/TdmServerMethodsIN/ImpWD4MF10";
+                    var url = urlBase + apiName;
+
+                    foreach (var item in List) 
+                    {
+                        #region maping
+                        ReceivableForInv_req model = new ReceivableForInv_req();
+                        model.AToken = okResult.Value.ToString();
+                        model.ADocType = "20";
+                        model.AUpdateType = 0;
+                        model.InvoiceGroup = "01";
+
+                        model.ADataSetMaster = new List<ReceivableForInv_M_req>();
+                        model.ADataSetDetail = new List<ReceivableForInv_D_req>();
+
+                        ReceivableForInv_M_req model_M = new ReceivableForInv_M_req();
+                        model_M.MF10003 = "S" + item.HS_id + "-" + item.RC_count.ToString("D3");
+                        model_M.MF10004 = DateTime.Now.ToString("yyyy-MM-dd");
+                        model_M.MF10008 = item.CS_PID;
+                        model_M.MF10010 = "00";
+                        model_M.MF10011 = "00";
+                        model_M.MF10012 = "";
+                        model_M.MF10018 = "2";
+                        model_M.MF10022 = "20";
+                        model_M.MF10059 = "1";
+                        model_M.MF10066 = DateTime.Now.ToString("yyyy-MM-dd");
+                        model_M.MF10091 = "N";
+                        model_M.MF10093 = "Y";
+                        model_M.MF10094 = "Y";
+                        model.ADataSetMaster.Add(model_M);
+
+                        ReceivableForInv_D_req model_D1 = new ReceivableForInv_D_req();
+                        model_D1.DT10004 = model_M.MF10003;
+                        model_D1.DT10006 = "002";
+                        model_D1.DT10030 = 1;
+                        model_D1.DT10040 = item.interest;
+                        model_D1.DT10021 = (item.amount_total / 10000) + "萬" + "(" + item.RC_count + "/" + item.month_total + ")";
+                        model.ADataSetDetail.Add(model_D1);
+
+                        ReceivableForInv_D_req model_D2 = new ReceivableForInv_D_req();
+                        model_D2.DT10004 = model_M.MF10003;
+                        model_D2.DT10006 = "003";
+                        model_D2.DT10030 = 1;
+                        model_D2.DT10040 = 20;
+                        model_D2.DT10021 = (item.amount_total / 10000) + "萬" + "(" + item.RC_count + "/" + item.month_total + ")";
+                        model.ADataSetDetail.Add(model_D2);
+                        #endregion
+
+                        var jsonData = "";
+                        jsonData = JsonConvert.SerializeObject(model);
+                        var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+
+                        var response = await _httpClient.PostAsync(url, content);
+                        response.EnsureSuccessStatusCode();
+
+                        var responseContent = await response.Content.ReadAsStringAsync();
+                        var responJson = JObject.Parse(responseContent);
+
+                        string errmsg = "";
+                        string Status = (string)responJson["status"];
+                        if (Status == "200")
+                        {
+                            errmsg = "成功 "+ (string)responJson["data"]["result"][0]["errmsg"];
+                        }
+                        else
+                        {
+                            errmsg = "失敗 " + (string)responJson["data"]["result"][0]["errmsg"];
+                        }
+                        item.Win_Msg = errmsg;
+
+                        _fun.ExtAPILogIns(apiCode, "ImpWD4MF10", model_M.MF10003, model.AToken, jsonData, Status, JsonConvert.SerializeObject(responJson));
+                       
+
+                    }
+                }
+
+                resultClass.objResult = JsonConvert.SerializeObject(List);
+                return resultClass;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+            
         }
 
     }
