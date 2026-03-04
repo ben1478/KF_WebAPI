@@ -18,6 +18,8 @@ using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using static OfficeOpenXml.ExcelErrorValue;
 using System.Collections.Generic;
+using KF_WebAPI.Service;
+using Grpc.Core;
 
 namespace KF_WebAPI.Controllers
 {
@@ -227,100 +229,20 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-        private async Task<Manufacturer_req> Manufacturer_Map(string strType, string FormID)
-        {
-            var result = await GetLoginToken(ACompNo);
-
-            if (result is OkObjectResult okResult)
-            {
-                var token = okResult.Value.ToString();
-
-                Manufacturer_req model = new Manufacturer_req();
-                model.AToken = token;
-                model.AUpdateType = "0";
-                model.ADataSet = new Manufacturer_M_req();
-                ADOData _adoData = new ADOData();
-                //來源為廠商資料
-                if (strType == "1")
-                {
-                    #region SQL
-                    var T_SQL = @"select * from Manufacturer where MF_ID=@MF_ID";
-                    var parameters = new List<SqlParameter>
-                    {
-                        new SqlParameter("@MF_ID", FormID)
-                    };
-                    #endregion
-                    var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
-
-                    model.ADataSet.SU01001 = dtResult.Rows[0]["MF_ID"].ToString();
-                    model.ADataSet.SU01002 = strType;
-                    model.ADataSet.SU01082 = dtResult.Rows[0]["MF_ID"].ToString();
-                    model.ADataSet.SU01004 = dtResult.Rows[0]["Company_name"].ToString();
-                    model.ADataSet.SU01003 = dtResult.Rows[0]["Company_name"].ToString();
-                    model.ADataSet.SU01007 = dtResult.Rows[0]["Company_number"].ToString();
-                    model.ADataSet.SU01011 = dtResult.Rows[0]["Company_addr"] != DBNull.Value ? dtResult.Rows[0]["Company_addr"].ToString() : null;
-                    model.ADataSet.SU01010 = dtResult.Rows[0]["Company_busin"] != DBNull.Value ? dtResult.Rows[0]["Company_busin"].ToString() : null;
-                    model.ADataSet.SU01014 = dtResult.Rows[0]["Company_tel"] != DBNull.Value ? dtResult.Rows[0]["Company_tel"].ToString() : null;
-                    model.ADataSet.SU01016 = dtResult.Rows[0]["Company_fax"] != DBNull.Value ? dtResult.Rows[0]["Company_fax"].ToString() : null;
-                }
-
-                //來源為客戶資料
-                if(strType == "2")
-                {
-                    #region SQL
-                    var T_SQL = @"select Item_list.item_D_code as U_BC_Show,* from House_apply 
-                                  left join User_M on House_apply.plan_num = User_M.U_num
-                                  left join User_Spec_Group on House_apply.plan_num = User_Spec_Group.U_num
-                                  left join Item_list on item_M_code='winton_company' and item_D_txt_A = ISNULL(User_Spec_Group.Spec_Group,User_M.U_BC)
-                                  where HA_id=@HA_id";
-                    var parameters = new List<SqlParameter>
-                    {
-                        new SqlParameter("@HA_id", FormID)
-                    };
-                    #endregion
-                    var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
-                    model.ADataSet.SU01001 = dtResult.Rows[0]["CS_PID"].ToString();
-                    model.ADataSet.SU01002 = strType;
-                    model.ADataSet.SU01003 = dtResult.Rows[0]["CS_name"].ToString();
-                    model.ADataSet.SU01004 = dtResult.Rows[0]["CS_name"].ToString();
-
-                    model.ADataSet.SU01011 = dtResult.Rows[0]["CS_register_address"].ToString();
-                    model.ADataSet.SU01019 = dtResult.Rows[0]["CS_MTEL1"].ToString();
-                    model.ADataSet.SU01029 = dtResult.Rows[0]["U_BC_Show"].ToString();
-                    model.ADataSet.SU01038 = "2";
-
-                    model.ADataSet.SU01076 = 1;
-                    model.ADataSet.SU01082 = dtResult.Rows[0]["CS_PID"].ToString();
-                    model.ADataSet.SU01096 = dtResult.Rows[0]["CS_EMAIL"].ToString();
-                    model.ADataSet.SU01107 = "B";
-                    model.ADataSet.SU01110 = "1";
-                    model.ADataSet.SU01112 = "Y";
-
-                    //存入載具
-                    if (dtResult.Rows[0]["IsVehicle"].ToString() == "Y")
-                    {
-                        model.ADataSet.SU01123 = 1;
-                        model.ADataSet.SU01124 = "EJ0110";
-                        model.ADataSet.SU01125 = dtResult.Rows[0]["Vehicle"].ToString();
-                    }
-                }
-                return model;
-            }
-            else
-            {
-                _fun.ExtAPILogIns(apiCode, "eToken", FormID, "", "", "500", $" error: Failed to get token");
-                throw new Exception("Failed to get token.");
-            }
-        }
-
+        /// <summary>
+        /// 自動呼叫文中開立應收帳款發票
+        /// </summary>
         [HttpPost("SendReceivableForInv")]
         public async Task<ResultClass<string>> SendReceivableForInv([FromBody] List<Receivable_Win_Inv> List)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
-
+            ReceivableForInv_req model = new ReceivableForInv_req();
+            ReceivableForInv_M_req model_M = new ReceivableForInv_M_req();
             try
             {
+              
+
                 var result = await GetLoginToken(ACompNo);
 
                 if (result is OkObjectResult okResult)
@@ -331,7 +253,7 @@ namespace KF_WebAPI.Controllers
                     foreach (var item in List) 
                     {
                         #region maping
-                        ReceivableForInv_req model = new ReceivableForInv_req();
+                        
                         model.AToken = okResult.Value.ToString();
                         model.ADocType = "20";
                         model.AUpdateType = 0;
@@ -340,7 +262,7 @@ namespace KF_WebAPI.Controllers
                         model.ADataSetMaster = new List<ReceivableForInv_M_req>();
                         model.ADataSetDetail = new List<ReceivableForInv_D_req>();
 
-                        ReceivableForInv_M_req model_M = new ReceivableForInv_M_req();
+                        
                         model_M.MF10003 = "S" + item.HS_id + "-" + item.RC_count.ToString("D3");
                         model_M.MF10004 = DateTime.Now.ToString("yyyy-MM-dd");
                         model_M.MF10008 = item.CS_PID;
@@ -413,13 +335,108 @@ namespace KF_WebAPI.Controllers
                 resultClass.objResult = JsonConvert.SerializeObject(List);
                 return resultClass;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _fun.ExtAPILogIns(apiCode, "ImpWD4MF10", model_M.MF10003, model.AToken, ex.Message, "500", ex.Message);
                 throw;
             }
         }
 
-        private async Task<string> GetSalesOrder(string Token,string ID)
+        /// <summary>
+        /// 自動呼叫文中開立清償發票
+        /// </summary>
+        //public async Task<IActionResult> SendSettInfo()
+        //{
+
+        //}
+
+        private async Task<Manufacturer_req> Manufacturer_Map(string strType, string FormID)
+        {
+            var result = await GetLoginToken(ACompNo);
+
+            if (result is OkObjectResult okResult)
+            {
+                var token = okResult.Value.ToString();
+
+                Manufacturer_req model = new Manufacturer_req();
+                model.AToken = token;
+                model.AUpdateType = "0";
+                model.ADataSet = new Manufacturer_M_req();
+                ADOData _adoData = new ADOData();
+                //來源為廠商資料
+                if (strType == "1")
+                {
+                    #region SQL
+                    var T_SQL = @"select * from Manufacturer where MF_ID=@MF_ID";
+                    var parameters = new List<SqlParameter>
+                    {
+                        new SqlParameter("@MF_ID", FormID)
+                    };
+                    #endregion
+                    var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+
+                    model.ADataSet.SU01001 = dtResult.Rows[0]["MF_ID"].ToString();
+                    model.ADataSet.SU01002 = strType;
+                    model.ADataSet.SU01082 = dtResult.Rows[0]["MF_ID"].ToString();
+                    model.ADataSet.SU01004 = dtResult.Rows[0]["Company_name"].ToString();
+                    model.ADataSet.SU01003 = dtResult.Rows[0]["Company_name"].ToString();
+                    model.ADataSet.SU01007 = dtResult.Rows[0]["Company_number"].ToString();
+                    model.ADataSet.SU01011 = dtResult.Rows[0]["Company_addr"] != DBNull.Value ? dtResult.Rows[0]["Company_addr"].ToString() : null;
+                    model.ADataSet.SU01010 = dtResult.Rows[0]["Company_busin"] != DBNull.Value ? dtResult.Rows[0]["Company_busin"].ToString() : null;
+                    model.ADataSet.SU01014 = dtResult.Rows[0]["Company_tel"] != DBNull.Value ? dtResult.Rows[0]["Company_tel"].ToString() : null;
+                    model.ADataSet.SU01016 = dtResult.Rows[0]["Company_fax"] != DBNull.Value ? dtResult.Rows[0]["Company_fax"].ToString() : null;
+                }
+
+                //來源為客戶資料
+                if (strType == "2")
+                {
+                    #region SQL
+                    var T_SQL = @"select Item_list.item_D_code as U_BC_Show,* from House_apply 
+                                  left join User_M on House_apply.plan_num = User_M.U_num
+                                  left join User_Spec_Group on House_apply.plan_num = User_Spec_Group.U_num
+                                  left join Item_list on item_M_code='winton_company' and item_D_txt_A = ISNULL(User_Spec_Group.Spec_Group,User_M.U_BC)
+                                  where HA_id=@HA_id";
+                    var parameters = new List<SqlParameter>
+                    {
+                        new SqlParameter("@HA_id", FormID)
+                    };
+                    #endregion
+                    var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                    model.ADataSet.SU01001 = dtResult.Rows[0]["CS_PID"].ToString();
+                    model.ADataSet.SU01002 = strType;
+                    model.ADataSet.SU01003 = dtResult.Rows[0]["CS_name"].ToString();
+                    model.ADataSet.SU01004 = dtResult.Rows[0]["CS_name"].ToString();
+
+                    model.ADataSet.SU01011 = dtResult.Rows[0]["CS_register_address"].ToString();
+                    model.ADataSet.SU01019 = dtResult.Rows[0]["CS_MTEL1"].ToString();
+                    model.ADataSet.SU01029 = dtResult.Rows[0]["U_BC_Show"].ToString();
+                    model.ADataSet.SU01038 = "2";
+
+                    model.ADataSet.SU01076 = 1;
+                    model.ADataSet.SU01082 = dtResult.Rows[0]["CS_PID"].ToString();
+                    model.ADataSet.SU01096 = dtResult.Rows[0]["CS_EMAIL"].ToString();
+                    model.ADataSet.SU01107 = "B";
+                    model.ADataSet.SU01110 = "1";
+                    model.ADataSet.SU01112 = "Y";
+
+                    //存入載具
+                    if (dtResult.Rows[0]["IsVehicle"].ToString() == "Y")
+                    {
+                        model.ADataSet.SU01123 = 1;
+                        model.ADataSet.SU01124 = "EJ0110";
+                        model.ADataSet.SU01125 = dtResult.Rows[0]["Vehicle"].ToString();
+                    }
+                }
+                return model;
+            }
+            else
+            {
+                _fun.ExtAPILogIns(apiCode, "eToken", FormID, "", "", "500", $" error: Failed to get token");
+                throw new Exception("Failed to get token.");
+            }
+        }
+
+        private async Task<string> GetSalesOrder(string Token, string ID)
         {
             var apiName = "rest/TdmServerMethodsIN/ExpWD4MF10";
             var url = urlBase + apiName;
@@ -461,7 +478,8 @@ namespace KF_WebAPI.Controllers
 
                 throw;
             }
-            
+
         }
+
     }
 }
