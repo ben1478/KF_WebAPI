@@ -6793,6 +6793,52 @@ namespace KF_WebAPI.Controllers
         }
         #endregion
 
+        #region 房貸專案總表
+        /// <summary>
+        /// 取得房貸分期總表
+        /// </summary>
+        [HttpPost("GetHouseSummaryList")]
+        public ActionResult<ResultClass<string>> GetHouseSummaryList(Carcase_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var result = _Rpt.GetHouseSummaryList(model);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 匯出房貸分期Excel
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("GetHouseSummaryExcel")]
+        public IActionResult GetHouseSummaryExcel(Carcase_req model)
+        {
+            try
+            {
+                var fileBytes = _Rpt.GetHouseSummaryExcel(model);
+                var fileName = "房貸分期貸款總表" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
+
+
         #region 上傳文中發票
         [HttpPost("GetRecForWin")]
         public async Task<IActionResult> GetRecForWin(IFormFile file)
