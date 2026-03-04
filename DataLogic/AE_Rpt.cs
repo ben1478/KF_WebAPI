@@ -1,9 +1,12 @@
 ﻿using KF_WebAPI.BaseClass;
 using KF_WebAPI.BaseClass.AE;
+using KF_WebAPI.BaseClass.Winton;
 using KF_WebAPI.Controllers;
 using KF_WebAPI.FunctionHandler;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Newtonsoft.Json;
 using OfficeOpenXml;
 using System;
 using System.Collections;
@@ -2395,9 +2398,12 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             }
         }
 
-        public List<Receivable_Win_Inv> GetRecForWin (IFormFile file)
+        public ResultClass<string> GetRecForWin(IFormFile file)
         {
+            ResultClass<string> resultClass = new ResultClass<string>();
             List<Receivable_Win_Inv> ReceivableWinList = new List<Receivable_Win_Inv>();
+            List<WinInvFileRow> FileList = new List<WinInvFileRow>();
+
             try
             {
                 using (var stream = new MemoryStream())
@@ -2412,82 +2418,119 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
                         for (int row = 2; row <= rowCount; row++)
                         {
-                            var item = new
+                            if (string.IsNullOrWhiteSpace(worksheet.Cells[row, 1].Text))
+                                continue;
+
+                            var item = new WinInvFileRow
                             {
-                                Col1 = worksheet.Cells[row, 1].Text,
-                                Col2 = worksheet.Cells[row, 2].Text,
-                                Col3 = worksheet.Cells[row, 3].Text
+                                Col1 = worksheet.Cells[row, 1].Text.Trim(),
+                                Col2 = worksheet.Cells[row, 2].Text.Trim(),
+                                Col3 = worksheet.Cells[row, 3].Text.Trim()
                             };
 
-                            var T_SQL = "";
-                            if (!string.IsNullOrEmpty(item.Col1))
-                            {
-                                if (string.IsNullOrEmpty(item.Col3))
-                                {
-                                    T_SQL = @"select top 1  * 
-                                          from Receivable_M RM
-                                          inner join Receivable_D RD ON RD.RCM_id = RM.RCM_id and RD.del_tag = 0
-                                          inner join House_apply HA ON HA.HA_id = RM.HA_id
-                                          where RM.del_tag = 0 and check_pay_type = 'N' and cancel_type <> 'Y' and bad_debt_type = 'N'
-                                          and HA.CS_PID = @CS_PID
-                                          order by RC_date,RC_count";
-                                }
-                                else
-                                {
-                                    T_SQL = @"select H.*,D.*,M.amount_per_month,M.HS_id,amount_total,month_total from (select HA_id,CS_Name,CS_PID from House_apply where CS_PID= @CS_PID) H
-                                          left join House_sendcase S on H.HA_id=S.HA_id                                           
-                                          left join Receivable_M M on H.HA_id=M.HA_id 
-                                          left join (
-                                          select * from Receivable_D where cast(RCM_id as varchar)+'-'+ cast( (RC_count) as varchar) in 
-                                          (/*抓出最近一期沒繳款的資料*/
-                                          select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) as varchar)RC_count 
-                                          from Receivable_D where check_pay_type ='N' group by RCM_id
-                                          union all
-                                          select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) +1 as varchar)RC_count 
-                                          from Receivable_D where check_pay_type ='N' group by RCM_id)
-                                          ) D on M.RCM_id=D.RCM_id
-                                          where RCM_note not like '%清償%' and D.check_pay_type ='N' and M.del_tag='0' and D.del_tag='0' 
-                                          and S.del_tag='0' and fund_company='FDCOM003'
-                                          order by RC_date";
-                                }
+                            FileList.Add(item);
 
-                                var parameters = new List<SqlParameter>
+                            var T_SQL = "";
+                            if (string.IsNullOrEmpty(item.Col3))
+                            {
+                                T_SQL = @"select top 1  * 
+                                              from Receivable_M RM
+                                              inner join Receivable_D RD ON RD.RCM_id = RM.RCM_id and RD.del_tag = 0
+                                              inner join House_apply HA ON HA.HA_id = RM.HA_id
+                                              where RM.del_tag = 0 and check_pay_type = 'N' and cancel_type <> 'Y' and bad_debt_type = 'N'
+                                              and HA.CS_PID = @CS_PID and invoice_no is null
+                                              order by RC_date,RC_count";
+                            }
+                            else
+                            {
+                                T_SQL = @"select H.*,D.*,M.amount_per_month,M.HS_id,amount_total,month_total from (select HA_id,CS_Name,CS_PID from House_apply where CS_PID= @CS_PID) H
+                                              left join House_sendcase S on H.HA_id=S.HA_id                                           
+                                              left join Receivable_M M on H.HA_id=M.HA_id 
+                                              left join (
+                                              select * from Receivable_D where cast(RCM_id as varchar)+'-'+ cast( (RC_count) as varchar) in 
+                                              (/*抓出最近一期沒繳款的資料*/
+                                              select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) as varchar)RC_count 
+                                              from Receivable_D where check_pay_type ='N' and invoice_no is null group by RCM_id
+                                              union all
+                                              select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) +1 as varchar)RC_count 
+                                              from Receivable_D where check_pay_type ='N' and invoice_no is null group by RCM_id)
+                                              ) D on M.RCM_id=D.RCM_id
+                                              where RCM_note not like '%清償%' and D.check_pay_type ='N' and M.del_tag='0' and D.del_tag='0' 
+                                              and S.del_tag='0' and fund_company='FDCOM003'
+                                              order by RC_date";
+                            }
+
+                            var parameters = new List<SqlParameter>
                                 {
                                     new SqlParameter("@CS_PID",item.Col1)
                                 };
-                                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Win_Inv
-                                {
-                                    HS_id = row.Field<decimal>("HS_id"),
-                                    RCD_id = row.Field<decimal>("RCD_id"),
-                                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
-                                    CS_PID = row.Field<string>("CS_PID"),
-                                    RC_count = row.Field<int>("RC_count"),
-                                    roc_RC_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("RC_date").ToString("yyyy/MM/dd")),
-                                    amount_per_month = row.Field<decimal>("amount_per_month"),
-                                    interest = row.Field<decimal>("interest"),
-                                    Rmoney = row.Field<decimal>("Rmoney"),
-                                    HFees = 20,
-                                    Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
-                                    amount_total = row.Field<decimal>("amount_total"),
-                                    month_total = row.Field<int>("month_total")
-                                }).ToList();
-                                ReceivableWinList.AddRange(result);
-                            }
-                            
+                            var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Win_Inv
+                            {
+                                HS_id = row.Field<decimal>("HS_id"),
+                                RCD_id = row.Field<decimal>("RCD_id"),
+                                CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                                CS_PID = row.Field<string>("CS_PID"),
+                                RC_count = row.Field<int>("RC_count"),
+                                roc_RC_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("RC_date").ToString("yyyy/MM/dd")),
+                                amount_per_month = row.Field<decimal>("amount_per_month"),
+                                interest = row.Field<decimal>("interest"),
+                                Rmoney = row.Field<decimal>("Rmoney"),
+                                HFees = 20,
+                                Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
+                                amount_total = row.Field<decimal>("amount_total"),
+                                month_total = row.Field<int>("month_total"),
+                                RecPayDate = Convert.ToDateTime(item.Col2)
+                            }).ToList();
+                            ReceivableWinList.AddRange(result);
+
+                        }
+
+                        var missingInList = FileList.Where(f => !ReceivableWinList.Any(r => r.CS_PID == f.Col1)).ToList();
+
+                        // 判斷是否有缺失
+                        if (missingInList != null && missingInList.Count > 0)
+                        {
+                            var missingIds = string.Join(", ", missingInList.Select(f => f.Col1));
+                            resultClass.ResultMsg = "缺失: " + missingIds;
+                        }
+                        else
+                        {
+                            resultClass.ResultMsg = "查詢成功";
                         }
                     }
                 }
-                
-                return ReceivableWinList;
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(ReceivableWinList);
+                return resultClass;
             }
             catch (Exception)
             {
 
                 throw;
             }
-            
+
         }
 
-       
+        public void UpdWinToRecD(Receivable_Win_Inv model,string clientIp,string INV_NO)
+        {
+            try
+            {
+                var T_SQL = @"Update Receivable_D set RecPayDate = @RecPayDate,invoice_no=@invoice_no,invoice_date = getdate(),
+                              edit_date = getdate(),edit_num = @edit_num,edit_ip = @edit_ip where RCD_id = @RCD_id";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@RecPayDate",model.RecPayDate),
+                    new SqlParameter("@invoice_no",INV_NO),
+                    new SqlParameter("@edit_ip",clientIp),
+                    new SqlParameter("@edit_num",model.User),
+                    new SqlParameter("@RCD_id",model.RCD_id)
+                };
+                _adoData.ExecuteNonQuery(T_SQL, parameters);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
     }
 }

@@ -17,6 +17,7 @@ using OfficeOpenXml.FormulaParsing.LexicalAnalysis;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using static OfficeOpenXml.ExcelErrorValue;
+using System.Collections.Generic;
 
 namespace KF_WebAPI.Controllers
 {
@@ -210,12 +211,12 @@ namespace KF_WebAPI.Controllers
 
                 if (responseObject.Status == "200" && responseObject.Error == null)
                 {
-                    _fun.ExtAPILogIns(apiCode, apiName, model.ADataSet.SU01001, model.AToken, jsonData, "200", JsonConvert.SerializeObject(responseObject), User);
+                    _fun.ExtAPILogIns(apiCode, "ImpWD2SU01", model.ADataSet.SU01001, model.AToken, jsonData, "200", JsonConvert.SerializeObject(responseObject), User);
                     return Ok();
                 }
                 else
                 {
-                    _fun.ExtAPILogIns(apiCode, apiName, model.ADataSet.SU01001, model.AToken, jsonData, "500", JsonConvert.SerializeObject(responseObject), User);
+                    _fun.ExtAPILogIns(apiCode, "ImpWD2SU01", model.ADataSet.SU01001, model.AToken, jsonData, "500", JsonConvert.SerializeObject(responseObject), User);
                     return BadRequest();
                 }
             }
@@ -316,6 +317,8 @@ namespace KF_WebAPI.Controllers
         public async Task<ResultClass<string>> SendReceivableForInv([FromBody] List<Receivable_Win_Inv> List)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
             try
             {
                 var result = await GetLoginToken(ACompNo);
@@ -384,16 +387,25 @@ namespace KF_WebAPI.Controllers
                         string Status = (string)responJson["status"];
                         if (Status == "200")
                         {
-                            errmsg = "成功 "+ (string)responJson["data"]["result"][0]["errmsg"];
+                            errmsg = "成功 " + (string)responJson["data"]["result"][0]["errmsg"];
+
+                            #region 抓發票資料更新發票號碼
+                            string INV_NO = await GetSalesOrder(okResult.Value.ToString(), model_M.MF10003);
+                            #endregion
+
+                            #region 異動Receivable_D
+                            AE_Rpt _Rpt = new AE_Rpt();
+                            _Rpt.UpdWinToRecD(item, clientIp, INV_NO);
+                            #endregion
                         }
                         else
                         {
-                            errmsg = "失敗 " + (string)responJson["data"]["result"][0]["errmsg"];
+                            errmsg = "失敗 " + (string)responJson["error"];
                         }
                         item.Win_Msg = errmsg;
 
                         _fun.ExtAPILogIns(apiCode, "ImpWD4MF10", model_M.MF10003, model.AToken, jsonData, Status, JsonConvert.SerializeObject(responJson));
-                       
+
 
                     }
                 }
@@ -403,11 +415,53 @@ namespace KF_WebAPI.Controllers
             }
             catch (Exception)
             {
+                throw;
+            }
+        }
+
+        private async Task<string> GetSalesOrder(string Token,string ID)
+        {
+            var apiName = "rest/TdmServerMethodsIN/ExpWD4MF10";
+            var url = urlBase + apiName;
+
+            try
+            {
+                var INV_NO = "";
+
+                SalesOrder_req model = new SalesOrder_req();
+                model.AToken = Token;
+                model.ADocType = "20";
+                model.AExpRange = "2";
+                model.ANoB = ID;
+                model.ANoE = ID;
+
+                var jsonData = "";
+                jsonData = JsonConvert.SerializeObject(model);
+                var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync(url, content);
+                response.EnsureSuccessStatusCode();
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responJson = JObject.Parse(responseContent);
+
+                string Status = (string)responJson["status"];
+
+                if (Status == "200")
+                {
+                    INV_NO = (string)responJson["data"]["adatasetmaster"][0]["mf10019"];
+                }
+
+                _fun.ExtAPILogIns(apiCode, "ExpWD4MF10", ID, model.AToken, jsonData, Status, JsonConvert.SerializeObject(responJson));
+
+                return INV_NO;
+            }
+            catch (Exception)
+            {
 
                 throw;
             }
             
         }
-
     }
 }

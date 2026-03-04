@@ -231,4 +231,40 @@ namespace KF_WebAPI.BaseClass.Winton
         public decimal DT10040 { get; set; }
         public string DT10021 { get; set; }
     }
+
+    public class Receivable_Win_Inv
+    {
+        public decimal HS_id { get; set; }
+        public decimal RCD_id { get; set; }
+        public string CS_name { get; set; }
+        public string CS_PID { get; set; }
+        public int RC_count { get; set; }
+        public string roc_RC_date { get; set; }
+        public decimal amount_per_month { get; set; }
+        public decimal interest { get; set; }
+        public decimal Rmoney { get; set; }
+        public int? HFees { get; set; }
+        public decimal Ex_RemainingPrincipal { get; set; }
+        public decimal amount_total { get; set; }
+        public int month_total { get; set; }
+        public string? Win_Msg { get; set; }
+        public DateTime RecPayDate { get; set; }
+        public string? User { get; set; }
+    }
+
+    public class WinInvFileRow
+    {
+        public string Col1 { get; set; }
+        public string Col2 { get; set; }
+        public string Col3 { get; set; }
+    }
+
+    public class SalesOrder_req
+    {
+        public string AToken { get; set; }
+        public string ADocType { get; set; }
+        public string AExpRange { get; set; }
+        public string ANoB { get; set; }
+        public string ANoE { get; set; }
+    }
 }

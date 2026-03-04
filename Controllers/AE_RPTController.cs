@@ -6801,9 +6801,7 @@ namespace KF_WebAPI.Controllers
             try
             {
                 var result = _Rpt.GetRecForWin(file);
-                resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(result);
-                return Ok(resultClass);
+                return Ok(result);
             }
             catch (Exception ex)
             {

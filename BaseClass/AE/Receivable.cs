@@ -323,21 +323,7 @@
         public decimal TOT_total { get; set; }
         public decimal TOT_OV_Rate { get; set; }
     }
-    public class Receivable_Win_Inv
-    {
-        public decimal HS_id { get; set; }
-        public decimal RCD_id { get; set; }
-        public string CS_name { get; set; }
-        public string CS_PID { get; set; }
-        public int RC_count { get; set; }
-        public string roc_RC_date { get; set; }
-        public decimal amount_per_month { get; set; }
-        public decimal interest { get; set; }
-        public decimal Rmoney { get; set; }
-        public int? HFees { get; set; }
-        public decimal Ex_RemainingPrincipal { get; set; }
-        public decimal amount_total { get; set; }
-        public int month_total { get; set; }
-        public string? Win_Msg { get; set; }
-    }
+  
+
+   
 }
