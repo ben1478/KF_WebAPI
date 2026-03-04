@@ -365,7 +365,7 @@ namespace KF_WebAPI.Controllers
                             model_D1.DT10004 = model_M.MF10003;
                             model_D1.DT10006 = "005";
                             model_D1.DT10030 = 1;
-                            model_D1.DT10040 = item.interest;
+                            model_D1.DT10040 = item.Delay_AMT;
                             model.ADataSetDetail.Add(model_D1);
                         }
 
@@ -375,7 +375,7 @@ namespace KF_WebAPI.Controllers
                             model_D1.DT10004 = model_M.MF10003;
                             model_D1.DT10006 = "014";
                             model_D1.DT10030 = 1;
-                            model_D1.DT10040 = item.interest;
+                            model_D1.DT10040 = item.Interest_AMT;
                             model.ADataSetDetail.Add(model_D1);
                         }
 
@@ -392,7 +392,7 @@ namespace KF_WebAPI.Controllers
                                 model_D1.DT10006 = "006";
                             }
                             model_D1.DT10030 = 1;
-                            model_D1.DT10040 = item.interest;
+                            model_D1.DT10040 = item.Break_AMT;
                             model.ADataSetDetail.Add(model_D1);
                         }
 
