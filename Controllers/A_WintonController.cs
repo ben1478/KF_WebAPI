@@ -18,6 +18,7 @@ using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using static OfficeOpenXml.ExcelErrorValue;
 using System.Collections.Generic;
+using Grpc.Core;
 
 namespace KF_WebAPI.Controllers
 {
@@ -450,6 +451,8 @@ namespace KF_WebAPI.Controllers
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+            ReceivableForInv_req model = new ReceivableForInv_req();
+            ReceivableForInv_M_req model_M = new ReceivableForInv_M_req();
 
             try
             {
@@ -463,7 +466,7 @@ namespace KF_WebAPI.Controllers
                     foreach (var item in List) 
                     {
                         #region maping
-                        ReceivableForInv_req model = new ReceivableForInv_req();
+                      
                         model.AToken = okResult.Value.ToString();
                         model.ADocType = "20";
                         model.AUpdateType = 0;
@@ -472,7 +475,7 @@ namespace KF_WebAPI.Controllers
                         model.ADataSetMaster = new List<ReceivableForInv_M_req>();
                         model.ADataSetDetail = new List<ReceivableForInv_D_req>();
 
-                        ReceivableForInv_M_req model_M = new ReceivableForInv_M_req();
+                       
                         model_M.MF10003 = "S" + item.HS_id + "-" + item.RC_count.ToString("D3");
                         model_M.MF10004 = DateTime.Now.ToString("yyyy-MM-dd");
                         model_M.MF10008 = item.CS_PID;
@@ -545,8 +548,9 @@ namespace KF_WebAPI.Controllers
                 resultClass.objResult = JsonConvert.SerializeObject(List);
                 return resultClass;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _fun.ExtAPILogIns(apiCode, "ImpWD4MF10", model_M.MF10003, model.AToken, ex.Message, "500", ex.Message);
                 throw;
             }
         }

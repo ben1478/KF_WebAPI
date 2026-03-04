@@ -2731,11 +2731,13 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
         {
             try
             {
-                var T_SQL = @"Update Receivable_D set RecPayDate = @RecPayDate,invoice_no=@invoice_no,invoice_date = getdate(),
-                              edit_date = getdate(),edit_num = @edit_num,edit_ip = @edit_ip where RCD_id = @RCD_id";
+                var T_SQL = @"Update Receivable_D set RecPayDate = @RecPayDate,check_pay_date=@check_pay_date,check_pay_type = 'Y',check_pay_num = @check_pay_num,
+                              invoice_no=@invoice_no,invoice_date = getdate(),edit_date = getdate(),edit_num = @edit_num,edit_ip = @edit_ip where RCD_id = @RCD_id";
                 var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@RecPayDate",model.RecPayDate),
+                    new SqlParameter("@check_pay_date",model.RecPayDate),
+                    new SqlParameter("@check_pay_num",model.User),
                     new SqlParameter("@invoice_no",INV_NO),
                     new SqlParameter("@edit_ip",clientIp),
                     new SqlParameter("@edit_num",model.User),
