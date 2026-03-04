@@ -252,6 +252,30 @@ namespace KF_WebAPI.BaseClass.Winton
         public string? User { get; set; }
     }
 
+    public class PayOff_Win_Inv: Receivable_Win_Inv
+    {
+        /// <summary>
+        /// 違約金/作業費
+        /// </summary>
+        public decimal Break_AMT { get; set; }
+        /// <summary>
+        /// A:違約金;B:作業費
+        /// </summary>
+        public string Break_Type { get; set; }
+        /// <summary>
+        /// 結清利息
+        /// </summary>
+        public decimal Interest_AMT { get; set; }
+        /// <summary>
+        /// 延滯總利息
+        /// </summary>
+        public decimal Delay_AMT { get; set; }
+       
+
+    }
+
+
+
     public class WinInvFileRow
     {
         public string Col1 { get; set; }

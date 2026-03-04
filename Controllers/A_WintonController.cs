@@ -313,6 +313,138 @@ namespace KF_WebAPI.Controllers
             }
         }
 
+
+
+        [HttpPost("SendPayOffForInv")]
+        public async Task<ResultClass<string>> SendPayOffForInv([FromBody] List<PayOff_Win_Inv> List)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                var result = await GetLoginToken(ACompNo);
+
+                if (result is OkObjectResult okResult)
+                {
+                    var apiName = "rest/TdmServerMethodsIN/ImpWD4MF10";
+                    var url = urlBase + apiName;
+
+                    foreach (var item in List)
+                    {
+                        #region maping
+                        ReceivableForInv_req model = new ReceivableForInv_req();
+                        model.AToken = okResult.Value.ToString();
+                        model.ADocType = "20";
+                        model.AUpdateType = 0;
+                        model.InvoiceGroup = "01";
+
+                        model.ADataSetMaster = new List<ReceivableForInv_M_req>();
+                        model.ADataSetDetail = new List<ReceivableForInv_D_req>();
+
+                        ReceivableForInv_M_req model_M = new ReceivableForInv_M_req();
+                        model_M.MF10003 = "S" + item.HS_id + "-" + item.RC_count.ToString("D3");
+                        model_M.MF10004 = DateTime.Now.ToString("yyyy-MM-dd");
+                        model_M.MF10008 = item.CS_PID;
+                        model_M.MF10010 = "00";
+                        model_M.MF10011 = "00";
+                        model_M.MF10012 = "";
+                        model_M.MF10018 = "2";
+                        model_M.MF10022 = "20";
+                        model_M.MF10059 = "1";
+                        model_M.MF10066 = DateTime.Now.ToString("yyyy-MM-dd");
+                        model_M.MF10091 = "N";
+                        model_M.MF10093 = "Y";
+                        model_M.MF10094 = "Y";
+                        model.ADataSetMaster.Add(model_M);
+
+                       
+                        if (item.Delay_AMT > 0)//延滯總利息-005
+                        {
+                            ReceivableForInv_D_req model_D1 = new ReceivableForInv_D_req();
+                            model_D1.DT10004 = model_M.MF10003;
+                            model_D1.DT10006 = "005";
+                            model_D1.DT10030 = 1;
+                            model_D1.DT10040 = item.interest;
+                            model.ADataSetDetail.Add(model_D1);
+                        }
+
+                        if (item.Interest_AMT > 0)//結清利息-014
+                        {
+                            ReceivableForInv_D_req model_D1 = new ReceivableForInv_D_req();
+                            model_D1.DT10004 = model_M.MF10003;
+                            model_D1.DT10006 = "014";
+                            model_D1.DT10030 = 1;
+                            model_D1.DT10040 = item.interest;
+                            model.ADataSetDetail.Add(model_D1);
+                        }
+
+                        if (item.Break_AMT > 0)//違約金/作業費
+                        {
+                            ReceivableForInv_D_req model_D1 = new ReceivableForInv_D_req();
+                            model_D1.DT10004 = model_M.MF10003;
+                            if (item.Break_Type =="A")//A:違約金
+                            {
+                                model_D1.DT10006 = "004";
+                            }
+                            else///B:作業費
+                            {
+                                model_D1.DT10006 = "006";
+                            }
+                            model_D1.DT10030 = 1;
+                            model_D1.DT10040 = item.interest;
+                            model.ADataSetDetail.Add(model_D1);
+                        }
+
+
+                        #endregion
+
+                        var jsonData = "";
+                        jsonData = JsonConvert.SerializeObject(model);
+                        var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+
+                        var response = await _httpClient.PostAsync(url, content);
+                        response.EnsureSuccessStatusCode();
+
+                        var responseContent = await response.Content.ReadAsStringAsync();
+                        var responJson = JObject.Parse(responseContent);
+
+                        string errmsg = "";
+                        string Status = (string)responJson["status"];
+                        if (Status == "200")
+                        {
+                            errmsg = "成功 " + (string)responJson["data"]["result"][0]["errmsg"];
+
+                            #region 抓發票資料更新發票號碼
+                            string INV_NO = await GetSalesOrder(okResult.Value.ToString(), model_M.MF10003);
+                            #endregion
+
+                            #region 異動Receivable_D
+                            AE_Rpt _Rpt = new AE_Rpt();
+                            _Rpt.UpdWinToRecD(item, clientIp, INV_NO);
+                            #endregion
+                        }
+                        else
+                        {
+                            errmsg = "失敗 " + (string)responJson["error"];
+                        }
+                        item.Win_Msg = errmsg;
+
+                        _fun.ExtAPILogIns(apiCode, "ImpWD4MF10", model_M.MF10003, model.AToken, jsonData, Status, JsonConvert.SerializeObject(responJson));
+
+
+                    }
+                }
+
+                resultClass.objResult = JsonConvert.SerializeObject(List);
+                return resultClass;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         [HttpPost("SendReceivableForInv")]
         public async Task<ResultClass<string>> SendReceivableForInv([FromBody] List<Receivable_Win_Inv> List)
         {
