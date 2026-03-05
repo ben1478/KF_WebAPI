@@ -37,7 +37,8 @@ builder.Services.AddCors(options =>
             "https://kfserver-jwt.ngrok.pro",
             "http://192.168.1.240:8080",
             "http://192.168.1.240:8081",
-            "http://localhost:5000"
+            "http://localhost:5000",
+            "http://localhost:7135"
         )
         .AllowAnyMethod()
         .AllowAnyHeader()

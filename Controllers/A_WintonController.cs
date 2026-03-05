@@ -344,7 +344,7 @@ namespace KF_WebAPI.Controllers
                         model.ADataSetDetail = new List<ReceivableForInv_D_req>();
 
                         ReceivableForInv_M_req model_M = new ReceivableForInv_M_req();
-                        model_M.MF10003 = "S" + item.HS_id + "-" + item.RC_count.ToString("D3");
+                        model_M.MF10003 = "P" + item.HS_id + "-" + item.RC_count.ToString("D3");
                         model_M.MF10004 = DateTime.Now.ToString("yyyy-MM-dd");
                         model_M.MF10008 = item.CS_PID;
                         model_M.MF10010 = "00";
