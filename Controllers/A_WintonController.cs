@@ -527,14 +527,6 @@ namespace KF_WebAPI.Controllers
                         if (Status == "200")
                         {
                             errmsg = "成功 " + (string)responJson["data"]["result"][0]["errmsg"];
-
-                            #region 抓發票資料更新發票號碼
-                            string INV_NO = await GetSalesOrder(okResult.Value.ToString(), model_M.MF10003);
-                            #endregion
-
-                            #region 異動Receivable_D
-                            _Rpt.UpdWinToRecD(List[i], clientIp, INV_NO);
-                            #endregion
                         }
                         else
                         {
@@ -550,6 +542,16 @@ namespace KF_WebAPI.Controllers
                             _Rpt.UpdInvGp(yyyMM, GroupNo);
                             #endregion
                             i--;
+                        }
+                        else
+                        {
+                            #region 抓發票資料更新發票號碼
+                            string INV_NO = await GetSalesOrder(okResult.Value.ToString(), model_M.MF10003);
+                            #endregion
+
+                            #region 異動Receivable_D
+                            _Rpt.UpdWinToRecD(List[i], clientIp, INV_NO);
+                            #endregion
                         }
                     }
                 }
