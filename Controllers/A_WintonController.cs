@@ -422,7 +422,7 @@ namespace KF_WebAPI.Controllers
 
                             #region 異動Receivable_D
                             AE_Rpt _Rpt = new AE_Rpt();
-                            _Rpt.UpdWinToRecD(item, clientIp, INV_NO);
+                            _Rpt.UpdWinToRecD(item, clientIp, INV_NO,"S");
                             #endregion
                         }
                         else
@@ -463,10 +463,15 @@ namespace KF_WebAPI.Controllers
                     var apiName = "rest/TdmServerMethodsIN/ImpWD4MF10";
                     var url = urlBase + apiName;
 
-                    foreach (var item in List) 
-                    {
+                    
+
+                    for (int i = 0; i < List.Count; i++){
+
+                        #region 抓取可用的發票組別
+
+                        #endregion
+
                         #region maping
-                      
                         model.AToken = okResult.Value.ToString();
                         model.ADocType = "20";
                         model.AUpdateType = 0;
@@ -475,10 +480,9 @@ namespace KF_WebAPI.Controllers
                         model.ADataSetMaster = new List<ReceivableForInv_M_req>();
                         model.ADataSetDetail = new List<ReceivableForInv_D_req>();
 
-                       
-                        model_M.MF10003 = "S" + item.HS_id + "-" + item.RC_count.ToString("D3");
+                        model_M.MF10003 = "S" + List[i].HS_id + "-" + List[i].RC_count.ToString("D3");
                         model_M.MF10004 = DateTime.Now.ToString("yyyy-MM-dd");
-                        model_M.MF10008 = item.CS_PID;
+                        model_M.MF10008 = List[i].CS_PID;
                         model_M.MF10010 = "00";
                         model_M.MF10011 = "00";
                         model_M.MF10012 = "";
@@ -495,8 +499,8 @@ namespace KF_WebAPI.Controllers
                         model_D1.DT10004 = model_M.MF10003;
                         model_D1.DT10006 = "002";
                         model_D1.DT10030 = 1;
-                        model_D1.DT10040 = item.interest;
-                        model_D1.DT10021 = (item.amount_total / 10000) + "萬" + "(" + item.RC_count + "/" + item.month_total + ")";
+                        model_D1.DT10040 = List[i].interest;
+                        model_D1.DT10021 = (List[i].amount_total / 10000) + "萬" + "(" + List[i].RC_count + "/" + List[i].month_total + ")";
                         model.ADataSetDetail.Add(model_D1);
 
                         ReceivableForInv_D_req model_D2 = new ReceivableForInv_D_req();
@@ -504,7 +508,7 @@ namespace KF_WebAPI.Controllers
                         model_D2.DT10006 = "003";
                         model_D2.DT10030 = 1;
                         model_D2.DT10040 = 20;
-                        model_D2.DT10021 = (item.amount_total / 10000) + "萬" + "(" + item.RC_count + "/" + item.month_total + ")";
+                        model_D2.DT10021 = (List[i].amount_total / 10000) + "萬" + "(" + List[i].RC_count + "/" + List[i].month_total + ")";
                         model.ADataSetDetail.Add(model_D2);
                         #endregion
 
@@ -530,18 +534,21 @@ namespace KF_WebAPI.Controllers
 
                             #region 異動Receivable_D
                             AE_Rpt _Rpt = new AE_Rpt();
-                            _Rpt.UpdWinToRecD(item, clientIp, INV_NO);
+                            _Rpt.UpdWinToRecD(List[i], clientIp, INV_NO);
                             #endregion
                         }
                         else
                         {
                             errmsg = "失敗 " + (string)responJson["error"];
                         }
-                        item.Win_Msg = errmsg;
+                        List[i].Win_Msg = errmsg;
 
                         _fun.ExtAPILogIns(apiCode, "ImpWD4MF10", model_M.MF10003, model.AToken, jsonData, Status, JsonConvert.SerializeObject(responJson));
 
-
+                        if (errmsg.Contains("無可用的發票號碼"))
+                        {
+                            i--;
+                        }
                     }
                 }
 
