@@ -2756,7 +2756,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
         {
             try
             {
-                string KeyVal = "01";
+                string ColumnVal = "01";
                 var T_SQL = @"select * from LogTable where TableNA = 'Winton' and  KeyVal = @yyyMM and ColumnVal = @GpNO";
                 var parameters = new List<SqlParameter>
                 {
@@ -2781,10 +2781,33 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 }
                 else
                 {
-                    //KeyVal = 
+                    ColumnVal = model.ColumnVal;
                 }
 
-                return model.KeyVal;
+                return ColumnVal;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        public void UpdInvGp(string yyyMM, string GpNO)
+        {
+            try
+            {
+                int num = int.Parse(GpNO);
+                num++;
+
+                string ColumnVal = num.ToString("D2");
+
+                var T_SQL = @"Update LogTable set ColumnVal = @ColumnVal where TableNA = 'Winton' and  KeyVal = @yyyMM";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@KeyVal",yyyMM),
+                    new SqlParameter("@ColumnVal",ColumnVal)
+                };
             }
             catch (Exception)
             {

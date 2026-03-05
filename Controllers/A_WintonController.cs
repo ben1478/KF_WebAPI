@@ -453,6 +453,7 @@ namespace KF_WebAPI.Controllers
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
             ReceivableForInv_req model = new ReceivableForInv_req();
             ReceivableForInv_M_req model_M = new ReceivableForInv_M_req();
+            AE_Rpt _Rpt = new AE_Rpt();
 
             try
             {
@@ -463,19 +464,18 @@ namespace KF_WebAPI.Controllers
                     var apiName = "rest/TdmServerMethodsIN/ImpWD4MF10";
                     var url = urlBase + apiName;
 
-                    
-
                     for (int i = 0; i < List.Count; i++){
 
                         #region 抓取可用的發票組別
-
+                        string yyyMM = (DateTime.Now.Year - 1911).ToString() + DateTime.Now.Month.ToString("D2");
+                        var GroupNo = _Rpt.CheckInvGp(yyyMM, "01");
                         #endregion
 
                         #region maping
                         model.AToken = okResult.Value.ToString();
                         model.ADocType = "20";
                         model.AUpdateType = 0;
-                        model.InvoiceGroup = "01";
+                        model.InvoiceGroup = GroupNo;
 
                         model.ADataSetMaster = new List<ReceivableForInv_M_req>();
                         model.ADataSetDetail = new List<ReceivableForInv_D_req>();
@@ -533,7 +533,6 @@ namespace KF_WebAPI.Controllers
                             #endregion
 
                             #region 異動Receivable_D
-                            AE_Rpt _Rpt = new AE_Rpt();
                             _Rpt.UpdWinToRecD(List[i], clientIp, INV_NO);
                             #endregion
                         }
@@ -547,6 +546,9 @@ namespace KF_WebAPI.Controllers
 
                         if (errmsg.Contains("無可用的發票號碼"))
                         {
+                            #region 異動可用的發票組別
+                            _Rpt.UpdInvGp(yyyMM, GroupNo);
+                            #endregion
                             i--;
                         }
                     }
