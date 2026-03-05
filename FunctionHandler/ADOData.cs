@@ -74,7 +74,7 @@ namespace KF_WebAPI.FunctionHandler
             switch (p_DB)
             {
                 case "AE":
-                    ConnStr = "Data Source=ERP;Initial Catalog=AE_DB_TEST;User ID=sa;Password=juestcho;TrustServerCertificate=True;";
+                    ConnStr = "Data Source=ERP;Initial Catalog=AE_DB;User ID=sa;Password=juestcho;TrustServerCertificate=True;";
                     break;
                 case "Other":
                     ConnStr = "Data Source=ERP;Initial Catalog=Other;User ID=sa;Password=juestcho;";
