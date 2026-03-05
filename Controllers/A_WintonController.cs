@@ -422,7 +422,7 @@ namespace KF_WebAPI.Controllers
 
                             #region 異動Receivable_D
                             AE_Rpt _Rpt = new AE_Rpt();
-                            _Rpt.UpdWinToRecD(item, clientIp, INV_NO);
+                            _Rpt.UpdWinToRecD(item, clientIp, INV_NO,"S");
                             #endregion
                         }
                         else
