@@ -187,23 +187,23 @@ namespace KF_WebAPI.Controllers
         /// <summary>
         /// 財務抓取客戶繳款資料
         /// </summary>
-        public ActionResult<ResultClass<string>> Client_Pay_LQuery()
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
-            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+        //public ActionResult<ResultClass<string>> Client_Pay_LQuery()
+        //{
+        //    ResultClass<string> resultClass = new ResultClass<string>();
+        //    var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
 
-            try
-            {
-                resultClass.ResultCode = "000";
-                resultClass.ResultMsg = "變更成功";
-                return Ok(resultClass);
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
-            }
-        }
+        //    try
+        //    {
+        //        resultClass.ResultCode = "000";
+        //        resultClass.ResultMsg = "變更成功";
+        //        return Ok(resultClass);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        resultClass.ResultCode = "500";
+        //        resultClass.ResultMsg = $" response: {ex.Message}";
+        //        return StatusCode(500, resultClass);
+        //    }
+        //}
     }
 }
