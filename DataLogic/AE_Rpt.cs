@@ -2750,5 +2750,46 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 throw;
             }
         }
+
+        public string CheckInvGp(string yyyMM , string GpNO)
+        {
+            try
+            {
+                string KeyVal = "01";
+                var T_SQL = @"select * from LogTable where TableNA = 'Winton' and  KeyVal = @yyyMM and ColumnVal = @GpNO";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@yyyMM",yyyMM),
+                    new SqlParameter("@GpNO",GpNO)
+                };
+                var model = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
+                {
+                    KeyVal = row.Field<string>("KeyVal"),
+                    ColumnVal = row.Field<string>("ColumnVal")
+                }).FirstOrDefault();
+
+                if ( model == null)
+                {
+                    var T_SQL_in = @"Insert into LogTable (TableNA,KeyVal,ColumnVal,LogID,LogDate) values ('Winton',@yyyMM,@GpNO,'sys',getdate())";
+                    var parameters_in = new List<SqlParameter>
+                    {
+                        new SqlParameter("@yyyMM",yyyMM),
+                        new SqlParameter("@GpNO",GpNO)
+                    };
+                    _adoData.ExecuteNonQuery(T_SQL_in, parameters_in);
+                }
+                else
+                {
+                    KeyVal = 
+                }
+
+                return model.KeyVal;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
     }
 }
