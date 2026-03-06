@@ -1,4 +1,6 @@
-﻿namespace KF_WebAPI.BaseClass.AE
+﻿using KF_WebAPI.BaseClass.Winton;
+
+namespace KF_WebAPI.BaseClass.AE
 {
     public class Receivable_M
     {
@@ -324,6 +326,22 @@
         public decimal TOT_OV_Rate { get; set; }
     }
   
+    public class Receivable_Pay_req
+    {
+        public tbInfo? tbInfo { get; set; }
+        public string RC_Date_S { get; set; }
+        public string RC_Date_E { get; set; }
+    }
 
-   
+    public class Receivable_Pay_res: Receivable_Win_Inv
+    {
+        public int FileCount { get; set; }
+    }
+
+    public class Receivable_Pay_Ins: Receivable_Pay_res
+    {
+        public DateTime CP_pay_date { get; set; }
+        public string CP_account_last { get; set; }
+        public string CP_bus_remark { get; set; }   
+    }
 }
