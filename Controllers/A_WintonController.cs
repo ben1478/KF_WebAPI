@@ -397,7 +397,6 @@ namespace KF_WebAPI.Controllers
                             model.ADataSetDetail.Add(model_D1);
                         }
 
-
                         #endregion
 
                         var jsonData = "";
@@ -550,7 +549,7 @@ namespace KF_WebAPI.Controllers
                             #endregion
 
                             #region 異動Receivable_D
-                            _Rpt.UpdWinToRecD(List[i], clientIp, INV_NO);
+                            _Rpt.UpdWinToRecD(List[i], clientIp, INV_NO,"Y","B");
                             #endregion
                         }
                     }
@@ -558,6 +557,131 @@ namespace KF_WebAPI.Controllers
 
                 resultClass.objResult = JsonConvert.SerializeObject(List);
                 return resultClass;
+            }
+            catch (Exception ex)
+            {
+                _fun.ExtAPILogIns(apiCode, "ImpWD4MF10", model_M.MF10003, model.AToken, ex.Message, "500", ex.Message);
+                throw;
+            }
+        }
+
+        [HttpPost("SendPaySelfForInv")]
+        public async Task<ResultClass<string>> SendPaySelfForInv([FromBody] List<PaySelf_Win_Inv> List)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+            ReceivableForInv_req model = new ReceivableForInv_req();
+            ReceivableForInv_M_req model_M = new ReceivableForInv_M_req();
+            AE_Rpt _Rpt = new AE_Rpt();
+
+            try
+            {
+                var apiName = "rest/TdmServerMethodsIN/ImpWD4MF10";
+                var url = urlBase + apiName;
+
+                var result = await GetLoginToken(ACompNo);
+
+                if (result is OkObjectResult okResult)
+                {
+                    for (int i = 0; i < List.Count; i++)
+                    {
+                        #region 抓取可用的發票組別
+                        string yyyMM = (DateTime.Now.Year - 1911).ToString() + DateTime.Now.Month.ToString("D2");
+                        var GroupNo = _Rpt.CheckInvGp(yyyMM, "01");
+                        #endregion
+
+                        #region maping
+                        model.AToken = okResult.Value.ToString();
+                        model.ADocType = "20";
+                        model.AUpdateType = 0;
+                        model.InvoiceGroup = GroupNo;
+
+                        model.ADataSetMaster = new List<ReceivableForInv_M_req>();
+                        model.ADataSetDetail = new List<ReceivableForInv_D_req>();
+
+                        model_M.MF10003 = "S" + List[i].HS_id + "-" + List[i].RC_count.ToString("D3");
+                        model_M.MF10004 = DateTime.Now.ToString("yyyy-MM-dd");
+                        model_M.MF10008 = List[i].CS_PID;
+                        model_M.MF10010 = "00";
+                        model_M.MF10011 = "00";
+                        model_M.MF10012 = "";
+                        model_M.MF10018 = "2";
+                        model_M.MF10022 = "20";
+                        model_M.MF10059 = "1";
+                        model_M.MF10066 = DateTime.Now.ToString("yyyy-MM-dd");
+                        model_M.MF10091 = "N";
+                        model_M.MF10093 = "Y";
+                        model_M.MF10094 = "Y";
+                        model.ADataSetMaster.Add(model_M);
+
+                        ReceivableForInv_D_req model_D1 = new ReceivableForInv_D_req();
+                        model_D1.DT10004 = model_M.MF10003;
+                        model_D1.DT10006 = "002";
+                        model_D1.DT10030 = 1;
+                        model_D1.DT10040 = List[i].interest;
+                        model_D1.DT10021 = (List[i].amount_total / 10000) + "萬" + "(" + List[i].RC_count + "/" + List[i].month_total + ")";
+                        model.ADataSetDetail.Add(model_D1);
+
+                        ReceivableForInv_D_req model_D2 = new ReceivableForInv_D_req();
+                        model_D2.DT10004 = model_M.MF10003;
+                        model_D2.DT10006 = "003";
+                        model_D2.DT10030 = 1;
+                        model_D2.DT10040 = 20;
+                        model_D2.DT10021 = (List[i].amount_total / 10000) + "萬" + "(" + List[i].RC_count + "/" + List[i].month_total + ")";
+                        model.ADataSetDetail.Add(model_D2);
+                        #endregion
+
+                        var jsonData = "";
+                        jsonData = JsonConvert.SerializeObject(model);
+                        var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+
+                        var response = await _httpClient.PostAsync(url, content);
+                        response.EnsureSuccessStatusCode();
+
+                        var responseContent = await response.Content.ReadAsStringAsync();
+                        var responJson = JObject.Parse(responseContent);
+
+                        string errmsg = "";
+                        string Status = (string)responJson["status"];
+                        if (Status == "200")
+                        {
+                            errmsg = "成功 " + (string)responJson["data"]["result"][0]["errmsg"];
+                        }
+                        else
+                        {
+                            errmsg = "失敗 " + (string)responJson["error"];
+                        }
+                        List[i].Win_Msg = errmsg;
+
+                        _fun.ExtAPILogIns(apiCode, "ImpWD4MF10", model_M.MF10003, model.AToken, jsonData, Status, JsonConvert.SerializeObject(responJson));
+
+                        if (errmsg.Contains("無可用的發票號碼"))
+                        {
+                            #region 異動可用的發票組別
+                            _Rpt.UpdInvGp(yyyMM, GroupNo);
+                            #endregion
+                            i--;
+                        }
+                        else
+                        {
+                            #region 抓發票資料更新發票號碼
+                            //string INV_NO = await GetSalesOrder(okResult.Value.ToString(), model_M.MF10003);
+                            #endregion
+
+                            #region 異動Receivable_D
+                            //_Rpt.UpdWinToRecD(List[i], clientIp, INV_NO,"Y");
+                            #endregion
+
+                            #region 異動自主繳款資料
+                            _Rpt.UpdClientPay(List[i].RCD_id.ToString(), List[i].User);
+                            #endregion
+                        }
+                    }
+                }
+
+                resultClass.objResult = JsonConvert.SerializeObject(List);
+                return resultClass;
+
             }
             catch (Exception ex)
             {
