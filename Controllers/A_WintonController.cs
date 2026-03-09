@@ -338,7 +338,7 @@ namespace KF_WebAPI.Controllers
                         model.AToken = okResult.Value.ToString();
                         model.ADocType = "20";
                         model.AUpdateType = 0;
-                        model.InvoiceGroup = "01";
+                        model.InvoiceGroup = "02";
 
                         model.ADataSetMaster = new List<ReceivableForInv_M_req>();
                         model.ADataSetDetail = new List<ReceivableForInv_D_req>();
