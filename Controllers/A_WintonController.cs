@@ -665,11 +665,11 @@ namespace KF_WebAPI.Controllers
                         else
                         {
                             #region 抓發票資料更新發票號碼
-                            //string INV_NO = await GetSalesOrder(okResult.Value.ToString(), model_M.MF10003);
+                            string INV_NO = await GetSalesOrder(okResult.Value.ToString(), model_M.MF10003);
                             #endregion
 
                             #region 異動Receivable_D
-                            //_Rpt.UpdWinToRecD(List[i], clientIp, INV_NO,"Y");
+                            _Rpt.UpdWinToRecD(List[i], clientIp, INV_NO,"Y");
                             #endregion
 
                             #region 異動自主繳款資料
