@@ -6,6 +6,10 @@ using KF_WebAPI.FunctionHandler;
 using Microsoft.Data.SqlClient;
 using System.Diagnostics.Eventing.Reader;
 using System.Data;
+using KF_WebAPI.BaseClass.Winton;
+using Newtonsoft.Json;
+using System.Reflection;
+using System.Collections.Generic;
 
 namespace KF_WebAPI.Controllers
 {
@@ -180,30 +184,190 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-        //業務或業助抓取分期資料
+        /// <summary>
+        /// 業務或業助抓取待沖銷分期資料
+        /// </summary>
+        [HttpPost("Receivable_Pay_LQuery")]
+        public ActionResult<ResultClass<string>> Receivable_Pay_LQuery(Receivable_Pay_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            FuncHandler _Fun = new FuncHandler();
 
-        //業務新增客戶繳款資料
+            try
+            {
+                ADOData _adoData = new ADOData();
+
+                #region T_SQL
+                var T_SQL = @"select H.*,D.*,M.amount_per_month,M.HS_id,amount_total,month_total
+                              ,(select COUNT(*) from AE_Files where AE_Files.KeyID = 'P' + cast(D.RCD_id as varchar)) as FileCount
+                              from 
+                              (
+                                  select HA_id,CS_Name,CS_PID,plan_num FROM House_apply
+                              	  JOIN User_M ON House_apply.plan_num = User_M.U_num WHERE User_M.U_num = @user AND User_M.Role_num <> '1010'
+                              	  UNION ALL
+                              	  select HA_id,CS_Name,CS_PID,plan_num FROM House_apply h
+                              	  JOIN User_M u1 ON u1.U_num = @user
+                              	  JOIN User_M u2 ON u1.U_BC = u2.U_BC
+                              	  WHERE u1.Role_num = '1010' AND h.plan_num = u2.U_num
+                              ) H
+                              left join House_sendcase S on H.HA_id=S.HA_id                                           
+                              left join Receivable_M M on H.HA_id=M.HA_id 
+                              left join (
+                              select * from Receivable_D where cast(RCM_id as varchar)+'-'+ cast( (RC_count) as varchar) in 
+                              (/*抓出最近一期沒繳款的資料*/
+                              select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) as varchar)RC_count 
+                              from Receivable_D where check_pay_type ='N' group by RCM_id
+                              union all
+                              select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) +1 as varchar)RC_count 
+                              from Receivable_D where check_pay_type ='N' group by RCM_id)
+                              ) D on M.RCM_id=D.RCM_id
+                              where RCM_note not like '%清償%' and D.check_pay_type ='N' and M.del_tag='0' and D.del_tag='0' 
+                              and S.del_tag='0' and fund_company='FDCOM003' and not exists (select 1 from ClientPayback Ck where Ck.RCD_id = D.RCD_id)";
+
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@user",model.tbInfo.add_num)
+                };
+
+                if (!string.IsNullOrEmpty(model.RC_Date_S))
+                {
+                    model.RC_Date_S = FuncHandler.ConvertROCToGregorian(model.RC_Date_S);
+                    T_SQL += " and RC_date >= @RC_Date_S";
+                    parameters.Add(new SqlParameter("@RC_Date_S", model.RC_Date_S));
+                }
+                if (!string.IsNullOrEmpty(model.RC_Date_E))
+                {
+                    model.RC_Date_E = FuncHandler.ConvertROCToGregorian(model.RC_Date_E);
+                    T_SQL += " and RC_date <= @RC_Date_E";
+                    parameters.Add(new SqlParameter("@RC_Date_E", model.RC_Date_E));
+                }
+                #endregion
+
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Pay_res
+                {
+                    HS_id = row.Field<decimal>("HS_id"),
+                    RCD_id = row.Field<decimal>("RCD_id"),
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    RC_count = row.Field<int>("RC_count"),
+                    roc_RC_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("RC_date").ToString("yyyy/MM/dd")),
+                    amount_per_month = row.Field<decimal>("amount_per_month"),
+                    interest = row.Field<decimal>("interest"),
+                    Rmoney = row.Field<decimal>("Rmoney"),
+                    HFees = 20,
+                    Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
+                    amount_total = row.Field<decimal>("amount_total"),
+                    month_total = row.Field<int>("month_total"),
+                    FileCount = row.Field<int>("FileCount")
+                }).ToList();
+
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "成功";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
 
         /// <summary>
-        /// 財務抓取客戶繳款資料
+        /// 業務新增客戶繳款資料
         /// </summary>
-        //public ActionResult<ResultClass<string>> Client_Pay_LQuery()
-        //{
-        //    ResultClass<string> resultClass = new ResultClass<string>();
-        //    var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+        [HttpPost("Client_Pay_Ins")]
+        public ActionResult<ResultClass<string>> Client_Pay_Ins([FromBody] List<Receivable_Pay_Ins> List)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
 
-        //    try
-        //    {
-        //        resultClass.ResultCode = "000";
-        //        resultClass.ResultMsg = "變更成功";
-        //        return Ok(resultClass);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        resultClass.ResultCode = "500";
-        //        resultClass.ResultMsg = $" response: {ex.Message}";
-        //        return StatusCode(500, resultClass);
-        //    }
-        //}
+            try
+            {
+                ADOData _adoData = new ADOData();
+
+                foreach (var item in List)
+                {
+                    #region SQL
+                    var T_SQL = @"Insert into ClientPayback (RCD_id,CP_pay_date,CP_account_last,CP_bus_remark,add_date,add_num) 
+                              Values (@RCD_id,@CP_pay_date,@CP_account_last,@CP_bus_remark,getdate(),@add_num)";
+                    var parameters = new List<SqlParameter>
+                    {
+                        new SqlParameter("@RCD_id",item.RCD_id),
+                        new SqlParameter("@CP_pay_date",item.CP_pay_date),
+                        new SqlParameter("@CP_account_last",item.CP_account_last),
+                        new SqlParameter("@CP_bus_remark",item.CP_bus_remark),
+                        new SqlParameter("@add_num",item.User)
+                    };
+                    #endregion
+                    _adoData.ExecuteNonQuery(T_SQL, parameters);
+                }
+
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "儲存成功";
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        // <summary>
+        // 財務抓取客戶繳款資料
+        // </summary>
+        [HttpGet("Client_Pay_LQuery")]
+        public ActionResult<ResultClass<string>> Client_Pay_LQuery()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+            FuncHandler _Fun = new FuncHandler();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"select * from ClientPayback Cp
+                              inner join Receivable_D Rd ON Rd.RCD_id = Cp.RCD_id
+                              inner join Receivable_M Rm ON Rm.RCM_id = Rd.RCM_id
+                              inner join House_apply HA ON HA.HA_id = RM.HA_id
+                              where RM.del_tag = 0 and check_pay_type = 'N' 
+                              and cancel_type <> 'Y' and bad_debt_type = 'N'
+                              and CP_WIN_CK = 'N'";
+                #endregion
+                var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new PaySelf_Win_Inv
+                {
+                    HS_id = row.Field<decimal>("HS_id"),
+                    RCD_id = row.Field<decimal>("RCD_id"),
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    RC_count = row.Field<int>("RC_count"),
+                    roc_RC_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("RC_date").ToString("yyyy/MM/dd")),
+                    amount_per_month = row.Field<decimal>("amount_per_month"),
+                    interest = row.Field<decimal>("interest"),
+                    Rmoney = row.Field<decimal>("Rmoney"),
+                    HFees = 20,
+                    Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
+                    amount_total = row.Field<decimal>("amount_total"),
+                    month_total = row.Field<int>("month_total"),
+                    RecPayDate = row.Field<DateTime>("CP_pay_date"),
+                    CP_account_last = row.Field<string>("CP_account_last"),
+                    CP_fin_remark = row.Field<string>("CP_fin_remark")
+                }).ToList(); ;
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "變更成功";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
     }
 }

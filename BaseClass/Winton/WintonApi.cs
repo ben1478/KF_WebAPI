@@ -274,7 +274,11 @@ namespace KF_WebAPI.BaseClass.Winton
 
     }
 
-
+    public class PaySelf_Win_Inv: Receivable_Win_Inv
+    {
+        public string? CP_account_last { get; set; }
+        public string? CP_fin_remark { get; set; }
+    }
 
     public class WinInvFileRow
     {
