@@ -216,7 +216,7 @@ namespace KF_WebAPI.Controllers
                     T_SQL += @" ( select HA_id,CS_Name,CS_PID,plan_num FROM House_apply
 	                              JOIN User_M ON House_apply.plan_num = User_M.U_num WHERE User_M.U_num = @user ) H ";
                 }
-                T_SQL += @" left join House_sendcase S on H.HA_id=S.HA_id                                           
+                T_SQL += @" left join House_sendcase S on H.HA_id=S.HA_id and get_amount_type = 'GTAT002'                                           
                             left join Receivable_M M on H.HA_id=M.HA_id 
                             left join (
                             select * from Receivable_D where cast(RCM_id as varchar)+'-'+ cast( (RC_count) as varchar) in 
