@@ -384,6 +384,31 @@ namespace KF_WebAPI.DataLogic
             return m_Count;
         }
 
+        public string GetUserRole(string user)
+        {
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var T_SQL = @"select * from User_M where U_num = @user";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@user",user)
+                };
+
+                var Role_num = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
+                {
+                    Role_num = row.Field<string>("Role_num")
+                }).FirstOrDefault().Role_num;
+
+                return Role_num;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
 
     }
 }

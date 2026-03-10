@@ -185,7 +185,7 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
-        /// 業務或業助抓取待沖銷分期資料
+        /// 業務或業助抓取待沖銷分期資料(queryType 1.查看全部資訊  2.查看分區資訊  3.查看單一業務資訊)
         /// </summary>
         [HttpPost("Receivable_Pay_LQuery")]
         public ActionResult<ResultClass<string>> Receivable_Pay_LQuery(Receivable_Pay_req model)
@@ -199,30 +199,36 @@ namespace KF_WebAPI.Controllers
 
                 #region T_SQL
                 var T_SQL = @"select H.*,D.*,M.amount_per_month,M.HS_id,amount_total,month_total
-                              ,(select COUNT(*) from AE_Files where AE_Files.KeyID = 'P' + cast(D.RCD_id as varchar)) as FileCount
-                              from 
-                              (
-                                  select HA_id,CS_Name,CS_PID,plan_num FROM House_apply
-                              	  JOIN User_M ON House_apply.plan_num = User_M.U_num WHERE User_M.U_num = @user AND User_M.Role_num <> '1010'
-                              	  UNION ALL
-                              	  select HA_id,CS_Name,CS_PID,plan_num FROM House_apply h
-                              	  JOIN User_M u1 ON u1.U_num = @user
-                              	  JOIN User_M u2 ON u1.U_BC = u2.U_BC
-                              	  WHERE u1.Role_num = '1010' AND h.plan_num = u2.U_num
-                              ) H
-                              left join House_sendcase S on H.HA_id=S.HA_id                                           
-                              left join Receivable_M M on H.HA_id=M.HA_id 
-                              left join (
-                              select * from Receivable_D where cast(RCM_id as varchar)+'-'+ cast( (RC_count) as varchar) in 
-                              (/*抓出最近一期沒繳款的資料*/
-                              select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) as varchar)RC_count 
-                              from Receivable_D where check_pay_type ='N' group by RCM_id
-                              union all
-                              select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) +1 as varchar)RC_count 
-                              from Receivable_D where check_pay_type ='N' group by RCM_id)
-                              ) D on M.RCM_id=D.RCM_id
-                              where RCM_note not like '%清償%' and D.check_pay_type ='N' and M.del_tag='0' and D.del_tag='0' 
-                              and S.del_tag='0' and fund_company='FDCOM003' and not exists (select 1 from ClientPayback Ck where Ck.RCD_id = D.RCD_id)";
+                              ,(select COUNT(*) from AE_Files where AE_Files.KeyID = 'P' + cast(D.RCD_id as varchar)) as FileCount from ";
+                if (model.queryType == 1)
+                {
+                    T_SQL += @" ( select HA_id,CS_Name,CS_PID,plan_num FROM House_apply h) H";
+                }
+                else if (model.queryType == 2)
+                {
+                    T_SQL += @" ( select HA_id,CS_Name,CS_PID,plan_num FROM House_apply h
+	                              JOIN User_M u1 ON u1.U_num = @user
+	                              JOIN User_M u2 ON u1.U_BC = u2.U_BC
+	                              WHERE h.plan_num = u2.U_num ) H";
+                }
+                else
+                {
+                    T_SQL += @" ( select HA_id,CS_Name,CS_PID,plan_num FROM House_apply
+	                              JOIN User_M ON House_apply.plan_num = User_M.U_num WHERE User_M.U_num = @user ) H ";
+                }
+                T_SQL += @" left join House_sendcase S on H.HA_id=S.HA_id                                           
+                            left join Receivable_M M on H.HA_id=M.HA_id 
+                            left join (
+                            select * from Receivable_D where cast(RCM_id as varchar)+'-'+ cast( (RC_count) as varchar) in 
+                            (/*抓出最近一期沒繳款的資料*/
+                            select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) as varchar)RC_count 
+                            from Receivable_D where check_pay_type ='N' and bad_debt_type = 'N' group by RCM_id
+                            union all
+                            select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) +1 as varchar)RC_count 
+                            from Receivable_D where check_pay_type ='N' and bad_debt_type = 'N' group by RCM_id)
+                            ) D on M.RCM_id=D.RCM_id
+                            where RCM_note not like '%清償%' and D.check_pay_type ='N' and M.del_tag='0' and D.del_tag='0' 
+                            and S.del_tag='0' and fund_company='FDCOM003' and not exists (select 1 from ClientPayback Ck where Ck.RCD_id = D.RCD_id)";
 
                 var parameters = new List<SqlParameter>
                 {
@@ -240,6 +246,16 @@ namespace KF_WebAPI.Controllers
                     model.RC_Date_E = FuncHandler.ConvertROCToGregorian(model.RC_Date_E);
                     T_SQL += " and RC_date <= @RC_Date_E";
                     parameters.Add(new SqlParameter("@RC_Date_E", model.RC_Date_E));
+                }
+                if(!string.IsNullOrEmpty(model.CS_Name))
+                {
+                    T_SQL += " and CS_name = @CS_Name";
+                    parameters.Add(new SqlParameter("@CS_name", model.CS_Name));
+                }
+                if (!string.IsNullOrEmpty(model.CS_PID))
+                {
+                    T_SQL += " and CS_PID = @CS_PID";
+                    parameters.Add(new SqlParameter("@CS_PID", model.CS_PID));
                 }
                 #endregion
 

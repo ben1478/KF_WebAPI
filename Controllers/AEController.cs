@@ -1148,7 +1148,24 @@ namespace KF_WebAPI.Controllers
             return Ok(resultClass);
         }
 
-        
+        [HttpGet("GetUserRole")]
+        public ActionResult<ResultClass<string>> GetUserRole(string user)
+        {
+            ResultClass<string> resultClass = new();
+            try
+            {
+                string roleNum = _AEData.GetUserRole(user);
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "";
+                resultClass.objResult = roleNum;
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "999";
+                resultClass.ResultMsg = ex.Message;
+            }
+            return Ok(resultClass);
+        }
 
 
     }

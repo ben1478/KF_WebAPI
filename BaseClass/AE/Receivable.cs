@@ -331,6 +331,9 @@ namespace KF_WebAPI.BaseClass.AE
         public tbInfo? tbInfo { get; set; }
         public string RC_Date_S { get; set; }
         public string RC_Date_E { get; set; }
+        public int queryType { get; set; }
+        public string CS_Name { get;set; }
+        public string CS_PID { get; set; }
     }
 
     public class Receivable_Pay_res: Receivable_Win_Inv
