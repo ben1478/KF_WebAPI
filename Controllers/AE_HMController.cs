@@ -368,7 +368,7 @@ namespace KF_WebAPI.Controllers
         // <summary>
         // 財務抓取待開發票的客戶資料
         // </summary>
-        [HttpPost("Client_Pay_LQuery")]
+        [HttpGet("Client_Pay_LQuery")]
         public ActionResult<ResultClass<string>> Client_Pay_LQuery()
         {
             ResultClass<string> resultClass = new ResultClass<string>();
