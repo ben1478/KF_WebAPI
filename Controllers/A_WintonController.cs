@@ -551,7 +551,7 @@ namespace KF_WebAPI.Controllers
                             #endregion
 
                             #region 異動Receivable_D
-                            _Rpt.UpdWinToRecDetail(List[i], clientIp, INV_NO, List[i].amount_per_month, "Y", "B");
+                            _Rpt.UpdWinToRecAuto(List[i], clientIp, INV_NO, List[i].amount_per_month, "Y", "B");
                             #endregion
                         }
                     }

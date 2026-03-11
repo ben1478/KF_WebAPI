@@ -280,6 +280,7 @@ namespace KF_WebAPI.BaseClass.Winton
         public string? CP_account_last { get; set; }
         public decimal? CP_Pay_Amt { get; set; }
         public string? CP_bus_remark { get; set; }
+        public int FileCount { get; set; }
     }
 
     public class WinInvFileRow

@@ -366,9 +366,9 @@ namespace KF_WebAPI.Controllers
         }
 
         // <summary>
-        // 財務抓取客戶繳款資料
+        // 財務抓取待開發票的客戶資料
         // </summary>
-        [HttpGet("Client_Pay_LQuery")]
+        [HttpPost("Client_Pay_LQuery")]
         public ActionResult<ResultClass<string>> Client_Pay_LQuery()
         {
             ResultClass<string> resultClass = new ResultClass<string>();
@@ -378,14 +378,19 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
+                var parameters = new List<SqlParameter>();
                 #region SQL
-                var T_SQL = @"select * from ClientPayback Cp
+                var T_SQL = @"select *,(select COUNT(*) from AE_Files where AE_Files.KeyID = 'P' + cast(Cp.RCD_id as varchar)) as FileCount from ClientPayback Cp
                               inner join Receivable_D Rd ON Rd.RCD_id = Cp.RCD_id
                               inner join Receivable_M Rm ON Rm.RCM_id = Rd.RCM_id
                               inner join House_apply HA ON HA.HA_id = RM.HA_id
                               where RM.del_tag = 0 and check_pay_type = 'N' 
-                              and cancel_type <> 'Y' and bad_debt_type = 'N'
-                              and CP_WIN_CK = 'N'";
+                              and cancel_type <> 'Y' and bad_debt_type = 'N'";
+                //if (!string.IsNullOrEmpty(model.CP_Win_CK))
+                //{
+                //    T_SQL += @" and CP_WIN_CK = @CP_WIN_CK ";
+                //    parameters.Add(new SqlParameter("@CP_WIN_CK",model.CP_WIN_CK));
+                //}
                 #endregion
                 var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new PaySelf_Win_Inv
                 {
@@ -405,7 +410,8 @@ namespace KF_WebAPI.Controllers
                     RecPayDate = row.Field<DateTime>("CP_pay_date"),
                     CP_account_last = row.Field<string>("CP_account_last"),
                     CP_bus_remark = row.Field<string>("CP_bus_remark"),
-                    CP_Pay_Amt = row.Field<decimal?>("CP_Pay_Amt")
+                    CP_Pay_Amt = row.Field<decimal?>("CP_Pay_Amt"),
+                    FileCount = row.Field<int>("FileCount"),
                 }).ToList(); ;
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "變更成功";
@@ -416,6 +422,58 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        // <summary>
+        // 財務刪除待開發票的客戶資料
+        // </summary>
+        [HttpPost("Client_Pay_Del")]
+        public ActionResult<ResultClass<string>> Client_Pay_Del([FromBody] int[] ids, string user)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+
+                if (ids == null || ids.Length == 0)
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "沒有要刪除的資料";
+                    return Ok(resultClass);
+                }
+
+                var paramNames = ids.Select((id, i) => $"@id{i}").ToArray();
+
+                var T_SQL = $@"
+                     UPDATE ClientPayback
+                     SET CP_Win_CK = 'D',
+                         del_date = GETDATE(),
+                         del_num = @user
+                     WHERE RCD_id IN ({string.Join(",", paramNames)})
+                 ";
+
+                List<SqlParameter> parameters = new List<SqlParameter>();
+
+                parameters.Add(new SqlParameter("@user", user));
+
+                for (int i = 0; i < ids.Length; i++)
+                {
+                    parameters.Add(new SqlParameter(paramNames[i], ids[i]));
+                }
+
+                _adoData.ExecuteQuery(T_SQL, parameters);
+
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "刪除成功";
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = ex.Message;
                 return StatusCode(500, resultClass);
             }
         }
