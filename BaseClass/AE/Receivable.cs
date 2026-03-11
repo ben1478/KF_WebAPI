@@ -351,4 +351,10 @@ namespace KF_WebAPI.BaseClass.AE
         public decimal CP_Pay_Amt { get; set; }
         public string CP_bus_remark { get; set; }   
     }
+
+    public class Client_Pay_req
+    {
+        public string? str_CP_pay_date { get; set; }
+        public string CP_WIN_CK { get; set; }
+    }
 }
