@@ -224,8 +224,7 @@ namespace KF_WebAPI.Controllers
                 }
                 T_SQL += @" left join House_sendcase S on H.HA_id=S.HA_id and get_amount_type = 'GTAT002'                                          
                             left join Receivable_M M on H.HA_id=M.HA_id 
-                            left join (
-                            select * from Receivable_D where cast(RCM_id as varchar)+'-'+ cast( (RC_count) as varchar) in 
+                            left join ( select * from Receivable_D where cast(RCM_id as varchar)+'-'+ cast( (RC_count) as varchar) in 
                             (/*抓出最近一期沒繳款的資料*/
                             select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) as varchar)RC_count 
                             from Receivable_D where check_pay_type ='N' and bad_debt_type = 'N'";
