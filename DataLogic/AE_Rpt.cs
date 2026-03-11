@@ -2727,24 +2727,26 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
         }
 
-        public void UpdWinToRecD(Receivable_Win_Inv model, string clientIp, string INV_NO, string check_pay_type = "Y", string RecPayType = "C")
+        public void UpdWinToRecD(Receivable_Win_Inv model, string clientIp, string INV_NO, string check_pay_type = "Y", string RecPayType = "C", decimal RecPayAmt = 0)
         {
             try
             {
-                var T_SQL = @"Update Receivable_D set RecPayDate = @RecPayDate,RecPayAmt = @RecPayAmt,RecPayType = @RecPayType ,check_pay_date=@check_pay_date,check_pay_type =  @check_pay_type,check_pay_num = @check_pay_num,
-                              invoice_no=@invoice_no,invoice_date = getdate(),edit_date = getdate(),edit_num = @edit_num,edit_ip = @edit_ip where RCD_id = @RCD_id";
+                var T_SQL = @"Update Receivable_D set RecPayDate = @RecPayDate,RecPayAmt = @RecPayAmt,RecPayType = @RecPayType ,check_pay_date=@check_pay_date
+                              ,check_pay_type =  @check_pay_type,check_pay_num = @check_pay_num,invoice_no=@invoice_no,invoice_date = getdate(),edit_date = getdate()
+                              ,RC_note=@RC_note,edit_num = @edit_num,edit_ip = @edit_ip where RCD_id = @RCD_id";
                 var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@RecPayDate",model.RecPayDate),
                     new SqlParameter("@check_pay_date",model.RecPayDate),
                     new SqlParameter("@check_pay_num",model.User),
-                    new SqlParameter("@RecPayAmt",model.amount_per_month),
+                    new SqlParameter("@RecPayAmt",RecPayAmt),
                     new SqlParameter("@invoice_no",INV_NO),
                     new SqlParameter("@edit_ip",clientIp),
                     new SqlParameter("@edit_num",model.User),
                     new SqlParameter("@check_pay_type",check_pay_type),
                     new SqlParameter("@RecPayType",RecPayType),
-                    new SqlParameter("@RCD_id",model.RCD_id)
+                    new SqlParameter("@RCD_id",model.RCD_id),
+                    new SqlParameter("@RC_note",model.RC_note)
                 };
                 _adoData.ExecuteNonQuery(T_SQL, parameters);
             }

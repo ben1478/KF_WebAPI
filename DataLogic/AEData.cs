@@ -409,6 +409,29 @@ namespace KF_WebAPI.DataLogic
             }
         }
 
+        public void InsLogTable(LogTable model)
+        {
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var T_SQL = @"Insert into LogTable (TableNA,KeyVal,ColumnNA,ColumnVal,Remark,LogID,LogDate)
+                              Values (@TableNA,@KeyVal,@ColumnNA,@ColumnVal,@Remark,@LogID,getdate())";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@TableNA",model.TableNA),
+                    new SqlParameter("@KeyVal",model.KeyVal),
+                    new SqlParameter("@ColumnNA",model.ColumnNA),
+                    new SqlParameter("@ColumnVal",model.ColumnVal),
+                    new SqlParameter("@Remark",model.Remark),
+                    new SqlParameter("@LogID",model.LogID)
+                };
+                _ADO.ExecuteQuery(T_SQL,parameters);    
+            }
+            catch (Exception)
+            {
 
+                throw;
+            }
+        }
     }
 }

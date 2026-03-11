@@ -250,6 +250,7 @@ namespace KF_WebAPI.BaseClass.Winton
         public string? Win_Msg { get; set; }
         public DateTime RecPayDate { get; set; }
         public string? User { get; set; }
+        public string? RC_note { get; set; }
     }
 
     public class PayOff_Win_Inv: Receivable_Win_Inv
@@ -277,7 +278,8 @@ namespace KF_WebAPI.BaseClass.Winton
     public class PaySelf_Win_Inv: Receivable_Win_Inv
     {
         public string? CP_account_last { get; set; }
-        public string? CP_fin_remark { get; set; }
+        public decimal? CP_Pay_Amt { get; set; }
+        public string? CP_bus_remark { get; set; }
     }
 
     public class WinInvFileRow

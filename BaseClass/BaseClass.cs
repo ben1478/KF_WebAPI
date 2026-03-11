@@ -150,4 +150,13 @@ namespace KF_WebAPI.BaseClass
         public String Add_User { get; set; }
     }
 
+    public class LogTable
+    {
+        public string TableNA { get; set; }
+        public string KeyVal { get; set; }
+        public string ColumnNA { get; set; }
+        public string ColumnVal { get; set; }
+        public string Remark { get; set; }
+        public string LogID { get; set; }
+    }
 }

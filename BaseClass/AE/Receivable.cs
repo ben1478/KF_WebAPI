@@ -334,17 +334,21 @@ namespace KF_WebAPI.BaseClass.AE
         public int queryType { get; set; }
         public string CS_Name { get;set; }
         public string CS_PID { get; set; }
+        public string? plan_num { get; set; }    
     }
 
     public class Receivable_Pay_res: Receivable_Win_Inv
     {
+        public string? CP_bus_remark { get; set; }
         public int FileCount { get; set; }
+        public decimal? CP_Pay_Amt { get; set; }
     }
 
     public class Receivable_Pay_Ins: Receivable_Pay_res
     {
         public DateTime CP_pay_date { get; set; }
         public string CP_account_last { get; set; }
+        public decimal CP_Pay_Amt { get; set; }
         public string CP_bus_remark { get; set; }   
     }
 }

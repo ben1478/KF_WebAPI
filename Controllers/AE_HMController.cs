@@ -10,6 +10,7 @@ using KF_WebAPI.BaseClass.Winton;
 using Newtonsoft.Json;
 using System.Reflection;
 using System.Collections.Generic;
+using KF_WebAPI.DataLogic;
 
 namespace KF_WebAPI.Controllers
 {
@@ -17,6 +18,8 @@ namespace KF_WebAPI.Controllers
     [Route("[controller]")]
     public class AE_HMController : Controller
     {
+        private AEData _AEData = new();
+
         /// <summary>
         /// 汽車進件API HouseApplyCar_Ins / House_apply_addCarDB.asp
         /// </summary>
@@ -196,7 +199,10 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
-
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@user",model.tbInfo.add_num)
+                };
                 #region T_SQL
                 var T_SQL = @"select H.*,D.*,M.amount_per_month,M.HS_id,amount_total,month_total
                               ,(select COUNT(*) from AE_Files where AE_Files.KeyID = 'P' + cast(D.RCD_id as varchar)) as FileCount from ";
@@ -216,38 +222,37 @@ namespace KF_WebAPI.Controllers
                     T_SQL += @" ( select HA_id,CS_Name,CS_PID,plan_num FROM House_apply
 	                              JOIN User_M ON House_apply.plan_num = User_M.U_num WHERE User_M.U_num = @user ) H ";
                 }
-                T_SQL += @" left join House_sendcase S on H.HA_id=S.HA_id                                           
+                T_SQL += @" left join House_sendcase S on H.HA_id=S.HA_id and get_amount_type = 'GTAT002'                                          
                             left join Receivable_M M on H.HA_id=M.HA_id 
                             left join (
                             select * from Receivable_D where cast(RCM_id as varchar)+'-'+ cast( (RC_count) as varchar) in 
                             (/*抓出最近一期沒繳款的資料*/
                             select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) as varchar)RC_count 
-                            from Receivable_D where check_pay_type ='N' and bad_debt_type = 'N' group by RCM_id
-                            union all
-                            select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) +1 as varchar)RC_count 
-                            from Receivable_D where check_pay_type ='N' and bad_debt_type = 'N' group by RCM_id)
-                            ) D on M.RCM_id=D.RCM_id
-                            where RCM_note not like '%清償%' and D.check_pay_type ='N' and M.del_tag='0' and D.del_tag='0' 
-                            and S.del_tag='0' and fund_company='FDCOM003' and not exists (select 1 from ClientPayback Ck where Ck.RCD_id = D.RCD_id)";
-
-                var parameters = new List<SqlParameter>
+                            from Receivable_D where check_pay_type ='N' and bad_debt_type = 'N'";
+                if(!string.IsNullOrEmpty(model.RC_Date_S) && !string.IsNullOrEmpty(model.RC_Date_E))
                 {
-                    new SqlParameter("@user",model.tbInfo.add_num)
-                };
+                    T_SQL += @" and RC_date >= @RC_Date_S and RC_date <= @RC_Date_E ";
+                }
+                T_SQL += @"group by RCM_id
+                           union all 
+                           select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) +1 as varchar)RC_count 
+                           from Receivable_D where check_pay_type ='N' and bad_debt_type = 'N'";
+                if (!string.IsNullOrEmpty(model.RC_Date_S) && !string.IsNullOrEmpty(model.RC_Date_E))
+                {
+                    T_SQL += @" and RC_date >= @RC_Date_S and RC_date <= @RC_Date_E ";
+                }
+                T_SQL += @"group by RCM_id ) ) D on M.RCM_id=D.RCM_id
+                           where RCM_note not like '%清償%' and D.check_pay_type ='N' and M.del_tag='0' and D.del_tag='0' 
+                           and S.del_tag='0' and fund_company='FDCOM003' and not exists (select 1 from ClientPayback Ck where Ck.RCD_id = D.RCD_id)";
 
-                if (!string.IsNullOrEmpty(model.RC_Date_S))
+                if (!string.IsNullOrEmpty(model.RC_Date_S) && !string.IsNullOrEmpty(model.RC_Date_E))
                 {
                     model.RC_Date_S = FuncHandler.ConvertROCToGregorian(model.RC_Date_S);
-                    T_SQL += " and RC_date >= @RC_Date_S";
-                    parameters.Add(new SqlParameter("@RC_Date_S", model.RC_Date_S));
-                }
-                if (!string.IsNullOrEmpty(model.RC_Date_E))
-                {
                     model.RC_Date_E = FuncHandler.ConvertROCToGregorian(model.RC_Date_E);
-                    T_SQL += " and RC_date <= @RC_Date_E";
+                    parameters.Add(new SqlParameter("@RC_Date_S", model.RC_Date_S));
                     parameters.Add(new SqlParameter("@RC_Date_E", model.RC_Date_E));
                 }
-                if(!string.IsNullOrEmpty(model.CS_Name))
+                if (!string.IsNullOrEmpty(model.CS_Name))
                 {
                     T_SQL += " and CS_name = @CS_Name";
                     parameters.Add(new SqlParameter("@CS_name", model.CS_Name));
@@ -256,6 +261,11 @@ namespace KF_WebAPI.Controllers
                 {
                     T_SQL += " and CS_PID = @CS_PID";
                     parameters.Add(new SqlParameter("@CS_PID", model.CS_PID));
+                }
+                if (!string.IsNullOrEmpty(model.plan_num))
+                {
+                    T_SQL += " and plan_num = @plan_num";
+                    parameters.Add(new SqlParameter("@plan_num", model.plan_num));
                 }
                 #endregion
 
@@ -274,7 +284,9 @@ namespace KF_WebAPI.Controllers
                     Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
                     amount_total = row.Field<decimal>("amount_total"),
                     month_total = row.Field<int>("month_total"),
-                    FileCount = row.Field<int>("FileCount")
+                    FileCount = row.Field<int>("FileCount"),
+                    CP_bus_remark = row.Field<string?>("RC_note"),
+                    CP_Pay_Amt = row.Field<decimal?>("RecPayAmt") 
                 }).ToList();
 
                 resultClass.ResultCode = "000";
@@ -298,26 +310,48 @@ namespace KF_WebAPI.Controllers
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
-
+            
             try
             {
                 ADOData _adoData = new ADOData();
-
+               
                 foreach (var item in List)
                 {
-                    #region SQL
-                    var T_SQL = @"Insert into ClientPayback (RCD_id,CP_pay_date,CP_account_last,CP_bus_remark,add_date,add_num) 
-                              Values (@RCD_id,@CP_pay_date,@CP_account_last,@CP_bus_remark,getdate(),@add_num)";
-                    var parameters = new List<SqlParameter>
+                    var T_SQL = "";
+                    var parameters = new List<SqlParameter>();
+                    //判定已繳款金額是否足額
+                    if (item.CP_Pay_Amt >= item.amount_per_month)
                     {
-                        new SqlParameter("@RCD_id",item.RCD_id),
-                        new SqlParameter("@CP_pay_date",item.CP_pay_date),
-                        new SqlParameter("@CP_account_last",item.CP_account_last),
-                        new SqlParameter("@CP_bus_remark",item.CP_bus_remark),
-                        new SqlParameter("@add_num",item.User)
-                    };
-                    #endregion
+                        T_SQL = @"Insert into ClientPayback (RCD_id,CP_pay_date,CP_account_last,CP_Pay_Amt,CP_bus_remark,add_date,add_num) 
+                                  Values (@RCD_id,@CP_pay_date,@CP_account_last,@CP_Pay_Amt,@CP_bus_remark,getdate(),@add_num)";
+                        parameters.Add(new SqlParameter("@RCD_id", item.RCD_id));
+                        parameters.Add(new SqlParameter("@CP_pay_date", item.CP_pay_date));
+                        parameters.Add(new SqlParameter("@CP_account_last", item.CP_account_last));
+                        parameters.Add(new SqlParameter("@CP_Pay_Amt",item.CP_Pay_Amt));
+                        parameters.Add(new SqlParameter("@CP_bus_remark", item.CP_bus_remark));
+                        parameters.Add(new SqlParameter("@add_num", item.User));
+                    }
+                    else
+                    {
+                        //異動部分Receivable_D
+                        T_SQL += @"Update Receivable_D set RecPayAmt=@CP_Pay_Amt,RC_note=@CP_bus_remark where RCD_id = @RCD_id";
+                        parameters.Add(new SqlParameter("@CP_Pay_Amt",item.CP_Pay_Amt));
+                        parameters.Add(new SqlParameter("@CP_bus_remark",item.CP_bus_remark));
+                        parameters.Add(new SqlParameter("@RCD_id",item.RCD_id));
+                    }
                     _adoData.ExecuteNonQuery(T_SQL, parameters);
+
+                    #region 寫入LogTable
+                    var logTable = new LogTable();
+                    logTable.TableNA = "ClientPayback";
+                    logTable.KeyVal = item.RCD_id.ToString();
+                    logTable.ColumnNA = "CP_pay_date" + "," +"CP_Pay_Amt";
+                    logTable.ColumnVal = item.CP_pay_date.ToString("yyyy-MM-dd") + "," + item.CP_Pay_Amt.ToString();
+                    logTable.Remark = item.CP_bus_remark;
+                    logTable.LogID = item.User;
+                    _AEData.InsLogTable(logTable);
+                    #endregion
+
                 }
 
                 resultClass.ResultCode = "000";
@@ -371,7 +405,8 @@ namespace KF_WebAPI.Controllers
                     month_total = row.Field<int>("month_total"),
                     RecPayDate = row.Field<DateTime>("CP_pay_date"),
                     CP_account_last = row.Field<string>("CP_account_last"),
-                    CP_fin_remark = row.Field<string>("CP_fin_remark")
+                    CP_bus_remark = row.Field<string>("CP_bus_remark"),
+                    CP_Pay_Amt = row.Field<decimal?>("CP_Pay_Amt")
                 }).ToList(); ;
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "變更成功";
