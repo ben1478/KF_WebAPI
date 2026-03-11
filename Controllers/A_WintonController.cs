@@ -551,7 +551,7 @@ namespace KF_WebAPI.Controllers
                             #endregion
 
                             #region 異動Receivable_D
-                            _Rpt.UpdWinToRecD(List[i], clientIp, INV_NO, "Y", "B", List[i].amount_per_month);
+                            _Rpt.UpdWinToRecDetail(List[i], clientIp, INV_NO, List[i].amount_per_month, "Y", "B");
                             #endregion
                         }
                     }
@@ -673,7 +673,7 @@ namespace KF_WebAPI.Controllers
                             #region 異動Receivable_D
                             var cpPayAmt = List[i].CP_Pay_Amt ?? 0;
                             List[i].RC_note = List[i].CP_bus_remark;
-                            _Rpt.UpdWinToRecD(List[i], clientIp, INV_NO,"Y","C", cpPayAmt);
+                            _Rpt.UpdWinToRecDetail(List[i], clientIp, INV_NO, cpPayAmt, "Y","C");
                             #endregion
 
                             #region 異動自主繳款資料
