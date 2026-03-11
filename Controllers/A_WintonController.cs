@@ -285,7 +285,9 @@ namespace KF_WebAPI.Controllers
                     model.ADataSet.SU01003 = dtResult.Rows[0]["CS_name"].ToString();
                     model.ADataSet.SU01004 = dtResult.Rows[0]["CS_name"].ToString();
 
+                    model.ADataSet.SU01010 = dtResult.Rows[0]["CS_register_address"].ToString();
                     model.ADataSet.SU01011 = dtResult.Rows[0]["CS_register_address"].ToString();
+                    model.ADataSet.SU01012 = dtResult.Rows[0]["CS_register_address"].ToString();
                     model.ADataSet.SU01019 = dtResult.Rows[0]["CS_MTEL1"].ToString();
                     model.ADataSet.SU01029 = dtResult.Rows[0]["U_BC_Show"].ToString();
                     model.ADataSet.SU01038 = "2";
