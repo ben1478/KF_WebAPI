@@ -317,7 +317,11 @@ namespace KF_WebAPI.Controllers
         }
 
 
-
+        /// <summary>
+        /// 清償轉文中
+        /// </summary>
+        /// <param name="List"></param>
+        /// <returns></returns>
         [HttpPost("SendPayOffForInv")]
         public async Task<ResultClass<string>> SendPayOffForInv([FromBody] List<PayOff_Win_Inv> List)
         {
@@ -327,28 +331,34 @@ namespace KF_WebAPI.Controllers
             try
             {
                 var result = await GetLoginToken(ACompNo);
-
+                AE_Rpt _Rpt = new AE_Rpt();
                 if (result is OkObjectResult okResult)
                 {
                     var apiName = "rest/TdmServerMethodsIN/ImpWD4MF10";
                     var url = urlBase + apiName;
 
-                    foreach (var item in List)
+                    for (int i = 0; i < List.Count; i++)
                     {
+                        #region 抓取可用的發票組別
+                        string yyyMM = (DateTime.Now.Year - 1911).ToString() + DateTime.Now.Month.ToString("D2");
+                        var GroupNo = _Rpt.CheckInvGp(yyyMM, "01");
+                        #endregion
+
+
                         #region maping
                         ReceivableForInv_req model = new ReceivableForInv_req();
                         model.AToken = okResult.Value.ToString();
                         model.ADocType = "20";
                         model.AUpdateType = 0;
-                        model.InvoiceGroup = "02";
+                        model.InvoiceGroup = GroupNo;
 
                         model.ADataSetMaster = new List<ReceivableForInv_M_req>();
                         model.ADataSetDetail = new List<ReceivableForInv_D_req>();
 
                         ReceivableForInv_M_req model_M = new ReceivableForInv_M_req();
-                        model_M.MF10003 = "P" + item.HS_id + "-" + item.RC_count.ToString("D3");
+                        model_M.MF10003 = "P" + List[i].HS_id + "-" + List[i].RC_count.ToString("D3");
                         model_M.MF10004 = DateTime.Now.ToString("yyyy-MM-dd");
-                        model_M.MF10008 = item.CS_PID;
+                        model_M.MF10008 = List[i].CS_PID;
                         model_M.MF10010 = "00";
                         model_M.MF10011 = "00";
                         model_M.MF10012 = "";
@@ -362,31 +372,31 @@ namespace KF_WebAPI.Controllers
                         model.ADataSetMaster.Add(model_M);
 
                        
-                        if (item.Delay_AMT > 0)//延滯總利息-005
+                        if (List[i].Delay_AMT > 0)//延滯總利息-005
                         {
                             ReceivableForInv_D_req model_D1 = new ReceivableForInv_D_req();
                             model_D1.DT10004 = model_M.MF10003;
                             model_D1.DT10006 = "005";
                             model_D1.DT10030 = 1;
-                            model_D1.DT10040 = item.Delay_AMT;
+                            model_D1.DT10040 = List[i].Delay_AMT;
                             model.ADataSetDetail.Add(model_D1);
                         }
 
-                        if (item.Interest_AMT > 0)//結清利息-014
+                        if (List[i].Interest_AMT > 0)//結清利息-014
                         {
                             ReceivableForInv_D_req model_D1 = new ReceivableForInv_D_req();
                             model_D1.DT10004 = model_M.MF10003;
                             model_D1.DT10006 = "014";
                             model_D1.DT10030 = 1;
-                            model_D1.DT10040 = item.Interest_AMT;
+                            model_D1.DT10040 = List[i].Interest_AMT;
                             model.ADataSetDetail.Add(model_D1);
                         }
 
-                        if (item.Break_AMT > 0)//違約金/作業費
+                        if (List[i].Break_AMT > 0)//違約金/作業費
                         {
                             ReceivableForInv_D_req model_D1 = new ReceivableForInv_D_req();
                             model_D1.DT10004 = model_M.MF10003;
-                            if (item.Break_Type =="A")//A:違約金
+                            if (List[i].Break_Type =="A")//A:違約金
                             {
                                 model_D1.DT10006 = "004";
                             }
@@ -395,7 +405,7 @@ namespace KF_WebAPI.Controllers
                                 model_D1.DT10006 = "006";
                             }
                             model_D1.DT10030 = 1;
-                            model_D1.DT10040 = item.Break_AMT;
+                            model_D1.DT10040 = List[i].Break_AMT;
                             model.ADataSetDetail.Add(model_D1);
                         }
 
@@ -416,25 +426,33 @@ namespace KF_WebAPI.Controllers
                         if (Status == "200")
                         {
                             errmsg = "成功 " + (string)responJson["data"]["result"][0]["errmsg"];
-
-                            #region 抓發票資料更新發票號碼
-                            string INV_NO = await GetSalesOrder(okResult.Value.ToString(), model_M.MF10003);
-                            #endregion
-
-                            #region 異動Receivable_D
-                            AE_Rpt _Rpt = new AE_Rpt();
-                            _Rpt.UpdWinToRecD(item, clientIp, INV_NO,"S");
-                            #endregion
                         }
                         else
                         {
                             errmsg = "失敗 " + (string)responJson["error"];
                         }
-                        item.Win_Msg = errmsg;
+                        List[i].Win_Msg = errmsg;
 
                         _fun.ExtAPILogIns(apiCode, "ImpWD4MF10", model_M.MF10003, model.AToken, jsonData, Status, JsonConvert.SerializeObject(responJson));
 
+                        if (errmsg.Contains("無可用的發票號碼"))
+                        {
+                            #region 異動可用的發票組別
+                            _Rpt.UpdInvGp(yyyMM, GroupNo);
+                            #endregion
+                            i--;
+                        }
+                        else
+                        {
+                            #region 抓發票資料更新發票號碼
+                            string INV_NO = await GetSalesOrder(okResult.Value.ToString(), model_M.MF10003);
+                            #endregion
 
+                            #region 異動Receivable_D
+
+                            _Rpt.UpdWinToRecD(List[i], clientIp, INV_NO, "S");
+                            #endregion
+                        }
                     }
                 }
 
