@@ -365,74 +365,73 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-        //// <summary>
-        //// 財務抓取待開發票的客戶資料
-        //// </summary>
-        //[HttpPost("Client_Pay_LQuery")]
-        //public ActionResult<ResultClass<string>> Client_Pay_LQuery(Client_Pay_req model)
-        //{
-        //    ResultClass<string> resultClass = new ResultClass<string>();
-        //    var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
-        //    FuncHandler _Fun = new FuncHandler();
+        // <summary>
+        // 財務抓取待開發票的客戶資料
+        // </summary>
+        [HttpPost("Client_Pay_LQuery")]
+        public ActionResult<ResultClass<string>> Client_Pay_LQuery(Client_Pay_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+            FuncHandler _Fun = new FuncHandler();
 
-        //    try
-        //    {
-        //        ADOData _adoData = new ADOData();
-        //        var parameters = new List<SqlParameter>();
-        //        #region SQL
-        //        var T_SQL = @"select *,(select COUNT(*) from AE_Files where AE_Files.KeyID = 'P' + cast(Cp.RCD_id as varchar)) as FileCount from ClientPayback Cp
-        //                      inner join Receivable_D Rd ON Rd.RCD_id = Cp.RCD_id
-        //                      inner join Receivable_M Rm ON Rm.RCM_id = Rd.RCM_id
-        //                      inner join House_apply HA ON HA.HA_id = RM.HA_id
-        //                      where RM.del_tag = 0 and check_pay_type = 'N' 
-        //                      and cancel_type <> 'Y' and bad_debt_type = 'N'";
-        //        if (!string.IsNullOrEmpty(model.CP_WIN_CK))
-        //        {
-        //            T_SQL += @" and CP_WIN_CK = @CP_WIN_CK ";
-        //            parameters.Add(new SqlParameter("@CP_WIN_CK", model.CP_WIN_CK));
-        //        }
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var parameters = new List<SqlParameter>();
+                #region SQL
+                var T_SQL = @"select *,(select COUNT(*) from AE_Files where AE_Files.KeyID = 'P' + cast(Cp.RCD_id as varchar)) as FileCount from ClientPayback Cp
+                              inner join Receivable_D Rd ON Rd.RCD_id = Cp.RCD_id
+                              inner join Receivable_M Rm ON Rm.RCM_id = Rd.RCM_id
+                              inner join House_apply HA ON HA.HA_id = RM.HA_id
+                              where RM.del_tag = 0  and cancel_type <> 'Y' and bad_debt_type = 'N'";
+                if (!string.IsNullOrEmpty(model.CP_WIN_CK))
+                {
+                    T_SQL += @" and CP_Win_CK = @CP_WIN_CK ";
+                    parameters.Add(new SqlParameter("@CP_WIN_CK", model.CP_WIN_CK));
+                }
 
-        //        if (!string.IsNullOrEmpty(model.str_CP_pay_date))
-        //        {
-        //            var CP_pay_date = FuncHandler.ConvertROCToGregorian(model.str_CP_pay_date);
-        //            T_SQL += @" and CP_pay_date = @CP_pay_date ";
-        //            parameters.Add(new SqlParameter("@CP_pay_date", CP_pay_date));
-        //        }
-        //        #endregion
-        //        var result = _adoData.ExecuteQuery(T_SQL,parameters).AsEnumerable().Select(row => new PaySelf_Win_Inv
-        //        {
-        //            HS_id = row.Field<decimal>("HS_id"),
-        //            RCD_id = row.Field<decimal>("RCD_id"),
-        //            CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
-        //            CS_PID = row.Field<string>("CS_PID"),
-        //            RC_count = row.Field<int>("RC_count"),
-        //            roc_RC_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("RC_date").ToString("yyyy/MM/dd")),
-        //            amount_per_month = row.Field<decimal>("amount_per_month"),
-        //            interest = row.Field<decimal>("interest"),
-        //            Rmoney = row.Field<decimal>("Rmoney"),
-        //            HFees = 20,
-        //            Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
-        //            amount_total = row.Field<decimal>("amount_total"),
-        //            month_total = row.Field<int>("month_total"),
-        //            RecPayDate = row.Field<DateTime>("CP_pay_date"),
-        //            CP_account_last = row.Field<string>("CP_account_last"),
-        //            CP_bus_remark = row.Field<string>("CP_bus_remark"),
-        //            CP_Pay_Amt = row.Field<decimal?>("CP_Pay_Amt"),
-        //            FileCount = row.Field<int>("FileCount"),
-        //            str_Pay_Date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("CP_pay_date").ToString("yyyy/MM/dd"))
-        //        }).ToList(); ;
-        //        resultClass.ResultCode = "000";
-        //        resultClass.ResultMsg = "變更成功";
-        //        resultClass.objResult = JsonConvert.SerializeObject(result);
-        //        return Ok(resultClass);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        resultClass.ResultCode = "500";
-        //        resultClass.ResultMsg = $" response: {ex.Message}";
-        //        return StatusCode(500, resultClass);
-        //    }
-        //}
+                if (!string.IsNullOrEmpty(model.str_CP_pay_date))
+                {
+                    var CP_pay_date = FuncHandler.ConvertROCToGregorian(model.str_CP_pay_date);
+                    T_SQL += @" and CP_pay_date = @CP_pay_date ";
+                    parameters.Add(new SqlParameter("@CP_pay_date", CP_pay_date));
+                }
+                #endregion
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new PaySelf_Win_Inv
+                {
+                    HS_id = row.Field<decimal>("HS_id"),
+                    RCD_id = row.Field<decimal>("RCD_id"),
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    RC_count = row.Field<int>("RC_count"),
+                    roc_RC_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("RC_date").ToString("yyyy/MM/dd")),
+                    amount_per_month = row.Field<decimal>("amount_per_month"),
+                    interest = row.Field<decimal>("interest"),
+                    Rmoney = row.Field<decimal>("Rmoney"),
+                    HFees = 20,
+                    Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
+                    amount_total = row.Field<decimal>("amount_total"),
+                    month_total = row.Field<int>("month_total"),
+                    RecPayDate = row.Field<DateTime>("CP_pay_date"),
+                    CP_account_last = row.Field<string>("CP_account_last"),
+                    CP_bus_remark = row.Field<string>("CP_bus_remark"),
+                    CP_Pay_Amt = row.Field<decimal?>("CP_Pay_Amt"),
+                    FileCount = row.Field<int>("FileCount"),
+                    str_Pay_Date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("CP_pay_date").ToString("yyyy/MM/dd"))
+                }).ToList(); ;
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "變更成功";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
 
         // <summary>
         // 財務抓取待開發票的客戶資料
