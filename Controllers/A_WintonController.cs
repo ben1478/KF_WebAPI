@@ -318,7 +318,7 @@ namespace KF_WebAPI.Controllers
 
 
         /// <summary>
-        /// 清償轉文中
+        /// 清償轉文中開發票to銷帳+
         /// </summary>
         /// <param name="List"></param>
         /// <returns></returns>
@@ -464,7 +464,11 @@ namespace KF_WebAPI.Controllers
                 throw;
             }
         }
-
+        /// <summary>
+        /// ACH 轉文中開發票to銷帳
+        /// </summary>
+        /// <param name="List"></param>
+        /// <returns></returns>
         [HttpPost("SendReceivableForInv")]
         public async Task<ResultClass<string>> SendReceivableForInv([FromBody] List<Receivable_Win_Inv> List)
         {
@@ -584,7 +588,11 @@ namespace KF_WebAPI.Controllers
                 throw;
             }
         }
-
+        /// <summary>
+        /// 自行繳款 轉文中開發票to銷帳
+        /// </summary>
+        /// <param name="List"></param>
+        /// <returns></returns>
         [HttpPost("SendPaySelfForInv")]
         public async Task<ResultClass<string>> SendPaySelfForInv([FromBody] List<PaySelf_Win_Inv> List)
         {
