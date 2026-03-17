@@ -130,7 +130,8 @@ namespace KF_WebAPI.DataLogic
                                     byte[] blob = (byte[])reader["file_body_encode"];
                                     string base64String = Convert.ToBase64String(blob);
                                     AE_Files m_AE_File = new();
-                                   // m_AE_File.file_body_encode = _Comm.DecompressFile(base64String);
+                                    // m_AE_File.file_body_encode = _Comm.DecompressFile(base64String);
+                                    m_AE_File.KeyID = reader["KeyID"].ToString();
                                     m_AE_File.file_size = reader["file_size"].ToString();
                                     m_AE_File.file_index = reader["file_index"].ToString();
                                     m_AE_File.file_name = reader["file_name"].ToString();
