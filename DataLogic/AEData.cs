@@ -18,7 +18,7 @@ namespace KF_WebAPI.DataLogic
         Common _Common = new();
 
 
-        private Int32 GetFilesCountByKeyID(string p_Key, string p_Key_Type)
+        private Int32 GetFilesCountByKeyID(string p_Key, string p_Key_Type, string p_isLike)
         {
             Common _Comm = new();
             Int32 m_FileCount =0;
@@ -27,7 +27,17 @@ namespace KF_WebAPI.DataLogic
                 ADOData _adoData = new ADOData();
                 var parameters = new List<SqlParameter>();
                 #region SQL
-                var T_SQL = @"SELECT count(*) FileCount FROM AE_Files WHERE KeyID = @KeyID  and Key_Type=@Key_Type";
+                var T_SQL = @"SELECT count(*) FileCount FROM AE_Files WHERE  Key_Type=@Key_Type";
+
+                if (p_isLike == "Y")
+                {
+                    T_SQL += " and  KeyID like @KeyID   ";
+                    p_Key += "%";
+                }
+                else
+                {
+                    T_SQL += " and  KeyID = @KeyID   ";
+                }
                 #endregion
 
 
@@ -80,22 +90,33 @@ namespace KF_WebAPI.DataLogic
         }
 
 
-        public ResultClass<AE_Files[]> GetFilesByKeyID(string p_Key, string p_Key_Type)
+        public ResultClass<AE_Files[]> GetFilesByKeyID(string p_Key, string p_Key_Type,string p_isLike)
         {
 
             ResultClass<AE_Files[]> resultClass = new();
             Common _Comm = new();
-            Int32 _FileCount = GetFilesCountByKeyID(p_Key, p_Key_Type);   
+            Int32 _FileCount = GetFilesCountByKeyID(p_Key, p_Key_Type, p_isLike);   
             AE_Files[] m_AE_Files = new AE_Files[_FileCount];
             try
             {
+                string m_SQL = "SELECT *,format(add_date,'yyyy/MM/dd')Add_YYMMDD FROM AE_Files WHERE Key_Type=@Key_Type ";
+
+                if (p_isLike == "Y")
+                {
+                    m_SQL += " and  KeyID like @KeyID   ";
+                    p_Key += "%";
+                }
+                else
+                {
+                    m_SQL += " and  KeyID = @KeyID   ";
+                }
                 using (SqlConnection connection = new SqlConnection(_ADO.GetConnStr()))
                 {
                     connection.Open();
 
                     using (SqlCommand command = connection.CreateCommand())
                     {
-                        command.CommandText = "SELECT *,format(add_date,'yyyy/MM/dd')Add_YYMMDD FROM AE_Files WHERE KeyID = @KeyID  and Key_Type=@Key_Type";
+                        command.CommandText = m_SQL;
                         command.Parameters.AddWithValue("@KeyID", p_Key);
                         command.Parameters.AddWithValue("@Key_Type", p_Key_Type);
 
@@ -109,7 +130,8 @@ namespace KF_WebAPI.DataLogic
                                     byte[] blob = (byte[])reader["file_body_encode"];
                                     string base64String = Convert.ToBase64String(blob);
                                     AE_Files m_AE_File = new();
-                                   // m_AE_File.file_body_encode = _Comm.DecompressFile(base64String);
+                                    // m_AE_File.file_body_encode = _Comm.DecompressFile(base64String);
+                                    m_AE_File.KeyID = reader["KeyID"].ToString();
                                     m_AE_File.file_size = reader["file_size"].ToString();
                                     m_AE_File.file_index = reader["file_index"].ToString();
                                     m_AE_File.file_name = reader["file_name"].ToString();
