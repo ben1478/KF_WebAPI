@@ -315,6 +315,50 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+        /// <summary>
+        /// 汽機車貸清償時另外提供利息金額
+        /// </summary>
+        [HttpGet("GetSpecCaseSett")]
+        public ActionResult<ResultClass<string>> GetSpecCaseSett(string RCM_ID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"select SUM(interest) as totalInterest,COUNT(*) as RC_count,RC_amount from Receivable_D where RCM_id = @RCM_id and check_pay_type = 'N' group by RC_amount";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@RCM_id",RCM_ID)
+                };
+                #endregion
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
+                {
+                    totalInterest = row.Field<decimal>("totalInterest"),
+                    rcCount = row.Field<int>("RC_count"),
+                    rcAmount = row.Field<decimal>("RC_amount")
+                }).FirstOrDefault();
+                if (result != null)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(result);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                }
+                return Ok(resultClass);
+
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
         #endregion
 
         #region 帳款其他資訊
