@@ -80,7 +80,7 @@ namespace KF_WebAPI.DataLogic
         }
 
 
-        public ResultClass<AE_Files[]> GetFilesByKeyID(string p_Key, string p_Key_Type)
+        public ResultClass<AE_Files[]> GetFilesByKeyID(string p_Key, string p_Key_Type,string p_isLike)
         {
 
             ResultClass<AE_Files[]> resultClass = new();
@@ -89,13 +89,24 @@ namespace KF_WebAPI.DataLogic
             AE_Files[] m_AE_Files = new AE_Files[_FileCount];
             try
             {
+                string m_SQL = "SELECT *,format(add_date,'yyyy/MM/dd')Add_YYMMDD FROM AE_Files WHERE Key_Type=@Key_Type";
+
+                if (p_isLike == "Y")
+                {
+                    m_SQL = "and  KeyID like @KeyID   ";
+                    p_Key += "%";
+                }
+                else
+                {
+                    m_SQL = "and  KeyID = @KeyID   ";
+                }
                 using (SqlConnection connection = new SqlConnection(_ADO.GetConnStr()))
                 {
                     connection.Open();
 
                     using (SqlCommand command = connection.CreateCommand())
                     {
-                        command.CommandText = "SELECT *,format(add_date,'yyyy/MM/dd')Add_YYMMDD FROM AE_Files WHERE KeyID = @KeyID  and Key_Type=@Key_Type";
+                        command.CommandText = m_SQL;
                         command.Parameters.AddWithValue("@KeyID", p_Key);
                         command.Parameters.AddWithValue("@Key_Type", p_Key_Type);
 

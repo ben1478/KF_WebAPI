@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System;
+using System.ComponentModel;
 using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
@@ -1030,12 +1031,12 @@ namespace KF_WebAPI.Controllers
 
         [Route("GetFilesByKeyID")]
         [HttpPost]
-        public ActionResult<string> GetFilesByKeyID(string KeyID, string Type)
+        public ActionResult<string> GetFilesByKeyID(string KeyID, string Type , string isLike)
         {
             ResultClass<AE_Files[]> resultClass = new();
             try
             {
-                resultClass = _AEData.GetFilesByKeyID(KeyID, Type);
+                resultClass = _AEData.GetFilesByKeyID(KeyID, Type, isLike);
             }
             catch (Exception ex)
             {
