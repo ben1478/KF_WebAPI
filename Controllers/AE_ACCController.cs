@@ -13,6 +13,7 @@ using System.Collections;
 using System.Data;
 using System.Data.SqlTypes;
 using System.Reflection;
+using System.Reflection.Metadata;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
@@ -3967,76 +3968,107 @@ namespace KF_WebAPI.Controllers
 
         #region 資產數據分析 
         /// <summary>
+        /// 取得主要語法
+        /// </summary>
+        /// <param name="auction_status"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        private DataTable GetdtRC_Excess(string auction_status)
+        {
+            DataTable dtResult = new DataTable();
+            ADOData _adoData = new ADOData();
+            string T_SQL = "";
+            try
+            {
+                
+                if (string.IsNullOrEmpty(auction_status))
+                {
+                    T_SQL = @"select [item_D_name] auction_status_Desc , V.auction_status,V.diffType,AmtTypeDesc,AmtType,count(V.diffType) Count,Format(sum(amount_total),'N0') amount_total,Tot_Amt,rowspan,
+                    Format(convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)),'N2') + '%' Rate
+                    from [view_excess_base_New] V
+                    left join (
+					SELECT [item_D_code] , [item_D_name]   FROM [dbo].[Item_list] where  [item_M_code]='auction_status' and item_D_type='Y'
+					) I on V.auction_status=[item_D_code]
+                    left join (select sum(isnull(case when try_convert(decimal, get_amount) is NULL
+                        then 0
+                        else convert(decimal, get_amount)
+                        end,0)*10000) Tot_Amt
+                    from House_sendcase H
+                    left join House_apply A ON A.HA_id = H.HA_id
+                    where H.del_tag = '0' AND A.del_tag= '0'
+                    AND H.sendcase_handle_type= 'Y' AND isnull(H.Send_amount, '') <>''     
+        			AND H.fund_company='FDCOM003' AND get_amount_type = 'GTAT002'
+                    ) T on 1=1    
+                    left join(select diffType,auction_status, count(diffType) rowspan
+                    from (select diffType,auction_status, AmtType, count(diffType) rowspan
+                          from [view_excess_base_New] 
+                          group by diffType, AmtType,auction_status
+                         ) a
+                    group by auction_status,diffType  
+                    ) R on V.auction_status=R.auction_status and V.diffType=R.diffType
+                    group by [item_D_name],V.auction_status,AmtType,AmtTypeDesc,V.diffType,Tot_Amt,rowspan
+                    order by V.auction_status,V.diffType, AmtType";
+                    dtResult = _adoData.ExecuteSQuery(T_SQL);
+                }
+                else
+                {
+                    T_SQL = @"select  [item_D_name] auction_status_Desc ,V.auction_status,V.diffType,AmtTypeDesc,AmtType,count(V.diffType) Count,Format(sum(amount_total),'N0') amount_total,Tot_Amt,rowspan,
+                    Format(convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)),'N2') + '%' Rate
+                    from [view_excess_base_New] V
+                 left join (
+					SELECT [item_D_code] , [item_D_name]   FROM [dbo].[Item_list] where  [item_M_code]='auction_status' and item_D_type='Y'
+					) I on V.auction_status=[item_D_code]
+                    left join (select sum(isnull(case when try_convert(decimal, get_amount) is NULL
+                        then 0
+                        else convert(decimal, get_amount)
+                        end,0)*10000) Tot_Amt
+                    from House_sendcase H
+                    left join House_apply A ON A.HA_id = H.HA_id
+                    where H.del_tag = '0' AND A.del_tag= '0'
+                    AND H.sendcase_handle_type= 'Y' AND isnull(H.Send_amount, '') <>''     
+        			AND H.fund_company='FDCOM003' AND get_amount_type = 'GTAT002'
+                    ) T on 1=1    
+                    left join(select diffType,auction_status, count(diffType) rowspan
+                    from (select diffType,auction_status, AmtType, count(diffType) rowspan
+                          from [view_excess_base_New] where auction_status=@auction_status
+                          group by diffType, AmtType,auction_status
+                         ) a
+                    group by auction_status,diffType  
+                    ) R on V.auction_status=R.auction_status and V.diffType=R.diffType
+					where V.auction_status=@auction_status
+                    group by [item_D_name],V.auction_status,AmtType,AmtTypeDesc,V.diffType,Tot_Amt,rowspan
+                    order by V.auction_status,V.diffType, AmtType ";
+
+                    var parameters = new List<SqlParameter>
+                    {
+                        new SqlParameter("@auction_status", auction_status)
+                    };
+
+                    dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+
+                }
+                return dtResult;
+            }
+            catch
+            {
+                throw new Exception("GetDataTable Err SQL :  "+ T_SQL);
+            }
+        }
+
+
+        /// <summary>
         /// 資產數據分析查詢 RC_Excess_LQuery/RC_Excess.asp
         /// </summary>
         /// <param name="Forec">1</param>
         [HttpGet("RC_Excess_LQuery")]
-        public ActionResult<ResultClass<string>> RC_Excess_LQuery(string? Forec)
+        public ActionResult<ResultClass<string>> RC_Excess_LQuery(string? auction_status)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
             try
             {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var parametes = new List<SqlParameter>();
-                var T_SQL = "";
-                //差在where court_sale = ''條件是否存在
-                if (!string.IsNullOrEmpty(Forec) && Forec == "1")
-                {
-                    T_SQL = @"select V.diffType,AmtTypeDesc,AmtType,count(V.diffType) Count,Format(sum(amount_total),'N0') amount_total,Tot_Amt,rowspan,
-                    Format(convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)),'N2') + '%' Rate
-                    from view_excess_base V
-                    left join (select sum(isnull(case when try_convert(decimal, get_amount) is NULL
-                        then 0
-                        else convert(decimal, get_amount)
-                        end,0)*10000) Tot_Amt
-                    from House_sendcase H
-                    left join House_apply A ON A.HA_id = H.HA_id
-                    where H.del_tag = '0' AND A.del_tag= '0'
-                    AND H.sendcase_handle_type= 'Y' AND isnull(H.Send_amount, '') <>''     
-        			AND H.fund_company='FDCOM003' AND get_amount_type = 'GTAT002'
-                    ) T on 1=1    
-                    left join(select diffType, count(diffType) rowspan
-                    from (select diffType, AmtType, count(diffType) rowspan
-                          from view_excess_base
-                          group by diffType, AmtType
-                         ) a
-                    group by diffType  
-                    ) R on V.diffType=R.diffType
-                    group by AmtType,AmtTypeDesc,V.diffType,Tot_Amt,rowspan
-                    order by V.diffType, AmtType";
-                }
-                else
-                {
-                    T_SQL = @"select V.diffType,AmtTypeDesc,AmtType,count(V.diffType) Count,Format(sum(amount_total),'N0') amount_total,Tot_Amt,rowspan,
-                    Format(convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)),'N2') + '%' Rate
-                    from view_excess_base V
-                    left join (select sum(isnull(case when try_convert(decimal, get_amount) is NULL
-                        then 0
-                        else convert(decimal, get_amount)
-                        end,0)*10000) Tot_Amt
-                    from House_sendcase H
-                    left join House_apply A ON A.HA_id = H.HA_id
-                    where H.del_tag = '0' AND A.del_tag= '0'
-                    AND H.sendcase_handle_type= 'Y' AND isnull(H.Send_amount, '') <>''     
-        			AND H.fund_company='FDCOM003' AND get_amount_type = 'GTAT002'
-                    ) T on 1=1    
-                    left join (select diffType, count(diffType) rowspan
-                    from (select diffType, AmtType, count(diffType) rowspan
-                          from view_excess_base
-                          where court_sale = ''
-                          group by diffType, AmtType
-                         ) a
-                    group by diffType  
-                    ) R on V.diffType=R.diffType
-                    where court_sale=''
-                    group by AmtType,AmtTypeDesc,V.diffType,Tot_Amt,rowspan
-                    order by V.diffType, AmtType";
-                }
-                #endregion
-                DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
-                if (dtResult.Rows.Count > 0)
+                DataTable dtResult = GetdtRC_Excess(auction_status);
+               if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
                     resultClass.objResult = JsonConvert.SerializeObject(dtResult);
@@ -4060,64 +4092,14 @@ namespace KF_WebAPI.Controllers
         /// 資產數據分析查詢Excel下載 RC_Excess_Excel/RC_Excess.asp
         /// </summary>
         [HttpPost("RC_Excess_Excel")]
-        public IActionResult RC_Excess_Excel(string? Forec)
+        public IActionResult RC_Excess_Excel(string? auction_status)
         {
             try
             {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var parametes = new List<SqlParameter>();
-                var T_SQL = "";
-                //差在where court_sale = ''條件是否存在
-                if (!string.IsNullOrEmpty(Forec) && Forec == "1")
+                DataTable dtResult = GetdtRC_Excess(auction_status);
+                var excelList = dtResult.AsEnumerable().Select(row => new Receivable_Excess_Excel
                 {
-                    T_SQL = @"select V.diffType,AmtTypeDesc,AmtType,count(V.diffType) Count,sum(amount_total) amount_total,Tot_Amt,rowspan,
-                    convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)) Rate
-                    from view_excess_base V
-                    left join (select sum(isnull(convert(int, get_amount),0)*10000) Tot_Amt
-                    from House_sendcase H
-                    left join House_apply A ON A.HA_id = H.HA_id
-                    where H.del_tag = '0' AND A.del_tag= '0'
-                    AND H.sendcase_handle_type= 'Y' AND isnull(H.Send_amount, '') <>''     
-        			AND H.fund_company='FDCOM003' AND get_amount_type = 'GTAT002'
-                    ) T on 1=1    
-                    left join(select diffType, count(diffType) rowspan
-                    from (select diffType, AmtType, count(diffType) rowspan
-                          from view_excess_base
-                          group by diffType, AmtType
-                         ) a
-                    group by diffType  
-                    ) R on V.diffType=R.diffType
-                    group by AmtType,AmtTypeDesc,V.diffType,Tot_Amt,rowspan
-                    order by V.diffType, AmtType";
-                }
-                else
-                {
-                    T_SQL = @"select V.diffType,AmtTypeDesc,AmtType,count(V.diffType) Count,sum(amount_total) amount_total,Tot_Amt,rowspan,
-                    convert (decimal(5,2),ROUND(sum(amount_total)/Tot_Amt*100,2)) Rate
-                    from view_excess_base V
-                    left join (select sum(isnull(convert(int, get_amount),0)*10000) Tot_Amt
-                    from House_sendcase H
-                    left join House_apply A ON A.HA_id = H.HA_id
-                    where H.del_tag = '0' AND A.del_tag= '0'
-                    AND H.sendcase_handle_type= 'Y' AND isnull(H.Send_amount, '') <>''     
-        			AND H.fund_company='FDCOM003' AND get_amount_type = 'GTAT002'
-                    ) T on 1=1    
-                    left join (select diffType, count(diffType) rowspan
-                    from (select diffType, AmtType, count(diffType) rowspan
-                          from view_excess_base
-                          where court_sale = ''
-                          group by diffType, AmtType
-                         ) a
-                    group by diffType  
-                    ) R on V.diffType=R.diffType
-                    where court_sale=''
-                    group by AmtType,AmtTypeDesc,V.diffType,Tot_Amt,rowspan
-                    order by V.diffType, AmtType";
-                }
-                #endregion
-                var excelList = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new Receivable_Excess_Excel
-                {
+                    auction_status_Desc = row.Field<string>("auction_status_Desc"),
                     diffType = row.Field<string>("diffType"),
                     AmtTypeDesc = row.Field<string>("AmtTypeDesc"),
                     Count = row.Field<int>("Count"),
@@ -4127,6 +4109,7 @@ namespace KF_WebAPI.Controllers
 
                 var Excel_Headers = new Dictionary<string, string>
                 {
+                     { "auction_status_Desc", "法拍狀態" },
                     { "diffType","逾放期數" },
                     { "AmtTypeDesc", "放款金額" },
                     { "Count", "件數" },
@@ -4145,6 +4128,56 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+
+        private DataTable GetdtRC_Excess_Detail(Receivable_Excess_req? model)
+        {
+            DataTable dtResult = new DataTable();
+            ADOData _adoData = new ADOData();
+            string T_SQL = "";
+            try
+            {
+                if (model != null)
+                {
+                    T_SQL = @"SELECT [item_D_name] auction_status_Desc , auction_status,cs_name,DiffDay, amount_total,RC_count,month_total,AmtTypeDesc,AmtType,DiffType
+                    ,replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(max)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'') RCM_note
+                    FROM dbo.[view_excess_base_New] V
+					left join (
+					SELECT [item_D_code] , [item_D_name]   FROM [dbo].[Item_list] where  [item_M_code]='auction_status' and item_D_type='Y'
+					) I on V.auction_status=[item_D_code]
+                    where  DiffType=@DiffType and  AmtType=@AmtType and auction_status=@auction_status
+                    ORDER BY auction_status,DiffType,AmtType,DiffDay ";
+                    var parameters = new List<SqlParameter>
+                    {
+                        new SqlParameter("@DiffType", model.DiffType),
+                        new SqlParameter("@AmtType", model.AmtType),
+                        new SqlParameter("@auction_status", model.auction_status)
+                    };
+                    dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                }
+                else
+                {
+                    T_SQL = @"SELECT [item_D_name] auction_status_Desc , auction_status,cs_name,DiffDay, amount_total,RC_count,month_total,AmtTypeDesc,AmtType,DiffType
+                    ,replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(max)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'') RCM_note
+                    FROM dbo.[view_excess_base_New] V
+					left join (
+					SELECT [item_D_code] , [item_D_name]   FROM [dbo].[Item_list] where  [item_M_code]='auction_status' and item_D_type='Y'
+					) I on V.auction_status=[item_D_code]
+                    ORDER BY auction_status,DiffType,AmtType,DiffDay ";
+
+                    dtResult = _adoData.ExecuteSQuery(T_SQL);
+                }
+                
+
+                
+                return dtResult;
+            }
+            catch
+            {
+                throw new Exception("GetDataTable Err SQL :  " + T_SQL);
+            }
+        }
+
         /// <summary>
         /// 資產數據分析明細查詢 RC_Excess_Detail_LQuery/_Ajaxhandler.asp?method=GetExcess_base
         /// </summary>
@@ -4155,33 +4188,7 @@ namespace KF_WebAPI.Controllers
 
             try
             {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var parameters = new List<SqlParameter>();
-                var T_SQL = "";
-                if(!string.IsNullOrEmpty(model.Forec) && model.Forec == "1")
-                {
-                    T_SQL = @"SELECT cs_name,DiffDay, amount_total,RC_count,month_total,court_sale,AmtTypeDesc,AmtType,DiffType
-                    ,replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(max)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'') RCM_note
-                    FROM dbo.view_excess_base
-                    where 1 = 1 
-                    and DiffType=@DiffType and  AmtType=@AmtType
-                    ORDER BY DiffType,AmtType,DiffDay";
-                }
-                else
-                {
-                    T_SQL = @"SELECT cs_name,DiffDay, amount_total,RC_count,month_total,court_sale,AmtTypeDesc,AmtType,DiffType
-                    ,replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(max)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'') RCM_note
-                    FROM dbo.view_excess_base
-                    where 1 = 1 
-                    and DiffType=@DiffType and  AmtType=@AmtType
-                    and court_sale=''
-                    ORDER BY DiffType,AmtType,DiffDay";
-                }
-                parameters.Add(new SqlParameter("@DiffType", model.DiffType));
-                parameters.Add(new SqlParameter("@AmtType", model.AmtType));
-                #endregion
-                DataTable dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
+                DataTable dtResult = GetdtRC_Excess_Detail(model);
                 if (dtResult.Rows.Count > 0)
                 {
                     resultClass.ResultCode = "000";
@@ -4206,33 +4213,14 @@ namespace KF_WebAPI.Controllers
         /// 資產數據分析查詢明細Excel下載 RC_Excess_Detail_Excel//RC_Excess.asp
         /// </summary>
         [HttpPost("RC_Excess_Detail_Excel")]
-        public IActionResult RC_Excess_Detail_Excel(string? Forec)
+        public IActionResult RC_Excess_Detail_Excel(Receivable_Excess_req model)
         {
             try
             {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var T_SQL = "";
-                if(!string.IsNullOrEmpty(Forec) && Forec == "1")
+                DataTable dtResult = GetdtRC_Excess_Detail(model);
+                var excelList = dtResult.AsEnumerable().Select(row=>new Receivable_Excess_Detail_Excel 
                 {
-                    T_SQL = @"SELECT cs_name,DiffDay,amount_total,RC_count,month_total,court_sale,AmtTypeDesc,AmtType,DiffType
-                    ,replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(max)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'') RCM_note
-                    FROM dbo.view_excess_base
-                    where 1 = 1 
-                    ORDER BY DiffType,AmtType,DiffDay";
-                }
-                else
-                {
-                    T_SQL = @"SELECT cs_name,DiffDay,amount_total,RC_count,month_total,court_sale,AmtTypeDesc,AmtType,DiffType
-                    ,replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(max)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'') RCM_note
-                    FROM dbo.view_excess_base
-                    where 1 = 1 
-                    and court_sale=''
-                    ORDER BY DiffType,AmtType,DiffDay";
-                }
-                #endregion
-                var excelList =_adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row=>new Receivable_Excess_Detail_Excel 
-                {
+                    auction_status_Desc = row.Field<string>("auction_status_Desc"),
                     diffType = row.Field<string>("diffType"),
                     AmtTypeDesc = row.Field<string>("AmtTypeDesc"),
                     Cs_name = row.Field<string>("Cs_name"),
@@ -4243,12 +4231,13 @@ namespace KF_WebAPI.Controllers
 
                 var Excel_Headers = new Dictionary<string, string>
                 {
-                    { "diffType","逾放期數" },
-                    { "AmtTypeDesc", "放款金額" },
-                    { "Cs_name", "客戶名稱" },
-                    { "DiffDay", "延滯天數" },
-                    { "amount_total", "逾放金額" },
-                    { "RCM_note", "備註" }
+                   { "auction_status_Desc", "法拍狀態" },
+                   { "diffType","逾放期數" },
+                   { "AmtTypeDesc", "放款金額" },
+                   { "Cs_name", "客戶名稱" },
+                   { "DiffDay", "延滯天數" },
+                   { "amount_total", "逾放金額" },
+                   { "RCM_note", "備註" }
                 };
 
                 var fileBytes = FuncHandler.ReceivableExcessDetailExcel(excelList, Excel_Headers);

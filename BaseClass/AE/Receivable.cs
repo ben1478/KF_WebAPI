@@ -274,13 +274,15 @@ namespace KF_WebAPI.BaseClass.AE
     {
         public string diffType { get; set; }
         public string AmtTypeDesc { get; set; }
+        public string auction_status { get; set; }
+        public string auction_status_Desc { get; set; }
         public int Count { get; set; }
         public decimal amount_total { get; set; }
         public decimal Rate { get; set; }
     }
     public class Receivable_Excess_req
     {
-        public string Forec { get; set; }
+        public string auction_status { get; set; }
         public string DiffType { get; set; }
         public string AmtType { get; set; }
     }
@@ -288,6 +290,7 @@ namespace KF_WebAPI.BaseClass.AE
     {
         public string diffType { get; set; }
         public string AmtTypeDesc { get; set; }
+        public string auction_status_Desc { get; set; }
         public string Cs_name { get; set; } 
         public int DiffDay { get; set; }
         public decimal amount_total { get; set; }
