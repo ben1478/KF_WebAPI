@@ -272,7 +272,9 @@ namespace KF_WebAPI.BaseClass.Winton
         /// </summary>
         public decimal Delay_AMT { get; set; }
        
+        public int month_total { get;set; }
 
+        public string project_title { get; set; }
     }
 
     public class PaySelf_Win_Inv: Receivable_Win_Inv

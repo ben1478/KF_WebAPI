@@ -382,6 +382,20 @@ namespace KF_WebAPI.Controllers
                             model.ADataSetDetail.Add(model_D1);
                         }
 
+                        #region 如果是汽機車會有手續費(未沖銷筆數*20)
+                        string[] strPjt = new string[] { "PJ00046", "PJ00047", "PJ00048", "PJ00099" };
+                        if (strPjt.Contains(List[i].project_title))
+                        {
+                            ReceivableForInv_D_req model_D1 = new ReceivableForInv_D_req();
+                            model_D1.DT10004 = model_M.MF10003;
+                            model_D1.DT10006 = "003";
+                            model_D1.DT10030 = 1;
+                            model_D1.DT10040 = (List[i].month_total - List[i].RC_count + 1 )*20;
+                            model.ADataSetDetail.Add(model_D1);
+                            List[i].Interest_AMT = List[i].Interest_AMT - model_D1.DT10040;
+                        }
+                        #endregion
+
                         if (List[i].Interest_AMT > 0)//結清利息-014
                         {
                             ReceivableForInv_D_req model_D1 = new ReceivableForInv_D_req();

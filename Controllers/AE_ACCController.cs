@@ -143,7 +143,7 @@ namespace KF_WebAPI.Controllers
                 if (isFirst == "Y")
                 {
                     T_SQL = @"
-                    SELECT Case When P.project_title IN ('PJ00099', 'PJ00046', 'PJ00047') Then M.amount_per_month*M.month_total Else M.amount_total END as RP_AMT,
+                    SELECT Case When P.project_title IN ('PJ00099', 'PJ00046', 'PJ00047', 'PJ00048') Then M.amount_per_month*M.month_total Else M.amount_total END as RP_AMT,
                     isnull(M.Break_AMT,CEILING(M.amount_total * 0.13)) Break_AMT,
                     convert(varchar(10),S.get_amount_date,111) RC_date,D1.RC_count,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111) OffDate,
                     D1.interest,Case When DATEPART(Day,convert(varchar(10),S.get_amount_date,111)) = DATEPART(Day,isnull(M.date_begin_settle, SYSDATETIME())) and DATEDIFF(MONTH, convert(varchar(10),S.get_amount_date,111), isnull(M.date_begin_settle, SYSDATETIME())) = 1 
@@ -161,7 +161,7 @@ namespace KF_WebAPI.Controllers
                 else
                 {
                     T_SQL = @"
-                    SELECT Case When P.project_title IN ('PJ00099', 'PJ00046', 'PJ00047') THEN M.amount_per_month*(M.month_total-D.RC_count) ELSE D.Ex_RemainingPrincipal END as RP_AMT,
+                    SELECT Case When P.project_title IN ('PJ00099', 'PJ00046', 'PJ00047', 'PJ00048') THEN M.amount_per_month*(M.month_total-D.RC_count) ELSE D.Ex_RemainingPrincipal END as RP_AMT,
                     isnull(M.Break_AMT,CEILING(D.Ex_RemainingPrincipal * 0.13)) Break_AMT,
                     convert(varchar(10),D.RC_date,111) RC_date,D.RC_count,convert(varchar(10),isnull(M.date_begin_settle,SYSDATETIME()),111) OffDate,
                     D1.interest,Case When DATEPART(Day,D.RC_date) = DATEPART(Day,isnull(M.date_begin_settle, SYSDATETIME())) and DATEDIFF(MONTH, D.RC_date, isnull(M.date_begin_settle, SYSDATETIME())) = 1 
