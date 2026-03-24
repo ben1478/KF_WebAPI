@@ -2919,7 +2919,7 @@ namespace KF_WebAPI.Controllers
                                       JOIN House_sendcase HS ON HS.HS_id = RM.HS_id
                                       JOIN ProjectCode P ON P.HA_id = RM.HA_id AND P.del_tag = '0'
                                       LEFT JOIN Item_list I ON I.item_D_code = P.project_code AND I.item_M_code = 'project_title' AND I.item_D_type = 'Y'
-                                      WHERE SM.del_tag = '0' and RM.RCM_id <> 10010495 )
+                                      WHERE SM.del_tag = '0' and exists (select 1 from Receivable_D where Receivable_D.bad_debt_type = 'Y' and Receivable_D.RCM_id = SM.RCM_id) )
                                       SELECT pro_name,amount_type,COUNT(*) AS TOT_bad_Count,SUM(amount_bad_total) AS TOT_bad_debt 
                                       FROM BaseData 
                                       GROUP BY pro_name, amount_type ORDER BY pro_name, amount_type";
