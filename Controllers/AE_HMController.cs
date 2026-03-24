@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using System.Reflection;
 using System.Collections.Generic;
 using KF_WebAPI.DataLogic;
+using System.Xml.Linq;
 
 namespace KF_WebAPI.Controllers
 {
@@ -19,6 +20,8 @@ namespace KF_WebAPI.Controllers
     public class AE_HMController : Controller
     {
         private AEData _AEData = new();
+
+        private AE_HM _HM = new AE_HM();
 
         /// <summary>
         /// 汽車進件API HouseApplyCar_Ins / House_apply_addCarDB.asp
@@ -187,6 +190,7 @@ namespace KF_WebAPI.Controllers
             }
         }
 
+        #region 客戶繳款回報
         /// <summary>
         /// 業務或業助抓取待沖銷分期資料(queryType 1.查看全部資訊  2.查看分區資訊  3.查看單一業務資訊)
         /// </summary>
@@ -228,7 +232,7 @@ namespace KF_WebAPI.Controllers
                             (/*抓出最近一期沒繳款的資料*/
                             select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) as varchar)RC_count 
                             from Receivable_D where check_pay_type ='N' and bad_debt_type = 'N'";
-                if(!string.IsNullOrEmpty(model.RC_Date_S) && !string.IsNullOrEmpty(model.RC_Date_E))
+                if (!string.IsNullOrEmpty(model.RC_Date_S) && !string.IsNullOrEmpty(model.RC_Date_E))
                 {
                     T_SQL += @" and RC_date >= @RC_Date_S and RC_date <= @RC_Date_E ";
                 }
@@ -285,7 +289,7 @@ namespace KF_WebAPI.Controllers
                     month_total = row.Field<int>("month_total"),
                     FileCount = row.Field<int>("FileCount"),
                     CP_bus_remark = row.Field<string?>("RC_note"),
-                    CP_Pay_Amt = row.Field<decimal?>("RecPayAmt") 
+                    CP_Pay_Amt = row.Field<decimal?>("RecPayAmt")
                 }).ToList();
 
                 resultClass.ResultCode = "000";
@@ -309,11 +313,11 @@ namespace KF_WebAPI.Controllers
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
-            
+
             try
             {
                 ADOData _adoData = new ADOData();
-               
+
                 foreach (var item in List)
                 {
                     var T_SQL = "";
@@ -326,7 +330,7 @@ namespace KF_WebAPI.Controllers
                         parameters.Add(new SqlParameter("@RCD_id", item.RCD_id));
                         parameters.Add(new SqlParameter("@CP_pay_date", item.CP_pay_date));
                         parameters.Add(new SqlParameter("@CP_account_last", item.CP_account_last));
-                        parameters.Add(new SqlParameter("@CP_Pay_Amt",item.CP_Pay_Amt));
+                        parameters.Add(new SqlParameter("@CP_Pay_Amt", item.CP_Pay_Amt));
                         parameters.Add(new SqlParameter("@CP_bus_remark", item.CP_bus_remark));
                         parameters.Add(new SqlParameter("@add_num", item.User));
                     }
@@ -334,9 +338,9 @@ namespace KF_WebAPI.Controllers
                     {
                         //異動部分Receivable_D
                         T_SQL += @"Update Receivable_D set RecPayAmt=@CP_Pay_Amt,RC_note=@CP_bus_remark where RCD_id = @RCD_id";
-                        parameters.Add(new SqlParameter("@CP_Pay_Amt",item.CP_Pay_Amt));
-                        parameters.Add(new SqlParameter("@CP_bus_remark",item.CP_bus_remark));
-                        parameters.Add(new SqlParameter("@RCD_id",item.RCD_id));
+                        parameters.Add(new SqlParameter("@CP_Pay_Amt", item.CP_Pay_Amt));
+                        parameters.Add(new SqlParameter("@CP_bus_remark", item.CP_bus_remark));
+                        parameters.Add(new SqlParameter("@RCD_id", item.RCD_id));
                     }
                     _adoData.ExecuteNonQuery(T_SQL, parameters);
 
@@ -344,7 +348,7 @@ namespace KF_WebAPI.Controllers
                     var logTable = new LogTable();
                     logTable.TableNA = "ClientPayback";
                     logTable.KeyVal = item.RCD_id.ToString();
-                    logTable.ColumnNA = "CP_pay_date" + "," +"CP_Pay_Amt";
+                    logTable.ColumnNA = "CP_pay_date" + "," + "CP_Pay_Amt";
                     logTable.ColumnVal = item.CP_pay_date.ToString("yyyy-MM-dd") + "," + item.CP_Pay_Amt.ToString();
                     logTable.Remark = item.CP_bus_remark;
                     logTable.LogID = item.User;
@@ -380,10 +384,12 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 var parameters = new List<SqlParameter>();
                 #region SQL
-                var T_SQL = @"select *,(select COUNT(*) from AE_Files where AE_Files.KeyID = 'P' + cast(Cp.RCD_id as varchar)) as FileCount from ClientPayback Cp
+                var T_SQL = @"select *,(select COUNT(*) from AE_Files where AE_Files.KeyID = 'P' + cast(Cp.RCD_id as varchar)) as FileCount,Um.U_name as U_Name 
+                              from ClientPayback Cp
                               inner join Receivable_D Rd ON Rd.RCD_id = Cp.RCD_id
                               inner join Receivable_M Rm ON Rm.RCM_id = Rd.RCM_id
                               inner join House_apply HA ON HA.HA_id = RM.HA_id
+                              left join User_M Um ON Um.U_num = Cp.add_num
                               where RM.del_tag = 0  and cancel_type <> 'Y' and bad_debt_type = 'N'";
                 if (!string.IsNullOrEmpty(model.CP_WIN_CK))
                 {
@@ -418,64 +424,8 @@ namespace KF_WebAPI.Controllers
                     CP_bus_remark = row.Field<string>("CP_bus_remark"),
                     CP_Pay_Amt = row.Field<decimal?>("CP_Pay_Amt"),
                     FileCount = row.Field<int>("FileCount"),
-                    str_Pay_Date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("CP_pay_date").ToString("yyyy/MM/dd"))
-                }).ToList(); ;
-                resultClass.ResultCode = "000";
-                resultClass.ResultMsg = "變更成功";
-                resultClass.objResult = JsonConvert.SerializeObject(result);
-                return Ok(resultClass);
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
-            }
-        }
-
-        // <summary>
-        // 財務抓取待開發票的客戶資料
-        // </summary>
-        [HttpGet("Client_Pay_LQuery")]
-        public ActionResult<ResultClass<string>> Client_Pay_LQuery()
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
-            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
-            FuncHandler _Fun = new FuncHandler();
-
-            try
-            {
-                ADOData _adoData = new ADOData();
-                var parameters = new List<SqlParameter>();
-                #region SQL
-                var T_SQL = @"select *,(select COUNT(*) from AE_Files where AE_Files.KeyID = 'P' + cast(Cp.RCD_id as varchar)) as FileCount from ClientPayback Cp
-                              inner join Receivable_D Rd ON Rd.RCD_id = Cp.RCD_id
-                              inner join Receivable_M Rm ON Rm.RCM_id = Rd.RCM_id
-                              inner join House_apply HA ON HA.HA_id = RM.HA_id
-                              where RM.del_tag = 0 and check_pay_type = 'N' 
-                              and cancel_type <> 'Y' and bad_debt_type = 'N' and CP_WIN_CK = 'N'";
-                #endregion
-                var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new PaySelf_Win_Inv
-                {
-                    HS_id = row.Field<decimal>("HS_id"),
-                    RCD_id = row.Field<decimal>("RCD_id"),
-                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
-                    CS_PID = row.Field<string>("CS_PID"),
-                    RC_count = row.Field<int>("RC_count"),
-                    roc_RC_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("RC_date").ToString("yyyy/MM/dd")),
-                    amount_per_month = row.Field<decimal>("amount_per_month"),
-                    interest = row.Field<decimal>("interest"),
-                    Rmoney = row.Field<decimal>("Rmoney"),
-                    HFees = 20,
-                    Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
-                    amount_total = row.Field<decimal>("amount_total"),
-                    month_total = row.Field<int>("month_total"),
-                    RecPayDate = row.Field<DateTime>("CP_pay_date"),
-                    CP_account_last = row.Field<string>("CP_account_last"),
-                    CP_bus_remark = row.Field<string>("CP_bus_remark"),
-                    CP_Pay_Amt = row.Field<decimal?>("CP_Pay_Amt"),
-                    FileCount = row.Field<int>("FileCount"),
-                    str_Pay_Date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("CP_pay_date").ToString("yyyy/MM/dd"))
+                    str_Pay_Date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("CP_pay_date").ToString("yyyy/MM/dd")),
+                    U_Name = row.Field<string>("U_Name")
                 }).ToList(); ;
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "變更成功";
@@ -541,5 +491,58 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+        #endregion
+
+        #region 客訴資料維護
+        //Complaint_LQuery 有權限規則
+        [HttpPost("Complaint_LQuery")]
+        public ActionResult<ResultClass<string>> Complaint_LQuery(Complaint_M_req model)
+        {
+            ResultClass<string> resultClass = new();
+
+            try
+            {
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+
+        }
+        [HttpPost("Complaint_Ins")]
+        public ActionResult<ResultClass<string>> Complaint_Ins(Complaint_M model)
+        {
+            ResultClass<string> resultClass = new ();
+
+            try
+            {
+                var reslt = _HM.Complaint_Ins(model);
+                if(reslt > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "儲存成功";
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "儲存失敗";
+                }
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        //Complaint_SQuery
+        //Complaint_Upd
+        //Complaint_Excel
+        //Complaint_Close_Excel
+        #endregion
     }
 }
