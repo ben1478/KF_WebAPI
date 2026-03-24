@@ -1331,7 +1331,7 @@ namespace KF_WebAPI.Controllers
         /// 新增客訴資料資料 House_othercase_Ins
         /// </summary>
         [HttpPost("Complaint_Ins")]
-        public ActionResult<ResultClass<string>> Complaint_Ins(Complaint_Ins model)
+        public ActionResult<ResultClass<string>> Complaint_Ins(Complaint_M model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -1375,7 +1375,7 @@ namespace KF_WebAPI.Controllers
                         new SqlParameter("@CompTime",  string.IsNullOrEmpty(model.CompTime) ? DBNull.Value : model.CompTime),
                         new SqlParameter("@Remark",  string.IsNullOrEmpty(model.Remark) ? DBNull.Value : model.Remark),
                         new SqlParameter("@add_date", DateTime.Today),
-                        new SqlParameter("@add_num", model.add_num)
+                        new SqlParameter("@add_num", model.tbInfo.add_num)
                   };
 
 
@@ -1409,7 +1409,7 @@ namespace KF_WebAPI.Controllers
         /// 修改客訴資料資料 House_othercase_Upd
         /// </summary>
         [HttpPost("Complaint_Upd")]
-        public ActionResult<ResultClass<string>> Complaint_Upd(Complaint_Ins model)
+        public ActionResult<ResultClass<string>> Complaint_Upd(Complaint_M model)
         {
 
             // CompDate 傳入格式 國曆：yyy-MM-dd 需轉成國曆：yyy/MM/dd 並且要去零 。例如:113-01-01 -> 113/1/1
@@ -1441,7 +1441,7 @@ namespace KF_WebAPI.Controllers
                         new SqlParameter("@CompTime",  string.IsNullOrEmpty(model.CompTime) ? DBNull.Value : model.CompTime),
                         new SqlParameter("@Remark",  string.IsNullOrEmpty(model.Remark) ? DBNull.Value : model.Remark),
                         new SqlParameter("@edit_date", DateTime.Today),
-                        new SqlParameter("@edit_num",  model.edit_num)
+                        new SqlParameter("@edit_num",  model.tbInfo.edit_num)
                 };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
