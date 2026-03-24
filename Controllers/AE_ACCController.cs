@@ -4139,12 +4139,16 @@ namespace KF_WebAPI.Controllers
             {
                 if (model != null)
                 {
-                    T_SQL = @"SELECT [item_D_name] auction_status_Desc , auction_status,cs_name,DiffDay, amount_total,RC_count,month_total,AmtTypeDesc,AmtType,DiffType
+                    T_SQL = @"SELECT distinct V.project_title, title_name, H.pre_address, [item_D_name] auction_status_Desc , auction_status,cs_name,DiffDay, amount_total,RC_count,month_total,AmtTypeDesc,AmtType,DiffType
                     ,replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(max)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'') RCM_note
                     FROM dbo.[view_excess_base_New] V
 					left join (
 					SELECT [item_D_code] , [item_D_name]   FROM [dbo].[Item_list] where  [item_M_code]='auction_status' and item_D_type='Y'
 					) I on V.auction_status=[item_D_code]
+                    left join House_pre H on V.HA_id=H.HA_id
+                    left join (SELECT item_D_code project_title ,replace( item_D_name,(select item_M_name from Item_list where item_M_code='KF_Desc'),'') title_name
+						FROM Item_list WHERE item_M_code = 'project_title' AND item_D_type='Y'
+					) PP on V.project_title=PP.project_title
                     where  DiffType=@DiffType and  AmtType=@AmtType and auction_status=@auction_status
                     ORDER BY auction_status,DiffType,AmtType,DiffDay ";
                     var parameters = new List<SqlParameter>
@@ -4157,12 +4161,16 @@ namespace KF_WebAPI.Controllers
                 }
                 else
                 {
-                    T_SQL = @"SELECT [item_D_name] auction_status_Desc , auction_status,cs_name,DiffDay, amount_total,RC_count,month_total,AmtTypeDesc,AmtType,DiffType
+                    T_SQL = @"SELECT  distinct V.project_title, title_name, H.pre_address, [item_D_name] auction_status_Desc , auction_status,cs_name,DiffDay, amount_total,RC_count,month_total,AmtTypeDesc,AmtType,DiffType
                     ,replace(replace(REPLACE(replace(replace(cast(RCM_note as nvarchar(max)),'[',''),']',''),char(10),''),CHAR(13),''),CHAR(32),'') RCM_note
                     FROM dbo.[view_excess_base_New] V
 					left join (
 					SELECT [item_D_code] , [item_D_name]   FROM [dbo].[Item_list] where  [item_M_code]='auction_status' and item_D_type='Y'
 					) I on V.auction_status=[item_D_code]
+                    left join House_pre H on V.HA_id=H.HA_id
+                    left join (SELECT item_D_code project_title ,replace( item_D_name,(select item_M_name from Item_list where item_M_code='KF_Desc'),'') title_name
+						FROM Item_list WHERE item_M_code = 'project_title' AND item_D_type='Y'
+					) PP on V.project_title=PP.project_title
                     ORDER BY auction_status,DiffType,AmtType,DiffDay ";
 
                     dtResult = _adoData.ExecuteSQuery(T_SQL);
