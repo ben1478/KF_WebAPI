@@ -463,8 +463,8 @@ namespace KF_WebAPI.Controllers
                             #endregion
 
                             #region 異動Receivable_D
-
-                            _Rpt.UpdWinToRecD(List[i], clientIp, INV_NO, "S");
+                            //_Rpt.UpdWinToRecD(List[i], clientIp, INV_NO, "S");
+                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, 0, "3");
                             #endregion
                         }
                     }
@@ -587,7 +587,8 @@ namespace KF_WebAPI.Controllers
                             #endregion
 
                             #region 異動Receivable_D
-                            _Rpt.UpdWinToRecAuto(List[i], clientIp, INV_NO, List[i].amount_per_month, "Y", "B");
+                            //_Rpt.UpdWinToRecAuto(List[i], clientIp, INV_NO, List[i].amount_per_month, "Y", "B");
+                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, List[i].amount_per_month, "2");
                             #endregion
                         }
                     }
@@ -710,10 +711,12 @@ namespace KF_WebAPI.Controllers
                             string INV_NO = await GetSalesOrder(okResult.Value.ToString(), model_M.MF10003);
                             #endregion
 
+
                             #region 異動Receivable_D
                             var cpPayAmt = List[i].CP_Pay_Amt ?? 0;
                             List[i].RC_note = List[i].CP_bus_remark;
-                            _Rpt.UpdWinToRecDetail(List[i], clientIp, INV_NO, cpPayAmt, "Y","C");
+                            //_Rpt.UpdWinToRecDetail(List[i], clientIp, INV_NO, cpPayAmt, "Y","C");
+                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, cpPayAmt,"1");
                             #endregion
 
                             #region 異動自主繳款資料

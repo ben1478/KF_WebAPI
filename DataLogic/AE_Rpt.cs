@@ -2727,89 +2727,89 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
         }
 
-        public void UpdWinToRecD(Receivable_Win_Inv model, string clientIp, string INV_NO, string check_pay_type = "Y", string RecPayType = "C")
-        {
-            try
-            {
-                var T_SQL = @"Update Receivable_D set RecPayDate = @RecPayDate,RecPayAmt = 0,RecPayType = @RecPayType ,check_pay_date=@check_pay_date
-                              ,check_pay_type =  @check_pay_type,check_pay_num = @check_pay_num,invoice_no=@invoice_no,invoice_date = getdate(),edit_date = getdate()
-                              ,edit_num = @edit_num,edit_ip = @edit_ip where RCD_id = @RCD_id";
-                var parameters = new List<SqlParameter>
-                {
-                    new SqlParameter("@RecPayDate",model.RecPayDate),
-                    new SqlParameter("@check_pay_date",model.RecPayDate),
-                    new SqlParameter("@check_pay_num",model.User),
-                    new SqlParameter("@invoice_no",INV_NO),
-                    new SqlParameter("@edit_ip",clientIp),
-                    new SqlParameter("@edit_num",model.User),
-                    new SqlParameter("@check_pay_type",check_pay_type),
-                    new SqlParameter("@RecPayType",RecPayType),
-                    new SqlParameter("@RCD_id",model.RCD_id)
-                };
-                _adoData.ExecuteNonQuery(T_SQL, parameters);
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
+        //public void UpdWinToRecD(Receivable_Win_Inv model, string clientIp, string INV_NO, string check_pay_type = "Y", string RecPayType = "C")
+        //{
+        //    try
+        //    {
+        //        var T_SQL = @"Update Receivable_D set RecPayDate = @RecPayDate,RecPayAmt = 0,RecPayType = @RecPayType ,check_pay_date=@check_pay_date
+        //                      ,check_pay_type =  @check_pay_type,check_pay_num = @check_pay_num,invoice_no=@invoice_no,invoice_date = getdate(),edit_date = getdate()
+        //                      ,edit_num = @edit_num,edit_ip = @edit_ip where RCD_id = @RCD_id";
+        //        var parameters = new List<SqlParameter>
+        //        {
+        //            new SqlParameter("@RecPayDate",model.RecPayDate),
+        //            new SqlParameter("@check_pay_date",model.RecPayDate),
+        //            new SqlParameter("@check_pay_num",model.User),
+        //            new SqlParameter("@invoice_no",INV_NO),
+        //            new SqlParameter("@edit_ip",clientIp),
+        //            new SqlParameter("@edit_num",model.User),
+        //            new SqlParameter("@check_pay_type",check_pay_type),
+        //            new SqlParameter("@RecPayType",RecPayType),
+        //            new SqlParameter("@RCD_id",model.RCD_id)
+        //        };
+        //        _adoData.ExecuteNonQuery(T_SQL, parameters);
+        //    }
+        //    catch (Exception)
+        //    {
+        //        throw;
+        //    }
+        //}
 
-        public void UpdWinToRecAuto(Receivable_Win_Inv model, string clientIp, string INV_NO, decimal RecPayAmt, string check_pay_type = "Y", string RecPayType = "C")
-        {
-            try
-            {
-                var T_SQL = @"Update Receivable_D set RecPayDate = @RecPayDate,RecPayAmt = @RecPayAmt,RecPayType = @RecPayType ,check_pay_date=@check_pay_date
-                              ,check_pay_type =  @check_pay_type,check_pay_num = @check_pay_num,invoice_no=@invoice_no,invoice_date = getdate(),edit_date = getdate()
-                              ,edit_num = @edit_num,edit_ip = @edit_ip where RCD_id = @RCD_id";
-                var parameters = new List<SqlParameter>
-                {
-                    new SqlParameter("@RecPayDate",model.RecPayDate),
-                    new SqlParameter("@check_pay_date",model.RecPayDate),
-                    new SqlParameter("@check_pay_num",model.User),
-                    new SqlParameter("@RecPayAmt",RecPayAmt),
-                    new SqlParameter("@invoice_no",INV_NO),
-                    new SqlParameter("@edit_ip",clientIp),
-                    new SqlParameter("@edit_num",model.User),
-                    new SqlParameter("@check_pay_type",check_pay_type),
-                    new SqlParameter("@RecPayType",RecPayType),
-                    new SqlParameter("@RCD_id",model.RCD_id)
-                };
-                _adoData.ExecuteNonQuery(T_SQL, parameters);
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
+        //public void UpdWinToRecAuto(Receivable_Win_Inv model, string clientIp, string INV_NO, decimal RecPayAmt, string check_pay_type = "Y", string RecPayType = "C")
+        //{
+        //    try
+        //    {
+        //        var T_SQL = @"Update Receivable_D set RecPayDate = @RecPayDate,RecPayAmt = @RecPayAmt,RecPayType = @RecPayType ,check_pay_date=@check_pay_date
+        //                      ,check_pay_type =  @check_pay_type,check_pay_num = @check_pay_num,invoice_no=@invoice_no,invoice_date = getdate(),edit_date = getdate()
+        //                      ,edit_num = @edit_num,edit_ip = @edit_ip where RCD_id = @RCD_id";
+        //        var parameters = new List<SqlParameter>
+        //        {
+        //            new SqlParameter("@RecPayDate",model.RecPayDate),
+        //            new SqlParameter("@check_pay_date",model.RecPayDate),
+        //            new SqlParameter("@check_pay_num",model.User),
+        //            new SqlParameter("@RecPayAmt",RecPayAmt),
+        //            new SqlParameter("@invoice_no",INV_NO),
+        //            new SqlParameter("@edit_ip",clientIp),
+        //            new SqlParameter("@edit_num",model.User),
+        //            new SqlParameter("@check_pay_type",check_pay_type),
+        //            new SqlParameter("@RecPayType",RecPayType),
+        //            new SqlParameter("@RCD_id",model.RCD_id)
+        //        };
+        //        _adoData.ExecuteNonQuery(T_SQL, parameters);
+        //    }
+        //    catch (Exception)
+        //    {
+        //        throw;
+        //    }
+        //}
 
-        public void UpdWinToRecDetail(Receivable_Win_Inv model, string clientIp, string INV_NO, decimal RecPayAmt, string check_pay_type = "Y", string RecPayType = "C")
-        {
-            try
-            {
-                var T_SQL = @"Update Receivable_D set RecPayDate = @RecPayDate,RecPayAmt = @RecPayAmt,RecPayType = @RecPayType ,check_pay_date=@check_pay_date
-                              ,check_pay_type =  @check_pay_type,check_pay_num = @check_pay_num,invoice_no=@invoice_no,invoice_date = getdate(),edit_date = getdate()
-                              ,RC_note=@RC_note,edit_num = @edit_num,edit_ip = @edit_ip where RCD_id = @RCD_id";
-                var parameters = new List<SqlParameter>
-                {
-                    new SqlParameter("@RecPayDate",model.RecPayDate),
-                    new SqlParameter("@check_pay_date",model.RecPayDate),
-                    new SqlParameter("@check_pay_num",model.User),
-                    new SqlParameter("@RecPayAmt",RecPayAmt),
-                    new SqlParameter("@invoice_no",INV_NO),
-                    new SqlParameter("@edit_ip",clientIp),
-                    new SqlParameter("@edit_num",model.User),
-                    new SqlParameter("@check_pay_type",check_pay_type),
-                    new SqlParameter("@RecPayType",RecPayType),
-                    new SqlParameter("@RCD_id",model.RCD_id),
-                    new SqlParameter("@RC_note",model.RC_note)
-                };
-                _adoData.ExecuteNonQuery(T_SQL, parameters);
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
+        //public void UpdWinToRecDetail(Receivable_Win_Inv model, string clientIp, string INV_NO, decimal RecPayAmt, string check_pay_type = "Y", string RecPayType = "C")
+        //{
+        //    try
+        //    {
+        //        var T_SQL = @"Update Receivable_D set RecPayDate = @RecPayDate,RecPayAmt = @RecPayAmt,RecPayType = @RecPayType ,check_pay_date=@check_pay_date
+        //                      ,check_pay_type =  @check_pay_type,check_pay_num = @check_pay_num,invoice_no=@invoice_no,invoice_date = getdate(),edit_date = getdate()
+        //                      ,RC_note=@RC_note,edit_num = @edit_num,edit_ip = @edit_ip where RCD_id = @RCD_id";
+        //        var parameters = new List<SqlParameter>
+        //        {
+        //            new SqlParameter("@RecPayDate",model.RecPayDate),
+        //            new SqlParameter("@check_pay_date",model.RecPayDate),
+        //            new SqlParameter("@check_pay_num",model.User),
+        //            new SqlParameter("@RecPayAmt",RecPayAmt),
+        //            new SqlParameter("@invoice_no",INV_NO),
+        //            new SqlParameter("@edit_ip",clientIp),
+        //            new SqlParameter("@edit_num",model.User),
+        //            new SqlParameter("@check_pay_type",check_pay_type),
+        //            new SqlParameter("@RecPayType",RecPayType),
+        //            new SqlParameter("@RCD_id",model.RCD_id),
+        //            new SqlParameter("@RC_note",model.RC_note)
+        //        };
+        //        _adoData.ExecuteNonQuery(T_SQL, parameters);
+        //    }
+        //    catch (Exception)
+        //    {
+        //        throw;
+        //    }
+        //}
 
         public string CheckInvGp(string yyyMM , string GpNO)
         {
@@ -2887,6 +2887,84 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                     new SqlParameter("@RCD_id",RCD_id)
                 };
                 _adoData.ExecuteNonQuery(T_SQL, parameters);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 異動Receivable_D(uType=>自主繳款:1 ACH:2 清償:3) 
+        /// </summary>
+        public void UpdReceivableD(Receivable_Win_Inv model, string clientIp, string INV_NO, decimal RecPayAmt, string uType)
+        {
+            try
+            {
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"UPDATE RD
+                              SET RecPayDate = @RecPayDate,RecPayAmt = @RecPayAmt,RecPayType = @RecPayType ,check_pay_date = @check_pay_date,
+                              check_pay_type = @check_pay_type,check_pay_num = @check_pay_num,invoice_no = @invoice_no,invoice_date = getdate(),
+                              edit_date = getdate(),edit_num = @edit_num,edit_ip = @edit_ip";
+                var T_SQL_B = @" FROM Receivable_D RD
+                                 INNER JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id
+                                 INNER JOIN House_sendcase HS ON HS.HS_id = RM.HS_id
+                                 WHERE RD.RCD_id = @RCD_id";
+                if (uType == "1") 
+                {
+                    T_SQL += ",RC_note = @RC_note";
+                    T_SQL += ",RD.Delaymoney = CASE WHEN HS.sendcase_handle_date >= '2023-04-24 00:00:00.000' THEN dbo.getDelaymoney(@check_pay_date, RD.RCD_cknum) ELSE NULL END";
+                    T_SQL += T_SQL_B;
+                    parameters.Add(new SqlParameter("@RecPayDate", model.RecPayDate));
+                    parameters.Add(new SqlParameter("@check_pay_date", model.RecPayDate));
+                    parameters.Add(new SqlParameter("@check_pay_num", model.User));
+                    parameters.Add(new SqlParameter("@RecPayAmt", RecPayAmt));
+                    parameters.Add(new SqlParameter("@invoice_no", INV_NO));
+                    parameters.Add(new SqlParameter("@edit_ip", clientIp));
+                    parameters.Add(new SqlParameter("@edit_num", model.User));
+                    parameters.Add(new SqlParameter("@check_pay_type", "Y"));
+                    parameters.Add(new SqlParameter("@RecPayType", "C"));
+                    parameters.Add(new SqlParameter("@RCD_id", model.RCD_id));
+                    parameters.Add(new SqlParameter("@RC_note", model.RC_note));
+
+                    _adoData.ExecuteNonQuery(T_SQL, parameters);
+                }
+                
+                if(uType == "2")
+                {
+                    T_SQL += ",RD.Delaymoney = CASE WHEN HS.sendcase_handle_date >= '2023-04-24 00:00:00.000' THEN dbo.getDelaymoney(@check_pay_date, RD.RCD_cknum) ELSE NULL END";
+                    T_SQL += T_SQL_B;
+                    parameters.Add(new SqlParameter("@RecPayDate", model.RecPayDate));
+                    parameters.Add(new SqlParameter("@check_pay_date", model.RecPayDate));
+                    parameters.Add(new SqlParameter("@check_pay_num", model.User));
+                    parameters.Add(new SqlParameter("@RecPayAmt", RecPayAmt));
+                    parameters.Add(new SqlParameter("@invoice_no", INV_NO));
+                    parameters.Add(new SqlParameter("@edit_ip", clientIp));
+                    parameters.Add(new SqlParameter("@edit_num", model.User));
+                    parameters.Add(new SqlParameter("@check_pay_type", "Y"));
+                    parameters.Add(new SqlParameter("@RecPayType", "B"));
+                    parameters.Add(new SqlParameter("@RCD_id", model.RCD_id));
+
+                    _adoData.ExecuteNonQuery(T_SQL, parameters);
+                }
+               
+                if(uType == "3") 
+                {
+                    T_SQL += T_SQL_B;
+                    parameters.Add(new SqlParameter("@RecPayDate", model.RecPayDate));
+                    parameters.Add(new SqlParameter("@check_pay_date", model.RecPayDate));
+                    parameters.Add(new SqlParameter("@check_pay_num", model.User));
+                    parameters.Add(new SqlParameter("@RecPayAmt", RecPayAmt));
+                    parameters.Add(new SqlParameter("@invoice_no", INV_NO));
+                    parameters.Add(new SqlParameter("@edit_ip", clientIp));
+                    parameters.Add(new SqlParameter("@edit_num", model.User));
+                    parameters.Add(new SqlParameter("@check_pay_type", "S"));
+                    parameters.Add(new SqlParameter("@RecPayType", "C"));
+                    parameters.Add(new SqlParameter("@RCD_id", model.RCD_id));
+
+                    _adoData.ExecuteNonQuery(T_SQL, parameters);
+                }
             }
             catch (Exception)
             {
