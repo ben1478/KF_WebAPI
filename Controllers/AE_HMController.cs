@@ -384,12 +384,16 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 var parameters = new List<SqlParameter>();
                 #region SQL
-                var T_SQL = @"select *,(select COUNT(*) from AE_Files where AE_Files.KeyID = 'P' + cast(Cp.RCD_id as varchar)) as FileCount,Um.U_name as U_Name 
+                var T_SQL = @"select *,AE.FileCount,Um.U_name as U_Name
+                              ,CASE WHEN P.project_title IN ('PJ00046', 'PJ00047') THEN '機車貸' WHEN P.project_title IN ('PJ00048') THEN '汽車貸' ELSE '房貸' END as CaseType
                               from ClientPayback Cp
                               inner join Receivable_D Rd ON Rd.RCD_id = Cp.RCD_id
                               inner join Receivable_M Rm ON Rm.RCM_id = Rd.RCM_id
                               inner join House_apply HA ON HA.HA_id = RM.HA_id
                               left join User_M Um ON Um.U_num = Cp.add_num
+                              LEFT JOIN House_sendcase S ON Rm.HS_id=S.HS_id
+                              LEFT JOIN House_pre_project P ON S.HP_project_id = P.HP_project_id
+                              LEFT JOIN ( SELECT KeyID,COUNT(*) AS FileCount FROM AE_Files GROUP BY KeyID ) AE ON AE.KeyID = 'P' + CAST(Cp.RCD_id AS VARCHAR)
                               where RM.del_tag = 0  and cancel_type <> 'Y' and bad_debt_type = 'N'";
                 if (!string.IsNullOrEmpty(model.CP_WIN_CK))
                 {
@@ -425,7 +429,8 @@ namespace KF_WebAPI.Controllers
                     CP_Pay_Amt = row.Field<decimal?>("CP_Pay_Amt"),
                     FileCount = row.Field<int>("FileCount"),
                     str_Pay_Date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("CP_pay_date").ToString("yyyy/MM/dd")),
-                    U_Name = row.Field<string>("U_Name")
+                    U_Name = row.Field<string>("U_Name"),
+                    CaseType = row.Field<string>("CaseType")
                 }).ToList(); ;
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "變更成功";
@@ -494,7 +499,6 @@ namespace KF_WebAPI.Controllers
         #endregion
 
         #region 客訴資料維護
-        //Complaint_LQuery 有權限規則
         [HttpPost("Complaint_LQuery")]
         public ActionResult<ResultClass<string>> Complaint_LQuery(Complaint_M_req model)
         {
@@ -502,6 +506,8 @@ namespace KF_WebAPI.Controllers
 
             try
             {
+                resultClass = _HM.Complaint_LQuery(model);
+                resultClass.ResultCode = "000";
                 return Ok(resultClass);
             }
             catch (Exception ex)
@@ -512,6 +518,7 @@ namespace KF_WebAPI.Controllers
             }
 
         }
+
         [HttpPost("Complaint_Ins")]
         public ActionResult<ResultClass<string>> Complaint_Ins(Complaint_M model)
         {
@@ -539,7 +546,25 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-        //Complaint_SQuery
+
+        [HttpGet("Complaint_SQuery")]
+        public ActionResult<ResultClass<string>> Complaint_SQuery(string Comp_Id)
+        {
+            ResultClass<string> resultClass = new();
+
+            try
+            {
+                resultClass = _HM.Complaint_SQuery(Comp_Id);
+                resultClass.ResultCode = "000";
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
         //Complaint_Upd
         //Complaint_Excel
         //Complaint_Close_Excel

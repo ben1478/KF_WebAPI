@@ -285,6 +285,7 @@ namespace KF_WebAPI.BaseClass.Winton
         public int FileCount { get; set; }
         public string? str_Pay_Date { get; set; }   
         public string? U_Name { get; set; }
+        public string? CaseType { get; set; }
     }
 
     public class WinInvFileRow
