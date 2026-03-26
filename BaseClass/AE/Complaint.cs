@@ -39,6 +39,8 @@ namespace KF_WebAPI.BaseClass.AE
         public string? RiskLevel { get;set; }
         public string? CompSou { get; set; }
         public string? IsClose { get;set; }
+        public string U_BC { get;set; }
+        public string User { get; set; }    
     }
     public class Complaint_Req
     {   
