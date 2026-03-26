@@ -384,7 +384,7 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 var parameters = new List<SqlParameter>();
                 #region SQL
-                var T_SQL = @"select *,ISNULL(AE.FileCount, 0) AS FileCount,Um.U_name as U_Name
+                var T_SQL = @"select *,(select COUNT(*) from AE_Files where AE_Files.KeyID = 'P' + cast(Cp.RCD_id as varchar)) as FileCount,Um.U_name as U_Name
                               ,CASE WHEN P.project_title IN ('PJ00046', 'PJ00047') THEN '機車貸' WHEN P.project_title IN ('PJ00048') THEN '汽車貸' ELSE '房貸' END as CaseType
                               from ClientPayback Cp
                               inner join Receivable_D Rd ON Rd.RCD_id = Cp.RCD_id
@@ -393,7 +393,6 @@ namespace KF_WebAPI.Controllers
                               left join User_M Um ON Um.U_num = Cp.add_num
                               LEFT JOIN House_sendcase S ON Rm.HS_id=S.HS_id
                               LEFT JOIN House_pre_project P ON S.HP_project_id = P.HP_project_id
-                              LEFT JOIN ( SELECT KeyID,COUNT(*) AS FileCount FROM AE_Files GROUP BY KeyID ) AE ON AE.KeyID = 'P' + CAST(Cp.RCD_id AS VARCHAR)
                               where RM.del_tag = 0  and cancel_type <> 'Y' and bad_debt_type = 'N'";
                 if (!string.IsNullOrEmpty(model.CP_WIN_CK))
                 {
