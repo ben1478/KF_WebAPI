@@ -384,7 +384,7 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 var parameters = new List<SqlParameter>();
                 #region SQL
-                var T_SQL = @"select *,AE.FileCount,Um.U_name as U_Name
+                var T_SQL = @"select *,ISNULL(AE.FileCount, 0) AS FileCount,Um.U_name as U_Name
                               ,CASE WHEN P.project_title IN ('PJ00046', 'PJ00047') THEN '機車貸' WHEN P.project_title IN ('PJ00048') THEN '汽車貸' ELSE '房貸' END as CaseType
                               from ClientPayback Cp
                               inner join Receivable_D Rd ON Rd.RCD_id = Cp.RCD_id
