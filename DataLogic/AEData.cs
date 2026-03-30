@@ -110,6 +110,7 @@ namespace KF_WebAPI.DataLogic
                 {
                     m_SQL += " and  KeyID = @KeyID   ";
                 }
+                m_SQL += "Order by  add_date desc  ";
                 using (SqlConnection connection = new SqlConnection(_ADO.GetConnStr()))
                 {
                     connection.Open();

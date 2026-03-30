@@ -29,7 +29,7 @@ namespace KF_WebAPI.Controllers
        // private readonly string _storagePath = @"C:\UploadedFiles";
         private readonly string _storagePath = @"D:\AE_Web_UpLoad";
         private AEData _AEData = new();
-
+        private ADOData _db = new ADOData();
 
 
         private async Task<string> GetAuth0Token()
@@ -1166,6 +1166,125 @@ namespace KF_WebAPI.Controllers
                 resultClass.ResultMsg = ex.Message;
             }
             return Ok(resultClass);
+        }
+
+        [HttpGet("CreateBooking")]
+        public ActionResult<ResultClass<string>> CreateBooking([FromBody] BookingRequest req)
+        {
+            ResultClass<string> resultClass = new();
+            try
+            {
+               
+                string checkSql = @"
+                SELECT COUNT(*) 
+                FROM Bookings 
+                WHERE RoomID = @RoomID 
+                AND (
+                    (@Start >= StartTime AND @Start < EndTime) OR 
+                    (@End > StartTime AND @End <= EndTime) OR 
+                    (@Start <= StartTime AND @End >= EndTime)
+                )";
+                var checkParams = new List<SqlParameter>
+            {
+                new SqlParameter("@RoomID", req.RoomId),
+                new SqlParameter("@Start", req.StartTime),
+                new SqlParameter("@End", req.EndTime)
+            };
+
+                // 使用 ExecuteScalar 檢查數量
+                object countResult = _db.ExecuteScalar(checkSql, checkParams);
+                int conflictCount = Convert.ToInt32(countResult);
+
+                if (conflictCount > 0)
+                {
+                    resultClass.ResultCode = "999";
+                    resultClass.ResultMsg = "該時段已被預約，請選擇其他時段";
+                    return Ok(resultClass);
+                }
+
+                // 2. 執行新增預約
+                string insertSql = @"
+                INSERT INTO Bookings (RoomID, U_num, StartTime, EndTime, Subject, CreateTime)
+                VALUES (@RoomID, @U_num, @Start, @End, @Subject, GETDATE())";
+
+                var insertParams = new List<SqlParameter>
+            {
+                new SqlParameter("@RoomID", req.RoomId),
+                new SqlParameter("@U_num", req.U_num),
+                new SqlParameter("@Start", req.StartTime),
+                new SqlParameter("@End", req.EndTime),
+                new SqlParameter("@Subject", req.Subject ?? (object)DBNull.Value)
+            };
+
+                int rowsAffected = _db.ExecuteNonQuery(insertSql, insertParams);
+
+                if (rowsAffected > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "預約成功";
+
+                }
+                else
+                {
+                    resultClass.ResultCode = "500";
+                    resultClass.ResultMsg = "寫入資料庫時發生錯誤";
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "999";
+                resultClass.ResultMsg = ex.Message;
+            }
+            return Ok(resultClass);
+        }
+
+
+        [HttpGet("GetBookingBoard")]
+        public ActionResult<ResultClass<string>> GetBookingBoard()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                // 撰寫 SQL：取出今日以後的預約資訊
+                string strSQL = @"
+            SELECT 
+                B.BookingID, 
+                R.RoomName, 
+                U.UserName,
+                B.StartTime, 
+                B.EndTime, 
+                B.Subject
+            FROM Bookings B
+            INNER JOIN Rooms R ON B.RoomID = R.RoomID
+            LEFT JOIN Users U ON B.UserID = U.UserID
+            WHERE B.StartTime >= CAST(GETDATE() AS DATE)
+            ORDER BY B.StartTime ASC";
+
+                // 使用您元件中的 ExecuteQuery (傳入 null 表示無參數)
+                DataTable dtResult = _db.ExecuteQuery(strSQL, null);
+
+                if (dtResult.Rows.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    // 按照您的習慣：將 DataTable 直接轉為 JSON 字串
+                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "目前尚無預約資料";
+                    // 這裡回傳 OK 或 BadRequest 視您公司標準而定，通常查詢無資料回傳 OK(200) 配合 Code 400 也是常見做法
+                    return Ok(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $"系統異常: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
         }
 
 

@@ -10,7 +10,7 @@ namespace KF_WebAPI.FunctionHandler
 {
     public class ADOData
     {
-        public  string ConnStr = "Data Source=ERP;Initial Catalog=AE_DB_TEST;User ID=sa;Password=juestcho;";
+        public  string ConnStr = "";
 
         /// <summary>
         /// 根據物件屬性產生Datatable的欄位
