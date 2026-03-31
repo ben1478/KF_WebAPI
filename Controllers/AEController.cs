@@ -1168,74 +1168,79 @@ namespace KF_WebAPI.Controllers
             return Ok(resultClass);
         }
 
-        [HttpGet("CreateBooking")]
-        public ActionResult<ResultClass<string>> CreateBooking([FromBody] BookingRequest req)
+        [HttpPost("CreateBooking")]
+        public ActionResult<ResultClass<string>> CreateBooking([FromBody] BookingRequest model)
         {
-            ResultClass<string> resultClass = new();
+            ResultClass<string> resultClass = new ResultClass<string>();
+
             try
             {
-               
-                string checkSql = @"
-                SELECT COUNT(*) 
-                FROM Bookings 
-                WHERE RoomID = @RoomID 
-                AND (
-                    (@Start >= StartTime AND @Start < EndTime) OR 
-                    (@End > StartTime AND @End <= EndTime) OR 
-                    (@Start <= StartTime AND @End >= EndTime)
-                )";
-                var checkParams = new List<SqlParameter>
-            {
-                new SqlParameter("@RoomID", req.RoomId),
-                new SqlParameter("@Start", req.StartTime),
-                new SqlParameter("@End", req.EndTime)
-            };
+                // 1. 檢查時段是否衝突 (核心邏輯)
+                string checkSQL = @"
+            SELECT COUNT(1) 
+            FROM Bookings 
+            WHERE RoomID = @RoomID 
+            AND (
+                (@Start >= StartTime AND @Start < EndTime) OR 
+                (@End > StartTime AND @End <= EndTime) OR 
+                (@Start <= StartTime AND @End >= EndTime)
+            )";
 
-                // 使用 ExecuteScalar 檢查數量
-                object countResult = _db.ExecuteScalar(checkSql, checkParams);
-                int conflictCount = Convert.ToInt32(countResult);
+                var checkParams = new List<SqlParameter>
+        {
+            new SqlParameter("@RoomID", model.RoomId),
+            new SqlParameter("@Start", model.StartTime),
+            new SqlParameter("@End", model.EndTime)
+        };
+
+                // 執行 Scalar 取得衝突筆數
+                object countObj = _db.ExecuteScalar(checkSQL, checkParams);
+                int conflictCount = Convert.ToInt32(countObj);
 
                 if (conflictCount > 0)
                 {
-                    resultClass.ResultCode = "999";
-                    resultClass.ResultMsg = "該時段已被預約，請選擇其他時段";
-                    return Ok(resultClass);
+                    resultClass.ResultCode = "401"; // 自定義衝突代碼
+                    resultClass.ResultMsg = "該時段已被其他會議佔用，請重新選擇。";
+                    return Ok(resultClass); // 實務上回傳 Ok(200) 配合 Code 判斷是為了讓前端 AJAX 不進 Catch
                 }
 
-                // 2. 執行新增預約
-                string insertSql = @"
-                INSERT INTO Bookings (RoomID, U_num, StartTime, EndTime, Subject, CreateTime)
-                VALUES (@RoomID, @U_num, @Start, @End, @Subject, GETDATE())";
+                // 2. 執行新增
+                string insertSQL = @"
+            INSERT INTO Bookings (RoomID, UserID, StartTime, EndTime, Subject, CreateTime)
+            VALUES (@RoomID, @UserID, @Start, @End, @Subject, GETDATE())";
 
                 var insertParams = new List<SqlParameter>
-            {
-                new SqlParameter("@RoomID", req.RoomId),
-                new SqlParameter("@U_num", req.U_num),
-                new SqlParameter("@Start", req.StartTime),
-                new SqlParameter("@End", req.EndTime),
-                new SqlParameter("@Subject", req.Subject ?? (object)DBNull.Value)
-            };
+        {
+            new SqlParameter("@RoomID", model.RoomId),
+            new SqlParameter("@UserID", model.U_num),
+            new SqlParameter("@Start", model.StartTime),
+            new SqlParameter("@End", model.EndTime),
+            new SqlParameter("@Subject", (object)model.Subject ?? DBNull.Value)
+        };
 
-                int rowsAffected = _db.ExecuteNonQuery(insertSql, insertParams);
+                int affectedRows = _db.ExecuteNonQuery(insertSQL, insertParams);
 
-                if (rowsAffected > 0)
+                if (affectedRows > 0)
                 {
                     resultClass.ResultCode = "000";
                     resultClass.ResultMsg = "預約成功";
-
+                    // 按照您的習慣，若無 DataTable 則可回傳成功 JSON 字串或自定義訊息
+                    resultClass.objResult = JsonConvert.SerializeObject(new { Status = "Success", Time = DateTime.Now });
+                    return Ok(resultClass);
                 }
                 else
                 {
-                    resultClass.ResultCode = "500";
-                    resultClass.ResultMsg = "寫入資料庫時發生錯誤";
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "預約失敗，資料未寫入。";
+                    return Ok(resultClass);
                 }
             }
             catch (Exception ex)
             {
-                resultClass.ResultCode = "999";
-                resultClass.ResultMsg = ex.Message;
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $"系統異常: {ex.Message}";
+                return StatusCode(500, resultClass);
             }
-            return Ok(resultClass);
         }
 
 
@@ -1257,7 +1262,7 @@ namespace KF_WebAPI.Controllers
                 B.Subject
             FROM Bookings B
             INNER JOIN Rooms R ON B.RoomID = R.RoomID
-            LEFT JOIN Users U ON B.UserID = U.UserID
+            LEFT JOIN User_M U ON B.U_num = U.U_num
             WHERE B.StartTime >= CAST(GETDATE() AS DATE)
             ORDER BY B.StartTime ASC";
 
@@ -1283,6 +1288,53 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $"系統異常: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+
+        [HttpGet("GetCalendarData")]
+        public ActionResult<ResultClass<string>> GetCalendarData(string startDate)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                // 1. 準備 SQL：一次抓取 14 天內的假日與預約摘要
+                // 使用 CROSS APPLY 或 STRING_AGG 將當天的預約串起來
+                // 使用 STUFF + FOR XML PATH 代替 STRING_AGG
+                string strSQL = @"
+            WITH DateRange AS (
+                SELECT TOP 14 
+                    DATEADD(DAY, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1, @BaseDate) AS DateValue
+                FROM sys.objects
+            )
+            SELECT 
+                D.DateValue,
+                CASE WHEN H.HDate IS NOT NULL THEN 1 ELSE 0 END AS IsHoliday,
+                ISNULL(STUFF((
+                    SELECT '<br/>' + R.RoomName + ' ' + FORMAT(B.StartTime, 'HH:mm')
+                    FROM Bookings B
+                    JOIN Rooms R ON B.RoomID = R.RoomID
+                    WHERE CAST(B.StartTime AS DATE) = D.DateValue
+                    FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 5, ''), '') AS BookingSummary
+            FROM DateRange D
+            LEFT JOIN Holidays H ON FORMAT(D.DateValue, 'yyyy/MM/dd') = H.HDate
+            ORDER BY D.DateValue"; 
+
+                var paramsList = new List<SqlParameter> {
+            new SqlParameter("@BaseDate", DateTime.Parse(startDate))
+        };
+
+                DataTable dt = _db.ExecuteQuery(strSQL, paramsList);
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dt);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = ex.Message;
                 return StatusCode(500, resultClass);
             }
         }
