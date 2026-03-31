@@ -2574,10 +2574,8 @@ namespace KF_WebAPI.Controllers
                     #region 呆帳資料處理
                     var T_SQL_bad = @"SELECT isnull(BC_name_SP, BC_name) BC_name,M.u_name,0 as OV_Count,0 as OV_total,0 as OV_Rate,TT.TOT_total,
                                       Tol.amount_total,Tol.TOT_Count, HA.plan_num,COUNT(*) AS TOT_bad_Count,
-                                      SUM(SM.amount_total - ISNULL(SD.total_payment,0)) AS TOT_bad_debt 
+                                      SUM(SM.amount_total) AS TOT_bad_debt 
                                       FROM StagnationDebt_M SM
-                                      LEFT JOIN (SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id) SD 
-                                      ON SD.sdm_id = SM.sdm_id
                                       LEFT JOIN Receivable_M RM ON RM.RCM_id = SM.RCM_id
                                       LEFT JOIN House_apply HA ON RM.HA_id = HA.HA_id
                                       LEFT JOIN User_M M ON HA.plan_num=M.u_num
@@ -2628,7 +2626,7 @@ namespace KF_WebAPI.Controllers
                                                  AND HA.del_tag='0'
                                                  GROUP BY plan_num
                                       		 ) TT ON TT.plan_num=Tol.plan_num
-                                      WHERE SM.del_tag='0' AND HA.del_tag='0'
+                                      WHERE SM.del_tag='0' AND HA.del_tag='0' AND exists (select 1 from Receivable_D where Receivable_D.bad_debt_type = 'Y' and Receivable_D.RCM_id = SM.RCM_id)
                                       GROUP BY HA.plan_num,isnull(BC_name_SP, BC_name),M.u_name,Tol.amount_total,Tol.TOT_Count,TOT_total";
                     var badResult = _adoData.ExecuteSQuery(T_SQL_bad).AsEnumerable().Select(row => new {
                         BC_name = row.Field<string>("BC_name"),
@@ -3198,19 +3196,17 @@ namespace KF_WebAPI.Controllers
                     #region 呆帳資料處理
                     var T_SQL_bad = @"WITH ProjectCode AS ( SELECT HA_id,CASE WHEN project_title = 'PJ00001' THEN 'PJ00005' ELSE project_title END AS project_code,del_tag
                                       FROM House_pre_project ),
-                                      BaseData AS ( SELECT distinct I.item_D_name AS pro_name,RM.RCM_id,SM.amount_total - ISNULL(SD.total_payment,0) AS amount_bad_total,
+                                      BaseData AS ( SELECT distinct I.item_D_name AS pro_name,RM.RCM_id,SM.amount_total AS amount_bad_total,
                                       CASE WHEN RM.amount_total < 500000 THEN '050' WHEN RM.amount_total BETWEEN 500000 AND 1000000 THEN '100' 
                                       WHEN RM.amount_total BETWEEN 1000001 AND 2000000 THEN '200'
                                       WHEN RM.amount_total BETWEEN 2000001 AND 3000000 THEN '300' WHEN RM.amount_total BETWEEN 3000001 AND 4000000 THEN '400' 
                                       WHEN RM.amount_total BETWEEN 4000001 AND 5000000 THEN '500' ELSE '501' END AS amount_type
                                       FROM StagnationDebt_M SM
-                                      LEFT JOIN (SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' 
-                                      GROUP BY sdm_id) SD ON SD.sdm_id = SM.sdm_id
                                       JOIN Receivable_M RM ON RM.RCM_id = SM.RCM_id
                                       JOIN House_sendcase HS ON HS.HS_id = RM.HS_id
                                       JOIN ProjectCode P ON P.HA_id = RM.HA_id AND P.del_tag = '0'
                                       LEFT JOIN Item_list I ON I.item_D_code = P.project_code AND I.item_M_code = 'project_title' AND I.item_D_type = 'Y'
-                                      WHERE SM.del_tag = '0' )
+                                      WHERE SM.del_tag = '0' and exists (select 1 from Receivable_D where Receivable_D.bad_debt_type = 'Y' and Receivable_D.RCM_id = SM.RCM_id))
                                       SELECT pro_name,amount_type,COUNT(*) AS TOT_bad_Count,SUM(amount_bad_total) AS TOT_bad_debt 
                                       FROM BaseData 
                                       GROUP BY pro_name, amount_type ORDER BY pro_name, amount_type";
@@ -3469,10 +3465,8 @@ namespace KF_WebAPI.Controllers
                         OV_bad_Rate = 0
                     }).ToList();
                     #region 呆帳資料處理
-                    var T_SQL_bad = @"WITH BaseData AS ( SELECT LI.item_D_name AS BC_name,SM.amount_total - ISNULL(SD.total_payment,0) AS amount_bad_total 
+                    var T_SQL_bad = @"WITH BaseData AS ( SELECT LI.item_D_name AS BC_name,SM.amount_total AS amount_bad_total 
                                       FROM StagnationDebt_M SM
-                                      LEFT JOIN ( SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id ) SD 
-                                      ON SD.sdm_id = SM.sdm_id
                                       LEFT JOIN Receivable_M RM ON RM.RCM_id = SM.RCM_id
                                       LEFT JOIN House_apply HA ON RM.HA_id = HA.HA_id
                                       LEFT JOIN ( SELECT ISNULL(UG.Spec_Group,UM.U_BC) as U_BC,U_name,UM.U_num FROM User_M UM 
@@ -3480,7 +3474,7 @@ namespace KF_WebAPI.Controllers
                                       ON HA.plan_num=M.u_num
                                       LEFT JOIN ( SELECT item_D_code,item_D_name FROM Item_list WHERE item_M_code IN ('branch_company','Spec_Group') and item_D_type ='Y' ) LI 
                                       ON LI.item_D_code = M.U_BC
-                                      WHERE SM.del_tag='0' AND HA.del_tag='0')
+                                      WHERE SM.del_tag='0' AND HA.del_tag='0' AND exists (select 1 from Receivable_D where Receivable_D.bad_debt_type = 'Y' and Receivable_D.RCM_id = SM.RCM_id))
                                       SELECT BC_name,COUNT(*) AS TOT_bad_Count,SUM(amount_bad_total) AS TOT_bad_debt FROM BaseData GROUP BY BC_name";
                     #endregion
                     var badResult = _adoData.ExecuteSQuery(T_SQL_bad).AsEnumerable().Select(row => new {
