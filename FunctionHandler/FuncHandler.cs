@@ -31,8 +31,6 @@ namespace KF_WebAPI.FunctionHandler
 {
     public class FuncHandler
     {
-
-
         public DataTable MergeSalesDataToDataTable(DataTable dtA, DataTable dtB)
         {
             // 1. 建立新的結果 DataTable 並初始化結構
@@ -75,7 +73,6 @@ namespace KF_WebAPI.FunctionHandler
 
             return dtResult;
         }
-
 
         public static DataRow AddTitleByTable(DataTable dt, string TbName)
         {
@@ -138,8 +135,6 @@ namespace KF_WebAPI.FunctionHandler
             return m_dr;
         }
 
-
-
         /// <summary>
         /// DataTable分頁
         /// </summary>
@@ -172,6 +167,7 @@ namespace KF_WebAPI.FunctionHandler
 
             return pageTable;
         }
+
         /// <summary>
         /// List分頁
         /// </summary>
@@ -191,6 +187,7 @@ namespace KF_WebAPI.FunctionHandler
 
             return list.Skip(skip).Take(take).ToList();
         }
+
         /// <summary>
         /// 獲得Check_Num
         /// </summary>
@@ -229,81 +226,114 @@ namespace KF_WebAPI.FunctionHandler
         public static byte[] ExportToExcel<T>(List<T> items, Dictionary<string, string> headers)
         {
             if (items == null || items.Count == 0)
-            {
                 throw new ArgumentException("The list cannot be null or empty.", nameof(items));
-            }
+
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial; // EPPlus 5+
 
             using (var package = new ExcelPackage())
             {
                 var worksheet = package.Workbook.Worksheets.Add(typeof(T).Name);
                 var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
-                // 添加表頭
+                //添加表頭
                 worksheet.Cells[1, 1].Value = "序號";
-                worksheet.Cells[1, 1].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                worksheet.Cells[1, 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
                 worksheet.Cells[1, 1].Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                worksheet.Cells[1, 1].Style.WrapText = true;
+
                 for (int i = 0; i < properties.Length; i++)
                 {
                     var propertyName = properties[i].Name;
-                    if (headers.TryGetValue(propertyName, out var header))
-                    {
-                        worksheet.Cells[1, i + 2].Value = header;
-                    }
-                    else
-                    {
-                        worksheet.Cells[1, i + 2].Value = propertyName;
-                    }
-
-                    worksheet.Cells[1, i + 2].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    worksheet.Cells[1, i + 2].Value = headers.TryGetValue(propertyName, out var header) ? header : propertyName;
+                    worksheet.Cells[1, i + 2].Style.Fill.PatternType = ExcelFillStyle.Solid;
                     worksheet.Cells[1, i + 2].Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                    worksheet.Cells[1, i + 2].Style.WrapText = true;
                 }
 
-                // 添加表頭邊框
+                //添加表頭邊框
                 using (var range = worksheet.Cells[1, 1, 1, properties.Length + 1])
                 {
-                    range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                    range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    range.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+                    range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                    range.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                    range.Style.Border.Right.Style = ExcelBorderStyle.Thin;
                 }
 
-                // 添加表身
+                //添加表身
                 for (int i = 0; i < items.Count; i++)
                 {
                     var item = items[i];
-                    worksheet.Cells[i + 2, 1].Value = i + 1;
+                    worksheet.Cells[i + 2, 1].Value = i + 1; // 序號
+                    worksheet.Cells[i + 2, 1].Style.WrapText = true;
 
                     for (int j = 0; j < properties.Length; j++)
                     {
                         var value = properties[j].GetValue(item);
 
-                        // 檢查類型並設置值
                         if (value is int || value is long || value is float || value is double || value is decimal)
                         {
                             worksheet.Cells[i + 2, j + 2].Style.Numberformat.Format = "#,##0";
-                            worksheet.Cells[i + 2, j + 2].Value = value; // 直接赋值
+                            worksheet.Cells[i + 2, j + 2].Value = value;
                         }
-                        else
+                        else if (value is string strValue)
                         {
-                            worksheet.Cells[i + 2, j + 2].Value = value?.ToString(); // 字符串赋值
+                            // 支援換行
+                            strValue = strValue.Replace("<br>", "\n").Replace("&#10;", "\n");
+                            worksheet.Cells[i + 2, j + 2].Value = strValue;
+                            worksheet.Cells[i + 2, j + 2].Style.WrapText = true;
+                        }
+                        else if (value != null)
+                        {
+                            worksheet.Cells[i + 2, j + 2].Value = value.ToString();
+                            worksheet.Cells[i + 2, j + 2].Style.WrapText = true;
                         }
                     }
 
                     // 添加表身邊框
-                    using (var range = worksheet.Cells[i + 2, 1, i + 2, headers.Count + 1])
+                    using (var range = worksheet.Cells[i + 2, 1, i + 2, properties.Length + 1])
                     {
-                        range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
-                        range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+                        range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                        range.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                        range.Style.Border.Right.Style = ExcelBorderStyle.Thin;
                     }
+
+                    // 自動行高
+                    worksheet.Row(i + 2).CustomHeight = true;
                 }
 
-                // 列寬自動調整
+                //自動調整列寬（考慮多行文字）
                 for (int j = 0; j < properties.Length + 1; j++)
                 {
-                    worksheet.Column(j + 1).AutoFit();
+                    double maxLength = 0;
+
+                    for (int i = 0; i < items.Count; i++)
+                    {
+                        var item = items[i];
+                        var prop = (j == 0) ? null : properties[j - 1];
+                        string text = j == 0 ? (i + 1).ToString() : prop.GetValue(item)?.ToString() ?? "";
+
+                        //找最長的一行
+                        var lines = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                        foreach (var line in lines)
+                        {
+                            if (line.Length > maxLength)
+                                maxLength = line.Length;
+                        }
+                    }
+
+                    worksheet.Column(j + 1).Width = maxLength + 5; // +5作為緩衝
                 }
+
+                //整表格格式調整
+                var allCells = worksheet.Cells[1, 1, items.Count + 1, properties.Length + 1];
+
+                // 文字換行
+                allCells.Style.WrapText = true;
+
+                // 垂直頂端對齊，避免換行欄位影響其他欄
+                allCells.Style.VerticalAlignment = ExcelVerticalAlignment.Top;
+
                 return package.GetAsByteArray();
             }
         }
