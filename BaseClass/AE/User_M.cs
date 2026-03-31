@@ -102,6 +102,10 @@
         public string? U_Check_BC { get; set; }
         public string? is_susp { get; set; }
         public string? str_U_susp_date { get; set; }
+        public string? str_U_susp_end_date { get; set; }
+        public string? str_U_susp_date2 { get; set; }
+        public string? str_U_susp_end_date2 { get; set; }
+
     }
     public class Uesr_M_req
     {
