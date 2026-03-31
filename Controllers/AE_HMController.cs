@@ -564,9 +564,75 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-        //Complaint_Upd
-        //Complaint_Excel
-        //Complaint_Close_Excel
+
+        [HttpPost("Complaint_Upd")]
+        public ActionResult<ResultClass<string>> Complaint_Upd(Complaint_M model)
+        {
+            ResultClass<string> resultClass = new();
+
+            try
+            {
+                var reslt = _HM.Complaint_Upd(model);
+                if (reslt > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "儲存成功";
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "儲存失敗";
+                }
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 匯出客訴明細表
+        /// </summary>
+        [HttpPost("Complaint_Excel")]
+        public IActionResult Complaint_Excel(Complaint_M_req model)
+        {
+            ResultClass<string> resultClass = new();
+
+            try
+            {
+                var fileBytes = _HM.Complaint_Excel(model);
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"); ;
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 匯出結案檢核表
+        /// </summary>
+        [HttpGet("Complaint_Close_Excel")]
+        public IActionResult Complaint_Close_Excel(string DeadlineDate)
+        {
+            ResultClass<string> resultClass = new();
+            try
+            {
+                var fileBytes = _HM.Complaint_Close_Excel(DeadlineDate);
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"); ;
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
         #endregion
     }
 }

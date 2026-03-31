@@ -50,4 +50,33 @@ namespace KF_WebAPI.BaseClass.AE
         public string? UserRole { get; set; }     
         public string? UserBC { get; set; } 
     }
+
+    public class Complaint_report_excel
+    {
+        public string? CompDate { get; set; }
+        public string? CompSou_show { get; set; }
+        public string? ContractID { get; set; }
+        public string? CS_name { get; set; }
+        public string? CS_PID { get; set; }
+        public string? PassID { get; set; }
+        public string? U_name { get; set; }
+        public string? Complaint { get; set; }
+        public string? Remark { get; set; }
+        public string? Risk_show { get; set; }
+        public string? ResponsBC_Show { get; set; }
+        public string? ResponsWay { get; set; }
+        public string? ResponsStates { get; set; }
+        public string Close_show { get; set; }
+        public string? CloseDate { get; set; }
+        public int? DealDay { get; set; }
+    }
+
+    public class ComplaintCloseDto
+    {
+        public string CompSou { get; set; }
+        public string CompDate { get; set; }
+        public string? CloseDate { get;set; }
+        public string IsClose { get; set; }
+        public int? DealDay { get;set; }
+    }
 }
