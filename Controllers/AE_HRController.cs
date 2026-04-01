@@ -2831,7 +2831,7 @@ namespace KF_WebAPI.Controllers
                     ,U_Birthday=@U_Birthday,U_PID=@U_PID,U_Tel=@U_Tel,U_MTel=@U_MTel,U_Email=@U_Email,Emergency_contact=@Emergency_contact,Emergency_Tel=@Emergency_Tel
                     ,Emergency_MTel=@Emergency_MTel,School_Level=@School_Level,School_Name=@School_Name,School_Graduated=@School_Graduated,School_D_N=@School_D_N
                     ,School_Major=@School_Major,U_leader_1_num=@U_leader_1_num,U_leader_2_num=@U_leader_2_num,U_Check_BC=@U_Check_BC,U_address_live=@U_address_live
-                    ,U_arrive_date=@U_arrive_date,is_susp=@is_susp,U_susp_date=@U_susp_date Where U_id=@U_id";
+                    ,U_arrive_date=@U_arrive_date,is_susp=@is_susp,U_susp_date=@U_susp_date,U_susp_end_date=@U_susp_end_date,U_susp_date2=@U_susp_date2,U_susp_end_date2=@U_susp_end_date2 Where U_id=@U_id";
 
                 var parameters = new List<SqlParameter>() 
                 {
@@ -2881,8 +2881,16 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@U_arrive_date", string.IsNullOrEmpty(model.str_U_arrive_date)
                     ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_arrive_date))),
                     new SqlParameter("@is_susp", string.IsNullOrEmpty(model.is_susp) ? DBNull.Value : model.is_susp),
+
                     new SqlParameter("@U_susp_date", string.IsNullOrEmpty(model.str_U_susp_date)
-                    ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_susp_date)))
+                    ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_susp_date))),
+                    new SqlParameter("@U_susp_end_date", string.IsNullOrEmpty(model.str_U_susp_end_date)
+                    ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_susp_end_date))),
+                     new SqlParameter("@U_susp_date2", string.IsNullOrEmpty(model.str_U_susp_date2)
+                    ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_susp_date2))),
+                    new SqlParameter("@U_susp_end_date2", string.IsNullOrEmpty(model.str_U_susp_end_date2)
+                    ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_susp_end_date2)))
+
                 };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
