@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 
 namespace KF_WebAPI.BaseClass.AE
 {
@@ -69,6 +70,14 @@ namespace KF_WebAPI.BaseClass.AE
         public string Close_show { get; set; }
         public string? CloseDate { get; set; }
         public int? DealDay { get; set; }
+    }
+
+    public class ComplaintClose_req
+    {
+        public string RoleType { get; set; }
+        public string DeadlineDate { get; set; }
+        public string U_BC { get; set; }
+        public string User { get; set; }
     }
 
     public class ComplaintCloseDto
