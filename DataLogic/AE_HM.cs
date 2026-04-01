@@ -80,12 +80,12 @@ namespace KF_WebAPI.DataLogic
                 }
                 if (model.RoleType == "RoleB")
                 {
-                    T_SQL += @" AND C.Sales_num = @UserNum";
+                    T_SQL += @" AND Ct.Sales_num = @UserNum";
                     parameters.Add(new SqlParameter("@UserNum", model.User));
                 }
                 if (model.RoleType == "RoleC")
                 {
-                    T_SQL += @" AND M1.U_BC = @UserBC";
+                    T_SQL += @" AND Um.U_BC = @UserBC";
                     parameters.Add(new SqlParameter("@UserBC", model.U_BC));
                 }
 
@@ -300,12 +300,12 @@ namespace KF_WebAPI.DataLogic
                 }
                 if (model.RoleType == "RoleB")
                 {
-                    T_SQL += @" AND C.Sales_num = @UserNum";
+                    T_SQL += @" AND Ct.Sales_num = @UserNum";
                     parameters.Add(new SqlParameter("@UserNum", model.User));
                 }
                 if (model.RoleType == "RoleC")
                 {
-                    T_SQL += @" AND M1.U_BC = @UserBC";
+                    T_SQL += @" AND Um.U_BC = @UserBC";
                     parameters.Add(new SqlParameter("@UserBC", model.U_BC));
                 }
 
@@ -358,10 +358,10 @@ namespace KF_WebAPI.DataLogic
             }
         }
 
-        public byte[] Complaint_Close_Excel(string DeadlineDate)
+        public byte[] Complaint_Close_Excel(ComplaintClose_req model)
         {
             var parameters = new List<SqlParameter>();
-            var DeadlineDateGre = FuncHandler.ConvertROCToGregorian(DeadlineDate);
+            var DeadlineDateGre = FuncHandler.ConvertROCToGregorian(model.DeadlineDate);
             try
             {
                 var T_SQL = @"SELECT Ct.*,ub.item_D_name as CompSou_show,Um.U_name,Cs.item_D_name as Risk_show,Bc.item_D_name as ResponsBC_Show,
@@ -373,6 +373,16 @@ namespace KF_WebAPI.DataLogic
                               LEFT JOIN Item_list Bc ON Bc.item_M_code = 'branch_company' AND Bc.item_D_code = Ct.ResponsBC
                               WHERE 1 = 1 AND CompDate <= @Date";
 
+                if (model.RoleType == "RoleB")
+                {
+                    T_SQL += @" AND Ct.Sales_num = @UserNum";
+                    parameters.Add(new SqlParameter("@UserNum", model.User));
+                }
+                if (model.RoleType == "RoleC")
+                {
+                    T_SQL += @" AND Um.U_BC = @UserBC";
+                    parameters.Add(new SqlParameter("@UserBC", model.U_BC));
+                }
                 parameters.Add(new SqlParameter("@Date", DeadlineDateGre));
 
                 var resultList = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new ComplaintCloseDto

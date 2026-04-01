@@ -617,13 +617,13 @@ namespace KF_WebAPI.Controllers
         /// <summary>
         /// 匯出結案檢核表
         /// </summary>
-        [HttpGet("Complaint_Close_Excel")]
-        public IActionResult Complaint_Close_Excel(string DeadlineDate)
+        [HttpPost("Complaint_Close_Excel")]
+        public IActionResult Complaint_Close_Excel(ComplaintClose_req model)
         {
             ResultClass<string> resultClass = new();
             try
             {
-                var fileBytes = _HM.Complaint_Close_Excel(DeadlineDate);
+                var fileBytes = _HM.Complaint_Close_Excel(model);
                 return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"); ;
             }
             catch (Exception ex)
