@@ -965,7 +965,7 @@ namespace KF_WebAPI.DataLogic
             if (U_BC == "")
             {
                 T_SQL = @"select isnull(G.Spec_Group, U_BC)U_BC,BC_Name,bc_sort,count(*) PelCount
-                         from (select U_num,U_BC from User_M where U_BC between 'BC0100' and 'BC0600' and U_PFT in('PFT050','PFT030','PFT060','PFT300')  and  U_leave_date is null or convert(varchar, U_arrive_date, 112) =@ThisMon ) U
+                         from (select U_num,U_BC from User_M where U_BC between 'BC0100' and 'BC0600' and U_PFT in('PFT050','PFT030','PFT060','PFT300') and U_num<>'K0064'  and  (U_leave_date is null or convert(varchar, U_arrive_date, 112) =@ThisMon) ) U
                         Left join  User_Spec_Group G  on U.U_num=G.U_num 
                         left join (
                         select item_D_code,item_D_name BC_Name,0 bc_sort from Item_list where item_M_code = 'Spec_Group' and item_M_type='N'
@@ -977,8 +977,8 @@ namespace KF_WebAPI.DataLogic
                         select U_BC,BC_Name,bc_sort,count(*)PelCount  from USER_M M Left Join
                         (select  item_D_code,item_D_name BC_Name,item_sort bc_sort from Item_list  where item_M_code = 'branch_company' and item_M_type='N' )
                         D on M.U_BC=D.item_D_code
-                        where U_BC='BC0900' and U_num <> 'K9999' and U_PFT in('PFT050','PFT030','PFT060','PFT300')  and U_susp_date is null 
-                        and U_leave_date is null or convert(varchar, U_arrive_date, 112) =@ThisMon
+                        where U_BC='BC0900' and U_num <> 'K9999' and U_PFT in('PFT050','PFT030','PFT060','PFT300') and U_num<>'K0064'  and U_susp_date is null 
+                        and (U_leave_date is null or convert(varchar, U_arrive_date, 112) =@ThisMon)
                         group by  U_BC,BC_Name,bc_sort 
                         union all 
                         select 'BC0901','湧立','999',1
@@ -1659,7 +1659,9 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 
                     if (Dis_BC != "BC0900" && Dis_BC != "BC0901")
                     {
-                        if ((U_PFT_sort == "120" || U_PFT_sort == "130"))
+                    if (Dis_BC == "BC0200")
+                    {
+                        if ((U_PFT_sort == "140"))//新北主管:邱國維職稱:副理
                         {
                             DataRow TotRow = dtTotle.NewRow();
                             TotRow["SEQ"] = "";
@@ -1678,6 +1680,31 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                             dtEngine.Rows.Add(FuncHandler.AddTitleByTable(dtEngine, "Engine"));
                             BC_Count++;
                         }
+                    }
+                    else
+                    {
+                        if ((U_PFT_sort == "120" || U_PFT_sort == "130"))//其他部門:職稱:區經理或經理
+                        {
+                            DataRow TotRow = dtTotle.NewRow();
+                            TotRow["SEQ"] = "";
+                            TotRow["U_PFT_name"] = "";
+                            TotRow["plan_name"] = arrTitle[BC_Count];
+                            TotRow["month_get_amount_FDCOM001"] = AddDate;
+                            dtTotle.Rows.Add(TotRow);
+                            dtTotle.Rows.Add(FuncHandler.AddTitleByTable(dtTotle, "Totle"));
+
+                            DataRow TotRow_E = dtEngine.NewRow();
+                            TotRow_E["SEQ"] = "";
+                            TotRow_E["U_PFT_name"] = "";
+                            TotRow_E["plan_name"] = arrTitle[BC_Count];
+                            TotRow_E["month_get_amount_PJ00046"] = AddDate;
+                            dtEngine.Rows.Add(TotRow_E);
+                            dtEngine.Rows.Add(FuncHandler.AddTitleByTable(dtEngine, "Engine"));
+                            BC_Count++;
+                        }
+                    }
+                        
+
                     }
                     else
                     {
