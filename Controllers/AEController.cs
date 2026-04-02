@@ -1287,8 +1287,8 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-        [HttpGet("GetBookingBoardByRoom")]
-        public ActionResult<ResultClass<string>> GetBookingBoardByRoom(string Room)
+        [HttpGet("GetBookingBoardByDate")]
+        public ActionResult<ResultClass<string>> GetBookingBoardByDate(string startDate)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -1296,15 +1296,15 @@ namespace KF_WebAPI.Controllers
             {
                 // 撰寫 SQL：取出今日以後的預約資訊
                 string strSQL = @"
-             SELECT B.BookingID,B.Room,R.RoomName,U.U_name,B.StartTime,B.EndTime,B.Subject
+               SELECT B.BookingID,B.Room,R.RoomName,U.U_num,U.U_name,format(B.StartTime,'HH:mm')StartTime,format(B.EndTime,'HH:mm') EndTime,B.Subject
                FROM Bookings B
                INNER JOIN (select item_D_code Room,item_D_name RoomName  from Item_list where item_M_code='Room' and item_D_type='Y') R ON B.Room = R.Room
-               LEFT JOIN User_M U ON B.U_num = U.U_num  ORDER BY B.StartTime ASC";
+               LEFT JOIN User_M U ON B.U_num = U.U_num  where format(B.StartTime,'yyyy/MM/dd')=@StartTime  ORDER BY B.Room,B.StartTime ASC ";
 
                 // 使用您元件中的 ExecuteQuery (傳入 null 表示無參數)
                 var paramsList = new List<SqlParameter> {
-            new SqlParameter("@Room", Room)
-        };
+                     new SqlParameter("@StartTime", startDate)
+                 };
 
                 DataTable dtResult = _db.ExecuteQuery(strSQL, paramsList);
 
