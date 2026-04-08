@@ -1168,80 +1168,135 @@ namespace KF_WebAPI.Controllers
             return Ok(resultClass);
         }
 
-       
+
 
         [HttpPost("SubmitBooking")]
         public ActionResult<ResultClass<string>> SubmitBooking([FromBody] BookingRequest model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
+
             try
             {
-                // 1. 基本邏輯檢查：結束時間必須晚於開始時間
+                // 1. 檢查時間邏輯
                 if (model.EndTime <= model.StartTime)
                 {
                     resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "錯誤：結束時間必須晚於開始時間。";
+                    resultClass.ResultMsg = "結束時間必須晚於開始時間";
                     return Ok(resultClass);
                 }
 
-                // 2. 衝突檢查 (Conflict Check)
-                // 邏輯：(新開始 < 舊結束) AND (新結束 > 舊開始)
+                // 2. 衝突檢查 (核心邏輯：排除自己正在修改的這筆 ID)
                 string checkSQL = @"
             SELECT COUNT(1) 
             FROM Bookings 
-            WHERE Room = @Room
+            WHERE Room = @Room 
             AND (@Start < EndTime AND @End > StartTime)";
 
-                var checkParams = new List<SqlParameter>
-        {
+                // 如果是修改模式，檢查衝突時要排除掉原本這筆紀錄
+                if (model.BookingID.HasValue)
+                {
+                    checkSQL += " AND BookingID != @BID";
+                }
+
+                var checkParams = new List<SqlParameter> {
             new SqlParameter("@Room", model.Room),
             new SqlParameter("@Start", model.StartTime),
             new SqlParameter("@End", model.EndTime)
         };
+                if (model.BookingID.HasValue)
+                {
+                    checkParams.Add(new SqlParameter("@BID", model.BookingID.Value));
+                }
 
                 int conflictCount = Convert.ToInt32(_db.ExecuteScalar(checkSQL, checkParams));
-
                 if (conflictCount > 0)
                 {
                     resultClass.ResultCode = "401";
-                    resultClass.ResultMsg = "此時段該會議室已被預約，請重新選擇。";
+                    resultClass.ResultMsg = "該時段會議室已被預約";
                     return Ok(resultClass);
                 }
 
-                // 3. 執行寫入
-                // 注意：Subject 欄位建議存入 "會議標題(預約人)" 格式，方便您之前的 renderTable 顯示
-                string insertSQL = @"
-            INSERT INTO Bookings (Room, U_num, StartTime, EndTime, Subject)
-            VALUES (@Room, @U_num, @Start, @End, @Subject)";
-
-                var insertParams = new List<SqlParameter>
-        {
+                // 3. 執行 SQL (根據 BookingID 是否有值決定 Insert 或 Update)
+                string execSQL = "";
+                var execParams = new List<SqlParameter> {
             new SqlParameter("@Room", model.Room),
-            new SqlParameter("@U_num", model.U_num),
             new SqlParameter("@Start", model.StartTime),
             new SqlParameter("@End", model.EndTime),
             new SqlParameter("@Subject", model.Subject)
         };
 
-                int affected = _db.ExecuteNonQuery(insertSQL, insertParams);
-
-                if (affected > 0)
+                if (model.BookingID.HasValue)
                 {
-                    resultClass.ResultCode = "000";
-                    resultClass.ResultMsg = "預約成功！";
-                    return Ok(resultClass);
+                    // 修改模式
+                    execSQL = @"
+                UPDATE Bookings 
+                SET Room = @Room, StartTime = @Start, EndTime = @End, Subject = @Subject 
+                WHERE BookingID = @BID";
+                    execParams.Add(new SqlParameter("@BID", model.BookingID.Value));
                 }
                 else
                 {
-                    resultClass.ResultCode = "500";
-                    resultClass.ResultMsg = "資料庫寫入失敗。";
-                    return Ok(resultClass);
+                    // 新增模式
+                    execSQL = @"
+                INSERT INTO Bookings (Room, StartTime, EndTime, Subject, U_num, add_date)
+                VALUES (@Room, @Start, @End, @Subject, @Unum, GETDATE())";
+                    execParams.Add(new SqlParameter("@Unum", model.U_num));
                 }
+
+                _db.ExecuteNonQuery(execSQL, execParams);
+
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = model.BookingID.HasValue ? "修改成功" : "預約成功";
+                return Ok(resultClass);
             }
             catch (Exception ex)
             {
-                resultClass.ResultCode = "999";
-                resultClass.ResultMsg = $"系統異常：{ex.Message}";
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $"系統異常: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        [HttpPost("DeleteBooking")]
+        public ActionResult<ResultClass<string>> DeleteBooking(int id, string WebUser)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                // 1. 權限檢查：先抓出該筆資料的預約者
+                string findSQL = "SELECT U_num FROM Bookings WHERE BookingID = @ID";
+                DataTable dt = _db.ExecuteQuery(findSQL, new List<SqlParameter> { new SqlParameter("@ID", id) });
+
+                if (dt.Rows.Count == 0)
+                {
+                    resultClass.ResultCode = "404";
+                    resultClass.ResultMsg = "找不到該筆預約紀錄";
+                    return Ok(resultClass);
+                }
+
+                string owner = dt.Rows[0]["U_num"].ToString();
+
+                // 2. 校驗：非本人且非管理員則拒絕
+                if (WebUser != "AA999" && WebUser != owner)
+                {
+                    resultClass.ResultCode = "403";
+                    resultClass.ResultMsg = "權限不足，無法刪除他人預約";
+                    return Ok(resultClass);
+                }
+
+                // 3. 執行刪除
+                string delSQL = "DELETE FROM Bookings WHERE BookingID = @ID";
+                _db.ExecuteNonQuery(delSQL, new List<SqlParameter> { new SqlParameter("@ID", id) });
+
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "預約已成功取消";
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $"刪除失敗: {ex.Message}";
                 return StatusCode(500, resultClass);
             }
         }
