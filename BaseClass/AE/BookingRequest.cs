@@ -2,6 +2,7 @@
 {
     public class BookingRequest
     {
+        public int? BookingID { get; set; }
         public string Room { get; set; }
         public string? U_num{ get; set; }
         public DateTime StartTime { get; set; }
