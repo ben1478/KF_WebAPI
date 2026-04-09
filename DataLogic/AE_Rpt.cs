@@ -680,12 +680,10 @@ namespace KF_WebAPI.DataLogic
             }
         }
 
-
-
         /// <summary>
         /// 取得房貸分期總表
         /// </summary>
-        public List<CarcaseSummary> GetHouseSummaryList(Carcase_req model)
+        public List<HousecaseSummary> GetHouseSummaryList(Housecase_req model)
         {
             try
             {
@@ -695,7 +693,7 @@ namespace KF_WebAPI.DataLogic
                     new SqlParameter("@checkDateS",model.checkDateS),
                     new SqlParameter("@checkDateE",model.checkDateE)
                 };
-                var result = _adoData.ExecuteQuery(T_SQL_SP, parameters).AsEnumerable().Select(row => new CarcaseSummary
+                var result = _adoData.ExecuteQuery(T_SQL_SP, parameters).AsEnumerable().Select(row => new HousecaseSummary
                 {
                     YYYYMM = row.Field<string>("YYYYMM"),
                     SendCount = row.Field<int>("SendCount"),
@@ -726,7 +724,7 @@ namespace KF_WebAPI.DataLogic
         /// <summary>
         /// 匯出房貸分期總表EXCEL
         /// </summary>
-        public byte[] GetHouseSummaryExcel(Carcase_req model)
+        public byte[] GetHouseSummaryExcel(Housecase_req model)
         {
             try
             {
@@ -734,8 +732,8 @@ namespace KF_WebAPI.DataLogic
                 {
                     var worksheet = package.Workbook.Worksheets.Add("總表");
 
-                    #region 汽車貸彙總
-                    var mtoSummaryList = GetCarSummaryList(model);
+                    #region 房貸彙總
+                    var mtoSummaryList = GetHouseSummaryList(model);
 
                     string[] headers = { "進件數", "核准數", "撥款數", "核准總額", "撥款總額", "呆帳準備金", "目前月付金總額", "本金餘額", "已清償"
                             , "已清償金額", "呆帳", "呆帳金額", "核准率", "動撥率" };

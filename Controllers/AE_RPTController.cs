@@ -6798,7 +6798,7 @@ namespace KF_WebAPI.Controllers
         /// 取得房貸分期總表
         /// </summary>
         [HttpPost("GetHouseSummaryList")]
-        public ActionResult<ResultClass<string>> GetHouseSummaryList(Carcase_req model)
+        public ActionResult<ResultClass<string>> GetHouseSummaryList(Housecase_req model)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
@@ -6821,7 +6821,7 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPost("GetHouseSummaryExcel")]
-        public IActionResult GetHouseSummaryExcel(Carcase_req model)
+        public IActionResult GetHouseSummaryExcel(Housecase_req model)
         {
             try
             {
