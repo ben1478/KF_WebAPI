@@ -6746,6 +6746,31 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+        /// <summary>
+        /// 取得機車清償資料
+        /// </summary>
+        [HttpGet("GetMotoSettList")]
+        public ActionResult<ResultClass<string>> GetMotoSettList(string yyyyMM)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var result = _Rpt.GetMotoSettList(yyyyMM);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        //匯出機車清償資料
+
         #endregion
 
         #region 汽車貸專案總表

@@ -91,4 +91,18 @@
         public string PassRate { get; set; }
         public string GetRate { get; set; }
     }
+
+    public class SettDetailList
+    {
+        public string CS_name { get; set; } 
+        public string str_get_amount_date { get; set; }
+        public decimal capital_AMT { get; set; }
+        public decimal fee_total { get;set; }
+        public decimal Interest_total { get; set; }
+        public decimal Delay_AMT { get; set; }
+        public string get_amount { get; set; }
+        public string str_date_begin_settle { get; set; }
+        public decimal Sett_total { get; set; } 
+        public string pj_name { get; set; }
+    }
 }

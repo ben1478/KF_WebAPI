@@ -468,6 +468,54 @@ namespace KF_WebAPI.DataLogic
         }
 
         /// <summary>
+        /// 取得機車清償資料
+        /// </summary>
+        /// <param name="yyyyMM">202404</param>
+        public List<SettDetailList> GetMotoSettList(string yyyyMM)
+        {
+            try
+            {
+                var T_SQL = @"SELECT Ha.CS_name,b.get_amount_date,rm.capital_AMT,rm.month_total*20 as fee_total,
+                              rm.Interest_AMT-(rm.month_total*20) as Interest_total,rm.Delay_AMT,b.get_amount,rm.date_begin_settle,
+                              rm.sett_AMT-(rm.month_total*20) as Sett_total,li.item_D_name as pj_name
+                              FROM view_HS_Base b
+                              INNER JOIN Receivable_M rm ON rm.HS_id = b.HS_id AND rm.del_tag = 0
+                              LEFT JOIN House_apply ha ON Ha.HA_id = b.HA_id
+                              LEFT JOIN Item_list li ON item_M_code = 'project_title' AND  li.item_D_code = b.project_title
+                              WHERE b.Send_result_type = 'SRT002' AND b.get_amount_type = 'GTAT002'
+                              AND b.project_title IN ('PJ00046', 'PJ00047') AND sett_AMT IS NOT NULL
+                              AND b.GetYYYYMM = @TargetMonth
+                              order by rm.date_begin_settle";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@TargetMonth",yyyyMM)
+                };
+
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new SettDetailList
+                {
+                    CS_name = row.Field<string>("CS_name"),
+                    str_get_amount_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("get_amount_date").ToString("yyyy/MM/dd")),
+                    capital_AMT = row.Field<int>("capital_AMT"),
+                    fee_total = row.Field<int>("fee_total"),
+                    Interest_total = row.Field<decimal>("Interest_total"),
+                    Delay_AMT = row.Field<decimal>("Delay_AMT"),
+                    get_amount = row.Field<string>("get_amount"),
+                    str_date_begin_settle = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("date_begin_settle").ToString("yyyy/MM/dd")),
+                    Sett_total = row.Field<int>("Sett_total"),
+                    pj_name = row.Field<string>("pj_name")
+                }).ToList();
+
+                return result;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+
+        /// <summary>
         /// 取得汽車分期總表
         /// </summary>
         public List<CarcaseSummary> GetCarSummaryList(Carcase_req model)
