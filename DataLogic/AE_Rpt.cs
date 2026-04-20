@@ -471,7 +471,7 @@ namespace KF_WebAPI.DataLogic
         /// 取得機車清償資料
         /// </summary>
         /// <param name="yyyyMM">202404</param>
-        public List<SettDetailList> GetMotoSettList(string yyyyMM)
+        public List<SettDetailList> GetMotoSettList(int yyyyMM)
         {
             try
             {
@@ -574,7 +574,7 @@ namespace KF_WebAPI.DataLogic
                             , "已清償金額", "呆帳", "呆帳金額", "核准率", "動撥率" };
 
                     // 添加合併標題
-                    worksheet.Cells[1, 1].Value = "機車分期付款專案彙整表";
+                    worksheet.Cells[1, 1].Value = "汽車分期付款專案彙整表";
                     worksheet.Cells[1, 1, 1, headers.Length + 1].Merge = true; // 合併儲存格
                     worksheet.Cells[1, 1, 1, headers.Length + 1].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center; // 標題居中
                     worksheet.Cells[1, 1, 1, headers.Length + 1].Style.Font.Bold = true; // 標題加粗

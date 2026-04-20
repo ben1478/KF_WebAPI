@@ -6751,7 +6751,7 @@ namespace KF_WebAPI.Controllers
         /// 取得機車清償資料
         /// </summary>
         [HttpGet("GetMotoSettList")]
-        public ActionResult<ResultClass<string>> GetMotoSettList(string yyyyMM)
+        public ActionResult<ResultClass<string>> GetMotoSettList(int yyyyMM)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
@@ -6806,7 +6806,7 @@ namespace KF_WebAPI.Controllers
             try
             {
                 var fileBytes = _Rpt.GetCarSummaryExcel(model);
-                var fileName = "機車貸分期貸款總表" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx";
+                var fileName = "汽車貸分期貸款總表" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx";
                 return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
             }
             catch (Exception ex)
