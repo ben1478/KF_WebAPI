@@ -475,17 +475,20 @@ namespace KF_WebAPI.DataLogic
         {
             try
             {
-                var T_SQL = @"SELECT Ha.CS_name,b.get_amount_date,rm.capital_AMT,rm.month_total*20 as fee_total,
-                              rm.Interest_AMT-(rm.month_total*20) as Interest_total,rm.Delay_AMT,b.get_amount,rm.date_begin_settle,
-                              rm.sett_AMT-(rm.month_total*20) as Sett_total,li.item_D_name as pj_name
+                var T_SQL = @"SELECT Ha.CS_name,b.get_amount_date,rm.capital_AMT,
+                              ISNULL(rd_stat.s_count, 0) * 20 AS fee_total,rm.Interest_AMT - (ISNULL(rd_stat.s_count, 0) * 20) AS Interest_total,
+                              rm.Delay_AMT,b.get_amount,rm.date_begin_settle,rm.sett_AMT - (ISNULL(rd_stat.s_count, 0) * 20) AS Sett_total,li.item_D_name AS pj_name
                               FROM view_HS_Base b
                               INNER JOIN Receivable_M rm ON rm.HS_id = b.HS_id AND rm.del_tag = 0
                               LEFT JOIN House_apply ha ON Ha.HA_id = b.HA_id
-                              LEFT JOIN Item_list li ON item_M_code = 'project_title' AND  li.item_D_code = b.project_title
+                              LEFT JOIN Item_list li ON li.item_M_code = 'project_title' AND li.item_D_code = b.project_title
+                              LEFT JOIN ( 
+                              SELECT rcm_id, COUNT(*) AS s_count FROM Receivable_D WHERE check_pay_type = 'S' OR (check_pay_type = 'Y' and RecPayAmt =0 )
+                              GROUP BY rcm_id ) rd_stat ON rd_stat.rcm_id = rm.rcm_id
                               WHERE b.Send_result_type = 'SRT002' AND b.get_amount_type = 'GTAT002'
                               AND b.project_title IN ('PJ00046', 'PJ00047') AND sett_AMT IS NOT NULL
-                              AND b.GetYYYYMM = @TargetMonth
-                              order by rm.date_begin_settle";
+                              AND (YEAR(rm.date_begin_settle)*100+MONTH(rm.date_begin_settle)) = @TargetMonth
+                              ORDER BY rm.date_begin_settle";
                 var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@TargetMonth",yyyyMM)
@@ -493,7 +496,7 @@ namespace KF_WebAPI.DataLogic
 
                 var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new SettDetailList
                 {
-                    CS_name = row.Field<string>("CS_name"),
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
                     str_get_amount_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("get_amount_date").ToString("yyyy/MM/dd")),
                     capital_AMT = row.Field<int>("capital_AMT"),
                     fee_total = row.Field<int>("fee_total"),
