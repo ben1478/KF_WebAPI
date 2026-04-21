@@ -2773,6 +2773,13 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                                 month_total = row.Field<int>("month_total"),
                                 RecPayDate = Convert.ToDateTime(item.Col2)
                             }).ToList();
+
+                            foreach (var res in result)
+                            {
+                                var roc_PayDate = FuncHandler.ConvertGregorianToROC(res.RecPayDate.ToString("yyyy/MM/dd"));
+                                if (res.roc_RC_date != roc_PayDate)
+                                    res.roc_RC_date += ";" + roc_PayDate;
+                            }
                             ReceivableWinList.AddRange(result);
 
                         }

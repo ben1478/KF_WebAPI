@@ -344,7 +344,6 @@ namespace KF_WebAPI.Controllers
                         var GroupNo = _Rpt.CheckInvGp(yyyMM, "01");
                         #endregion
 
-
                         #region maping
                         ReceivableForInv_req model = new ReceivableForInv_req();
                         model.AToken = okResult.Value.ToString();
@@ -435,38 +434,37 @@ namespace KF_WebAPI.Controllers
                         var responseContent = await response.Content.ReadAsStringAsync();
                         var responJson = JObject.Parse(responseContent);
 
-                        string errmsg = "";
+                        string errmsg = (string)responJson["data"]["result"][0]["errmsg"];
                         string Status = (string)responJson["status"];
-                        if (Status == "200")
-                        {
-                            errmsg = "成功 " + (string)responJson["data"]["result"][0]["errmsg"];
-                        }
-                        else
-                        {
-                            errmsg = "失敗 " + (string)responJson["error"];
-                        }
-                        List[i].Win_Msg = errmsg;
 
                         _fun.ExtAPILogIns(apiCode, "ImpWD4MF10", model_M.MF10003, model.AToken, jsonData, Status, JsonConvert.SerializeObject(responJson));
 
-                        if (errmsg.Contains("無可用的發票號碼"))
+                        if (string.IsNullOrEmpty(errmsg))
                         {
-                            #region 異動可用的發票組別
-                            _Rpt.UpdInvGp(yyyMM, GroupNo);
-                            #endregion
-                            i--;
-                        }
-                        else
-                        {
+                            errmsg = "成功";
+
                             #region 抓發票資料更新發票號碼
                             string INV_NO = await GetSalesOrder(okResult.Value.ToString(), model_M.MF10003);
                             #endregion
 
                             #region 異動Receivable_D
-                            //_Rpt.UpdWinToRecD(List[i], clientIp, INV_NO, "S");
                             _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, 0, "3");
                             #endregion
                         }
+                        else
+                        {
+                            errmsg = "失敗:" + errmsg;
+
+                            if (errmsg.Contains("無可用的發票號碼"))
+                            {
+                                #region 異動可用的發票組別
+                                _Rpt.UpdInvGp(yyyMM, GroupNo);
+                                #endregion
+                                i--;
+                                errmsg = "跳下一組發票號碼";
+                            }
+                        }
+                        List[i].Win_Msg = errmsg;
                     }
                 }
 
@@ -559,38 +557,37 @@ namespace KF_WebAPI.Controllers
                         var responseContent = await response.Content.ReadAsStringAsync();
                         var responJson = JObject.Parse(responseContent);
 
-                        string errmsg = "";
+                        string errmsg = (string)responJson["data"]["result"][0]["errmsg"];
                         string Status = (string)responJson["status"];
-                        if (Status == "200")
-                        {
-                            errmsg = "成功 " + (string)responJson["data"]["result"][0]["errmsg"];
-                        }
-                        else
-                        {
-                            errmsg = "失敗 " + (string)responJson["error"];
-                        }
-                        List[i].Win_Msg = errmsg;
 
                         _fun.ExtAPILogIns(apiCode, "ImpWD4MF10", model_M.MF10003, model.AToken, jsonData, Status, JsonConvert.SerializeObject(responJson));
 
-                        if (errmsg.Contains("無可用的發票號碼"))
+                        if (string.IsNullOrEmpty(errmsg))
                         {
-                            #region 異動可用的發票組別
-                            _Rpt.UpdInvGp(yyyMM, GroupNo);
-                            #endregion
-                            i--;
-                        }
-                        else
-                        {
+                            errmsg = "成功";
+
                             #region 抓發票資料更新發票號碼
                             string INV_NO = await GetSalesOrder(okResult.Value.ToString(), model_M.MF10003);
                             #endregion
 
                             #region 異動Receivable_D
-                            //_Rpt.UpdWinToRecAuto(List[i], clientIp, INV_NO, List[i].amount_per_month, "Y", "B");
                             _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, List[i].amount_per_month, "2");
                             #endregion
                         }
+                        else
+                        {
+                            errmsg = "失敗:" + errmsg;
+
+                            if (errmsg.Contains("無可用的發票號碼"))
+                            {
+                                #region 異動可用的發票組別
+                                _Rpt.UpdInvGp(yyyMM, GroupNo);
+                                #endregion
+                                i--;
+                                errmsg = "跳下一組發票號碼";
+                            }
+                        }
+                        List[i].Win_Msg = errmsg;
                     }
                 }
 
@@ -684,45 +681,43 @@ namespace KF_WebAPI.Controllers
                         var responseContent = await response.Content.ReadAsStringAsync();
                         var responJson = JObject.Parse(responseContent);
 
-                        string errmsg = "";
+                        string errmsg = (string)responJson["data"]["result"][0]["errmsg"];
                         string Status = (string)responJson["status"];
-                        if (Status == "200")
-                        {
-                            errmsg = "成功 " + (string)responJson["data"]["result"][0]["errmsg"];
-                        }
-                        else
-                        {
-                            errmsg = "失敗 " + (string)responJson["error"];
-                        }
-                        List[i].Win_Msg = errmsg;
 
                         _fun.ExtAPILogIns(apiCode, "ImpWD4MF10", model_M.MF10003, model.AToken, jsonData, Status, JsonConvert.SerializeObject(responJson));
 
-                        if (errmsg.Contains("無可用的發票號碼"))
+                        if (string.IsNullOrEmpty(errmsg))
                         {
-                            #region 異動可用的發票組別
-                            _Rpt.UpdInvGp(yyyMM, GroupNo);
-                            #endregion
-                            i--;
-                        }
-                        else
-                        {
+                            errmsg = "成功";
+
                             #region 抓發票資料更新發票號碼
                             string INV_NO = await GetSalesOrder(okResult.Value.ToString(), model_M.MF10003);
                             #endregion
 
-
                             #region 異動Receivable_D
                             var cpPayAmt = List[i].CP_Pay_Amt ?? 0;
                             List[i].RC_note = List[i].CP_bus_remark;
-                            //_Rpt.UpdWinToRecDetail(List[i], clientIp, INV_NO, cpPayAmt, "Y","C");
-                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, cpPayAmt,"1");
+                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, cpPayAmt, "1");
                             #endregion
 
                             #region 異動自主繳款資料
                             _Rpt.UpdClientPay(List[i].RCD_id.ToString(), List[i].User);
                             #endregion
                         }
+                        else
+                        {
+                            errmsg = "失敗:" + errmsg;
+
+                            if (errmsg.Contains("無可用的發票號碼"))
+                            {
+                                #region 異動可用的發票組別
+                                _Rpt.UpdInvGp(yyyMM, GroupNo);
+                                #endregion
+                                i--;
+                                errmsg = "跳下一組發票號碼";
+                            }
+                        }
+                        List[i].Win_Msg = errmsg;
                     }
                 }
 
