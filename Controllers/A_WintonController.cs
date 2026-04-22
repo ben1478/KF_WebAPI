@@ -19,6 +19,7 @@ using System.Text.RegularExpressions;
 using static OfficeOpenXml.ExcelErrorValue;
 using System.Collections.Generic;
 using Grpc.Core;
+using System.Linq;
 
 namespace KF_WebAPI.Controllers
 {
@@ -587,7 +588,11 @@ namespace KF_WebAPI.Controllers
                                 errmsg = "跳下一組發票號碼";
                             }
                         }
-                        List[i].Win_Msg = errmsg;
+                        //20260422 Bug修正
+                        if (List.ElementAtOrDefault(i) != null)
+                        {
+                            List[i].Win_Msg = errmsg;
+                        }
                     }
                 }
 
