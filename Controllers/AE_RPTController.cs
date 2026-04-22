@@ -6769,8 +6769,26 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-        //匯出機車清償資料
-
+        /// <summary>
+        /// 匯出機車清償Excel
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("GetMotoSettExcel")]
+        public IActionResult GetMotoSettExcel(int yyyyMM)
+        {
+            try
+            {
+                var fileBytes = _Rpt.GetMotoSettExcel(yyyyMM);
+                var fileName = "機車貸清償清冊" + yyyyMM + ".xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
         #endregion
 
         #region 汽車貸專案總表
@@ -6862,7 +6880,6 @@ namespace KF_WebAPI.Controllers
             }
         }
         #endregion
-
 
         #region 上傳文中發票
         [HttpPost("GetRecForWin")]

@@ -517,6 +517,87 @@ namespace KF_WebAPI.DataLogic
             }
         }
 
+        /// <summary>
+        /// 匯出機車貸清償EXCEL
+        /// </summary>
+        public byte[] GetMotoSettExcel(int yyyyMM)
+        {
+            try
+            {
+                using (var package = new ExcelPackage())
+                {
+                    var worksheet = package.Workbook.Worksheets.Add("已清償名單");
+
+                    #region 清償資料
+                    var settList = GetMotoSettList(yyyyMM);
+
+                    string[] headers = { "件數", "借款人", "撥款日", "結清本金", "手續費", "利息", "結清遲延金", "放款回收金額", "清償日", "回收金額"
+                            , "專案" };
+
+                    int rowIndex = 1;
+                    int colIndex = 1;
+                    foreach (var header in headers)
+                    {
+                        var cell = worksheet.Cells[rowIndex, colIndex++];
+                        cell.Value = header;
+                        // 設置儲存格底色為淺藍色
+                        cell.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                        cell.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                    }
+
+                    // 添加表身
+                    colIndex = 1;
+                    int index = 1;
+                    foreach (var item in settList)
+                    {
+                        rowIndex++;
+                        worksheet.Cells[rowIndex, colIndex++].Value = index++;
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.CS_name;
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.str_get_amount_date;
+
+                        worksheet.Cells[rowIndex, colIndex].Value = item.capital_AMT;
+                        worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0\"元\"";
+
+                        worksheet.Cells[rowIndex, colIndex].Value = item.fee_total;
+                        worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0\"元\"";
+
+                        worksheet.Cells[rowIndex, colIndex].Value = item.Interest_total;
+                        worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0\"元\"";
+
+                        worksheet.Cells[rowIndex, colIndex].Value = item.Delay_AMT;
+                        worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0\"元\"";
+
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.get_amount + "萬";
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.str_date_begin_settle;
+                        worksheet.Cells[rowIndex, colIndex].Value = item.Sett_total;
+                        worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0\"元\"";
+
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.pj_name;
+                        colIndex = 1;
+                    }
+
+                    // 框線
+                    using (var range = worksheet.Cells[1, 1, rowIndex, headers.Length])
+                    {
+                        range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    }
+                    #endregion
+
+                    // 自動調整列寬
+                    worksheet.Cells.AutoFitColumns();
+
+                    return package.GetAsByteArray();
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
 
         /// <summary>
         /// 取得汽車分期總表
