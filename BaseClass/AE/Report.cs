@@ -102,7 +102,7 @@
         public decimal Delay_AMT { get; set; }
         public string get_amount { get; set; }
         public string str_date_begin_settle { get; set; }
-        public decimal Sett_total { get; set; } 
+        public decimal sett_AMT { get; set; } 
         public string pj_name { get; set; }
     }
 }

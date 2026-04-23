@@ -471,13 +471,14 @@ namespace KF_WebAPI.DataLogic
         /// 取得機車清償資料
         /// </summary>
         /// <param name="yyyyMM">202404</param>
-        public List<SettDetailList> GetMotoSettList(int yyyyMM)
+        public List<SettDetailList> GetMotoSettList(int yyyyMM,string type)
         {
             try
             {
+                var parameters = new List<SqlParameter>();
                 var T_SQL = @"SELECT Ha.CS_name,b.get_amount_date,rm.capital_AMT,
                               ISNULL(rd_stat.s_count, 0) * 20 AS fee_total,rm.Interest_AMT - (ISNULL(rd_stat.s_count, 0) * 20) AS Interest_total,
-                              rm.Delay_AMT,b.get_amount,rm.date_begin_settle,rm.sett_AMT - (ISNULL(rd_stat.s_count, 0) * 20) AS Sett_total,li.item_D_name AS pj_name
+                              rm.Delay_AMT,b.get_amount,rm.date_begin_settle,rm.sett_AMT,li.item_D_name AS pj_name
                               FROM view_HS_Base b
                               INNER JOIN Receivable_M rm ON rm.HS_id = b.HS_id AND rm.del_tag = 0
                               LEFT JOIN House_apply ha ON Ha.HA_id = b.HA_id
@@ -486,13 +487,22 @@ namespace KF_WebAPI.DataLogic
                               SELECT rcm_id, COUNT(*) AS s_count FROM Receivable_D WHERE check_pay_type = 'S' OR (check_pay_type = 'Y' and RecPayAmt =0 )
                               GROUP BY rcm_id ) rd_stat ON rd_stat.rcm_id = rm.rcm_id
                               WHERE b.Send_result_type = 'SRT002' AND b.get_amount_type = 'GTAT002'
-                              AND b.project_title IN ('PJ00046', 'PJ00047') AND sett_AMT IS NOT NULL
-                              AND (YEAR(rm.date_begin_settle)*100+MONTH(rm.date_begin_settle)) = @TargetMonth
-                              ORDER BY rm.date_begin_settle";
-                var parameters = new List<SqlParameter>
+                              AND b.project_title IN ('PJ00046', 'PJ00047') AND sett_AMT IS NOT NULL";
+
+                if (type == "M")
                 {
-                    new SqlParameter("@TargetMonth",yyyyMM)
-                };
+                    T_SQL += @" AND (YEAR(rm.date_begin_settle)*100+MONTH(rm.date_begin_settle)) = @TargetMonth 
+                               ORDER BY rm.date_begin_settle";
+                    parameters.Add(new SqlParameter("@TargetMonth", yyyyMM));
+                }
+                else
+                {
+                    T_SQL += @" AND (YEAR(rm.date_begin_settle)*100) = @TargetYear 
+                               ORDER BY rm.date_begin_settle";
+
+                    int yyyy = (yyyyMM / 100) * 100;
+                    parameters.Add(new SqlParameter("@TargetYear", yyyy));
+                }
 
                 var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new SettDetailList
                 {
@@ -504,7 +514,7 @@ namespace KF_WebAPI.DataLogic
                     Delay_AMT = row.Field<decimal>("Delay_AMT"),
                     get_amount = row.Field<string>("get_amount"),
                     str_date_begin_settle = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("date_begin_settle").ToString("yyyy/MM/dd")),
-                    Sett_total = row.Field<int>("Sett_total"),
+                    sett_AMT = row.Field<int>("sett_AMT"),
                     pj_name = row.Field<string>("pj_name")
                 }).ToList();
 
@@ -520,7 +530,7 @@ namespace KF_WebAPI.DataLogic
         /// <summary>
         /// 匯出機車貸清償EXCEL
         /// </summary>
-        public byte[] GetMotoSettExcel(int yyyyMM)
+        public byte[] GetMotoSettExcel(int yyyyMM,string type)
         {
             try
             {
@@ -529,7 +539,7 @@ namespace KF_WebAPI.DataLogic
                     var worksheet = package.Workbook.Worksheets.Add("已清償名單");
 
                     #region 清償資料
-                    var settList = GetMotoSettList(yyyyMM);
+                    var settList = GetMotoSettList(yyyyMM, type);
 
                     string[] headers = { "件數", "借款人", "撥款日", "結清本金", "手續費", "利息", "結清遲延金", "放款回收金額", "清償日", "回收金額"
                             , "專案" };
@@ -569,7 +579,7 @@ namespace KF_WebAPI.DataLogic
 
                         worksheet.Cells[rowIndex, colIndex++].Value = item.get_amount + "萬";
                         worksheet.Cells[rowIndex, colIndex++].Value = item.str_date_begin_settle;
-                        worksheet.Cells[rowIndex, colIndex].Value = item.Sett_total;
+                        worksheet.Cells[rowIndex, colIndex].Value = item.sett_AMT;
                         worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0\"元\"";
 
                         worksheet.Cells[rowIndex, colIndex++].Value = item.pj_name;

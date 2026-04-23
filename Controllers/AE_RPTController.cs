@@ -6751,12 +6751,12 @@ namespace KF_WebAPI.Controllers
         /// 取得機車清償資料
         /// </summary>
         [HttpGet("GetMotoSettList")]
-        public ActionResult<ResultClass<string>> GetMotoSettList(int yyyyMM)
+        public ActionResult<ResultClass<string>> GetMotoSettList(int yyyyMM,string type)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
-                var result = _Rpt.GetMotoSettList(yyyyMM);
+                var result = _Rpt.GetMotoSettList(yyyyMM, type);
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(result);
                 return Ok(resultClass);
@@ -6774,12 +6774,22 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("GetMotoSettExcel")]
-        public IActionResult GetMotoSettExcel(int yyyyMM)
+        public IActionResult GetMotoSettExcel(int yyyyMM,string type)
         {
             try
             {
-                var fileBytes = _Rpt.GetMotoSettExcel(yyyyMM);
-                var fileName = "機車貸清償清冊" + yyyyMM + ".xlsx";
+                var fileBytes = _Rpt.GetMotoSettExcel(yyyyMM, type);
+                var fileName = "";
+                if (type == "M")
+                {
+                    fileName = "機車貸清償清冊" + yyyyMM + ".xlsx";
+                }
+                else
+                {
+                    int yyyy = (yyyyMM / 100) ;
+                    fileName = "機車貸清償清冊" + yyyy + ".xlsx";
+                }
+                
                 return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
             }
             catch (Exception ex)
