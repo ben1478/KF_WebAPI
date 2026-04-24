@@ -489,19 +489,22 @@ namespace KF_WebAPI.DataLogic
                               WHERE b.Send_result_type = 'SRT002' AND b.get_amount_type = 'GTAT002'
                               AND b.project_title IN ('PJ00046', 'PJ00047') AND sett_AMT IS NOT NULL";
 
-                if (type == "M")
+                switch (type)
                 {
-                    T_SQL += @" AND (YEAR(rm.date_begin_settle)*100+MONTH(rm.date_begin_settle)) = @TargetMonth 
+                    case "M":
+                        T_SQL += @" AND (YEAR(rm.date_begin_settle)*100+MONTH(rm.date_begin_settle)) = @TargetMonth 
                                ORDER BY rm.date_begin_settle";
-                    parameters.Add(new SqlParameter("@TargetMonth", yyyyMM));
-                }
-                else
-                {
-                    T_SQL += @" AND (YEAR(rm.date_begin_settle)*100) = @TargetYear 
+                        parameters.Add(new SqlParameter("@TargetMonth", yyyyMM));
+                        break;
+                    case "Y":
+                        T_SQL += @" AND (YEAR(rm.date_begin_settle)*100) = @TargetYear 
                                ORDER BY rm.date_begin_settle";
-
-                    int yyyy = (yyyyMM / 100) * 100;
-                    parameters.Add(new SqlParameter("@TargetYear", yyyy));
+                        int yyyy = (yyyyMM / 100) * 100;
+                        parameters.Add(new SqlParameter("@TargetYear", yyyy));
+                        break;
+                    default:
+                        T_SQL += @" ORDER BY rm.date_begin_settle";
+                        break;
                 }
 
                 var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new SettDetailList
