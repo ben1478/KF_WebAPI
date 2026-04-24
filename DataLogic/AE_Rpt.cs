@@ -589,6 +589,44 @@ namespace KF_WebAPI.DataLogic
                         colIndex = 1;
                     }
 
+                    #region 總計
+                    rowIndex++;
+                    colIndex = 1;
+
+                    var totalRowRange = worksheet.Cells[rowIndex, 1, rowIndex, headers.Length];
+                    totalRowRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    totalRowRange.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+
+                    worksheet.Cells[rowIndex, colIndex++].Value = "總計";
+                    worksheet.Cells[rowIndex, 1, rowIndex, colIndex].Merge = true;
+                    worksheet.Cells[rowIndex, 1, rowIndex, colIndex].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet.Cells[rowIndex, 1, rowIndex, colIndex].Style.Font.Bold = true;
+
+                    colIndex += 2;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => x.capital_AMT);
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0\"元\"";
+
+                    colIndex++;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => x.fee_total);
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0\"元\"";
+
+                    colIndex++;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => x.Interest_total);
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0\"元\"";
+
+                    colIndex++;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => x.Delay_AMT);
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0\"元\"";
+
+                    colIndex++;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => int.Parse(x.get_amount)) + "萬";
+
+                    colIndex += 2;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => x.sett_AMT);
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0\"元\"";
+
+                    #endregion
+
                     // 框線
                     using (var range = worksheet.Cells[1, 1, rowIndex, headers.Length])
                     {
