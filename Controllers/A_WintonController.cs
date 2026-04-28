@@ -435,12 +435,21 @@ namespace KF_WebAPI.Controllers
                         var responseContent = await response.Content.ReadAsStringAsync();
                         var responJson = JObject.Parse(responseContent);
 
-                        string errmsg = (string)responJson["data"]["result"][0]["errmsg"];
+                        string errmsg = "";
+                        if (responJson["data"]["result"] != null && responJson["data"]["result"].HasValues)
+                        {
+                            errmsg = (string)responJson["data"]["result"][0]?["errmsg"];
+                        }
+                        else
+                        {
+                            errmsg = "";
+                        }
+
                         string Status = (string)responJson["status"];
 
                         _fun.ExtAPILogIns(apiCode, "ImpWD4MF10", model_M.MF10003, model.AToken, jsonData, Status, JsonConvert.SerializeObject(responJson));
 
-                        if (string.IsNullOrEmpty(errmsg))
+                        if (string.IsNullOrEmpty(errmsg) && Status == "200")
                         {
                             errmsg = "成功";
 
@@ -464,8 +473,16 @@ namespace KF_WebAPI.Controllers
                                 i--;
                                 errmsg = "跳下一組發票號碼";
                             }
+
+                            if (Status == "500")
+                            {
+                                errmsg += (string)responJson["error"];
+                            }
                         }
-                        List[i].Win_Msg = errmsg;
+                        if (List.ElementAtOrDefault(i) != null)
+                        {
+                            List[i].Win_Msg = errmsg;
+                        }
                     }
                 }
 
@@ -702,12 +719,21 @@ namespace KF_WebAPI.Controllers
                         var responseContent = await response.Content.ReadAsStringAsync();
                         var responJson = JObject.Parse(responseContent);
 
-                        string errmsg = (string)responJson["data"]["result"][0]["errmsg"];
+                        string errmsg = "";
+                        if (responJson["data"]["result"] != null && responJson["data"]["result"].HasValues)
+                        {
+                            errmsg = (string)responJson["data"]["result"][0]?["errmsg"];
+                        }
+                        else
+                        {
+                            errmsg = "";
+                        }
+
                         string Status = (string)responJson["status"];
 
                         _fun.ExtAPILogIns(apiCode, "ImpWD4MF10", model_M.MF10003, model.AToken, jsonData, Status, JsonConvert.SerializeObject(responJson));
 
-                        if (string.IsNullOrEmpty(errmsg))
+                        if (string.IsNullOrEmpty(errmsg) && Status == "200")
                         {
                             errmsg = "成功";
 
@@ -737,8 +763,17 @@ namespace KF_WebAPI.Controllers
                                 i--;
                                 errmsg = "跳下一組發票號碼";
                             }
+
+                            if (Status == "500")
+                            {
+                                errmsg += (string)responJson["error"];
+                            }
                         }
-                        List[i].Win_Msg = errmsg;
+
+                        if (List.ElementAtOrDefault(i) != null)
+                        {
+                            List[i].Win_Msg = errmsg;
+                        }
                     }
                 }
 
