@@ -429,7 +429,8 @@ namespace KF_WebAPI.Controllers
                     FileCount = row.Field<int>("FileCount"),
                     str_Pay_Date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("CP_pay_date").ToString("yyyy/MM/dd")),
                     U_Name = row.Field<string>("U_Name"),
-                    CaseType = row.Field<string>("CaseType")
+                    CaseType = row.Field<string>("CaseType"),
+                    str_add_date = row.Field<DateTime>("add_date").ToString("yyyy/MM/dd HH:mm")
                 }).ToList(); ;
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "變更成功";
