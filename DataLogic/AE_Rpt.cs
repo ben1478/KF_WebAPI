@@ -3260,7 +3260,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                                  WHERE RD.RCD_id = @RCD_id";
                 if (uType == "1") 
                 {
-                    T_SQL += ",RC_note = @RC_note";
+                    T_SQL += ",RD.RemainingPrincipal = RD.Ex_RemainingPrincipal,RC_note = @RC_note";
                     T_SQL += ",RD.Delaymoney = CASE WHEN HS.sendcase_handle_date >= '2023-04-24 00:00:00.000' THEN dbo.getDelaymoney(@check_pay_date, RD.RCD_cknum) ELSE NULL END";
                     T_SQL += T_SQL_B;
                     parameters.Add(new SqlParameter("@RecPayDate", model.RecPayDate));
@@ -3280,7 +3280,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 
                 if(uType == "2")
                 {
-                    T_SQL += ",RD.Delaymoney = CASE WHEN HS.sendcase_handle_date >= '2023-04-24 00:00:00.000' THEN dbo.getDelaymoney(@check_pay_date, RD.RCD_cknum) ELSE NULL END";
+                    T_SQL += ",RD.RemainingPrincipal = RD.Ex_RemainingPrincipal,RD.Delaymoney = CASE WHEN HS.sendcase_handle_date >= '2023-04-24 00:00:00.000' THEN dbo.getDelaymoney(@check_pay_date, RD.RCD_cknum) ELSE NULL END";
                     T_SQL += T_SQL_B;
                     parameters.Add(new SqlParameter("@RecPayDate", model.RecPayDate));
                     parameters.Add(new SqlParameter("@check_pay_date", model.RecPayDate));
