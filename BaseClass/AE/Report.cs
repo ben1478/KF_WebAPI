@@ -97,12 +97,16 @@
         public string CS_name { get; set; } 
         public string str_get_amount_date { get; set; }
         public decimal capital_AMT { get; set; }
-        public decimal fee_total { get;set; }
+        public decimal? fee_total { get;set; }
         public decimal Interest_total { get; set; }
         public decimal Delay_AMT { get; set; }
         public string get_amount { get; set; }
         public string str_date_begin_settle { get; set; }
-        public decimal sett_AMT { get; set; } 
-        public string pj_name { get; set; }
+        public decimal? sett_AMT { get; set; } 
+        public string? pj_name { get; set; }
+        public decimal? Break_AMT { get; set; }
+        public string? Loan_rate { get; set; }
+        public string? all_pre_addCity { get; set; }
+        public string? all_pre_addresses { get; set; }
     }
 }

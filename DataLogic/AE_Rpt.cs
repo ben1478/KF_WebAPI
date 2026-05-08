@@ -471,7 +471,7 @@ namespace KF_WebAPI.DataLogic
         /// 取得機車清償資料
         /// </summary>
         /// <param name="yyyyMM">202404</param>
-        public List<SettDetailList> GetMotoSettList(int yyyyMM,string type)
+        public List<SettDetailList> GetMotoSettList(int yyyyMM,string type, string? chkSale)
         {
             try
             {
@@ -487,8 +487,15 @@ namespace KF_WebAPI.DataLogic
                               SELECT rcm_id, COUNT(*) AS s_count FROM Receivable_D WHERE check_pay_type = 'S' OR (check_pay_type = 'Y' and RecPayAmt =0 )
                               GROUP BY rcm_id ) rd_stat ON rd_stat.rcm_id = rm.rcm_id
                               WHERE b.Send_result_type = 'SRT002' AND b.get_amount_type = 'GTAT002'
-                              AND b.project_title IN ('PJ00046', 'PJ00047') AND sett_AMT IS NOT NULL";
-
+                              AND b.project_title IN ('PJ00046', 'PJ00047') AND date_begin_settle IS NOT NULL";
+                if (chkSale != null && chkSale == "1")
+                {
+                    T_SQL += @" AND ISNULL(rm.court_sale,'') = 1 ";
+                }
+                else
+                {
+                    T_SQL += @" AND ISNULL(rm.court_sale,'') = ''";
+                }
                 switch (type)
                 {
                     case "M":
@@ -533,7 +540,7 @@ namespace KF_WebAPI.DataLogic
         /// <summary>
         /// 匯出機車貸清償EXCEL
         /// </summary>
-        public byte[] GetMotoSettExcel(int yyyyMM,string type)
+        public byte[] GetMotoSettExcel(int yyyyMM,string type, string? chkSale)
         {
             try
             {
@@ -542,7 +549,7 @@ namespace KF_WebAPI.DataLogic
                     var worksheet = package.Workbook.Worksheets.Add("已清償名單");
 
                     #region 清償資料
-                    var settList = GetMotoSettList(yyyyMM, type);
+                    var settList = GetMotoSettList(yyyyMM, type, chkSale);
 
                     string[] headers = { "件數", "借款人", "撥款日", "結清本金", "手續費", "利息", "結清遲延金", "放款回收金額", "清償日", "回收金額"
                             , "專案" };
@@ -1076,6 +1083,207 @@ namespace KF_WebAPI.DataLogic
             }
         }
 
+        /// <summary>
+        /// 取得房貸清償資料
+        /// </summary>
+        /// <param name="yyyyMM">202404</param>
+        public List<SettDetailList> GetHouseSettList(int yyyyMM, string type, string? chkSale)
+        {
+            try
+            {
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"SELECT rm.RCM_id,ha.CS_name,b.get_amount_date,rm.capital_AMT,rm.Breach_rate,rm.Break_AMT,
+                              rm.Interest_AMT,rm.Delay_AMT,rm.date_begin_settle,b.get_amount,
+                              (rm.Break_AMT + rm.Interest_AMT + rm.Delay_AMT) AS TotalAmount,
+                              b.Loan_rate,addr.all_pre_addCity,addr.all_pre_addresses,rm.court_sale
+                              FROM view_HS_Base b
+                              INNER JOIN Receivable_M rm ON rm.HS_id = b.HS_id AND rm.del_tag = 0
+                              INNER JOIN House_pre_project ht ON b.HP_project_id = ht.HP_project_id AND ht.del_tag = '0'
+                              INNER JOIN House_apply ha ON ha.HA_id = b.HA_id AND ha.del_tag = '0'
+                              CROSS APPLY ( SELECT (SELECT hp.pre_address + ';'FROM House_pre_pawn hn INNER JOIN House_pre hp ON hp.HP_id = hn.HP_id
+                              WHERE hn.pawn_type = 'Y' AND hn.del_tag = '0' AND hn.appraise_company = b.appraise_company AND hn.HA_id = b.HA_id
+                              FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)') AS all_pre_addresses,
+                              (SELECT hp.pre_city + ';' FROM House_pre_pawn hn INNER JOIN House_pre hp ON hp.HP_id = hn.HP_id
+                              WHERE hn.pawn_type = 'Y' AND hn.del_tag = '0' AND hn.appraise_company = b.appraise_company AND hn.HA_id = b.HA_id
+                              FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)') AS all_pre_addCity ) addr
+                              WHERE b.Send_result_type = 'SRT002' AND b.get_amount_type = 'GTAT002' AND date_begin_settle IS NOT NULL
+                              AND b.project_title NOT IN ('PJ00046','PJ00047','PJ00048')";
+
+                if(chkSale!=null && chkSale == "1")
+                {
+                    T_SQL += @" AND ISNULL(rm.court_sale,'') = 1 ";
+                }
+                else
+                {
+                    T_SQL += @" AND ISNULL(rm.court_sale,'') = ''";
+                }
+                switch (type)
+                {
+                    case "M":
+                        T_SQL += @" AND (YEAR(rm.date_begin_settle)*100+MONTH(rm.date_begin_settle)) = @TargetMonth 
+                               ORDER BY rm.date_begin_settle";
+                        parameters.Add(new SqlParameter("@TargetMonth", yyyyMM));
+                        break;
+                    case "Y":
+                        T_SQL += @" AND (YEAR(rm.date_begin_settle)*100) = @TargetYear 
+                               ORDER BY rm.date_begin_settle";
+                        int yyyy = (yyyyMM / 100) * 100;
+                        parameters.Add(new SqlParameter("@TargetYear", yyyy));
+                        break;
+                    default:
+                        T_SQL += @" ORDER BY rm.date_begin_settle";
+                        break;
+                }
+
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new SettDetailList
+                {
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    str_get_amount_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("get_amount_date").ToString("yyyy/MM/dd")),
+                    capital_AMT = row.Field<int>("capital_AMT"),
+                    Interest_total = row.Field<decimal>("Interest_AMT"),
+                    Delay_AMT = row.Field<decimal>("Delay_AMT"),
+                    get_amount = row.Field<string>("get_amount"),
+                    str_date_begin_settle = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("date_begin_settle").ToString("yyyy/MM/dd")),
+                    Break_AMT = row.Field<decimal>("Break_AMT"),
+                    Loan_rate = row.Field<string>("Loan_rate"),
+                    all_pre_addCity = row.Field<string>("all_pre_addCity"),
+                    all_pre_addresses = row.Field<string>("all_pre_addresses")
+                }).ToList();
+
+                return result;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 匯出房貸清償EXCEL
+        /// </summary>
+        public byte[] GetHouseSettExcel(int yyyyMM, string type,string? chkSale)
+        {
+            try
+            {
+                using (var package = new ExcelPackage())
+                {
+                    var worksheet = package.Workbook.Worksheets.Add("已清償名單");
+
+                    #region 清償資料
+                    var settList = GetHouseSettList(yyyyMM, type, chkSale);
+
+                    string[] headers = { "件數", "借款人", "撥款日", "結清本金", "違約金/手續費", "結清利息", "結清遲延金", "清償日", "放款回收金額", "成數"
+                            , "區", "擔保品地址" };
+
+                    int rowIndex = 1;
+                    int colIndex = 1;
+                    foreach (var header in headers)
+                    {
+                        var cell = worksheet.Cells[rowIndex, colIndex++];
+                        cell.Value = header;
+                        // 設置儲存格底色為淺藍色
+                        cell.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                        cell.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                    }
+
+                    // 添加表身
+                    colIndex = 1;
+                    int index = 1;
+                    foreach (var item in settList)
+                    {
+                        rowIndex++;
+                        worksheet.Cells[rowIndex, colIndex++].Value = index++;
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.CS_name;
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.str_get_amount_date;
+
+                        worksheet.Cells[rowIndex, colIndex].Value = item.capital_AMT;
+                        worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0\"元\"";
+
+                        worksheet.Cells[rowIndex, colIndex].Value = item.Break_AMT;
+                        worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0\"元\"";
+
+                        worksheet.Cells[rowIndex, colIndex].Value = item.Interest_total;
+                        worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0\"元\"";
+
+                        worksheet.Cells[rowIndex, colIndex].Value = item.Delay_AMT;
+                        worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0\"元\"";
+
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.str_date_begin_settle;
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.get_amount + "萬";
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.Loan_rate;
+
+                        var cityCell = worksheet.Cells[rowIndex, colIndex++];
+                        cityCell.Value = ProcessSemicolonString(item.all_pre_addCity?.ToString());
+                        cityCell.Style.WrapText = true;
+
+                        var addrCell = worksheet.Cells[rowIndex, colIndex++];
+                        addrCell.Value = ProcessSemicolonString(item.all_pre_addresses?.ToString());
+                        addrCell.Style.WrapText = true;
+
+                        colIndex = 1;
+                    }
+
+                    #region 總計
+                    rowIndex++;
+                    colIndex = 1;
+
+                    var totalRowRange = worksheet.Cells[rowIndex, 1, rowIndex, headers.Length];
+                    totalRowRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    totalRowRange.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+
+                    worksheet.Cells[rowIndex, colIndex++].Value = "總計";
+                    worksheet.Cells[rowIndex, 1, rowIndex, colIndex].Merge = true;
+                    worksheet.Cells[rowIndex, 1, rowIndex, colIndex].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet.Cells[rowIndex, 1, rowIndex, colIndex].Style.Font.Bold = true;
+
+                    colIndex += 2;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => x.capital_AMT);
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0\"元\"";
+
+                    colIndex++;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => x.Break_AMT);
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0\"元\"";
+
+                    colIndex++;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => x.Interest_total);
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0\"元\"";
+
+                    colIndex++;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => x.Delay_AMT);
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0\"元\"";
+
+                    colIndex += 2;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => int.Parse(x.get_amount)) + "萬";
+
+                    #endregion
+
+                    // 框線
+                    using (var range = worksheet.Cells[1, 1, rowIndex, headers.Length])
+                    {
+                        range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    }
+                    #endregion
+
+                    // 調整列寬
+                    worksheet.Cells[1, 1, rowIndex, headers.Length].AutoFitColumns();
+                    worksheet.Column(11).Width = 25;
+                    worksheet.Column(12).Width = 60;
+                    worksheet.Column(11).Style.WrapText = true;
+                    worksheet.Column(12).Style.WrapText = true;
+
+                    return package.GetAsByteArray();
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
 
         /// <summary>
         /// 業績報表_日報表
@@ -3318,6 +3526,27 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
                 throw;
             }
+        }
+
+        string ProcessSemicolonString(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return "";
+
+            // 以分號分割，並移除掉空值
+            var parts = input.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length > 1)
+            {
+                // 如果數量超過 1 個 (即至少有兩個項目)，則用換行結合
+                return string.Join("\n", parts);
+            }
+            else if (parts.Length == 1)
+            {
+                // 如果只有一個項目，直接回傳該項目 (不換行)
+                return parts[0];
+            }
+
+            return "";
         }
     }
 }

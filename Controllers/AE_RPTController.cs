@@ -6751,12 +6751,12 @@ namespace KF_WebAPI.Controllers
         /// 取得機車清償資料
         /// </summary>
         [HttpGet("GetMotoSettList")]
-        public ActionResult<ResultClass<string>> GetMotoSettList(int yyyyMM,string type)
+        public ActionResult<ResultClass<string>> GetMotoSettList(int yyyyMM,string type,string? chkSale)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
-                var result = _Rpt.GetMotoSettList(yyyyMM, type);
+                var result = _Rpt.GetMotoSettList(yyyyMM, type, chkSale);
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(result);
                 return Ok(resultClass);
@@ -6774,23 +6774,13 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("GetMotoSettExcel")]
-        public IActionResult GetMotoSettExcel(int yyyyMM,string type)
+        public IActionResult GetMotoSettExcel(int yyyyMM,string type, string? chkSale)
         {
             try
             {
-                var fileBytes = _Rpt.GetMotoSettExcel(yyyyMM, type);
-                var fileName = "";
-                if (type == "M")
-                {
-                    fileName = "機車貸清償清冊" + yyyyMM + ".xlsx";
-                }
-                else
-                {
-                    int yyyy = (yyyyMM / 100) ;
-                    fileName = "機車貸清償清冊" + yyyy + ".xlsx";
-                }
+                var fileBytes = _Rpt.GetMotoSettExcel(yyyyMM, type, chkSale);
                 
-                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "");
             }
             catch (Exception ex)
             {
@@ -6881,6 +6871,49 @@ namespace KF_WebAPI.Controllers
                 var fileBytes = _Rpt.GetHouseSummaryExcel(model);
                 var fileName = "房貸分期貸款總表" + DateTime.Now.ToString("yyyyMMdd") + ".xlsx";
                 return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 取得房貸清償資料
+        /// </summary>
+        [HttpGet("GetHouseSettList")]
+        public ActionResult<ResultClass<string>> GetHouseSettList(int yyyyMM, string type,string? chkSale)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var result = _Rpt.GetHouseSettList(yyyyMM, type, chkSale);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 匯出房貸清償Excel
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("GetHouseSettExcel")]
+        public IActionResult GetHouseSettExcel(int yyyyMM, string type,string? chkSale)
+        {
+            try
+            {
+                var fileBytes = _Rpt.GetHouseSettExcel(yyyyMM, type, chkSale);
+
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "");
             }
             catch (Exception ex)
             {
