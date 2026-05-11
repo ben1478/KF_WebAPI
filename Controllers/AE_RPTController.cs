@@ -6907,11 +6907,32 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("GetHouseSettExcel")]
-        public IActionResult GetHouseSettExcel(int yyyyMM, string type,string? chkSale)
+        public IActionResult GetHouseSettExcel(int yyyyMM, string type)
         {
             try
             {
-                var fileBytes = _Rpt.GetHouseSettExcel(yyyyMM, type, chkSale);
+                var fileBytes = _Rpt.GetHouseSettExcel(yyyyMM, type);
+
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "");
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 匯出法拍房貸清償Excel
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("GetHouseChkExcel")]
+        public IActionResult GetHouseChkExcel(int yyyyMM, string type, string? chkSale)
+        {
+            try
+            {
+                var fileBytes = _Rpt.GetHouseChkExcel(yyyyMM, type, chkSale);
 
                 return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "");
             }

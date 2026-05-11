@@ -1162,7 +1162,7 @@ namespace KF_WebAPI.DataLogic
         /// <summary>
         /// 匯出房貸清償EXCEL
         /// </summary>
-        public byte[] GetHouseSettExcel(int yyyyMM, string type,string? chkSale)
+        public byte[] GetHouseSettExcel(int yyyyMM, string type)
         {
             try
             {
@@ -1171,7 +1171,7 @@ namespace KF_WebAPI.DataLogic
                     var worksheet = package.Workbook.Worksheets.Add("已清償名單");
 
                     #region 清償資料
-                    var settList = GetHouseSettList(yyyyMM, type, chkSale);
+                    var settList = GetHouseSettList(yyyyMM, type, null);
 
                     string[] headers = { "件數", "借款人", "撥款日", "結清本金", "違約金/手續費", "結清利息", "結清遲延金", "清償日", "放款回收金額", "成數"
                             , "區", "擔保品地址" };
@@ -1274,6 +1274,138 @@ namespace KF_WebAPI.DataLogic
                     worksheet.Column(12).Width = 60;
                     worksheet.Column(11).Style.WrapText = true;
                     worksheet.Column(12).Style.WrapText = true;
+
+                    return package.GetAsByteArray();
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 匯出法拍房貸清償EXCEL
+        /// </summary>
+        public byte[] GetHouseChkExcel(int yyyyMM, string type, string chkSale)
+        {
+            try
+            {
+                using (var package = new ExcelPackage())
+                {
+                    var worksheet = package.Workbook.Worksheets.Add("法拍清償名單");
+
+                    #region 清償資料
+                    var settList = GetHouseSettList(yyyyMM, type, chkSale);
+
+                    string[] headers = { "件數", "借款人", "撥款日", "撥款金額", "已收回本金", "結清本金", "違約金/手續費", "結清利息", "結清遲延金", "法拍成功日", "收回金額", "全案預估收回率" };
+
+                    int rowIndex = 1;
+                    int colIndex = 1;
+                    foreach (var header in headers)
+                    {
+                        var cell = worksheet.Cells[rowIndex, colIndex++];
+                        cell.Value = header;
+                        // 設置儲存格底色為淺藍色
+                        cell.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                        cell.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                    }
+
+                    //計算總回收金額
+                    decimal ToTAmt = 0;
+
+                    // 添加表身
+                    colIndex = 1;
+                    int index = 1;
+                    foreach (var item in settList)
+                    {
+                        rowIndex++;
+                        worksheet.Cells[rowIndex, colIndex++].Value = index++;
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.CS_name;
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.str_get_amount_date;
+
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.get_amount + "萬";
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.get_amount + "萬";
+
+                        worksheet.Cells[rowIndex, colIndex].Value = item.capital_AMT;
+                        worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0\"元\"";
+
+                        worksheet.Cells[rowIndex, colIndex].Value = item.Break_AMT;
+                        worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0\"元\"";
+
+                        worksheet.Cells[rowIndex, colIndex].Value = item.Interest_total;
+                        worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0\"元\"";
+
+                        worksheet.Cells[rowIndex, colIndex].Value = item.Delay_AMT;
+                        worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0\"元\"";
+
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.str_date_begin_settle;
+
+                        decimal totalAmt = (decimal)(item.capital_AMT + item.Break_AMT + item.Interest_total + item.Delay_AMT);
+                        worksheet.Cells[rowIndex, colIndex].Value = totalAmt;
+                        worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0\"元\"";
+                        ToTAmt += totalAmt;
+
+                        worksheet.Cells[rowIndex, colIndex].Value = Math.Round((totalAmt / item.capital_AMT) * 100);
+                        worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "0\"%\"";
+
+                        colIndex = 1;
+                    }
+
+                    #region 總計
+                    rowIndex++;
+                    colIndex = 1;
+
+                    var totalRowRange = worksheet.Cells[rowIndex, 1, rowIndex, headers.Length];
+                    totalRowRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                    totalRowRange.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+
+                    worksheet.Cells[rowIndex, colIndex++].Value = "總計";
+                    worksheet.Cells[rowIndex, 1, rowIndex, colIndex].Merge = true;
+                    worksheet.Cells[rowIndex, 1, rowIndex, colIndex].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet.Cells[rowIndex, 1, rowIndex, colIndex].Style.Font.Bold = true;
+
+                    colIndex += 2;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => int.Parse(x.get_amount)) + "萬";
+
+                    colIndex++;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => int.Parse(x.get_amount)) + "萬";
+
+                    colIndex++;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => x.capital_AMT);
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0\"元\"";
+
+                    colIndex++;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => x.Break_AMT);
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0\"元\"";
+
+                    colIndex++;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => x.Interest_total);
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0\"元\"";
+
+                    colIndex++;
+                    worksheet.Cells[rowIndex, colIndex].Value = settList.Sum(x => x.Delay_AMT);
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0\"元\"";
+
+                    colIndex += 2;
+                    worksheet.Cells[rowIndex, colIndex].Value = ToTAmt;
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0\"元\"";
+
+                    #endregion
+
+                    // 框線
+                    using (var range = worksheet.Cells[1, 1, rowIndex, headers.Length])
+                    {
+                        range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    }
+                    #endregion
+
+                    // 調整列寬
+                    worksheet.Cells[1, 1, rowIndex, headers.Length].AutoFitColumns();
 
                     return package.GetAsByteArray();
                 }
