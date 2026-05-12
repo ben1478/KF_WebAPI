@@ -232,6 +232,11 @@ namespace KF_WebAPI.BaseClass.Winton
         public string DT10021 { get; set; }
     }
 
+    public class Receivable_Win_ACH:Receivable_Win_Inv
+    {
+        public string Invoice_No { get; set; }
+        public string FileKeyID { get; set; }
+    }
     public class Receivable_Win_Inv
     {
         public decimal HS_id { get; set; }

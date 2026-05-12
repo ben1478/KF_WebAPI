@@ -6962,6 +6962,25 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+
+        [HttpPost("GetCTBCBANK_ACH")]
+        public Task<IActionResult> GetCTBCBANK_ACH(string StartDate, string EndDate)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var result = _Rpt.GetCTBCBANK_ACH(StartDate, EndDate);
+                return Task.FromResult<IActionResult>(Ok(result));
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return Task.FromResult<IActionResult>(StatusCode(500, resultClass));
+            }
+        }
+
         #endregion
 
         /// <summary>

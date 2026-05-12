@@ -186,7 +186,15 @@ namespace KF_WebAPI.DataLogic
                             {
                                 byte[] blob = (byte[])reader["file_body_encode"];
                                 string base64String = Convert.ToBase64String(blob);
-                                m_attachmentFile.file_body_encode = _Comm.DecompressFile(base64String);
+                                if (Key_Type == "CTBCBANK")//中信ACH不需要解壓縮
+                                {
+                                    m_attachmentFile.file_body_encode = base64String;
+                                }
+                                else
+                                {
+                                    m_attachmentFile.file_body_encode = _Comm.DecompressFile(base64String);
+                                }
+                                
                                 m_attachmentFile.file_size = reader["file_size"].ToString();
                                 m_attachmentFile.file_index = reader["file_index"].ToString();
                                 m_attachmentFile.file_name = reader["file_name"].ToString();

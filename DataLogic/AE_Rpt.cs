@@ -3414,6 +3414,133 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
         }
 
+
+        public ResultClass<string> GetCTBCBANK_ACH(string StartDate, string EndDate)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            List<Receivable_Win_ACH> ReceivableWinList = new List<Receivable_Win_ACH>();
+            List<WinInvFileRow> FileList = new List<WinInvFileRow>();
+
+            try
+            {
+                #region SQL
+                var T_SQL = @"SELECT * FROM [dbo].[ACH_History] where PayDate between @StartDate and @EndDate  ";
+
+                #endregion
+
+                var parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@StartDate", StartDate),
+                new SqlParameter("@EndDate", EndDate)
+            };
+                DataTable dt = _adoData.ExecuteQuery(T_SQL, parameters);
+
+
+                var rowCount = dt.Rows.Count;
+
+                foreach (DataRow dr in dt.Rows)
+                {
+                    string RCD_id = dr["RCD_id"].ToString().Trim();
+                    var item = new WinInvFileRow
+                    {
+                        Col1 = dr["CustomerID"].ToString().Trim(),
+                        Col2 = dr["PayDate"].ToString().Trim()
+                    };
+                    FileList.Add(item);
+                    var T_SQL1 = "";
+                    var parameters1 = new List<SqlParameter>();
+                    
+                    if (RCD_id == "")
+                    {
+                        parameters1 = new List<SqlParameter>
+                        {
+                            new SqlParameter("@CS_PID",item.Col1)
+                        };
+                        T_SQL1 = @"select top 1  * 
+                                              from Receivable_M RM
+                                              inner join Receivable_D RD ON RD.RCM_id = RM.RCM_id and RD.del_tag = 0
+                                              inner join House_apply HA ON HA.HA_id = RM.HA_id
+                                              where RM.del_tag = 0 and check_pay_type = 'N' and cancel_type <> 'Y' and bad_debt_type = 'N'
+                                              and HA.CS_PID = @CS_PID
+                                              order by RC_date,RC_count";
+                    }
+                    else
+                    {
+                        T_SQL1 = @"select top 1  * 
+                                              from Receivable_M RM
+                                              inner join Receivable_D RD ON RD.RCM_id = RM.RCM_id and RD.del_tag = 0
+                                              inner join House_apply HA ON HA.HA_id = RM.HA_id
+                                              inner join ACH_History AC ON RD.RCD_id = AC.RCD_id
+                                              where RM.del_tag = 0 and check_pay_type = 'Y' and cancel_type <> 'Y' and bad_debt_type = 'N'
+                                              and HA.CS_PID = @CS_PID and  RD.RCD_id=@RCD_id
+                                              order by RC_date,RC_count";
+                        parameters1 = new List<SqlParameter>
+                        {
+                            new SqlParameter("@CS_PID",item.Col1),
+                             new SqlParameter("@RCD_id",RCD_id)
+                        };
+                    }
+
+
+
+                   
+                    var result = _adoData.ExecuteQuery(T_SQL1, parameters1).AsEnumerable().Select(row => new Receivable_Win_ACH
+                    {
+                        HS_id = row.Field<decimal>("HS_id"),
+                        RCD_id = row.Field<decimal>("RCD_id"),
+                        CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                        CS_PID = row.Field<string>("CS_PID"),
+                        RC_count = row.Field<int>("RC_count"),
+                        roc_RC_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("RC_date").ToString("yyyy/MM/dd")),
+                        amount_per_month = row.Field<decimal>("amount_per_month"),
+                        interest = row.Field<decimal>("interest"),
+                        Rmoney = row.Field<decimal>("Rmoney"),
+                        HFees = 20,
+                        Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
+                        amount_total = row.Field<decimal>("amount_total"),
+                        month_total = row.Field<int>("month_total"),
+                        RecPayDate = Convert.ToDateTime(item.Col2),
+                        Invoice_No = row.Field<string>("invoice_no"),
+                        FileKeyID = row.Field<string>("FileKeyID")
+                    }).ToList();
+
+                    foreach (var res in result)
+                    {
+                        var roc_PayDate = FuncHandler.ConvertGregorianToROC(res.RecPayDate.ToString("yyyy/MM/dd"));
+                        if (res.roc_RC_date != roc_PayDate)
+                            res.roc_RC_date += ";" + roc_PayDate;
+                    }
+                    ReceivableWinList.AddRange(result);
+
+                }
+
+                var missingInList = FileList.Where(f => !ReceivableWinList.Any(r => r.CS_PID == f.Col1)).ToList();
+
+                // 判斷是否有缺失
+                if (missingInList != null && missingInList.Count > 0)
+                {
+                    var missingIds = string.Join(", ", missingInList.Select(f => f.Col1));
+                    resultClass.ResultMsg = "缺失: " + missingIds;
+                }
+                else
+                {
+                    resultClass.ResultMsg = "查詢成功";
+                }
+
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(ReceivableWinList);
+                return resultClass;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+        }
+
+
         //public void UpdWinToRecD(Receivable_Win_Inv model, string clientIp, string INV_NO, string check_pay_type = "Y", string RecPayType = "C")
         //{
         //    try
