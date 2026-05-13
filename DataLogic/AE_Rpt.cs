@@ -3785,6 +3785,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             }
         }
 
+
         string ProcessSemicolonString(string input)
         {
             if (string.IsNullOrEmpty(input)) return "";
@@ -3805,5 +3806,33 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
             return "";
         }
+
+        /// <summary>
+        /// 中信ACH專用
+        /// </summary>
+        /// <param name="model"></param>
+        public void UpdACH_History(Receivable_Win_Inv model)
+        {
+            try
+            {
+                if (model.FileKeyID != "")
+                {
+                    var parameters = new List<SqlParameter>();
+                    var T_SQL = @"UPDATE ACH_History set RCD_id=@RCD_id where FileKeyID=@FileKeyID and CustomerID=@CustomerID";
+                    parameters.Add(new SqlParameter("@FileKeyID", model.FileKeyID));
+                    parameters.Add(new SqlParameter("@CustomerID", model.CS_PID));
+                    _adoData.ExecuteNonQuery(T_SQL, parameters);
+                }
+                
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+
+
     }
 }

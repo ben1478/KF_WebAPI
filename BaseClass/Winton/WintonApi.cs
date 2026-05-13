@@ -235,7 +235,6 @@ namespace KF_WebAPI.BaseClass.Winton
     public class Receivable_Win_ACH:Receivable_Win_Inv
     {
         public string Invoice_No { get; set; }
-        public string FileKeyID { get; set; }
         public string file_index { get; set; }
         public string PayDate { get; set; }
         public string IsSuccess { get; set; }
@@ -260,6 +259,10 @@ namespace KF_WebAPI.BaseClass.Winton
         public DateTime RecPayDate { get; set; }
         public string? User { get; set; }
         public string? RC_note { get; set; }
+        /// <summary>
+        /// 中信ACH專用
+        /// </summary>
+        public string FileKeyID { get; set; }
     }
 
     public class PayOff_Win_Inv: Receivable_Win_Inv

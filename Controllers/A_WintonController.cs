@@ -600,6 +600,16 @@ namespace KF_WebAPI.Controllers
                             #region 異動Receivable_D
                             _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, List[i].amount_per_month, "2");
                             #endregion
+
+                            #region 中信ACH回寫處理
+                            if (List[i].FileKeyID != null)
+                            {
+                                _Rpt.UpdACH_History(List[i]);
+                            }
+                           
+                            #endregion
+
+
                         }
                         else
                         {
