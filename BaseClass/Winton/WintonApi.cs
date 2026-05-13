@@ -236,6 +236,10 @@ namespace KF_WebAPI.BaseClass.Winton
     {
         public string Invoice_No { get; set; }
         public string FileKeyID { get; set; }
+        public string file_index { get; set; }
+        public string PayDate { get; set; }
+        public string IsSuccess { get; set; }
+        
     }
     public class Receivable_Win_Inv
     {

@@ -3424,7 +3424,10 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             try
             {
                 #region SQL
-                var T_SQL = @"SELECT * FROM [dbo].[ACH_History] where PayDate between @StartDate and @EndDate  ";
+                var T_SQL = @"SELECT * FROM ACH_History AH 
+                            left join (select [KeyID],[file_index],[file_name]
+                            FROM AE_Files  where [Key_Type]='CTBCBANK' and [content_type]='.xlsx')AF on AH.FileKeyID=KeyID
+	                        and 'ACHR01_'+format(PayDate,'yyyyMMdd')=substring([file_name],1,15) where PayDate between @StartDate and @EndDate ";
 
                 #endregion
 
@@ -3441,10 +3444,12 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 foreach (DataRow dr in dt.Rows)
                 {
                     string RCD_id = dr["RCD_id"].ToString().Trim();
+                    string file_index = dr["file_index"].ToString();
+                    string IsSuccess = dr["IsSuccess"].ToString();
                     var item = new WinInvFileRow
                     {
                         Col1 = dr["CustomerID"].ToString().Trim(),
-                        Col2 = dr["PayDate"].ToString().Trim()
+                        Col2 = FuncHandler.ConvertGregorianToROC(dr.Field<DateTime>("PayDate").ToString("yyyy/MM/dd"))
                     };
                     FileList.Add(item);
                     var T_SQL1 = "";
@@ -3480,9 +3485,6 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                              new SqlParameter("@RCD_id",RCD_id)
                         };
                     }
-
-
-
                    
                     var result = _adoData.ExecuteQuery(T_SQL1, parameters1).AsEnumerable().Select(row => new Receivable_Win_ACH
                     {
@@ -3499,17 +3501,13 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                         Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
                         amount_total = row.Field<decimal>("amount_total"),
                         month_total = row.Field<int>("month_total"),
-                        RecPayDate = Convert.ToDateTime(item.Col2),
+                        PayDate = item.Col2,
                         Invoice_No = row.Field<string>("invoice_no"),
-                        FileKeyID = row.Field<string>("FileKeyID")
+                        FileKeyID = row.Field<string>("FileKeyID"),
+                        file_index= file_index,
+                        IsSuccess= IsSuccess
                     }).ToList();
-
-                    foreach (var res in result)
-                    {
-                        var roc_PayDate = FuncHandler.ConvertGregorianToROC(res.RecPayDate.ToString("yyyy/MM/dd"));
-                        if (res.roc_RC_date != roc_PayDate)
-                            res.roc_RC_date += ";" + roc_PayDate;
-                    }
+                   
                     ReceivableWinList.AddRange(result);
 
                 }
