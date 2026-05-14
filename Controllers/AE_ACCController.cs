@@ -1,6 +1,7 @@
 ﻿using KF_WebAPI.BaseClass;
 using KF_WebAPI.BaseClass.AE;
 using KF_WebAPI.BaseClass.Max104;
+using KF_WebAPI.DataLogic;
 using KF_WebAPI.FunctionHandler;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
@@ -23,6 +24,8 @@ namespace KF_WebAPI.Controllers
     [Route("[controller]")]
     public class AE_ACCController : ControllerBase
     {
+        AE_ACC _Acc = new AE_ACC();
+
         #region 提前結清
         /// <summary>
         /// 抓取延滯利息金額
@@ -4748,6 +4751,28 @@ namespace KF_WebAPI.Controllers
                 }
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
+
+        #region 各年度撥款明細
+        /// <summary>
+        /// 匯出撥款案件明細+ACH設定
+        /// </summary>
+        [HttpGet("GetHouseACH_LQuery")]
+        public ActionResult<ResultClass<string>> GetHouseACH_LQuery(int yyyyMM, string type,string pjtype)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                resultClass = _Acc.GetHouseACH_LQuery(yyyyMM, type, pjtype);
                 return Ok(resultClass);
             }
             catch (Exception ex)
