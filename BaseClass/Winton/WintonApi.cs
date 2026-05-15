@@ -262,7 +262,7 @@ namespace KF_WebAPI.BaseClass.Winton
         /// <summary>
         /// 中信ACH專用
         /// </summary>
-        public string FileKeyID { get; set; }
+        public string? FileKeyID { get; set; }
     }
 
     public class PayOff_Win_Inv: Receivable_Win_Inv

@@ -6963,6 +6963,23 @@ namespace KF_WebAPI.Controllers
             }
         }
 
+        [HttpPost("GetSINOPAC_ACH")]
+        public async Task<IActionResult> GetSINOPAC_ACH(IFormFile file)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var result = _Rpt.GetSINOPAC_ACH(file);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
 
         [HttpPost("GetCTBCBANK_ACH")]
         public Task<IActionResult> GetCTBCBANK_ACH(string StartDate, string EndDate)

@@ -3415,6 +3415,113 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
         }
 
 
+        public ResultClass<string> GetSINOPAC_ACH(IFormFile file)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            List<Receivable_Win_Inv> ReceivableWinList = new List<Receivable_Win_Inv>();
+            List<WinInvFileRow> FileList = new List<WinInvFileRow>();
+
+            try
+            {
+                // 1. 從檔名擷取日期 (例如：_SAMP52611690_NP01_R_20260512.TXT -> 20260512)
+                string fileNameOnly = Path.GetFileNameWithoutExtension(file.FileName);
+                string datePart = fileNameOnly.Substring(fileNameOnly.Length - 8);
+                DateTime paymentDate = DateTime.ParseExact(datePart, "yyyyMMdd", null);
+
+                // 2. 註冊編碼支援以處理 Big5 繁體中文
+                System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
+                using (var reader = new StreamReader(file.OpenReadStream(), System.Text.Encoding.GetEncoding("big5")))
+                {
+                    string line;
+                    int currentRow = 0;
+
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        currentRow++;
+
+                        // 跳過前 2 行 Header
+                        if (currentRow <= 2) continue;
+
+                        // 僅處理以 "代收" 開頭的明細資料列
+                        if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("代收"))
+                            continue;
+
+                        // 3. 解析固定長度欄位 (根據實體文件長度校對)
+                        // 委繳戶統編：從索引 40 開始取 10 碼 
+                        string csPid = line.Substring(73, 10).Trim();
+
+                        // 退件理由：從索引 103 開始擷取至最後 (例如 02：餘額不足)
+                        string returnReason = line.Substring(140, 10).Trim();
+
+                        var fileRow = new WinInvFileRow
+                        {
+                            Col1 = csPid,
+                            Col2 = paymentDate.ToString("yyyy/MM/dd")
+                          
+                        };
+                        FileList.Add(fileRow);
+
+                        // 4. 執行 SQL 查詢對應應收帳款
+                        var T_SQL = @"SELECT TOP 1 * FROM Receivable_M RM
+                              INNER JOIN Receivable_D RD ON RD.RCM_id = RM.RCM_id AND RD.del_tag = 0
+                              INNER JOIN House_apply HA ON HA.HA_id = RM.HA_id
+                              WHERE RM.del_tag = 0 AND check_pay_type = 'N' AND cancel_type <> 'Y' AND bad_debt_type = 'N'
+                              AND HA.CS_PID = @CS_PID
+                              ORDER BY RC_date, RC_count";
+
+                        var parameters = new List<SqlParameter> { new SqlParameter("@CS_PID", fileRow.Col1) };
+
+                        var queryResult = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Win_Inv
+                        {
+                            HS_id = row.Field<decimal>("HS_id"),
+                            RCD_id = row.Field<decimal>("RCD_id"),
+                            CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                            CS_PID = row.Field<string>("CS_PID"),
+                            RC_count = row.Field<int>("RC_count"),
+                            roc_RC_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("RC_date").ToString("yyyy/MM/dd")),
+                            amount_per_month = row.Field<decimal>("amount_per_month"),
+                            interest = row.Field<decimal>("interest"),
+                            Rmoney = row.Field<decimal>("Rmoney"),
+                            HFees = 20,
+                            Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
+                            amount_total = row.Field<decimal>("amount_total"),
+                            month_total = row.Field<int>("month_total"),
+                            RecPayDate = paymentDate, // 帶入檔名日期
+                            Win_Msg = returnReason // 存入對象變數供後續判斷
+                        }).ToList();
+
+                        ReceivableWinList.AddRange(queryResult);
+                    }
+                }
+
+                // 5. 缺失比對判斷
+                var missingInList = FileList.Where(f => !ReceivableWinList.Any(r => r.CS_PID == f.Col1)).ToList();
+
+                if (missingInList.Count > 0)
+                {
+                    var missingIds = string.Join(", ", missingInList.Select(f => f.Col1));
+                    resultClass.ResultMsg = "檔案內有，但系統無對應帳款之 ID: " + missingIds;
+                }
+                else
+                {
+                    resultClass.ResultMsg = "查詢成功";
+                }
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(ReceivableWinList);
+                return resultClass;
+            }
+            catch (Exception ex)
+            {
+                // 建議此處加入 Log 記錄 ex.Message
+                resultClass.ResultCode = "999";
+                resultClass.ResultMsg = "解析發生錯誤: " + ex.Message;
+                return resultClass;
+            }
+        }
+
+
         public ResultClass<string> GetCTBCBANK_ACH(string StartDate, string EndDate)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
@@ -3446,6 +3553,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                     string RCD_id = dr["RCD_id"].ToString().Trim();
                     string file_index = dr["file_index"].ToString();
                     string IsSuccess = dr["IsSuccess"].ToString();
+                    string FileKeyID = dr["FileKeyID"].ToString();
                     var item = new WinInvFileRow
                     {
                         Col1 = dr["CustomerID"].ToString().Trim(),
@@ -3503,7 +3611,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                         month_total = row.Field<int>("month_total"),
                         PayDate = item.Col2,
                         Invoice_No = row.Field<string>("invoice_no"),
-                        FileKeyID = row.Field<string>("FileKeyID"),
+                        FileKeyID = FileKeyID,
                         file_index= file_index,
                         IsSuccess= IsSuccess
                     }).ToList();
@@ -3821,6 +3929,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                     var T_SQL = @"UPDATE ACH_History set RCD_id=@RCD_id where FileKeyID=@FileKeyID and CustomerID=@CustomerID";
                     parameters.Add(new SqlParameter("@FileKeyID", model.FileKeyID));
                     parameters.Add(new SqlParameter("@CustomerID", model.CS_PID));
+                    parameters.Add(new SqlParameter("@RCD_id", model.RCD_id));
                     _adoData.ExecuteNonQuery(T_SQL, parameters);
                 }
                 
