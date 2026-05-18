@@ -15,6 +15,8 @@ using System.Drawing;
 using System.Dynamic;
 using System.Reflection;
 using System.Reflection.PortableExecutable;
+using System.Text.RegularExpressions;
+
 
 namespace KF_WebAPI.DataLogic
 {
@@ -3414,7 +3416,11 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
         }
 
-
+        /// <summary>
+        /// 永豐銀行ACH
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
         public ResultClass<string> GetSINOPAC_ACH(IFormFile file)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
@@ -3521,7 +3527,143 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             }
         }
 
+        /// <summary>
+        /// 上海銀行ACH
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        public ResultClass<string> GetSCSB_ACH(IFormFile file)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            List<Receivable_Win_Inv> ReceivableWinList = new List<Receivable_Win_Inv>();
+            List<WinInvFileRow> FileList = new List<WinInvFileRow>();
 
+            try
+            {
+              
+                using (var stream = new MemoryStream())
+                {
+                    file.CopyTo(stream);
+                    stream.Position = 0; // 務必將串流指標歸零，讓 PDF 讀取器能從頭解析
+                    using (UglyToad.PdfPig.PdfDocument document = UglyToad.PdfPig.PdfDocument.Open(stream))
+                    {
+                        // 逐頁讀取 PDF
+                        foreach (UglyToad.PdfPig.Content.Page page in document.GetPages())
+                        {
+                            string pageText = page.Text;
+                            if (!string.IsNullOrWhiteSpace(pageText))
+                            {
+                                // 完美的黃金正則表達式：利用固定長度與前後特徵進行精確群組對齊
+                                string pattern = @"(?<Index>\d+)(?<AppDate>\d{4}/\d{2}/\d{2})(?<OrigId>\d{8})(?<OrigAcc>\d{16})(?<CustId>[A-Za-z0-9]{10})(?<BankId>\d{3})(?<CustAcc>\d{20})(?<UserNum>[A-Za-z0-9]{10})(?<Amount>[\d,]+)(?<PayDate>\d{4}/\d{2}/\d{2})(?<Summary>交易已完成(?:\(失敗\))?)(?<Status>.*?)(?=\d+\d{4}/\d{2}/\d{2}|$)";
+                                MatchCollection matches = Regex.Matches(pageText, pattern);
+
+                                foreach (Match match in matches)
+                                {
+                                    // 擷取原始文字欄位
+                                    string userNumber = match.Groups["UserNum"].Value.Trim();  // 用戶號碼
+                                    string payDate = match.Groups["PayDate"].Value.Trim();     // 扣款日期
+                                    string amount = match.Groups["Amount"].Value.Trim();       // 金額
+                                    string statusText = match.Groups["Status"].Value.Trim();   // 狀態文字
+
+                                    // 根據狀態文字，轉換為您要求的代碼定義
+                                    string resultCode = "01"; // 預設為失敗
+                                    string isSuccess = "0";   // 預設為失敗
+                                    string returnReason = "";
+                                    if (statusText.Contains("交易成功"))
+                                    {
+                                        resultCode = "00";
+                                        isSuccess = "1";
+                                        returnReason = "成功";
+                                    }
+                                    else if (statusText.Contains("存款不足"))
+                                    {
+                                        resultCode = "01";
+                                        isSuccess = "0";
+                                        returnReason = "存款不足";
+                                    }
+                                    // 備註：若日後有擴充其他錯誤狀態（例如：無此帳號），可在此繼續追加 else if
+                                    var fileRow = new WinInvFileRow
+                                    {
+                                        Col1 = userNumber,
+                                        Col2 = payDate
+
+                                    };
+                                    FileList.Add(fileRow);
+
+                                    // 4. 執行 SQL 查詢對應應收帳款
+                                    var T_SQL = @"SELECT TOP 1 * FROM Receivable_M RM
+                              INNER JOIN Receivable_D RD ON RD.RCM_id = RM.RCM_id AND RD.del_tag = 0
+                              INNER JOIN House_apply HA ON HA.HA_id = RM.HA_id
+                              WHERE RM.del_tag = 0 AND check_pay_type = 'N' AND cancel_type <> 'Y' AND bad_debt_type = 'N'
+                              AND HA.CS_PID = @CS_PID
+                              ORDER BY RC_date, RC_count";
+
+                                    var parameters = new List<SqlParameter> { new SqlParameter("@CS_PID", fileRow.Col1) };
+
+                                    var queryResult = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Win_Inv
+                                    {
+                                        HS_id = row.Field<decimal>("HS_id"),
+                                        RCD_id = row.Field<decimal>("RCD_id"),
+                                        CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                                        CS_PID = row.Field<string>("CS_PID"),
+                                        RC_count = row.Field<int>("RC_count"),
+                                        roc_RC_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("RC_date").ToString("yyyy/MM/dd")),
+                                        amount_per_month = row.Field<decimal>("amount_per_month"),
+                                        interest = row.Field<decimal>("interest"),
+                                        Rmoney = row.Field<decimal>("Rmoney"),
+                                        HFees = 20,
+                                        Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
+                                        amount_total = row.Field<decimal>("amount_total"),
+                                        month_total = row.Field<int>("month_total"),
+                                        RecPayDate = Convert.ToDateTime( payDate), // 帶入檔名日期
+                                        Win_Msg = returnReason // 存入對象變數供後續判斷
+                                    }).ToList();
+
+                                    ReceivableWinList.AddRange(queryResult);
+
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+                
+
+                // 5. 缺失比對判斷
+                var missingInList = FileList.Where(f => !ReceivableWinList.Any(r => r.CS_PID == f.Col1)).ToList();
+
+                if (missingInList.Count > 0)
+                {
+                    var missingIds = string.Join(", ", missingInList.Select(f => f.Col1));
+                    resultClass.ResultMsg = "檔案內有，但系統無對應帳款之 ID: " + missingIds;
+                }
+                else
+                {
+                    resultClass.ResultMsg = "查詢成功";
+                }
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(ReceivableWinList);
+                return resultClass;
+            }
+            catch (Exception ex)
+            {
+                // 建議此處加入 Log 記錄 ex.Message
+                resultClass.ResultCode = "999";
+                resultClass.ResultMsg = "解析發生錯誤: " + ex.Message;
+                return resultClass;
+            }
+        }
+
+
+
+        /// <summary>
+        /// 中信銀行ACH
+        /// </summary>
+        /// <param name="StartDate"></param>
+        /// <param name="EndDate"></param>
+        /// <returns></returns>
         public ResultClass<string> GetCTBCBANK_ACH(string StartDate, string EndDate)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
@@ -3534,7 +3676,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 var T_SQL = @"SELECT * FROM ACH_History AH 
                             left join (select [KeyID],[file_index],[file_name]
                             FROM AE_Files  where [Key_Type]='CTBCBANK' and [content_type]='.xlsx')AF on AH.FileKeyID=KeyID
-	                        and 'ACHR01_'+format(PayDate,'yyyyMMdd')=substring([file_name],1,15) where PayDate between @StartDate and @EndDate ";
+	                        and 'ACHR01_'+format(PayDate,'yyyyMMdd')=substring([file_name],1,15) where PayDate between @StartDate and @EndDate order by PayDate desc ";
 
                 #endregion
 
@@ -3609,6 +3751,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                         Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
                         amount_total = row.Field<decimal>("amount_total"),
                         month_total = row.Field<int>("month_total"),
+                        RecPayDate = row.Field<DateTime>("RC_date"),
                         PayDate = item.Col2,
                         Invoice_No = row.Field<string>("invoice_no"),
                         FileKeyID = FileKeyID,

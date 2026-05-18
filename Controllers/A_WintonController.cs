@@ -582,8 +582,16 @@ namespace KF_WebAPI.Controllers
                         }
                         else
                         {
-                            errmsg = "";
+                            if (responJson["error"] != null && responJson["error"].HasValues)
+                            {
+                                errmsg = responJson["error"].ToString();
+                            }
+                            else
+                            {
+                                errmsg = "";
+                            }
                         }
+                        
 
                         string Status = (string)responJson["status"];
 
