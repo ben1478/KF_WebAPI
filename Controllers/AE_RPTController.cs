@@ -6962,7 +6962,11 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-
+        /// <summary>
+        /// 永豐銀行ACH
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
         [HttpPost("GetSINOPAC_ACH")]
         public async Task<IActionResult> GetSINOPAC_ACH(IFormFile file)
         {
@@ -6979,8 +6983,33 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-
-
+        /// <summary>
+        ///  上海銀行ACH
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        [HttpPost("GetSCSB_ACH")]
+        public async Task<IActionResult> GetSCSB_ACH(IFormFile file)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var result = _Rpt.GetSCSB_ACH(file);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 中信銀行ACH
+        /// </summary>
+        /// <param name="StartDate"></param>
+        /// <param name="EndDate"></param>
+        /// <returns></returns>
         [HttpPost("GetCTBCBANK_ACH")]
         public Task<IActionResult> GetCTBCBANK_ACH(string StartDate, string EndDate)
         {
