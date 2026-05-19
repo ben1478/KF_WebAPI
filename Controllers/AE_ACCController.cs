@@ -13,6 +13,7 @@ using System;
 using System.Collections;
 using System.Data;
 using System.Data.SqlTypes;
+using System.Drawing.Drawing2D;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Security.Cryptography;
@@ -4772,12 +4773,74 @@ namespace KF_WebAPI.Controllers
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
-                resultClass = _Acc.GetHouseACH_LQuery(yyyyMM, type, pjtype);
+                var result = _Acc.GetHouseACH_LQuery(yyyyMM, type, pjtype);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
                 return Ok(resultClass);
             }
             catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 取得單筆Receivable_M的資料
+        /// </summary>
+        [HttpGet("RC_Ach_SQuery")]
+        public ActionResult<ResultClass<string>> RC_Ach_SQuery(string Rcm_id)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                resultClass = _Acc.RC_Ach_SQuery(Rcm_id);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 取得單筆Receivable_M的資料
+        /// </summary>
+        [HttpPost("RC_Ach_Upd")]
+        public ActionResult<ResultClass<string>> RC_Ach_Upd(RC_Ach_Ins model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                resultClass = _Acc.RC_Ach_Upd(model);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 匯出撥款明細Excel
+        /// </summary>
+        [HttpGet("GetRcAchExcel")]
+        public IActionResult GetRcAchExcel(int yyyyMM, string type, string pjtype)
+        {
+            try
+            {
+                var fileBytes = _Acc.GetRcAchExcel(yyyyMM, type, pjtype);
+
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "");
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
                 resultClass.ResultMsg = $" response: {ex.Message}";
                 return StatusCode(500, resultClass);
             }

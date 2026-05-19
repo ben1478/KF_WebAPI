@@ -360,4 +360,29 @@ namespace KF_WebAPI.BaseClass.AE
         public string? str_CP_pay_date { get; set; }
         public string CP_WIN_CK { get; set; }
     }
+
+    public class RC_Ach_Ins
+    {
+        public tbInfo? tbInfo { get; set; }
+        public decimal RCM_id { get; set; }
+        public string Ach_State { get; set; }
+        public string Ach_Note { get; set; }
+    }
+
+    public class RC_ACH_Res
+    {
+        public decimal RCM_id { get; set; }
+        public decimal HS_id { get; set; }
+        public string str_Send_amount_date { get; set; }
+        public string CS_name { get; set; }
+        public string U_name { get; set; }
+        public string U_BC { get; set; }
+        public string get_amount { get; set; }
+        public string str_get_amount_date { get; set; }
+        public string interest_rate_pass { get; set; }
+        public string pjName { get; set; }
+        public int month_total { get; set; }
+        public string str_Ach_State { get; set; }
+        public string Ach_Note { get; set; }
+    }
 }
