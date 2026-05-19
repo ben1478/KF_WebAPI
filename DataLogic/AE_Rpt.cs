@@ -3573,7 +3573,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                                     {
                                         resultCode = "00";
                                         isSuccess = "1";
-                                        returnReason = "成功";
+                                        returnReason = "";
                                     }
                                     else if (statusText.Contains("存款不足"))
                                     {

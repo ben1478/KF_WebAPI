@@ -27,6 +27,7 @@ using KF_WebAPI.DataLogic;
 using Microsoft.Extensions.Configuration;
 using System.Runtime.InteropServices;
 using System.Collections;
+using KF_WebAPI.Service;
 
 namespace KF_WebAPI.Controllers
 {
@@ -6962,6 +6963,25 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+        /// <summary>
+        /// 永豐銀行ACH設定檔
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        [HttpPost("GenerateACHFile")]
+        public IActionResult DownloadAchFile([FromBody] ACHBatchInput input)
+        {
+            var service = new AchGenerateService();
+            byte[] fileBytes = service.GenerateAchTextFile(input);
+
+            // 檔名規格配合：52611690_P01_yyyyMMdd.txt
+            string outputFileName = $"52611690_P01_{input.LaunchDate:yyyyMMdd}.txt";
+
+            // 回傳給瀏覽器直接下載文字檔
+            return File(fileBytes, "text/plain", outputFileName);
+        }
+
         /// <summary>
         /// 永豐銀行ACH
         /// </summary>
