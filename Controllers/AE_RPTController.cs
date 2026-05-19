@@ -6965,7 +6965,7 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
-        /// 永豐銀行ACH設定檔
+        /// 產生永豐銀行ACH設定檔
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
