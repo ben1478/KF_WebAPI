@@ -32,6 +32,7 @@ namespace KF_WebAPI.DataLogic
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"select rm.RCM_id,b.HS_id,b.Send_amount_date,ha.CS_name,um.U_name,li_1.item_D_name as U_BC,b.get_amount
                               ,b.get_amount_date,b.interest_rate_pass,li_2.item_D_name as pjName,rm.month_total,li_3.item_D_name as str_Ach_State,Ach_Note
+                              ,rm.RCM_cknum,(select COUNT(*) from AE_Files where KeyID = rm.RCM_cknum) as FileCount                              
                               from view_HS_Base b
                               INNER JOIN Receivable_M rm ON rm.HS_id = b.HS_id AND rm.del_tag = 0
                               INNER JOIN House_apply ha ON ha.HA_id = b.HA_id AND ha.del_tag = 0
@@ -86,7 +87,9 @@ namespace KF_WebAPI.DataLogic
                     pjName = _Fun.DeCodeBNWords(row.Field<string>("pjName")),
                     month_total = row.Field<int>("month_total"),
                     str_Ach_State = row.Field<string>("str_Ach_State"),
-                    Ach_Note = row.Field<string>("Ach_Note")
+                    Ach_Note = row.Field<string>("Ach_Note"),
+                    RCM_cknum = row.Field<string>("RCM_cknum"),
+                    FileCount = row.Field<int>("FileCount")
                 }).ToList();
 
                 return result;
@@ -105,7 +108,7 @@ namespace KF_WebAPI.DataLogic
             try
             {
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"SELECT ha.CS_name,rm.* 
+                var T_SQL = @"SELECT ha.CS_name,rm.*,(select COUNT(*) from AE_Files where KeyID = rm.RCM_cknum) as FileCount
                               FROM Receivable_M rm
                               INNER JOIN House_apply ha ON ha.HA_id = rm.HA_id AND ha.del_tag = 0
                               WHERE RCM_id = @Rcm_id";
@@ -114,7 +117,9 @@ namespace KF_WebAPI.DataLogic
                     RCM_id = row.Field<decimal>("RCM_id"),
                     CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
                     Ach_State = row.Field<string>("Ach_State"),
-                    Ach_Note = row.Field<string>("Ach_Note")
+                    Ach_Note = row.Field<string>("Ach_Note"),
+                    RCM_cknum = row.Field<string>("RCM_cknum"),
+                    FileCount = row.Field<int>("FileCount")
                 }).ToList();
 
                 resultClass.ResultCode = "000";

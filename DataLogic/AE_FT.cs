@@ -563,7 +563,7 @@ namespace KF_WebAPI.DataLogic
                 {
                     item_id = row.Field<decimal>("item_id"),
                     item_show = row.Field<string>("item_D_code") + '-' + _Fun.DeCodeBNWords(row.Field<string>("item_D_name")),
-                    item_int = row.Field<int>("item_D_int_A"),
+                    item_int = row.Field<int?>("item_D_int_A")?.ToString() ?? "",
                     show_tag = row.Field<string>("show_tag")
                 }).ToList();
 
