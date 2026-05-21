@@ -1060,7 +1060,7 @@ namespace KF_WebAPI.Controllers
 
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "";
-                if (ACH == "Y")
+               /* if (ACH == "Y")
                 {
                     if (AE_Files != null && AE_Files.Length > 0 && AE_Files[0] != null)
                     {
@@ -1071,7 +1071,7 @@ namespace KF_WebAPI.Controllers
                             resultClass.ResultMsg= System.Text.Json.JsonSerializer.Serialize(_ACHBankInfo); 
                         }
                     }
-                }
+                }*/
                 resultClass.objResult = m_Execut.ToString();
             }
             catch (Exception ex)
