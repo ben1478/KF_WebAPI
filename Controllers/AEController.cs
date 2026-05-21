@@ -4,6 +4,7 @@ using KF_WebAPI.BaseClass.AE;
 using KF_WebAPI.BaseClass.Max104;
 using KF_WebAPI.DataLogic;
 using KF_WebAPI.FunctionHandler;
+using KF_WebAPI.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -1048,15 +1049,30 @@ namespace KF_WebAPI.Controllers
 
         [Route("InsertFile")]
         [HttpPost]
-        public ActionResult<ResultClass<int>> InsertFile([FromBody] AE_Files[] AE_Files, string KeyID, string Type, string u_num)
+        public ActionResult<ResultClass<string>> InsertFile([FromBody] AE_Files[] AE_Files, string KeyID, string Type, string u_num, string ACH )
         {
-            ResultClass<int> resultClass = new();
+            ResultClass<string> resultClass = new();
             try
             {
-                int m_Execut  = _AEData.InsertFile(AE_Files, KeyID, Type, u_num);
+                int m_Execut = _AEData.InsertFile(AE_Files, KeyID, Type, u_num, ACH);
+
+                
+
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "";
-                resultClass.objResult = m_Execut;
+                if (ACH == "Y")
+                {
+                    if (AE_Files != null && AE_Files.Length > 0 && AE_Files[0] != null)
+                    {
+                        IronOcrService _IronOcrService = new IronOcrService();
+                        ACHBankInfo _ACHBankInfo = _IronOcrService.ParsePDF_Base64(AE_Files[0].file_body_encode);
+                        if (_ACHBankInfo.IsSuccess)
+                        {
+                            resultClass.ResultMsg= System.Text.Json.JsonSerializer.Serialize(_ACHBankInfo); 
+                        }
+                    }
+                }
+                resultClass.objResult = m_Execut.ToString();
             }
             catch (Exception ex)
             {
