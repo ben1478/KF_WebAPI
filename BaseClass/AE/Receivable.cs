@@ -382,9 +382,11 @@ namespace KF_WebAPI.BaseClass.AE
         public string interest_rate_pass { get; set; }
         public string pjName { get; set; }
         public int month_total { get; set; }
+        public string Loan_rate { get; set; }
         public string str_Ach_State { get; set; }
         public string Ach_Note { get; set; }
         public string RCM_cknum { get; set; }
         public int FileCount { get; set; }
+        
     }
 }

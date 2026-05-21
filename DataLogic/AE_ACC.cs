@@ -25,13 +25,13 @@ namespace KF_WebAPI.DataLogic
         ADOData _adoData = new ADOData();
         FuncHandler _Fun = new FuncHandler();
 
-        public List<RC_ACH_Res> GetHouseACH_LQuery(int yyyyMM, string type, string pjtype)
+        public List<RC_ACH_Res> GetRcACH_LQuery(int yyyyMM, string type, string pjtype)
         {
             try
             {
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"select rm.RCM_id,b.HS_id,b.Send_amount_date,ha.CS_name,um.U_name,li_1.item_D_name as U_BC,b.get_amount
-                              ,b.get_amount_date,b.interest_rate_pass,li_2.item_D_name as pjName,rm.month_total,li_3.item_D_name as str_Ach_State,Ach_Note
+                              ,b.get_amount_date,b.interest_rate_pass,li_2.item_D_name as pjName,rm.month_total,b.Loan_rate,li_3.item_D_name as str_Ach_State,Ach_Note
                               ,rm.RCM_cknum,(select COUNT(*) from AE_Files where KeyID = rm.RCM_cknum) as FileCount                              
                               from view_HS_Base b
                               INNER JOIN Receivable_M rm ON rm.HS_id = b.HS_id AND rm.del_tag = 0
@@ -86,6 +86,7 @@ namespace KF_WebAPI.DataLogic
                     interest_rate_pass = row.Field<string>("interest_rate_pass"),
                     pjName = _Fun.DeCodeBNWords(row.Field<string>("pjName")),
                     month_total = row.Field<int>("month_total"),
+                    Loan_rate = row.Field<string>("Loan_rate"),
                     str_Ach_State = row.Field<string>("str_Ach_State"),
                     Ach_Note = row.Field<string>("Ach_Note"),
                     RCM_cknum = row.Field<string>("RCM_cknum"),
@@ -175,9 +176,9 @@ namespace KF_WebAPI.DataLogic
                 {
                     var worksheet = package.Workbook.Worksheets.Add("撥款清冊");
                     #region 撥款資料
-                    var rcList = GetHouseACH_LQuery(yyyyMM, type, pjtype);
+                    var rcList = GetRcACH_LQuery(yyyyMM, type, pjtype);
 
-                    string[] headers = { "件數", "案件編號", "進件日期", "申請人", "經辦人", "區域", "撥款金額", "撥款日期", "利率", "專案", "期數", "ACH", "ACH備註" };
+                    string[] headers = { "件數", "案件編號", "進件日期", "申請人", "經辦人", "區域", "撥款金額", "撥款日期", "利率", "專案", "期數", "成數", "ACH", "ACH備註" };
 
                     int rowIndex = 1;
                     int colIndex = 1;
@@ -209,6 +210,7 @@ namespace KF_WebAPI.DataLogic
                         worksheet.Cells[rowIndex, colIndex++].Value = item.interest_rate_pass;
                         worksheet.Cells[rowIndex, colIndex++].Value = item.pjName;
                         worksheet.Cells[rowIndex, colIndex++].Value = item.month_total;
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.Loan_rate;
                         worksheet.Cells[rowIndex, colIndex++].Value = item.str_Ach_State;
                         worksheet.Cells[rowIndex, colIndex++].Value = item.Ach_Note;
                         colIndex = 1;
