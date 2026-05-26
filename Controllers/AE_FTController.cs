@@ -374,6 +374,39 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+        /// <summary>
+        /// 變更國峯佣金設定
+        /// </summary>
+        [HttpPost("Feat_KF_Ins")]
+        public ActionResult<ResultClass<string>> Feat_KF_Ins([FromBody] List<Feat_KF> modelList)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+
+            try
+            {
+                foreach (var item in modelList)
+                {
+                    item.tbInfo.add_ip = clientIp;
+                }
+                resultClass = _Ft.Feat_KF_Ins(modelList);
+                if (resultClass.ResultCode == "000")
+                {
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
         #endregion
 
 
