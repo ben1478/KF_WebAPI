@@ -119,6 +119,9 @@ namespace KF_WebAPI.DataLogic
                     CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
                     Ach_State = row.Field<string>("Ach_State"),
                     Ach_Note = row.Field<string>("Ach_Note"),
+                    Ach_Bank = row.Field<string>("Ach_Bank"),
+                    BankNo = row.Field<string>("BankNo"),
+                    AccountNo = row.Field<string>("AccountNo"),
                     RCM_cknum = row.Field<string>("RCM_cknum"),
                     FileCount = row.Field<int>("FileCount")
                 }).ToList();
