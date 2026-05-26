@@ -119,6 +119,9 @@ namespace KF_WebAPI.DataLogic
                     CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
                     Ach_State = row.Field<string>("Ach_State"),
                     Ach_Note = row.Field<string>("Ach_Note"),
+                    Ach_Bank = row.Field<string>("Ach_Bank"),
+                    BankNo = row.Field<string>("BankNo"),
+                    AccountNo = row.Field<string>("AccountNo"),
                     RCM_cknum = row.Field<string>("RCM_cknum"),
                     FileCount = row.Field<int>("FileCount")
                 }).ToList();
@@ -140,11 +143,13 @@ namespace KF_WebAPI.DataLogic
             try
             {
                 ResultClass<string> resultClass = new ResultClass<string>();
-                var T_SQL = @"Update Receivable_M Set Ach_State=@Ach_State,Ach_Note=@Ach_Note WHERE RCM_id = @Rcm_id";
+                var T_SQL = @"Update Receivable_M Set Ach_State=@Ach_State,Ach_Note=@Ach_Note,BankNo=@BankNo,AccountNo=@AccountNo WHERE RCM_id = @Rcm_id";
                 var parameters = new List<SqlParameter>()
                 {
                     new SqlParameter("@Ach_State",model.Ach_State),
                     new SqlParameter("@Ach_Note",model.Ach_Note),
+                    new SqlParameter("@BankNo",model.BankNo),
+                    new SqlParameter("@AccountNo",model.AccountNo),
                     new SqlParameter("@Rcm_id",model.RCM_id)
                 };
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);

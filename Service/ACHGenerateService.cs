@@ -64,8 +64,8 @@
                         nsd.Append(seq.ToString("D8"));                     // 7-14  交易序號 (靠右補零)
                         nsd.Append(SEND_ORG);                               // 15-21 提出行代號
                         nsd.Append(ORIG_ACC.PadRightBytes(16));             // 22-37 發動者帳號 (16碼，不滿補空白)
-                        nsd.Append(detail.RecvBankCode.PadRightBytes(7));   // 38-44 提回行代號 (7碼)
-                        nsd.Append(detail.ReceiverAccount.PadRightBytes(16));// 45-60 收受者帳號 (16碼)
+                        nsd.Append(detail.Bank_No.PadRightBytes(7));   // 38-44 提回行代號 (7碼)
+                        nsd.Append(detail.AccountNo.PadRightBytes(16));// 45-60 收受者帳號 (16碼)
 
                         // 金額處理：整數型態，10碼，靠右補零
                         long amtInt = (long)Math.Round(detail.Amount, 0);
@@ -74,17 +74,11 @@
                         nsd.Append(" ");                                    // 71    退件理由代號 (發動時留空)
                         nsd.Append(" ");                                    // 72    提示交換次序 (1碼空白)
                         nsd.Append(ORIG_ID.PadRightBytes(10));              // 73-82 發動者統一編號 (10碼)
-                        nsd.Append(detail.ReceiverId.PadRightBytes(10));    // 83-92 收受者統一編號 (10碼)
+                        nsd.Append(detail.CS_PID.PadRightBytes(10));    // 83-92 收受者統一編號 (10碼)
 
                         // 93-112 備用 (20碼空白)
                         nsd.Append("".PadRightBytes(20));
-
-                        // 113-132 用戶號碼 (20碼)
-                        nsd.Append(detail.UserNumber.PadRightBytes(20));
-
-                        // 133-162 發動者專用區 (30碼)
-                        string origZone = detail.OriginatorZone ?? "";
-                        nsd.Append(origZone.PadRightBytes(30));
+                    
 
                         // 163-250 剩餘空間補空白 (88 Bytes)
                         string nsdLine = nsd.ToString().PadRightBytes(250);

@@ -367,6 +367,12 @@ namespace KF_WebAPI.BaseClass.AE
         public decimal RCM_id { get; set; }
         public string Ach_State { get; set; }
         public string Ach_Note { get; set; }
+        public string? Ach_Bank { get; set; }
+        //銀行代號
+        public string? BankNo { get; set; }
+        //銀行帳號
+        public string? AccountNo { get; set; }
+
     }
 
     public class RC_ACH_Res
