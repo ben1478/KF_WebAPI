@@ -6973,11 +6973,10 @@ namespace KF_WebAPI.Controllers
         public IActionResult GenerateACHFile(string LaunchDate)
         {
             var service = new AchGenerateService();
-            byte[] fileBytes = service.GenerateAchTextFile(LaunchDate);
-
-            // 檔名規格配合：52611690_P01_yyyyMMdd.txt
-            string outputFileName = $"52611690_P01_{LaunchDate.Replace("/","")}.txt";
-
+            var Result = service.GenerateAchTextFile(LaunchDate);
+            byte[] fileBytes = Result.FileBytes;
+           // 檔名規格配合：52611690_P01_yyyyMMdd.txt
+           string outputFileName = Result.FileName;
             // 回傳給瀏覽器直接下載文字檔
             return File(fileBytes, "text/plain", outputFileName);
         }

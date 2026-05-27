@@ -18,13 +18,14 @@
         private const string SEND_ORG = "8070014";          // 發送單位代號 (永豐銀行通常為 8070014)
         private const string RECV_ORG = "9990250";          // 接收單位代號 (票交所 ACH 中心碼)
 
-        public byte[] GenerateAchTextFile(string LaunchDate)
+        public (byte[] FileBytes, string FileName) GenerateAchTextFile(string LaunchDate)
         {
             // 1. 環境編碼註冊 (防止 Windows Server 環境無 Big5 字典)
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             Encoding big5 = Encoding.GetEncoding("big5");
             AE_Rpt _AE_Rpt = new AE_Rpt();
             DataTable m_dt = _AE_Rpt.GetRCMInfo(LaunchDate);
+            string fileName = "";
             string Ach_Bank = "";
 
             string minguoDate = "0"+(Convert.ToInt16( LaunchDate.Substring(0, 4)) - 1911).ToString()+ LaunchDate.Replace("/","").Substring(4);
@@ -63,6 +64,7 @@
                         // 轉換發動日期格式
 
                         Ach_Bank = dr["Ach_Bank"].ToString();
+                       
                         StringBuilder nsd = new StringBuilder();
                         nsd.Append("N");                                    // 1     交易型態
                         nsd.Append("SD");                                   // 2-3   交易類別 (SD=代收)
@@ -75,15 +77,31 @@
 
                         // 金額處理：整數型態，10碼，靠右補零
                         long amtInt = (long)Math.Round(Convert.ToDecimal(dr["Amount"].ToString()), 0);
-                        nsd.Append(amtInt.ToString("D10"));                 // 61-70 金額
+                        nsd.Append(amtInt.ToString("D10"));               
 
-                        //nsd.Append(" ");                                    // 71    退件理由代號 (發動時留空)
-                        //nsd.Append(" ");                                    // 72    提示交換次序 (1碼空白)
-                        nsd.Append("00B"+ORIG_ID.PadRightBytes(10));              // 73-82 發動者統一編號 (10碼)
-                       // nsd.Append("  ");
-                        nsd.Append(dr["CS_PID"].ToString().PadRightBytes(10));    // 83-92 收受者統一編號 (10碼)
-                        nsd.Append("".PadRightBytes(6));
-                        nsd.Append(0.ToString("D16"));
+                        if (Ach_Bank == "CTBC")
+                        {
+                            nsd.Append("  B" + ORIG_ID.PadRightBytes(10));              
+                        }
+                        else
+                        {
+                            nsd.Append("00B" + ORIG_ID.PadRightBytes(10));            
+                        }
+                       
+                      
+                        nsd.Append(dr["CS_PID"].ToString().PadRightBytes(10));
+
+                        if (Ach_Bank == "CTBC")
+                        {
+                            nsd.Append("".PadRightBytes(22));
+                        }
+                        else
+                        {
+                            nsd.Append("".PadRightBytes(6));
+                            nsd.Append(0.ToString("D16"));
+                        }
+
+                       
                         nsd.Append(" ");
                         nsd.Append(dr["CS_PID"].ToString().PadRightBytes(10));
                         nsd.Append("".PadRightBytes(60));
@@ -117,7 +135,15 @@
 
                     sw.Flush();
                 }
-                return ms.ToArray();
+                if (Ach_Bank == "CTBC")
+                {
+                    fileName = "ACHP01_" + minguoDate + TX_CODE + ORIG_ID + ".txt";
+                }
+                else
+                {
+                    fileName = ORIG_ID+"_P01_" + LaunchDate.Replace("/", "") + ".txt";
+                }
+                return (ms.ToArray(), fileName);
             }
         }
     }
