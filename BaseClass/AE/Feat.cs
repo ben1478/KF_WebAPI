@@ -32,4 +32,11 @@ namespace KF_WebAPI.BaseClass.AE
         public string FR_M_name { get; set; }
         public string U_BC { get; set; }
     }
+
+    public class Feat_KF
+    {
+        public tbInfo? tbInfo { get; set; }
+        public decimal item_id { get; set; }
+        public int item_int { get; set; }
+    }
 }

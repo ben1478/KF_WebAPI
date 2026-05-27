@@ -593,6 +593,39 @@ namespace KF_WebAPI.DataLogic
             }
             return resultClass;
         }
+
+        public ResultClass<string> Feat_KF_Ins(List<Feat_KF> modelList)
+        {
+            var resultClass = new ResultClass<string>();
+            try
+            {
+                var T_SQL_S = @"select item_id,item_D_int_A from Item_list where del_tag = '0' AND item_M_code='Return' and item_D_name like '%國%'";
+                var result = _adoData.ExecuteSQuery(T_SQL_S).AsEnumerable().Select(row => new
+                {
+                    item_id = row.Field<decimal>("item_id"),
+                    item_int = row.Field<int?>("item_D_int_A")?.ToString() ?? ""
+                }).ToList();
+
+                foreach (var model in modelList)
+                {
+                    var dbData = result.FirstOrDefault(x => x.item_id == model.item_id);
+
+                    if (dbData == null || dbData.item_int != model.item_int.ToString())
+                    {
+                        UpdateItemReturn(model);
+                    }
+                }
+
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "異動成功";
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "400";
+                resultClass.ResultMsg = "異動失敗," + ex;
+            }
+            return resultClass;
+        }
         #endregion
 
         void InsertFeatRule(Feat_D model)
@@ -702,6 +735,28 @@ namespace KF_WebAPI.DataLogic
                                     new SqlParameter("@edit_num",model.tbInfo.edit_num),
                                     new SqlParameter("@IP",model.tbInfo.add_ip),
                                     new SqlParameter("@FR_id",model.FR_id)
+                                };
+                #endregion
+                _adoData.ExecuteNonQuery(T_SQL, parameters);
+            }
+            catch (Exception)
+            {
+                throw new Exception("DB 異動失敗");
+            }
+        }
+
+        void UpdateItemReturn(Feat_KF model)
+        {
+            try
+            {
+                #region SQL_Upd
+                var T_SQL = @"Update Item_list Set item_D_int_A = @item_D_int_A,edit_date = Getdate(),edit_num = @edit_num,edit_ip = @IP Where item_id = @item_id";
+                var parameters = new List<SqlParameter>()
+                                {
+                                    new SqlParameter("@item_D_int_A",model.item_int),
+                                    new SqlParameter("@edit_num",model.tbInfo.edit_num),
+                                    new SqlParameter("@IP",model.tbInfo.add_ip),
+                                    new SqlParameter("@item_id",model.item_id)
                                 };
                 #endregion
                 _adoData.ExecuteNonQuery(T_SQL, parameters);
