@@ -6970,13 +6970,13 @@ namespace KF_WebAPI.Controllers
         /// <param name="input"></param>
         /// <returns></returns>
         [HttpPost("GenerateACHFile")]
-        public IActionResult DownloadAchFile([FromBody] ACHBatchInput input)
+        public IActionResult GenerateACHFile(string LaunchDate)
         {
             var service = new AchGenerateService();
-            byte[] fileBytes = service.GenerateAchTextFile(input);
+            byte[] fileBytes = service.GenerateAchTextFile(LaunchDate);
 
             // 檔名規格配合：52611690_P01_yyyyMMdd.txt
-            string outputFileName = $"52611690_P01_{input.LaunchDate:yyyyMMdd}.txt";
+            string outputFileName = $"52611690_P01_{LaunchDate.Replace("/","")}.txt";
 
             // 回傳給瀏覽器直接下載文字檔
             return File(fileBytes, "text/plain", outputFileName);
