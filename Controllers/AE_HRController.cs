@@ -2831,7 +2831,8 @@ namespace KF_WebAPI.Controllers
                     ,U_Birthday=@U_Birthday,U_PID=@U_PID,U_Tel=@U_Tel,U_MTel=@U_MTel,U_Email=@U_Email,Emergency_contact=@Emergency_contact,Emergency_Tel=@Emergency_Tel
                     ,Emergency_MTel=@Emergency_MTel,School_Level=@School_Level,School_Name=@School_Name,School_Graduated=@School_Graduated,School_D_N=@School_D_N
                     ,School_Major=@School_Major,U_leader_1_num=@U_leader_1_num,U_leader_2_num=@U_leader_2_num,U_Check_BC=@U_Check_BC,U_address_live=@U_address_live
-                    ,U_arrive_date=@U_arrive_date,is_susp=@is_susp,U_susp_date=@U_susp_date,U_susp_end_date=@U_susp_end_date,U_susp_date2=@U_susp_date2,U_susp_end_date2=@U_susp_end_date2 Where U_id=@U_id";
+                    ,U_arrive_date=@U_arrive_date,is_susp=@is_susp,U_susp_date=@U_susp_date,U_susp_end_date=@U_susp_end_date,U_susp_date2=@U_susp_date2,U_susp_end_date2=@U_susp_end_date2 
+                    ,U_note=@U_note Where U_id=@U_id";
 
                 var parameters = new List<SqlParameter>() 
                 {
@@ -2889,8 +2890,8 @@ namespace KF_WebAPI.Controllers
                      new SqlParameter("@U_susp_date2", string.IsNullOrEmpty(model.str_U_susp_date2)
                     ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_susp_date2))),
                     new SqlParameter("@U_susp_end_date2", string.IsNullOrEmpty(model.str_U_susp_end_date2)
-                    ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_susp_end_date2)))
-
+                    ? DBNull.Value : DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_susp_end_date2))),
+                    new SqlParameter("@U_note", string.IsNullOrEmpty(model.U_note) ? DBNull.Value : model.U_note)
                 };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
@@ -2949,12 +2950,12 @@ namespace KF_WebAPI.Controllers
                     Military_EDate,Military_Exemption,License_Car,Self_Car,License_Motorcycle,Self_Motorcycle,
                     U_Tel,U_MTel,U_Email,Emergency_contact,Emergency_Tel,Emergency_MTel,School_Level,School_Name,
                     School_SDate,School_EDate,School_Graduated,School_D_N,School_Major,U_BC,U_PFT,Role_num,
-                    U_agent_num,U_leader_1_num,U_leader_2_num,U_leader_3_num,U_Check_BC,U_address_live,U_arrive_date,U_leave_date )
+                    U_agent_num,U_leader_1_num,U_leader_2_num,U_leader_3_num,U_Check_BC,U_address_live,U_arrive_date,U_leave_date,U_note )
                     Values ( @add_num,@add_date,@add_ip,@U_cknum,@U_num,@U_name,@U_Ename,@U_Birthday,@U_sex,@Marriage,@Children,
                     @U_PID,@Military,@Military_SDate,@Military_EDate,@Military_Exemption,@License_Car,@Self_Car,
                     @License_Motorcycle,@Self_Motorcycle,@U_Tel,@U_MTel,@U_Email,@Emergency_contact,@Emergency_Tel,
                     @Emergency_MTel,@School_Level,@School_Name,@School_SDate,@School_EDate,@School_Graduated,@School_D_N,
-                    @School_Major,@U_BC,@U_PFT,@Role_num,@U_agent_num,@U_leader_1_num,@U_leader_2_num,@U_leader_3_num,@U_Check_BC,@U_address_live,@U_arrive_date,@U_leave_date )";
+                    @School_Major,@U_BC,@U_PFT,@Role_num,@U_agent_num,@U_leader_1_num,@U_leader_2_num,@U_leader_3_num,@U_Check_BC,@U_address_live,@U_arrive_date,@U_leave_date,@U_note )";
 
                 var parameters = new List<SqlParameter> 
                 {
@@ -3003,7 +3004,8 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@U_address_live", string.IsNullOrEmpty(model.U_address_live) ? "" : model.U_address_live),
                     new SqlParameter("@U_arrive_date", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_arrive_date))),
                     new SqlParameter("@U_leave_date",
-                    string.IsNullOrEmpty(model.str_U_leave_date)? DBNull.Value: (object)DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_leave_date)))
+                    string.IsNullOrEmpty(model.str_U_leave_date)? DBNull.Value: (object)DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_U_leave_date))),
+                    new SqlParameter("@U_note", string.IsNullOrEmpty(model.U_note) ? DBNull.Value : model.U_note)
                 };
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
@@ -3705,12 +3707,36 @@ namespace KF_WebAPI.Controllers
                 }
                 T_SQL += " ORDER BY UM.U_type DESC,UM.U_leave_date,UM.U_id";
                 #endregion
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
-                if(dtResult.Rows.Count > 0)
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => 
+                {
+                    DateTime? hBegin2 = row.Field<DateTime?>("H_begin2");
+                    DateTime? hend2 = row.Field<DateTime?>("H_end2");
+
+                    DateTime? hBegin1 = row.Field<DateTime?>("H_begin1");
+                    DateTime? hend1 = row.Field<DateTime?>("H_end1");
+
+                    DateTime? hBegin0 = row.Field<DateTime?>("H_begin0");
+                    DateTime? hend0 = row.Field<DateTime?>("H_end0");
+
+                    return new 
+                    {
+                        U_num = row.Field<string>("U_Num"),
+                        U_name = row.Field<string>("U_Name"),
+                        str_arrive_date = row.Field<DateTime?>("U_arrive_date").HasValue ? FuncHandler.ConvertGregorianToROC(row.Field<DateTime?>("U_arrive_date").Value.ToString("yyyy/MM/dd")) : "",
+                        str_year2 = (hBegin2.HasValue ? FuncHandler.ConvertGregorianToROC(hBegin2.Value.ToString("yyyy/MM/dd")).Replace("-", "/") : "") + " ~ " + (hend2.HasValue ? FuncHandler.ConvertGregorianToROC(hend2.Value.ToString("yyyy/MM/dd")).Replace("-", "/") : ""),
+                        rem2 = (row.Field<decimal?>("H_day_base2") ?? 0) + (row.Field<decimal?>("H_day_adjust2") ?? 0),
+                        str_year1 = (hBegin1.HasValue ? FuncHandler.ConvertGregorianToROC(hBegin1.Value.ToString("yyyy/MM/dd")).Replace("-", "/") : "") + " ~ " + (hend1.HasValue ? FuncHandler.ConvertGregorianToROC(hend1.Value.ToString("yyyy/MM/dd")).Replace("-", "/") : ""),
+                        rem1 = (row.Field<decimal?>("H_day_base1") ?? 0) + (row.Field<decimal?>("H_day_adjust1") ?? 0),
+                        str_year0 = (hBegin0.HasValue ? FuncHandler.ConvertGregorianToROC(hBegin0.Value.ToString("yyyy/MM/dd")).Replace("-", "/") : "") + " ~ " + (hend0.HasValue ? FuncHandler.ConvertGregorianToROC(hend0.Value.ToString("yyyy/MM/dd")).Replace("-", "/") : ""),
+                        rem0 = (row.Field<decimal?>("H_day_base0") ?? 0) + (row.Field<decimal?>("H_day_adjust0") ?? 0)
+                    };
+                    
+                }).ToList();
+
+                if(result != null)
                 {
                     resultClass.ResultCode = "000";
-                    var pageData = FuncHandler.GetPage(dtResult, model.page, 25);
-                    resultClass.objResult = JsonConvert.SerializeObject(pageData);
+                    resultClass.objResult = JsonConvert.SerializeObject(result);
                     return Ok(resultClass);
                 }
                 else
@@ -3720,9 +3746,10 @@ namespace KF_WebAPI.Controllers
                     return BadRequest(resultClass);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 resultClass.ResultCode = "500";
+                resultClass.ResultMsg = ex.ToString();
                 return StatusCode(500, resultClass);
             }
         }

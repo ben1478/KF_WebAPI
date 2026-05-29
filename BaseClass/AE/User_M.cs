@@ -94,6 +94,7 @@
         public string? str_U_arrive_date { get; set; }
         public string? str_U_leave_date { get; set; }
         public string User { get; set; }
+        public string? U_note { get; set; }
     }
 
     public class User_M_Upd: User_M_Ins

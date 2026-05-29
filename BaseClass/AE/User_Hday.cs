@@ -37,7 +37,6 @@
 
     public class User_Hday_req
     {
-        public int page { get; set; }
         public string? U_Num_Name { get; set; }
         public string? U_BC { get; set; }
         public string? Job_Status { get; set; }
