@@ -1506,7 +1506,7 @@ namespace KF_WebAPI.DataLogic
                         and (U_leave_date is null or convert(varchar, U_arrive_date, 112) =@ThisMon)
                         group by  U_BC,BC_Name,bc_sort 
                         union all 
-                        select 'BC0901','電銷','999',1
+                        select 'BC0901','電銷','999',2
                         order by bc_sort,isnull(G.Spec_Group, U_BC) ";
 
                     parameters.Add(new SqlParameter("@ThisMon", ThisMon));
