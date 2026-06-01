@@ -1506,7 +1506,7 @@ namespace KF_WebAPI.DataLogic
                         and (U_leave_date is null or convert(varchar, U_arrive_date, 112) =@ThisMon)
                         group by  U_BC,BC_Name,bc_sort 
                         union all 
-                        select 'BC0901','湧立','999',1
+                        select 'BC0901','電銷','999',1
                         order by bc_sort,isnull(G.Spec_Group, U_BC) ";
 
                     parameters.Add(new SqlParameter("@ThisMon", ThisMon));
@@ -1897,6 +1897,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             OR left(convert(varchar, f.get_amount_date, 112), 6) = @ThisMon)
        WHERE @Base_date BETWEEN ug.group_M_start_day AND ug.group_M_end_day
          AND @Base_date BETWEEN ug.group_D_start_day AND ug.group_D_end_day
+         AND leader.U_BC <> 'BC0901'
        GROUP BY leader.bc_sort,leader.U_BC,sa.U_susp_date,sa.is_susp,
                 isnull(ug.group_M_name, '未分組'),ug.group_D_name,ug.group_D_code,
                 ug.group_id,ug.group_M_id,ug.group_M_title,sa.U_PFT_sort,
@@ -2223,69 +2224,98 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
                     if (Dis_BC != "BC0900" && Dis_BC != "BC0901")
                     {
-                        if (Dis_BC == "BC0200")
+                        //if (Dis_BC == "BC0200")
+                        //{
+                        //    if ((U_PFT_sort == "140"))//新北主管:邱國維職稱:副理
+                        //    {
+                        //        DataRow TotRow = dtTotle.NewRow();
+                        //        TotRow["SEQ"] = "";
+                        //        TotRow["U_PFT_name"] = "";
+                        //        TotRow["plan_name"] = arrTitle[BC_Count];
+                        //        TotRow["month_get_amount_FDCOM001"] = AddDate;
+                        //        dtTotle.Rows.Add(TotRow);
+                        //        dtTotle.Rows.Add(FuncHandler.AddTitleByTable(dtTotle, "Totle"));
+
+                        //        DataRow TotRow_E = dtEngine.NewRow();
+                        //        TotRow_E["SEQ"] = "";
+                        //        TotRow_E["U_PFT_name"] = "";
+                        //        TotRow_E["plan_name"] = arrTitle[BC_Count];
+                        //        TotRow_E["month_get_amount_PJ00046"] = AddDate;
+                        //        dtEngine.Rows.Add(TotRow_E);
+                        //        dtEngine.Rows.Add(FuncHandler.AddTitleByTable(dtEngine, "Engine"));
+
+                        //        DataRow TotRow_C = dtCar.NewRow();
+                        //        TotRow_C["SEQ"] = "";
+                        //        TotRow_C["U_PFT_name"] = "";
+                        //        TotRow_C["plan_name"] = arrTitle[BC_Count];
+                        //        TotRow_C["month_get_amount_PJ00048"] = AddDate;
+                        //        dtCar.Rows.Add(TotRow_C);
+                        //        dtCar.Rows.Add(FuncHandler.AddTitleByTable(dtCar, "Car"));
+
+                        //        BC_Count++;
+                        //    }
+                        //}
+                        //else
+                        //{
+                        //    if ((U_PFT_sort == "120" || U_PFT_sort == "130"))//其他部門:職稱:區經理或經理
+                        //    {
+                        //        DataRow TotRow = dtTotle.NewRow();
+                        //        TotRow["SEQ"] = "";
+                        //        TotRow["U_PFT_name"] = "";
+                        //        TotRow["plan_name"] = arrTitle[BC_Count];
+                        //        TotRow["month_get_amount_FDCOM001"] = AddDate;
+                        //        dtTotle.Rows.Add(TotRow);
+                        //        dtTotle.Rows.Add(FuncHandler.AddTitleByTable(dtTotle, "Totle"));
+
+                        //        DataRow TotRow_E = dtEngine.NewRow();
+                        //        TotRow_E["SEQ"] = "";
+                        //        TotRow_E["U_PFT_name"] = "";
+                        //        TotRow_E["plan_name"] = arrTitle[BC_Count];
+                        //        TotRow_E["month_get_amount_PJ00046"] = AddDate;
+                        //        dtEngine.Rows.Add(TotRow_E);
+                        //        dtEngine.Rows.Add(FuncHandler.AddTitleByTable(dtEngine, "Engine"));
+
+                        //        DataRow TotRow_C = dtCar.NewRow();
+                        //        TotRow_C["SEQ"] = "";
+                        //        TotRow_C["U_PFT_name"] = "";
+                        //        TotRow_C["plan_name"] = arrTitle[BC_Count];
+                        //        TotRow_C["month_get_amount_PJ00048"] = AddDate;
+                        //        dtCar.Rows.Add(TotRow_C);
+                        //        dtCar.Rows.Add(FuncHandler.AddTitleByTable(dtCar, "Car"));
+
+                        //        BC_Count++;
+                        //    }
+                        //}
+
+
+                        if ((U_PFT_sort == "120" || U_PFT_sort == "130"))//其他部門:職稱:區經理或經理
                         {
-                            if ((U_PFT_sort == "140"))//新北主管:邱國維職稱:副理
-                            {
-                                DataRow TotRow = dtTotle.NewRow();
-                                TotRow["SEQ"] = "";
-                                TotRow["U_PFT_name"] = "";
-                                TotRow["plan_name"] = arrTitle[BC_Count];
-                                TotRow["month_get_amount_FDCOM001"] = AddDate;
-                                dtTotle.Rows.Add(TotRow);
-                                dtTotle.Rows.Add(FuncHandler.AddTitleByTable(dtTotle, "Totle"));
+                            DataRow TotRow = dtTotle.NewRow();
+                            TotRow["SEQ"] = "";
+                            TotRow["U_PFT_name"] = "";
+                            TotRow["plan_name"] = arrTitle[BC_Count];
+                            TotRow["month_get_amount_FDCOM001"] = AddDate;
+                            dtTotle.Rows.Add(TotRow);
+                            dtTotle.Rows.Add(FuncHandler.AddTitleByTable(dtTotle, "Totle"));
 
-                                DataRow TotRow_E = dtEngine.NewRow();
-                                TotRow_E["SEQ"] = "";
-                                TotRow_E["U_PFT_name"] = "";
-                                TotRow_E["plan_name"] = arrTitle[BC_Count];
-                                TotRow_E["month_get_amount_PJ00046"] = AddDate;
-                                dtEngine.Rows.Add(TotRow_E);
-                                dtEngine.Rows.Add(FuncHandler.AddTitleByTable(dtEngine, "Engine"));
+                            DataRow TotRow_E = dtEngine.NewRow();
+                            TotRow_E["SEQ"] = "";
+                            TotRow_E["U_PFT_name"] = "";
+                            TotRow_E["plan_name"] = arrTitle[BC_Count];
+                            TotRow_E["month_get_amount_PJ00046"] = AddDate;
+                            dtEngine.Rows.Add(TotRow_E);
+                            dtEngine.Rows.Add(FuncHandler.AddTitleByTable(dtEngine, "Engine"));
 
-                                DataRow TotRow_C = dtCar.NewRow();
-                                TotRow_C["SEQ"] = "";
-                                TotRow_C["U_PFT_name"] = "";
-                                TotRow_C["plan_name"] = arrTitle[BC_Count];
-                                TotRow_C["month_get_amount_PJ00048"] = AddDate;
-                                dtCar.Rows.Add(TotRow_C);
-                                dtCar.Rows.Add(FuncHandler.AddTitleByTable(dtCar, "Car"));
+                            DataRow TotRow_C = dtCar.NewRow();
+                            TotRow_C["SEQ"] = "";
+                            TotRow_C["U_PFT_name"] = "";
+                            TotRow_C["plan_name"] = arrTitle[BC_Count];
+                            TotRow_C["month_get_amount_PJ00048"] = AddDate;
+                            dtCar.Rows.Add(TotRow_C);
+                            dtCar.Rows.Add(FuncHandler.AddTitleByTable(dtCar, "Car"));
 
-                                BC_Count++;
-                            }
+                            BC_Count++;
                         }
-                        else
-                        {
-                            if ((U_PFT_sort == "120" || U_PFT_sort == "130"))//其他部門:職稱:區經理或經理
-                            {
-                                DataRow TotRow = dtTotle.NewRow();
-                                TotRow["SEQ"] = "";
-                                TotRow["U_PFT_name"] = "";
-                                TotRow["plan_name"] = arrTitle[BC_Count];
-                                TotRow["month_get_amount_FDCOM001"] = AddDate;
-                                dtTotle.Rows.Add(TotRow);
-                                dtTotle.Rows.Add(FuncHandler.AddTitleByTable(dtTotle, "Totle"));
-
-                                DataRow TotRow_E = dtEngine.NewRow();
-                                TotRow_E["SEQ"] = "";
-                                TotRow_E["U_PFT_name"] = "";
-                                TotRow_E["plan_name"] = arrTitle[BC_Count];
-                                TotRow_E["month_get_amount_PJ00046"] = AddDate;
-                                dtEngine.Rows.Add(TotRow_E);
-                                dtEngine.Rows.Add(FuncHandler.AddTitleByTable(dtEngine, "Engine"));
-
-                                DataRow TotRow_C = dtCar.NewRow();
-                                TotRow_C["SEQ"] = "";
-                                TotRow_C["U_PFT_name"] = "";
-                                TotRow_C["plan_name"] = arrTitle[BC_Count];
-                                TotRow_C["month_get_amount_PJ00048"] = AddDate;
-                                dtCar.Rows.Add(TotRow_C);
-                                dtCar.Rows.Add(FuncHandler.AddTitleByTable(dtCar, "Car"));
-
-                                BC_Count++;
-                            }
-                        }
-
 
                     }
                     else
