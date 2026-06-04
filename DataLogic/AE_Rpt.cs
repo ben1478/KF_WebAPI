@@ -3460,10 +3460,23 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
             try
             {
-                // 1. 從檔名擷取日期 (例如：_SAMP52611690_NP01_R_20260512.TXT -> 20260512)
+
+                // 從檔名擷取日期
                 string fileNameOnly = Path.GetFileNameWithoutExtension(file.FileName);
-                string datePart = fileNameOnly.Substring(fileNameOnly.Length - 8);
-                DateTime paymentDate = DateTime.ParseExact(datePart, "yyyyMMdd", null);
+
+                Match match = Regex.Match(fileNameOnly, @"R_(\d{8})");
+
+                if (!match.Success)
+                {
+                    throw new Exception($"檔名格式錯誤，找不到日期：{file.FileName}");
+                }
+
+                DateTime paymentDate = DateTime.ParseExact(
+                    match.Value.Replace("R_",""),
+                    "yyyyMMdd",
+                    System.Globalization.CultureInfo.InvariantCulture
+                );
+
 
                 // 2. 註冊編碼支援以處理 Big5 繁體中文
                 System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
