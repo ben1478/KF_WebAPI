@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using OfficeOpenXml;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Dynamic;
@@ -3620,37 +3621,73 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                                     };
                                     FileList.Add(fileRow);
 
-                                    // 4. 執行 SQL 查詢對應應收帳款
+                                    // 4. 執行 SQL 查詢對應應收帳款,先針對繳款日期下條件,有符合日期已繳款日期為準
                                     var T_SQL = @"SELECT TOP 1 * FROM Receivable_M RM
-                              INNER JOIN Receivable_D RD ON RD.RCM_id = RM.RCM_id AND RD.del_tag = 0
-                              INNER JOIN House_apply HA ON HA.HA_id = RM.HA_id
-                              WHERE RM.del_tag = 0 AND check_pay_type = 'N' AND cancel_type <> 'Y' AND bad_debt_type = 'N'
-                              AND HA.CS_PID = @CS_PID
-                              ORDER BY RC_date, RC_count";
+                                      INNER JOIN Receivable_D RD ON RD.RCM_id = RM.RCM_id AND RD.del_tag = 0
+                                      INNER JOIN House_apply HA ON HA.HA_id = RM.HA_id
+                                      WHERE RM.del_tag = 0 AND check_pay_type = 'N' AND cancel_type <> 'Y' AND bad_debt_type = 'N'
+                                      AND HA.CS_PID = @CS_PID and RC_date=@RC_date
+                                      ORDER BY RC_date, RC_count ";
 
-                                    var parameters = new List<SqlParameter> { new SqlParameter("@CS_PID", fileRow.Col1) };
-
-                                    var queryResult = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Win_Inv
+                                    var parameters = new List<SqlParameter> { new SqlParameter("@CS_PID", fileRow.Col1), new SqlParameter("@RC_date", payDate) };
+                                    DataTable _dt = _adoData.ExecuteQuery(T_SQL, parameters);
+                                    List<Receivable_Win_Inv> lisReceivableWinList = new List<Receivable_Win_Inv>();
+                                    if (_dt.Rows.Count > 0)
                                     {
-                                        HS_id = row.Field<decimal>("HS_id"),
-                                        RCD_id = row.Field<decimal>("RCD_id"),
-                                        CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
-                                        CS_PID = row.Field<string>("CS_PID"),
-                                        RC_count = row.Field<int>("RC_count"),
-                                        roc_RC_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("RC_date").ToString("yyyy/MM/dd")),
-                                        amount_per_month = row.Field<decimal>("amount_per_month"),
-                                        interest = row.Field<decimal>("interest"),
-                                        Rmoney = row.Field<decimal>("Rmoney"),
-                                        HFees = 20,
-                                        Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
-                                        amount_total = row.Field<decimal>("amount_total"),
-                                        month_total = row.Field<int>("month_total"),
-                                        RecPayDate = Convert.ToDateTime( payDate), // 帶入檔名日期
-                                        Win_Msg = returnReason // 存入對象變數供後續判斷
-                                    }).ToList();
+                                        lisReceivableWinList = _dt.AsEnumerable().Select(row => new Receivable_Win_Inv
+                                        {
+                                            HS_id = row.Field<decimal>("HS_id"),
+                                            RCD_id = row.Field<decimal>("RCD_id"),
+                                            CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                                            CS_PID = row.Field<string>("CS_PID"),
+                                            RC_count = row.Field<int>("RC_count"),
+                                            roc_RC_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("RC_date").ToString("yyyy/MM/dd")),
+                                            amount_per_month = row.Field<decimal>("amount_per_month"),
+                                            interest = row.Field<decimal>("interest"),
+                                            Rmoney = row.Field<decimal>("Rmoney"),
+                                            HFees = 20,
+                                            Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
+                                            amount_total = row.Field<decimal>("amount_total"),
+                                            month_total = row.Field<int>("month_total"),
+                                            RecPayDate =  Convert.ToDateTime(payDate), // 帶入檔名日期
+                                            Win_Msg = returnReason // 存入對象變數供後續判斷
+                                        }).ToList();
+                                    }
+                                    else
+                                    {
+                                        T_SQL = @"SELECT TOP 1 * FROM Receivable_M RM
+                                      INNER JOIN Receivable_D RD ON RD.RCM_id = RM.RCM_id AND RD.del_tag = 0
+                                      INNER JOIN House_apply HA ON HA.HA_id = RM.HA_id
+                                      WHERE RM.del_tag = 0 AND check_pay_type = 'N' AND cancel_type <> 'Y' AND bad_debt_type = 'N'
+                                      AND HA.CS_PID = @CS_PID 
+                                      ORDER BY RC_date, RC_count ";
 
-                                    ReceivableWinList.AddRange(queryResult);
+                                        parameters = new List<SqlParameter> { new SqlParameter("@CS_PID", fileRow.Col1) };
+                                        _dt = _adoData.ExecuteQuery(T_SQL, parameters);
 
+                                        if (_dt.Rows.Count > 0)
+                                        {
+                                            lisReceivableWinList = _dt.AsEnumerable().Select(row => new Receivable_Win_Inv
+                                            {
+                                                HS_id = row.Field<decimal>("HS_id"),
+                                                RCD_id = row.Field<decimal>("RCD_id"),
+                                                CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                                                CS_PID = row.Field<string>("CS_PID"),
+                                                RC_count = row.Field<int>("RC_count"),
+                                                roc_RC_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("RC_date").ToString("yyyy/MM/dd")),
+                                                amount_per_month = row.Field<decimal>("amount_per_month"),
+                                                interest = row.Field<decimal>("interest"),
+                                                Rmoney = row.Field<decimal>("Rmoney"),
+                                                HFees = 20,
+                                                Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
+                                                amount_total = row.Field<decimal>("amount_total"),
+                                                month_total = row.Field<int>("month_total"),
+                                                RecPayDate = Convert.ToDateTime(payDate), // 帶入檔名日期
+                                                Win_Msg = returnReason // 存入對象變數供後續判斷
+                                            }).ToList();
+                                        }
+                                    }
+                                    ReceivableWinList.AddRange(lisReceivableWinList);
                                 }
                             }
                         }
