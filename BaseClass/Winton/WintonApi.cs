@@ -240,6 +240,11 @@ namespace KF_WebAPI.BaseClass.Winton
         public string IsSuccess { get; set; }
         
     }
+
+    public class Receivable_Win_Inv_Chk : Receivable_Win_Inv
+    {
+        public decimal? ProCount { get; set; }
+    }
     public class Receivable_Win_Inv
     {
         public decimal HS_id { get; set; }
