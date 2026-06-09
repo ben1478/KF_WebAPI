@@ -4157,8 +4157,9 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             {
                 var T_SQL = @" select BankNo,AccountNo,Ach_Bank,A.CS_PID ,amount_per_month Amount
                                   from ACH_Setting AC 
-                                  Left Join Receivable_M M on AC.RCM_id=M.RCM_id 
-                                  Left Join House_apply A on M.HA_id=A.HA_id  where LaunchDate=@LaunchDate ";
+                                  left join Receivable_D D on AC.RCD_id=D.RCD_id
+								  left join Receivable_M M on D.RCM_id=M.RCM_id
+                                  Left Join House_apply A on M.HA_id=A.HA_id  where check_pay_type <> 'S' and LaunchDate=@LaunchDate ";
                 var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@LaunchDate", LaunchDate),
