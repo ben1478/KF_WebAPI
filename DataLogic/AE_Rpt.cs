@@ -4155,11 +4155,11 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             DataTable dt = new DataTable();
             try
             {
-                var T_SQL = @" select BankNo,AccountNo,Ach_Bank,A.CS_PID ,amount_per_month Amount
+                var T_SQL = @" select BankNo,AccountNo,Ach_Bank,A.CS_PID ,RC_amount,dbo.GetDateToChin(D.RC_date) RC_date
                                   from ACH_Setting AC 
                                   left join Receivable_D D on AC.RCD_id=D.RCD_id
 								  left join Receivable_M M on D.RCM_id=M.RCM_id
-                                  Left Join House_apply A on M.HA_id=A.HA_id  where check_pay_type <> 'S' and LaunchDate=@LaunchDate ";
+                                  Left Join House_apply A on M.HA_id=A.HA_id  where  LaunchDate=@LaunchDate ";
                 var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@LaunchDate", LaunchDate),
