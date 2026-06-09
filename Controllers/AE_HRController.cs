@@ -1168,10 +1168,10 @@ namespace KF_WebAPI.Controllers
 
         #region 個人出勤紀錄
         /// <summary>
-        /// 個人出勤紀錄年月範圍 AttendanceYYYYMMList/Attendance_report.asp?Self=Y
+        /// 個人出勤紀錄年月範圍 GetAttYMList/Attendance_report.asp?Self=Y
         /// </summary>
-        [HttpGet("AttendanceYYYYMMList")]
-        public ActionResult<ResultClass<string>> AttendanceYYYYMMList()
+        [HttpGet("GetAttYMList")]
+        public ActionResult<ResultClass<string>> GetAttYMList()
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -1336,7 +1336,6 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-
         /// <summary>
         /// 個人出勤紀錄Excel下載 Attendance_SExcel/Attendance_report.asp? Self = Y
         /// </ summary >
