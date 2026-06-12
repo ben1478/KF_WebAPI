@@ -16,6 +16,7 @@ using System.Drawing;
 using System.Dynamic;
 using System.Reflection;
 using System.Reflection.PortableExecutable;
+using System.Text;
 using System.Text.RegularExpressions;
 
 
@@ -4221,8 +4222,73 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
 
 
+        /// <summary>
+        /// 設定ACH
+        /// </summary>
+        /// <param name="LaunchDate"></param>
+        /// <param name="Ach_Bank"></param>
+        /// <param name="lisRCD_id"></param>
+        /// <param name="add_num"></param>
+        public void InsertACH_Setting(string LaunchDate, string Ach_Bank, List<string> lisRCD_id, string add_num)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            // 如果傳入的 List 為空，可能只需執行刪除，這裡預先防呆
+            if (lisRCD_id == null) lisRCD_id = new List<string>();
 
+            // 建議將資料庫連線或交易交給 Transaction 處理
+            // 假設您的 _adoData 支援 Transaction，以下為最標準、有效率且安全的寫法：
+            try
+            {
+                // 1. 先執行刪除舊資料
+                var deleteSQL = "DELETE FROM ACH_Setting WHERE LaunchDate = @LaunchDate AND Ach_Bank = @Ach_Bank";
+                var delParam = new List<SqlParameter>
+        {
+            new SqlParameter("@LaunchDate", LaunchDate),
+            new SqlParameter("@Ach_Bank", Ach_Bank)
+        };
+                _adoData.ExecuteNonQuery(deleteSQL, delParam);
 
+                // 如果連一個勾選的項目都沒有，刪除完就可以結束了
+                if (lisRCD_id.Count == 0) return;
+
+                // 2. 構建批次新增的 SQL
+                // 預期結構：INSERT INTO ACH_Setting (...) VALUES (@L_0, @R_0, ...), (@L_1, @R_1, ...)
+                var insertSQL = new StringBuilder("INSERT INTO ACH_Setting (LaunchDate, RCD_id, Ach_Bank, add_num) VALUES ");
+                var insertParams = new List<SqlParameter>();
+
+                for (int i = 0; i < lisRCD_id.Count; i++)
+                {
+                    // 動態為每一列生成唯一的參數名稱，防止重複
+                    string pLaunchDate = $"@LaunchDate_{i}";
+                    string pRCD_id = $"@RCD_id_{i}";
+                    string pAch_Bank = $"@Ach_Bank_{i}";
+                    string padd_num = $"@add_num_{i}";
+
+                    // 串接 SQL 語法
+                    insertSQL.Append($"({pLaunchDate}, {pRCD_id}, {pAch_Bank}, {padd_num})");
+
+                    // 如果不是最後一筆，後面要加上逗號
+                    if (i < lisRCD_id.Count - 1)
+                    {
+                        insertSQL.Append(", ");
+                    }
+
+                    // 加入參數陣列
+                    insertParams.Add(new SqlParameter(pLaunchDate, LaunchDate));
+                    insertParams.Add(new SqlParameter(pRCD_id, lisRCD_id[i])); // 正確傳入 RCD_id 的值
+                    insertParams.Add(new SqlParameter(pAch_Bank, Ach_Bank));
+                    insertParams.Add(new SqlParameter(padd_num, add_num));
+                }
+
+                // 3. 一次性寫入資料庫（高效能，只向 DB 發送一次 Request）
+                _adoData.ExecuteNonQuery(insertSQL.ToString(), insertParams);
+            }
+            catch (Exception)
+            {
+                // 這裡若有外層 Transaction 會自動 Rollback
+                throw;
+            }
+        }
 
     }
 }

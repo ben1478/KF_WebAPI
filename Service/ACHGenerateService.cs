@@ -7,6 +7,10 @@
     using KF_WebAPI.BaseClass.AE;
     using KF_WebAPI.DataLogic;
     using System.Data;
+    using Ionic.Zip;
+    using Microsoft.VisualBasic.FileIO;
+    using System.IO.Compression;
+    using ZipFile = Ionic.Zip.ZipFile;
 
     public class AchGenerateService
     {
@@ -18,18 +22,39 @@
         private const string SEND_ORG = "8070014";          // 發送單位代號 (永豐銀行通常為 8070014)
         private const string RECV_ORG = "9990250";          // 接收單位代號 (票交所 ACH 中心碼)
 
-        public (byte[] FileBytes, string FileName) GenerateAchTextFile(string LaunchDate)
+        public (byte[] FileBytes, string FileName) GenerateAchTextFile(string LaunchDate, string Ach_Bank)
         {
             // 1. 環境編碼註冊 (防止 Windows Server 環境無 Big5 字典)
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             Encoding big5 = Encoding.GetEncoding("big5");
+
             AE_Rpt _AE_Rpt = new AE_Rpt();
             DataTable m_dt = _AE_Rpt.GetRCMInfo(LaunchDate);
             string fileName = "";
-            string Ach_Bank = "";
+            byte[] finalResultBytes = null;
 
-            string minguoDate = "0"+(Convert.ToInt16( LaunchDate.Substring(0, 4)) - 1911).ToString()+ LaunchDate.Replace("/","").Substring(4);
+            // 您原本的變數宣告 (請確保這些常數/欄位在類別內有定義)
+            // string SEND_ORG = "..."; 
+            // string RECV_ORG = "...";
+            // string TX_CODE = "902";
+            // string ORIG_ACC = "...";
+            // string ORIG_ID = "52611690";
+
+            string minguoDate = "0" + (Convert.ToInt16(LaunchDate.Substring(0, 4)) - 1911).ToString() + LaunchDate.Replace("/", "").Substring(4);
             string timeStr = DateTime.Now.ToString("HHmmss");
+
+            // 建立暫存文字檔名稱（不論是否壓縮，都要定義壓縮檔內實體文字檔的名稱）
+            string textFileName = "";
+            if (Ach_Bank == "CTBC")
+            {
+                textFileName = "ACHP01_" + minguoDate + TX_CODE + ORIG_ID + ".txt";
+                fileName = "ACHP01_" + minguoDate + TX_CODE + ORIG_ID + ".zip"; // 中信最終輸出檔名改為 .zip
+            }
+            else
+            {
+                textFileName = ORIG_ID + "_P01_" + LaunchDate.Replace("/", "") + ".txt";
+                fileName = textFileName; // 永豐維持原本的 .txt 檔名
+            }
 
             using (MemoryStream ms = new MemoryStream())
             {
@@ -37,6 +62,7 @@
                 {
                     // 換行符號設定為 Windows 的 \r\n
                     sw.NewLine = "\r\n";
+
                     // =========================================================================
                     // 2. 產出【控制首錄 (BOF)】 - 長度 250 Bytes
                     // =========================================================================
@@ -61,10 +87,6 @@
 
                     foreach (DataRow dr in m_dt.Rows)
                     {
-                        // 轉換發動日期格式
-
-                        Ach_Bank = dr["Ach_Bank"].ToString();
-                       
                         StringBuilder nsd = new StringBuilder();
                         nsd.Append("N");                                    // 1     交易型態
                         nsd.Append("SD");                                   // 2-3   交易類別 (SD=代收)
@@ -77,18 +99,17 @@
 
                         // 金額處理：整數型態，10碼，靠右補零
                         long amtInt = (long)Math.Round(Convert.ToDecimal(dr["Amount"].ToString()), 0);
-                        nsd.Append(amtInt.ToString("D10"));               
+                        nsd.Append(amtInt.ToString("D10"));
 
                         if (Ach_Bank == "CTBC")
                         {
-                            nsd.Append("  B" + ORIG_ID.PadRightBytes(10));              
+                            nsd.Append("  B" + ORIG_ID.PadRightBytes(10));
                         }
                         else
                         {
-                            nsd.Append("00B" + ORIG_ID.PadRightBytes(10));            
+                            nsd.Append("00B" + ORIG_ID.PadRightBytes(10));
                         }
-                       
-                      
+
                         nsd.Append(dr["CS_PID"].ToString().PadRightBytes(10));
 
                         if (Ach_Bank == "CTBC")
@@ -101,7 +122,7 @@
                             nsd.Append(0.ToString("D16"));
                         }
 
-                       
+
                         nsd.Append(" ");
                         nsd.Append(dr["CS_PID"].ToString().PadRightBytes(10));
                         nsd.Append("".PadRightBytes(60));
@@ -127,7 +148,7 @@
                     eof.Append(totalRecords.ToString("D8"));                // 32-39 總筆數 (8碼，靠右補零)
 
                     long totalAmtLong = (long)Math.Round(totalAmount, 0);
-                    eof.Append(totalAmtLong.ToString("D16"));               // 40-54 總金額 (15碼，靠右補零)
+                    eof.Append(totalAmtLong.ToString("D16"));               // 40-54 總金額 (16碼，靠右補零)
 
                     // 55-250 剩餘空間補空白 (196 Bytes)
                     string eofLine = eof.ToString().PadRightBytes(250);
@@ -135,17 +156,51 @@
 
                     sw.Flush();
                 }
+
+                // 取得純文字檔的 byte 陣列
+                byte[] textFileBytes = ms.ToArray();
+
+                // =========================================================================
+                // 5. 判斷是否需要進行加密壓縮 (中信銀行情境)
+                // =========================================================================
                 if (Ach_Bank == "CTBC")
                 {
-                    fileName = "ACHP01_" + minguoDate + TX_CODE + ORIG_ID + ".txt";
+                    using (MemoryStream zipMs = new MemoryStream())
+                    {
+                        using (ZipFile zip = new ZipFile())
+                        {
+                            // 設定 Zip 內部的檔名與檔名編碼支援
+                            zip.AlternateEncoding = big5;
+                            zip.AlternateEncodingUsage = ZipOption.AsNecessary;
+
+                            // 關鍵步驟：設定加密密碼
+                            zip.Password = "a52611690";
+
+                            // 設定加密演算法 (使用標準 ZipCrypto 相容性最高，若銀行要求進階加密可換成 EncryptionAlgorithm.WinZipAes256)
+                            zip.Encryption = EncryptionAlgorithm.PkzipWeak;
+
+                            // 將剛剛寫好的文字檔 byte 陣列加入壓縮檔內
+                            zip.AddEntry(textFileName, textFileBytes);
+
+                            // 儲存壓縮流
+                            zip.Save(zipMs);
+                        }
+                        finalResultBytes = zipMs.ToArray();
+                    }
                 }
                 else
                 {
-                    fileName = ORIG_ID+"_P01_" + LaunchDate.Replace("/", "") + ".txt";
+                    // 非中信銀行（永豐），直接回傳原始文字檔 Byte 陣列
+                    finalResultBytes = textFileBytes;
                 }
-                return (ms.ToArray(), fileName);
+
+                return (finalResultBytes, fileName);
             }
         }
+
+
+
+
     }
 
     public static class StringByteExtensions

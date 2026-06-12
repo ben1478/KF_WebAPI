@@ -6971,10 +6971,10 @@ namespace KF_WebAPI.Controllers
         /// <param name="input"></param>
         /// <returns></returns>
         [HttpPost("GenerateACHFile")]
-        public IActionResult GenerateACHFile(string LaunchDate)
+        public IActionResult GenerateACHFile(string LaunchDate, string Ach_Bank)
         {
             var service = new AchGenerateService();
-            var Result = service.GenerateAchTextFile(LaunchDate);
+            var Result = service.GenerateAchTextFile(LaunchDate, Ach_Bank);
             byte[] fileBytes = Result.FileBytes;
            // 檔名規格配合：52611690_P01_yyyyMMdd.txt
            string outputFileName = Result.FileName;
@@ -7067,6 +7067,30 @@ namespace KF_WebAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// 設定ACH
+        /// </summary>
+        [HttpPost]
+        [Route("InsertACH_Setting")]
+        public ActionResult<ResultClass<string>> InsertACH_Setting([FromBody] ACH_Setting input)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                 _Rpt.InsertACH_Setting(input.ACH_DATE, input.Ach_Bank, input.lisRCD_id, input.add_num);
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = "";
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        
 
         #endregion
 
