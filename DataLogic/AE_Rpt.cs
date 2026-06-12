@@ -4145,9 +4145,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             }
         }
 
-
-
-        /// <summary>
+                /// <summary>
         /// 取得貸款相關資訊
         /// </summary>
         public DataTable GetRCMInfo(string LaunchDate)
@@ -4172,6 +4170,58 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             }
             return dt;
         }
+
+
+        public ResultClass<string> GetACH_Setting(string ACH_DATE)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"select case when Ach_State <> 'FS' then 'ACH未設定' else '' end Ach_DESC ,RCD_id,proName,dbo.GetDateToChin(ACH_DATE)dis_ACH_DATE,dbo.GetDateToChin(RC_date)disRC_date,format(ACH_DATE,'yyyy-MM-dd') ACH_DATE,RC_date,CS_name,RC_amount,isSetting from (
+                                select  M.Ach_State, D.RCD_id, proName,[dbo].[fn_GetWorkday]( DATEADD(day,-1, RC_date)) ACH_DATE,format(RC_date,'yyyy-MM-dd')RC_date, M.HA_id,M.HS_id,A.CS_name,D.RC_amount,check_pay_type
+                                ,Case when ACH.RCD_id is null then '0' else '1' end isSetting  from Receivable_D D 
+                                left join Receivable_M M on D.RCM_ID=M.RCM_id
+                                Left join ACH_Setting ACH on D.RCD_id=ACH.RCD_id
+                                left join House_apply A on M.HA_id=A.HA_id
+                                left join House_sendcase H on A.HA_id=H.HA_id
+                                LEFT JOIN House_pre_project P ON P.HP_project_id = H.HP_project_id
+                                LEFT JOIN (select item_D_code,item_D_name proName from Item_list where item_M_code='project_title' and item_D_type='Y') I
+                                on project_title=item_D_code
+                                where D.del_tag='0' and  M.del_tag='0'   AND P.del_tag='0'and check_pay_type<>'S'
+                                and project_title in ( 'PJ00046','PJ00047','PJ00048')
+                                and RC_date between DATEADD(month,-1,@ACH_DATE) and DATEADD(DAY,5,@ACH_DATE)
+                                ) A where  ACH_DATE =@ACH_DATE
+                                order by RC_date";
+                parameters.Add(new SqlParameter("@ACH_DATE", ACH_DATE));
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
+                    RCD_id = row.Field<decimal>("RCD_id"),
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    proName = row.Field<string>("proName"),
+                    dis_ACH_DATE = row.Field<string>("dis_ACH_DATE"),
+                    disRC_date = row.Field<string>("disRC_date"),
+                    ACH_DATE = row.Field<string>("ACH_DATE"),
+                    RC_date = row.Field<string>("RC_date"),
+                    isSetting = row.Field<string>("isSetting"),
+                    RC_amount = row.Field<decimal>("RC_amount"),
+                    Ach_DESC = row.Field<string>("Ach_DESC")
+                }).ToList();
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+
+                return resultClass;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+
+
+
 
 
     }

@@ -6963,7 +6963,8 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-
+        #endregion
+        #region ACH相關
         /// <summary>
         /// 產生永豐銀行ACH設定檔
         /// </summary>
@@ -7045,6 +7046,27 @@ namespace KF_WebAPI.Controllers
                 return Task.FromResult<IActionResult>(StatusCode(500, resultClass));
             }
         }
+
+        /// <summary>
+        /// 取得ACH_Setting的資料
+        /// </summary>
+        [HttpGet("GetACH_Setting")]
+        public ActionResult<ResultClass<string>> GetACH_Setting(string ACH_DATE)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                resultClass = _Rpt.GetACH_Setting(ACH_DATE);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
 
         #endregion
 

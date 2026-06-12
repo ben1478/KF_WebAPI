@@ -1451,6 +1451,53 @@ namespace KF_WebAPI.Controllers
         }
 
 
+
+        [HttpGet("GetCalendarByMonth")]
+        public ActionResult<ResultClass<string>> GetCalendarByMonth(string YYYYMM,string Ach_Bank)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                string strSQL = @"
+                               WITH DateRange AS 
+                                (
+	                                SELECT TOP 30 
+	                                DATEADD(DAY, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1, @YYYYMM+'-01') AS DateValue
+	                                FROM sys.objects
+                                )
+                                  SELECT D.DateValue,CASE WHEN H.HDate IS NOT NULL THEN 1 ELSE 0 END AS IsHoliday,isnull(RC_amount,0)RC_amount
+                                            FROM DateRange D
+                                            LEFT JOIN Holidays H ON FORMAT(D.DateValue, 'yyyy/MM/dd') = H.HDate
+			                                LEFT JOIN (
+						                                select LaunchDate ,sum(RC_amount)RC_amount
+                                                        from ACH_Setting AC 
+                                                        left join Receivable_D D on AC.RCD_id=D.RCD_id
+						                                left join Receivable_M M on D.RCM_id=M.RCM_id
+                                                        Left Join House_apply A on M.HA_id=A.HA_id
+						                                where AC.Ach_Bank=@Ach_Bank
+						                                group by LaunchDate
+			                                ) A on LaunchDate= D.DateValue ORDER BY D.DateValue";
+
+                var paramsList = new List<SqlParameter> 
+                {
+                    new SqlParameter("@YYYYMM", YYYYMM),
+                    new SqlParameter("@Ach_Bank", Ach_Bank)
+                };
+
+                DataTable dt = _db.ExecuteQuery(strSQL, paramsList);
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dt);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = ex.Message;
+                return StatusCode(500, resultClass);
+            }
+        }
+
     }
 
 }
