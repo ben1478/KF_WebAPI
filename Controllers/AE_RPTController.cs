@@ -7070,12 +7070,12 @@ namespace KF_WebAPI.Controllers
         /// 取得ACH_Setting的資料
         /// </summary>
         [HttpGet("GetACH_Setting")]
-        public ActionResult<ResultClass<string>> GetACH_Setting(string ACH_DATE)
+        public ActionResult<ResultClass<string>> GetACH_Setting(string ACH_DATE, string Ach_Bank)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
-                resultClass = _Rpt.GetACH_Setting(ACH_DATE);
+                resultClass = _Rpt.GetACH_Setting(ACH_DATE, Ach_Bank);
                 return Ok(resultClass);
             }
             catch (Exception ex)

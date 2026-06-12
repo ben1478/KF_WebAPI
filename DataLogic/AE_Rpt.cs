@@ -4173,29 +4173,33 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
         }
 
 
-        public ResultClass<string> GetACH_Setting(string ACH_DATE)
+        public ResultClass<string> GetACH_Setting(string ACH_DATE, string Ach_Bank)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
+                // 1. 查詢當前選擇日期的 ACH 詳細清單 (您原本的 SQL)
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"select case when Ach_State <> 'FS' then 'ACH未設定' else '' end Ach_DESC ,RCD_id,proName,dbo.GetDateToChin(ACH_DATE)dis_ACH_DATE,dbo.GetDateToChin(RC_date)disRC_date,format(ACH_DATE,'yyyy-MM-dd') ACH_DATE,RC_date,CS_name,RC_amount,isSetting from (
-                                select  M.Ach_State, D.RCD_id, proName,[dbo].[fn_GetWorkday]( DATEADD(day,-1, RC_date)) ACH_DATE,format(RC_date,'yyyy-MM-dd')RC_date, M.HA_id,M.HS_id,A.CS_name,D.RC_amount,check_pay_type
-                                ,Case when ACH.RCD_id is null then '0' else '1' end isSetting  from Receivable_D D 
-                                left join Receivable_M M on D.RCM_ID=M.RCM_id
-                                Left join ACH_Setting ACH on D.RCD_id=ACH.RCD_id
-                                left join House_apply A on M.HA_id=A.HA_id
-                                left join House_sendcase H on A.HA_id=H.HA_id
-                                LEFT JOIN House_pre_project P ON P.HP_project_id = H.HP_project_id
-                                LEFT JOIN (select item_D_code,item_D_name proName from Item_list where item_M_code='project_title' and item_D_type='Y') I
-                                on project_title=item_D_code
-                                where D.del_tag='0' and  M.del_tag='0'   AND P.del_tag='0'and check_pay_type<>'S'
-                                and project_title in ( 'PJ00046','PJ00047','PJ00048')
-                                and RC_date between DATEADD(month,-1,@ACH_DATE) and DATEADD(DAY,5,@ACH_DATE)
-                                ) A where  ACH_DATE =@ACH_DATE
-                                order by RC_date";
+                var T_SQL = @"select case when Ach_State <> 'FS' then 'ACH未設定' else '' end Ach_DESC ,RCD_id,proName,dbo.GetDateToChin(ACH_DATE)dis_ACH_DATE,dbo.GetDateToChin(RC_date)disRC_date,format(ACH_DATE,'yyyy-MM-dd') ACH_DATE,RC_date,CS_name,RC_amount,isSetting,CS_PID from (
+                        select  M.Ach_State, D.RCD_id, proName,[dbo].[fn_GetWorkday]( DATEADD(day,-1, RC_date)) ACH_DATE,format(RC_date,'yyyy-MM-dd')RC_date, M.HA_id,M.HS_id,A.CS_name,D.RC_amount,check_pay_type
+                        ,Case when ACH.RCD_id is null then '0' else '1' end isSetting,CS_PID  from Receivable_D D 
+                        left join Receivable_M M on D.RCM_ID=M.RCM_id
+                        Left join ACH_Setting ACH on D.RCD_id=ACH.RCD_id
+                        left join House_apply A on M.HA_id=A.HA_id
+                        left join House_sendcase H on A.HA_id=H.HA_id
+                        LEFT JOIN House_pre_project P ON P.HP_project_id = H.HP_project_id
+                        LEFT JOIN (select item_D_code,item_D_name proName from Item_list where item_M_code='project_title' and item_D_type='Y') I
+                        on project_title=item_D_code
+                        where D.del_tag='0' and  M.del_tag='0'   AND P.del_tag='0'and check_pay_type<>'S'
+                        and project_title in ( 'PJ00046','PJ00047','PJ00048')  and (Ach_Bank is null or Ach_Bank=@Ach_Bank)
+                        and RC_date between DATEADD(month,-1,@ACH_DATE) and DATEADD(DAY,5,@ACH_DATE)
+                        ) A where  ACH_DATE =@ACH_DATE
+                        order by RC_date";
+
                 parameters.Add(new SqlParameter("@ACH_DATE", ACH_DATE));
-                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
+                parameters.Add(new SqlParameter("@Ach_Bank", Ach_Bank));
+
+                var currentList = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
                     RCD_id = row.Field<decimal>("RCD_id"),
                     CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
                     proName = row.Field<string>("proName"),
@@ -4205,17 +4209,44 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                     RC_date = row.Field<string>("RC_date"),
                     isSetting = row.Field<string>("isSetting"),
                     RC_amount = row.Field<decimal>("RC_amount"),
+                    CS_PID = row.Field<string>("CS_PID"),
                     Ach_DESC = row.Field<string>("Ach_DESC")
                 }).ToList();
 
+                // 2. 查詢「上個月同一天」已設定成功的客戶 CS_PID 清單
+                var lastMonthParameters = new List<SqlParameter>();
+                var lastMonthSQL = @"SELECT DISTINCT A.CS_PID 
+                             FROM ACH_Setting S
+                             INNER JOIN Receivable_D D ON S.RCD_id = D.RCD_id
+                             INNER JOIN Receivable_M M ON D.RCM_ID = M.RCM_id
+                             INNER JOIN House_apply A ON M.HA_id = A.HA_id
+                             WHERE S.LaunchDate = DATEADD(month, -1, @ACH_DATE) 
+                               AND S.Ach_Bank = @Ach_Bank";
+
+                lastMonthParameters.Add(new SqlParameter("@ACH_DATE", ACH_DATE));
+                lastMonthParameters.Add(new SqlParameter("@Ach_Bank", Ach_Bank));
+
+                List<string> lastMonthPids = _adoData.ExecuteQuery(lastMonthSQL, lastMonthParameters)
+                                                     .AsEnumerable()
+                                                     .Select(row => row.Field<string>("CS_PID"))
+                                                     .Where(pid => !string.IsNullOrEmpty(pid))
+                                                     .ToList();
+
+                // 3. 封裝成建議的組合格式
+                var finalResult = new
+                {
+                    CurrentList = currentList,
+                    LastMonthPids = lastMonthPids
+                };
+
                 resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(result);
+                // 序列化包含兩組資料的匿名物件，完美對接前端修改後的 OpenSetting(currentData, ACH_DATE, lastMonthPids)
+                resultClass.objResult = JsonConvert.SerializeObject(finalResult);
 
                 return resultClass;
             }
             catch (Exception)
             {
-
                 throw;
             }
         }
