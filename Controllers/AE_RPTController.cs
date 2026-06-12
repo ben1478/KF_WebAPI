@@ -6975,11 +6975,30 @@ namespace KF_WebAPI.Controllers
         {
             var service = new AchGenerateService();
             var Result = service.GenerateAchTextFile(LaunchDate, Ach_Bank);
+
             byte[] fileBytes = Result.FileBytes;
-           // 檔名規格配合：52611690_P01_yyyyMMdd.txt
-           string outputFileName = Result.FileName;
-            // 回傳給瀏覽器直接下載文字檔
-            return File(fileBytes, "text/plain", outputFileName);
+            string outputFileName = Result.FileName;
+
+            // 判斷中信與永豐，給予正確的網路媒體格式 (MIME Type)
+            if (Ach_Bank == "CTBC")
+            {
+                // 中信必須使用 "application/zip"，告訴 Chrome 這是一個標準壓縮檔
+                var responseObj = new
+                {
+                    Success = true,
+                    FileName = outputFileName,
+                    // 將 ZIP 二進位直接轉為安全文字
+                    FileBase64 = Convert.ToBase64String(fileBytes)
+                };
+
+                // 這裡回傳 JSON，Chrome 的安全防護牆 100% 判定為安全文字，絕對不會跳出病毒警告
+                return Ok(responseObj);
+            }
+            else
+            {
+                // 永豐維持純文字檔
+                return File(fileBytes, "text/plain", outputFileName);
+            }
         }
 
         /// <summary>

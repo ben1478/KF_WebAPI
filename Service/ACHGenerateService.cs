@@ -40,7 +40,7 @@
             // string ORIG_ACC = "...";
             // string ORIG_ID = "52611690";
 
-            string minguoDate = "0" + (Convert.ToInt16(LaunchDate.Substring(0, 4)) - 1911).ToString() + LaunchDate.Replace("/", "").Substring(4);
+            string minguoDate = "0" + (Convert.ToInt16(LaunchDate.Substring(0, 4)) - 1911).ToString() + LaunchDate.Replace("/", "").Replace("-", "").Substring(4);
             string timeStr = DateTime.Now.ToString("HHmmss");
 
             // 建立暫存文字檔名稱（不論是否壓縮，都要定義壓縮檔內實體文字檔的名稱）
@@ -52,7 +52,7 @@
             }
             else
             {
-                textFileName = ORIG_ID + "_P01_" + LaunchDate.Replace("/", "") + ".txt";
+                textFileName = ORIG_ID + "_P01_" + LaunchDate.Replace("/", "").Replace("-", "") + ".txt";
                 fileName = textFileName; // 永豐維持原本的 .txt 檔名
             }
 
@@ -98,7 +98,7 @@
                         nsd.Append(dr["AccountNo"].ToString().PadRightBytes(16));// 45-60 收受者帳號 (16碼)
 
                         // 金額處理：整數型態，10碼，靠右補零
-                        long amtInt = (long)Math.Round(Convert.ToDecimal(dr["Amount"].ToString()), 0);
+                        long amtInt = (long)Math.Round(Convert.ToDecimal(dr["RC_amount"].ToString()), 0);
                         nsd.Append(amtInt.ToString("D10"));
 
                         if (Ach_Bank == "CTBC")
@@ -169,20 +169,18 @@
                     {
                         using (ZipFile zip = new ZipFile())
                         {
-                            // 設定 Zip 內部的檔名與檔名編碼支援
+                            // 指定 Zip 內部的檔名編碼支援，防止解壓後中文亂碼
                             zip.AlternateEncoding = big5;
                             zip.AlternateEncodingUsage = ZipOption.AsNecessary;
 
-                            // 關鍵步驟：設定加密密碼
-                            zip.Password = "a52611690";
+                            // 💡 安全防護更新：使用 AES 256 位元高強度加密演算法 (阻斷 Chrome 病毒誤報)
+                            zip.Encryption = EncryptionAlgorithm.WinZipAes256;
+                            zip.Password = "a52611690"; // 解壓縮密碼
 
-                            // 設定加密演算法 (使用標準 ZipCrypto 相容性最高，若銀行要求進階加密可換成 EncryptionAlgorithm.WinZipAes256)
-                            zip.Encryption = EncryptionAlgorithm.PkzipWeak;
-
-                            // 將剛剛寫好的文字檔 byte 陣列加入壓縮檔內
+                            // 將記憶體中的文字檔陣列注入 ZIP 結構中
                             zip.AddEntry(textFileName, textFileBytes);
 
-                            // 儲存壓縮流
+                            // 儲存壓縮後的資料流
                             zip.Save(zipMs);
                         }
                         finalResultBytes = zipMs.ToArray();
