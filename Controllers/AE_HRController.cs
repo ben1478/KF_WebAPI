@@ -1206,7 +1206,7 @@ namespace KF_WebAPI.Controllers
         /// 個人出勤紀錄 Attendance_Query/Attendance_report.asp?Self=Y
         /// </summary>
         [HttpPost("Attendance_SQuery")]
-        public ActionResult<ResultClass<string>> Attendance_SQuery(Attendance_req model)
+        public ActionResult<ResultClass<string>> Attendance_SQuery(string YM,int AttStatus)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -1240,7 +1240,7 @@ namespace KF_WebAPI.Controllers
                     and FR_date_E
                     where convert( varchar,convert(datetime, @yyyy + [attendance_date]),111
                     ) not in ( SELECT convert(varchar, convert(datetime, [HDate]), 111) FROM Holidays )";
-                switch (model.AttStatus)
+                switch (AttStatus)
                 {
                     case 1:
                         T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00')";
@@ -1260,10 +1260,10 @@ namespace KF_WebAPI.Controllers
                 }
                 T_SQL += " AND userID = @userID AND yyyymm = @yyyymm order by";
                 T_SQL += " u_BC,userID,attendance_date";
-                var YYYY = (model.yyyymm).Substring(0, 4) + "/";
+                var YYYY = YM.Substring(0, 4) + "/";
                 parameters.Add(new SqlParameter("@yyyy", YYYY));
                 parameters.Add(new SqlParameter("@userID", User_Num));
-                parameters.Add(new SqlParameter("@yyyymm", model.yyyymm));
+                parameters.Add(new SqlParameter("@yyyymm", YM));
                 #endregion
                 DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
@@ -2121,6 +2121,7 @@ namespace KF_WebAPI.Controllers
             {
                
                 ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
                 #region SQL
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"
@@ -2167,7 +2168,7 @@ namespace KF_WebAPI.Controllers
                         item_sort = row.Field<int>("item_sort"),
                         U_Na = row.Field<string>("U_Na"),
                         userID = row.Field<string>("userID"),
-                        user_name = row.Field<string>("user_name"),
+                        user_name = _Fun.DeCodeBNWords(row.Field<string>("user_name")),
                         attendance_date = row.Field<string>("attendance_date"),
                         work_time = row.Field<string>("work_time"),
                         Late = row.Field<int>("Late"),
@@ -2718,7 +2719,7 @@ namespace KF_WebAPI.Controllers
                     U_PFT_name = row.Field<string>("U_PFT_name"),
                     R_name = _FuncHandler.DeCodeBNWords(row.Field<string>("R_name")),
                     U_num = row.Field<string>("U_num"),
-                    U_name = row.Field<string>("U_name"),
+                    U_name = _FuncHandler.DeCodeBNWords(row.Field<string>("U_name")),
                     U_agent_name = row.Field<string>("U_agent_name"),
                     U_leader_1_name = row.Field<string>("U_leader_1_name"),
                     U_leader_2_name = row.Field<string>("U_leader_2_name"),

@@ -14,11 +14,12 @@ namespace KF_WebAPI.Controllers
     [Route("[controller]")]
     public class AE_SDController : ControllerBase
     {
+        #region 呆帳通用
         /// <summary>
         /// 取得尚未列入呆帳清單的呆帳資料
         /// </summary>
         [HttpGet("Fina_BDebt_LQuery")]
-        public ActionResult<ResultClass<string>> Fina_BDebt_LQuery()
+        public ActionResult<ResultClass<string>> Fina_BDebt_LQuery(string strType)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -31,10 +32,25 @@ namespace KF_WebAPI.Controllers
                               from Receivable_M M
                               Inner join Receivable_D D on M.RCM_id = D.RCM_id
                               Inner join House_apply H on H.HA_id = M.HA_id
+                              Left join view_HS_Base V on V.HS_id = M.HS_id
                               OUTER APPLY ( SELECT TOP 1 RemainingPrincipal FROM Receivable_D WHERE RCM_id = M.RCM_id AND check_pay_type = 'Y' 
                               ORDER BY RC_count DESC ) RD
                               where D.bad_debt_type='Y' and D.check_pay_type='N' and D.cancel_type='N'
                               and not exists(select 1 from StagnationDebt_M where rcm_id = M.RCM_id and del_tag='0')";
+
+
+                switch (strType)
+                {
+                    case "House":
+                        T_SQL += @" and V.project_title not in ('PJ00046','PJ00047','PJ00048') ";
+                        break;
+                    case "Moto":
+                        T_SQL += @" and V.project_title in ('PJ00046','PJ00047') ";
+                        break;
+                    case "Car":
+                        T_SQL += @" and V.project_title in ('PJ00048') ";
+                        break;
+                }
                 #endregion
                 var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new
                 {
@@ -44,6 +60,56 @@ namespace KF_WebAPI.Controllers
                     sett_AMT = row.Field<int>("sett_AMT"),
                     amount_total = row.Field<decimal>("amount_total"),
                     RemainingPrincipal = row.Field<decimal>("RemainingPrincipal")
+                }).ToList();
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
+        /// 指定尚未列入呆帳清單的呆帳資料
+        /// </summary>
+        [HttpGet("Fina_BDebt_Spec_SQuery")]
+        public ActionResult<ResultClass<string>> Fina_BDebt_Spec_SQuery(string? Name, string? FID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
+                #region SQL
+                var T_SQL = @"select distinct H.CS_name,H.CS_PID,M.RCM_id,M.sett_AMT,M.amount_total,null as RemainingPrincipal 
+                              from Receivable_M M
+                              Inner join Receivable_D D on M.RCM_id = D.RCM_id
+                              Inner join House_apply H on H.HA_id = M.HA_id
+                              where not exists(select 1 from StagnationDebt_M where rcm_id = M.RCM_id and del_tag='0')";
+                var parameters = new List<SqlParameter>();
+                if (!string.IsNullOrEmpty(Name))
+                {
+                    T_SQL += " AND H.CS_name LIKE '%' + @Name + '%'  ";
+                    parameters.Add(new SqlParameter("@Name", Name));
+                }
+                if (!string.IsNullOrEmpty(FID))
+                {
+                    T_SQL += " AND H.CS_PID=@FID";
+                    parameters.Add(new SqlParameter("@FID", FID));
+                }
+                #endregion
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
+                {
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    RCM_id = row.Field<decimal>("RCM_id"),
+                    sett_AMT = row.Field<int?>("sett_AMT") ?? 0,
+                    amount_total = row.Field<decimal?>("amount_total") ?? 0,
+                    RemainingPrincipal = row.Field<decimal?>("RemainingPrincipal") ?? 0
                 }).ToList();
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(result);
@@ -71,7 +137,7 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var T_SQL = @"Insert into StagnationDebt_M(RCM_id,amount_total,RemainingPrincipal,total_due_amount,total_paid_amount,total_bad_debt,remarks,is_close,del_tag,add_date,add_num,add_ip) 
                               Values (@RCM_id,@amount_total,@RemainingPrincipal,@total_due_amount,@total_paid_amount,@total_bad_debt,@remarks,'N','0',getdate(),@add_num,@add_ip)";
-                var parameters = new List<SqlParameter>() 
+                var parameters = new List<SqlParameter>()
                 {
                     new SqlParameter("@RCM_id",model.RCM_id),
                     new SqlParameter("@amount_total",model.amount_total),
@@ -106,60 +172,6 @@ namespace KF_WebAPI.Controllers
             }
         }
         /// <summary>
-        /// 取得呆帳催繳清單
-        /// </summary>
-        [HttpGet("SD_M_LQuery")]
-        public ActionResult<ResultClass<string>> SD_M_LQuery()
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
-
-            try
-            {
-                ADOData _adoData = new ADOData();
-                var _Fun = new FuncHandler();
-                #region SQL
-                var T_SQL = @"SELECT SM.sdm_id,HA.CS_name,HA.CS_PID,
-                              FORMAT(SM.total_bad_debt - ISNULL(PD.total_payment, 0), 'N0') AS str_total_bad_debt,SM.remarks,
-                              ISNULL(CAST(YEAR(MAX_SD.latest_collection_date) - 1911 AS varchar) + '/' 
-                              + RIGHT('0' + CAST(MONTH(MAX_SD.latest_collection_date) AS varchar), 2) + '/' 
-                              + RIGHT('0' + CAST(DAY(MAX_SD.latest_collection_date) AS varchar), 2), 
-                              '') AS collection_date_roc,
-                              FORMAT(SM.amount_total, 'N0') AS str_amount_total,
-                              FORMAT(SM.RemainingPrincipal, 'N0') AS str_RemainingPrincipal,
-                              CASE WHEN SM.is_close = 'Y' THEN '已結清' ELSE '未結清' END AS str_close
-                              FROM StagnationDebt_M SM
-                              INNER JOIN Receivable_M RM ON RM.RCM_id = SM.rcm_id
-                              INNER JOIN House_apply HA ON HA.HA_id = RM.HA_id
-                              LEFT JOIN (SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id
-                              ) PD ON PD.sdm_id = SM.sdm_id
-                              LEFT JOIN (SELECT sdm_id, MAX(collection_date) AS latest_collection_date FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id
-                              ) MAX_SD ON MAX_SD.sdm_id = SM.sdm_id
-                              WHERE SM.del_tag = '0'";
-                #endregion
-                var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new
-                {
-                    sdm_id = row.Field<int>("sdm_id"),
-                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
-                    CS_PID = row.Field<string>("CS_PID"),
-                    str_total_bad_debt = row.Field<string>("str_total_bad_debt"),
-                    remarks = row.Field<string>("remarks"),
-                    collection_date_roc = row.Field<string>("collection_date_roc"),
-                    str_amount_total = row.Field<string>("str_amount_total"),
-                    str_RemainingPrincipal = row.Field<string>("str_RemainingPrincipal"),
-                    str_close = row.Field<string>("str_close")
-                }).ToList();
-                resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(result);
-                return Ok(resultClass);
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
-            }
-        }
-        /// <summary>
         /// 取得呆帳單筆紀錄
         /// </summary>
         [HttpGet("SD_M_SQuery")]
@@ -180,7 +192,7 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@sdm_id",sdm_id)
                 };
                 #endregion
-                var result = _adoData.ExecuteQuery(T_SQL,parameters).AsEnumerable().Select(row => new
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
                 {
                     CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
                     RemainingPrincipal = row.Field<decimal>("RemainingPrincipal"),
@@ -288,7 +300,7 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@sdm_id",sdm_id)
                 };
                 #endregion
-                var model = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new StagnationDebt_Res 
+                var model = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new StagnationDebt_Res
                 {
                     sdm_id = row.Field<int>("sdm_id"),
                     str_amount_total = row.Field<string>("str_amount_total"),
@@ -303,7 +315,7 @@ namespace KF_WebAPI.Controllers
                     HG_PID = row.Field<string>("HG_PID")
                 }).FirstOrDefault();
 
-                model.SDList = _adoData.ExecuteQuery(T_SQL_D, parameters_d).AsEnumerable().Select(row => new StagnationDebt_D 
+                model.SDList = _adoData.ExecuteQuery(T_SQL_D, parameters_d).AsEnumerable().Select(row => new StagnationDebt_D
                 {
                     sdd_id = row.Field<int>("sdd_id"),
                     str_payment_amount = row.Field<string>("str_payment_amount"),
@@ -337,7 +349,7 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var T_SQL = @"Insert into StagnationDebt_D (sdm_id,payment_amount,collection_date,collection_not,del_tag,add_date,add_num,add_ip)
                               Values (@sdm_id,@payment_amount,@collection_date,@collection_not,'0',getdate(),@add_num,@add_ip)";
-                var parameters = new List<SqlParameter>() 
+                var parameters = new List<SqlParameter>()
                 {
                     new SqlParameter("@sdm_id",model.sdm_id),
                     new SqlParameter("@payment_amount", model.payment_amount ?? (object)DBNull.Value),
@@ -470,7 +482,7 @@ namespace KF_WebAPI.Controllers
         /// 刪除呆帳催繳單筆紀錄
         /// </summary>
         [HttpGet("SD_D_Del")]
-        public ActionResult<ResultClass<string>> SD_D_Del(string User,string sdd_id)
+        public ActionResult<ResultClass<string>> SD_D_Del(string User, string sdd_id)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
@@ -550,6 +562,182 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+        #endregion
+
+        #region 房貸呆帳催繳
+        /// <summary>
+        /// 取得房貸呆帳催繳清單
+        /// </summary>
+        [HttpGet("SD_M_LQuery")]
+        public ActionResult<ResultClass<string>> SD_M_LQuery()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
+                #region SQL
+                var T_SQL = @"SELECT SM.sdm_id,HA.CS_name,HA.CS_PID,
+                              FORMAT(SM.total_bad_debt - ISNULL(PD.total_payment, 0), 'N0') AS str_total_bad_debt,SM.remarks,
+                              ISNULL(CAST(YEAR(MAX_SD.latest_collection_date) - 1911 AS varchar) + '/' 
+                              + RIGHT('0' + CAST(MONTH(MAX_SD.latest_collection_date) AS varchar), 2) + '/' 
+                              + RIGHT('0' + CAST(DAY(MAX_SD.latest_collection_date) AS varchar), 2), 
+                              '') AS collection_date_roc,
+                              FORMAT(SM.amount_total, 'N0') AS str_amount_total,
+                              FORMAT(SM.RemainingPrincipal, 'N0') AS str_RemainingPrincipal,
+                              CASE WHEN SM.is_close = 'Y' THEN '已結清' ELSE '未結清' END AS str_close
+                              FROM StagnationDebt_M SM
+                              INNER JOIN Receivable_M RM ON RM.RCM_id = SM.rcm_id
+                              INNER JOIN view_HS_Base VS ON VS.HS_id = RM.HS_id and VS.project_title NOT IN ('PJ00046','PJ00047','PJ00048')
+                              INNER JOIN House_apply HA ON HA.HA_id = RM.HA_id
+                              LEFT JOIN (SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id
+                              ) PD ON PD.sdm_id = SM.sdm_id
+                              LEFT JOIN (SELECT sdm_id, MAX(collection_date) AS latest_collection_date FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id
+                              ) MAX_SD ON MAX_SD.sdm_id = SM.sdm_id
+                              WHERE SM.del_tag = '0'";
+                #endregion
+                var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new
+                {
+                    sdm_id = row.Field<int>("sdm_id"),
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    str_total_bad_debt = row.Field<string>("str_total_bad_debt"),
+                    remarks = row.Field<string>("remarks"),
+                    collection_date_roc = row.Field<string>("collection_date_roc"),
+                    str_amount_total = row.Field<string>("str_amount_total"),
+                    str_RemainingPrincipal = row.Field<string>("str_RemainingPrincipal"),
+                    str_close = row.Field<string>("str_close")
+                }).ToList();
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
+
+        #region 機車貸呆帳催繳
+        /// <summary>
+        /// 取得機車貸呆帳催繳清單
+        /// </summary>
+        [HttpGet("SD_Moto_LQuery")]
+        public ActionResult<ResultClass<string>> SD_Moto_LQuery()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
+                #region SQL
+                var T_SQL = @"SELECT SM.sdm_id,HA.CS_name,HA.CS_PID,
+                              FORMAT(SM.total_bad_debt - ISNULL(PD.total_payment, 0), 'N0') AS str_total_bad_debt,SM.remarks,
+                              ISNULL(CAST(YEAR(MAX_SD.latest_collection_date) - 1911 AS varchar) + '/' 
+                              + RIGHT('0' + CAST(MONTH(MAX_SD.latest_collection_date) AS varchar), 2) + '/' 
+                              + RIGHT('0' + CAST(DAY(MAX_SD.latest_collection_date) AS varchar), 2), 
+                              '') AS collection_date_roc,
+                              FORMAT(SM.amount_total, 'N0') AS str_amount_total,
+                              FORMAT(SM.RemainingPrincipal, 'N0') AS str_RemainingPrincipal,
+                              CASE WHEN SM.is_close = 'Y' THEN '已結清' ELSE '未結清' END AS str_close
+                              FROM StagnationDebt_M SM
+                              INNER JOIN Receivable_M RM ON RM.RCM_id = SM.rcm_id
+                              INNER JOIN view_HS_Base VS ON VS.HS_id = RM.HS_id and VS.project_title IN ('PJ00046','PJ00047')
+                              INNER JOIN House_apply HA ON HA.HA_id = RM.HA_id
+                              LEFT JOIN (SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id
+                              ) PD ON PD.sdm_id = SM.sdm_id
+                              LEFT JOIN (SELECT sdm_id, MAX(collection_date) AS latest_collection_date FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id
+                              ) MAX_SD ON MAX_SD.sdm_id = SM.sdm_id
+                              WHERE SM.del_tag = '0'";
+                #endregion
+                var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new
+                {
+                    sdm_id = row.Field<int>("sdm_id"),
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    str_total_bad_debt = row.Field<string>("str_total_bad_debt"),
+                    remarks = row.Field<string>("remarks"),
+                    collection_date_roc = row.Field<string>("collection_date_roc"),
+                    str_amount_total = row.Field<string>("str_amount_total"),
+                    str_RemainingPrincipal = row.Field<string>("str_RemainingPrincipal"),
+                    str_close = row.Field<string>("str_close")
+                }).ToList();
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
+
+        #region 汽車貸呆帳催繳
+        /// <summary>
+        /// 取得機車貸呆帳催繳清單
+        /// </summary>
+        [HttpGet("SD_Car_LQuery")]
+        public ActionResult<ResultClass<string>> SD_Car_LQuery()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
+                #region SQL
+                var T_SQL = @"SELECT SM.sdm_id,HA.CS_name,HA.CS_PID,
+                              FORMAT(SM.total_bad_debt - ISNULL(PD.total_payment, 0), 'N0') AS str_total_bad_debt,SM.remarks,
+                              ISNULL(CAST(YEAR(MAX_SD.latest_collection_date) - 1911 AS varchar) + '/' 
+                              + RIGHT('0' + CAST(MONTH(MAX_SD.latest_collection_date) AS varchar), 2) + '/' 
+                              + RIGHT('0' + CAST(DAY(MAX_SD.latest_collection_date) AS varchar), 2), 
+                              '') AS collection_date_roc,
+                              FORMAT(SM.amount_total, 'N0') AS str_amount_total,
+                              FORMAT(SM.RemainingPrincipal, 'N0') AS str_RemainingPrincipal,
+                              CASE WHEN SM.is_close = 'Y' THEN '已結清' ELSE '未結清' END AS str_close
+                              FROM StagnationDebt_M SM
+                              INNER JOIN Receivable_M RM ON RM.RCM_id = SM.rcm_id
+                              INNER JOIN view_HS_Base VS ON VS.HS_id = RM.HS_id and VS.project_title IN ('PJ00048')
+                              INNER JOIN House_apply HA ON HA.HA_id = RM.HA_id
+                              LEFT JOIN (SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id
+                              ) PD ON PD.sdm_id = SM.sdm_id
+                              LEFT JOIN (SELECT sdm_id, MAX(collection_date) AS latest_collection_date FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id
+                              ) MAX_SD ON MAX_SD.sdm_id = SM.sdm_id
+                              WHERE SM.del_tag = '0'";
+                #endregion
+                var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new
+                {
+                    sdm_id = row.Field<int>("sdm_id"),
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    str_total_bad_debt = row.Field<string>("str_total_bad_debt"),
+                    remarks = row.Field<string>("remarks"),
+                    collection_date_roc = row.Field<string>("collection_date_roc"),
+                    str_amount_total = row.Field<string>("str_amount_total"),
+                    str_RemainingPrincipal = row.Field<string>("str_RemainingPrincipal"),
+                    str_close = row.Field<string>("str_close")
+                }).ToList();
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
+        
         /// <summary>
         /// 取得業務所有呆帳資料
         /// </summary>
@@ -652,8 +840,6 @@ AND HP.project_title IN('PJ00046','PJ00047') and format(HS.get_amount_date,'yyyy
                 return StatusCode(500, resultClass);
             }
         }
-
-
         /// <summary>
         /// 機車貸款繳款明細
         /// </summary>
@@ -713,55 +899,6 @@ AND HP.project_title IN('PJ00046','PJ00047') and format(HS.get_amount_date,'yyyy
             }
         }
 
-        /// <summary>
-        /// 指定尚未列入呆帳清單的呆帳資料
-        /// </summary>
-        [HttpGet("Fina_BDebt_Spec_SQuery")]
-        public ActionResult<ResultClass<string>> Fina_BDebt_Spec_SQuery(string? Name, string? FID)
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
-
-            try
-            {
-                ADOData _adoData = new ADOData();
-                var _Fun = new FuncHandler();
-                #region SQL
-                var T_SQL = @"select distinct H.CS_name,H.CS_PID,M.RCM_id,M.sett_AMT,M.amount_total,null as RemainingPrincipal 
-                              from Receivable_M M
-                              Inner join Receivable_D D on M.RCM_id = D.RCM_id
-                              Inner join House_apply H on H.HA_id = M.HA_id
-                              where not exists(select 1 from StagnationDebt_M where rcm_id = M.RCM_id and del_tag='0')";
-                var parameters = new List<SqlParameter>();
-                if (!string.IsNullOrEmpty(Name))
-                {
-                    T_SQL += " AND H.CS_name LIKE '%' + @Name + '%'  ";
-                    parameters.Add(new SqlParameter("@Name", Name));
-                }
-                if (!string.IsNullOrEmpty(FID))
-                {
-                    T_SQL += " AND H.CS_PID=@FID";
-                    parameters.Add(new SqlParameter("@FID", FID));
-                }
-                #endregion
-                var result = _adoData.ExecuteQuery(T_SQL,parameters).AsEnumerable().Select(row => new
-                {
-                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
-                    CS_PID = row.Field<string>("CS_PID"),
-                    RCM_id = row.Field<decimal>("RCM_id"),
-                    sett_AMT = row.Field<int?>("sett_AMT") ?? 0,
-                    amount_total = row.Field<decimal?>("amount_total") ?? 0,
-                    RemainingPrincipal = row.Field<decimal?>("RemainingPrincipal") ?? 0
-                }).ToList();
-                resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(result);
-                return Ok(resultClass);
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
-            }
-        }
+        
     }
 }
