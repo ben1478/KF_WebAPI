@@ -25,7 +25,7 @@ namespace KF_WebAPI.DataLogic
         ADOData _adoData = new ADOData();
         FuncHandler _Fun = new FuncHandler();
 
-        public List<RC_ACH_Res> GetRcACH_LQuery(int yyyyMM, string type, string pjtype)
+        public List<RC_ACH_Res> GetRcACH_LQuery(int yyyyMM, string type, string pjtype, string CS_Name)
         {
             try
             {
@@ -41,6 +41,11 @@ namespace KF_WebAPI.DataLogic
                               LEFT JOIN Item_list li_2 ON li_2.item_M_code = 'project_title' and li_2.item_D_code = b.project_title
                               LEFT JOIN Item_list li_3 ON li_3.item_M_code = 'Ach_State' and li_3.item_D_code = rm.Ach_State
                               WHERE b.Send_result_type = 'SRT002' AND b.get_amount_type = 'GTAT002'";
+                if (CS_Name != "")
+                {
+                    T_SQL += @" AND CS_Name like @CS_Name+'%'";
+                    parameters.Add(new SqlParameter("@CS_Name", CS_Name));
+                }
 
                 switch (pjtype)
                 {
@@ -180,7 +185,7 @@ namespace KF_WebAPI.DataLogic
                 {
                     var worksheet = package.Workbook.Worksheets.Add("撥款清冊");
                     #region 撥款資料
-                    var rcList = GetRcACH_LQuery(yyyyMM, type, pjtype);
+                    var rcList = GetRcACH_LQuery(yyyyMM, type, pjtype,"");
 
                     string[] headers = { "件數", "案件編號", "進件日期", "申請人", "經辦人", "區域", "撥款金額", "撥款日期", "利率", "專案", "期數", "成數", "ACH", "ACH備註" };
 

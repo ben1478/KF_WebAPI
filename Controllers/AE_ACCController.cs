@@ -4768,12 +4768,12 @@ namespace KF_WebAPI.Controllers
         /// 匯出撥款案件明細+ACH設定
         /// </summary>
         [HttpGet("GetRcACH_LQuery")]
-        public ActionResult<ResultClass<string>> GetRcACH_LQuery(int yyyyMM, string type,string pjtype)
+        public ActionResult<ResultClass<string>> GetRcACH_LQuery(int yyyyMM, string type,string pjtype, string CS_Name)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
-                var result = _Acc.GetRcACH_LQuery(yyyyMM, type, pjtype);
+                var result = _Acc.GetRcACH_LQuery(yyyyMM, type, pjtype, CS_Name);
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(result);
                 return Ok(resultClass);
