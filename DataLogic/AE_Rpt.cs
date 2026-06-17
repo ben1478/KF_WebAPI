@@ -4180,8 +4180,8 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             {
                 // 1. 查詢當前選擇日期的 ACH 詳細清單 (您原本的 SQL)
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"select case when Ach_State <> 'FS' then 'ACH未設定' else '' end Ach_DESC ,RCD_id,proName,dbo.GetDateToChin(ACH_DATE)dis_ACH_DATE,dbo.GetDateToChin(RC_date)disRC_date,format(ACH_DATE,'yyyy-MM-dd') ACH_DATE,RC_date,CS_name,RC_amount,isSetting,CS_PID from (
-                        select  M.Ach_State, D.RCD_id, proName,[dbo].[fn_GetWorkday]( DATEADD(day,-1, RC_date)) ACH_DATE,format(RC_date,'yyyy-MM-dd')RC_date, M.HA_id,M.HS_id,A.CS_name,D.RC_amount,check_pay_type
+                var T_SQL = @"select case when (Ach_State <> 'FS'or (LEN(AccountNo)<8 or AccountNo is null))  then 'ACH未設定' else '' end Ach_DESC ,RCD_id,proName,dbo.GetDateToChin(ACH_DATE)dis_ACH_DATE,dbo.GetDateToChin(RC_date)disRC_date,format(ACH_DATE,'yyyy-MM-dd') ACH_DATE,RC_date,CS_name,RC_amount,isSetting,CS_PID from (
+                        select M.AccountNo, M.Ach_State, D.RCD_id, proName,[dbo].[fn_GetWorkday]( DATEADD(day,-1, RC_date)) ACH_DATE,format(RC_date,'yyyy-MM-dd')RC_date, M.HA_id,M.HS_id,A.CS_name,D.RC_amount,check_pay_type
                         ,Case when ACH.RCD_id is null then '0' else '1' end isSetting,CS_PID  from Receivable_D D 
                         left join Receivable_M M on D.RCM_ID=M.RCM_id
                         Left join ACH_Setting ACH on D.RCD_id=ACH.RCD_id

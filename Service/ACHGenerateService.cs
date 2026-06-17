@@ -95,7 +95,7 @@
                         nsd.Append(SEND_ORG);                               // 15-21 提出行代號
                         nsd.Append(ORIG_ACC.PadRightBytes(16));             // 22-37 發動者帳號 (16碼，不滿補空白)
                         nsd.Append(dr["BankNo"].ToString().PadRightBytes(7));   // 38-44 提回行代號 (7碼)
-                        nsd.Append(dr["AccountNo"].ToString().PadRightBytes(16));// 45-60 收受者帳號 (16碼)
+                        nsd.Append(dr["AccountNo"].ToString().PadLeft(16, '0'));// 45-60 收受者帳號 (16碼)
 
                         // 金額處理：整數型態，10碼，靠右補零
                         long amtInt = (long)Math.Round(Convert.ToDecimal(dr["RC_amount"].ToString()), 0);
