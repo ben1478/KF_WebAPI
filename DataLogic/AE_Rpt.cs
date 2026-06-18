@@ -4252,6 +4252,56 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
         }
 
 
+        public ResultClass<string> GetACH_SettingByPID(string YYYYMM, string CS_PID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"select check_pay_type, RCD_id,dbo.GetDateToChin(ACH_DATE)dis_ACH_DATE,Ach_Bank_Na,dbo.GetDateToChin(RC_date)disRC_date,format(ACH_DATE,'yyyy-MM-dd') ACH_DATE,RC_date,CS_name,RC_amount,Ach_Bank,CS_PID from
+                                (select M.AccountNo, M.Ach_State, D.RCD_id,[dbo].[fn_GetWorkday]( DATEADD(day,-1, RC_date)) ACH_DATE,format(RC_date,'yyyy-MM-dd')RC_date, M.HA_id,M.HS_id,A.CS_name,D.RC_amount,check_pay_type
+                                     ,isnull(I.Ach_Bank,'')Ach_Bank_Na,isnull(ACH.Ach_Bank,'')Ach_Bank,CS_PID  from Receivable_D D 
+                                     left join Receivable_M M on D.RCM_ID=M.RCM_id
+                                     Left join ACH_Setting ACH on D.RCD_id=ACH.RCD_id
+                                     left join House_apply A on M.HA_id=A.HA_id
+                                     left join House_sendcase H on A.HA_id=H.HA_id
+                                     LEFT JOIN (select item_D_code,item_D_name Ach_Bank from Item_list where item_M_code='ACH_BANK' and item_D_type='Y') I
+                                     on ACH.Ach_Bank=item_D_code
+                                     where D.del_tag='0' and  M.del_tag='0' 
+                                     and RC_date between DATEADD(DAY,-7,@YYYYMM+'-01') and DATEADD(DAY,7,EOMONTH(@YYYYMM+'-01'))
+                                 ) A where CS_PID=@CS_PID order by RC_date";
+
+                parameters.Add(new SqlParameter("@YYYYMM", YYYYMM));
+                parameters.Add(new SqlParameter("@CS_PID", CS_PID));
+
+                var currentList = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
+                    check_pay_type = row.Field<string>("check_pay_type"),
+                    RCD_id = row.Field<decimal>("RCD_id"),
+                    dis_ACH_DATE = row.Field<string>("dis_ACH_DATE"),
+                    disRC_date = row.Field<string>("disRC_date"),
+                    ACH_DATE = row.Field<string>("ACH_DATE"),
+                    RC_date = row.Field<string>("RC_date"),
+                    Ach_Bank = row.Field<string>("Ach_Bank"),
+                    Ach_Bank_Na = row.Field<string>("Ach_Bank_Na"),
+                    RC_amount = row.Field<decimal>("RC_amount"),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name"))
+                }).ToList();
+
+                resultClass.ResultCode = "000";
+                // 序列化包含兩組資料的匿名物件，完美對接前端修改後的 OpenSetting(currentData, ACH_DATE, lastMonthPids)
+                resultClass.objResult = JsonConvert.SerializeObject(currentList);
+
+                return resultClass;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+
 
         /// <summary>
         /// 設定ACH

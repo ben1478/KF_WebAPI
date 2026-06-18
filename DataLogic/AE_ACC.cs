@@ -25,7 +25,7 @@ namespace KF_WebAPI.DataLogic
         ADOData _adoData = new ADOData();
         FuncHandler _Fun = new FuncHandler();
 
-        public List<RC_ACH_Res> GetRcACH_LQuery(int yyyyMM, string type, string pjtype, string CS_Name)
+        public List<RC_ACH_Res> GetRcACH_LQuery(int yyyyMM, string type, string pjtype, string CS_Name, string Ach_State)
         {
             try
             {
@@ -46,6 +46,13 @@ namespace KF_WebAPI.DataLogic
                     T_SQL += @" AND CS_Name like @CS_Name+'%'";
                     parameters.Add(new SqlParameter("@CS_Name", CS_Name));
                 }
+
+                if (Ach_State != "")
+                {
+                    T_SQL += @"  and isnull( rm.Ach_State,'NP')=@Ach_State ";
+                    parameters.Add(new SqlParameter("@Ach_State", Ach_State));
+                }
+
 
                 switch (pjtype)
                 {
@@ -114,10 +121,10 @@ namespace KF_WebAPI.DataLogic
             try
             {
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"SELECT ha.CS_name,rm.*,(select COUNT(*) from AE_Files where KeyID = rm.RCM_cknum) as FileCount
-                              FROM Receivable_M rm
+                var T_SQL = @"SELECT  case when  rd.RCM_id is null then 'N' else 'Y' end isPayOff , ha.CS_name,rm.*,(select COUNT(*) from AE_Files where KeyID = rm.RCM_cknum) as FileCount
+                              FROM Receivable_M rm Left join (select distinct RCM_ID from  Receivable_D where check_pay_type='S') rd on rm.RCM_id=rd.RCM_id
                               INNER JOIN House_apply ha ON ha.HA_id = rm.HA_id AND ha.del_tag = 0
-                              WHERE RCM_id = @Rcm_id";
+                              WHERE rm.RCM_id = @Rcm_id";
                 parameters.Add(new SqlParameter("@Rcm_id", Rcm_id));
                 var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
                     RCM_id = row.Field<decimal>("RCM_id"),
@@ -127,7 +134,8 @@ namespace KF_WebAPI.DataLogic
                     BankNo = row.Field<string>("BankNo"),
                     AccountNo = row.Field<string>("AccountNo"),
                     RCM_cknum = row.Field<string>("RCM_cknum"),
-                    FileCount = row.Field<int>("FileCount")
+                    FileCount = row.Field<int>("FileCount"),
+                    isPayOff = row.Field<string>("isPayOff")
                 }).ToList();
 
                 resultClass.ResultCode = "000";
@@ -185,7 +193,7 @@ namespace KF_WebAPI.DataLogic
                 {
                     var worksheet = package.Workbook.Worksheets.Add("撥款清冊");
                     #region 撥款資料
-                    var rcList = GetRcACH_LQuery(yyyyMM, type, pjtype,"");
+                    var rcList = GetRcACH_LQuery(yyyyMM, type, pjtype,"","");
 
                     string[] headers = { "件數", "案件編號", "進件日期", "申請人", "經辦人", "區域", "撥款金額", "撥款日期", "利率", "專案", "期數", "成數", "ACH", "ACH備註" };
 

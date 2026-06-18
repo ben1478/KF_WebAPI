@@ -7087,6 +7087,27 @@ namespace KF_WebAPI.Controllers
         }
 
         /// <summary>
+        /// GetACH_SettingByPID
+        /// </summary>
+        [HttpGet("GetACH_SettingByPID")]
+        public ActionResult<ResultClass<string>> GetACH_SettingByPID(string YYYYMM, string CS_PID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                resultClass = _Rpt.GetACH_SettingByPID(YYYYMM, CS_PID);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+
+        /// <summary>
         /// 設定ACH
         /// </summary>
         [HttpPost]
