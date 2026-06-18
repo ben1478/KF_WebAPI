@@ -173,8 +173,7 @@
                             zip.AlternateEncoding = big5;
                             zip.AlternateEncodingUsage = ZipOption.AsNecessary;
 
-                            // 💡 安全防護更新：使用 AES 256 位元高強度加密演算法 (阻斷 Chrome 病毒誤報)
-                            zip.Encryption = EncryptionAlgorithm.WinZipAes256;
+                           
                             zip.Password = "a52611690"; // 解壓縮密碼
 
                             // 將記憶體中的文字檔陣列注入 ZIP 結構中
