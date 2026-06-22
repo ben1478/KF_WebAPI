@@ -5150,7 +5150,8 @@ namespace KF_WebAPI.Controllers
                     FROM User_M u
                     LEFT JOIN Item_list ub ON ub.item_M_code = 'branch_company' AND ub.item_D_type = 'Y' AND ub.item_D_code = u.U_BC AND ub.del_tag = '0'
                     LEFT JOIN Item_list pft ON pft.item_M_code = 'professional_title' AND pft.item_D_type = 'Y' AND pft.item_D_code = u.U_PFT AND pft.del_tag = '0'
-                    WHERE (u.u_bc BETWEEN 'BC0100' AND 'BC0600' OR (u.U_BC IN ('BC0900') AND pft.item_sort BETWEEN '120' AND '170' OR u.U_PFT IN ('PFE830', 'PFE820')))
+                    WHERE ( u.u_bc BETWEEN 'BC0100' AND 'BC0600' OR (u.U_BC IN ('BC0900') AND pft.item_sort BETWEEN '120' AND '170' OR u.U_PFT IN ('PFE830', 'PFE820')) 
+                            OR (u.U_BC IN ('BC0701')))
                 ) User_M
                 LEFT JOIN [dbo].[fun_PerformanceByMonth] (@StartDate, @PerfFuncEndDate, @MonthDiff, @isACT) M 
                     ON User_M.U_num = M.plan_num
@@ -5361,7 +5362,7 @@ namespace KF_WebAPI.Controllers
                                 where ub.item_M_code = 'branch_company'
                                 AND ub.item_D_type = 'Y'
                                 AND ub.del_tag = '0'
-                                and (ub.item_D_code BETWEEN 'BC0100' AND 'BC0600' OR item_D_code IN ('BC0900'))
+                                and (ub.item_D_code BETWEEN 'BC0100' AND 'BC0600' OR item_D_code IN ('BC0900') OR item_D_code IN ('BC0701'))
                                 order by item_sort";
                 #endregion
                 DataTable dtResult = _adoData.ExecuteSQuery(T_SQL);
