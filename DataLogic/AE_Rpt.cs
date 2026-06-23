@@ -19,7 +19,6 @@ using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Text.RegularExpressions;
 
-
 namespace KF_WebAPI.DataLogic
 {
     public class AE_Rpt
@@ -4367,6 +4366,30 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             catch (Exception)
             {
                 // 這裡若有外層 Transaction 會自動 Rollback
+                throw;
+            }
+        }
+
+        public List<AccountOverdue> GetAccountOverdue(string YMD)
+        {
+            try
+            {
+                var T_SQL = $"EXEC GetAccountOverdue '{YMD}'";
+                var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new AccountOverdue
+                {
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    Remain = row.Field<decimal>("Remain"),
+                    NotOverdue = row.Field<decimal>("NotOverdue"),
+                    Day60 = row.Field<decimal>("Day60"),
+                    Day90 = row.Field<decimal>("Day90"),
+                    Day180 = row.Field<decimal>("Day180"),
+                    Day365 = row.Field<decimal>("Day365"),
+                    Day366 = row.Field<decimal>("Day366")
+                }).ToList();
+                return result;
+            }
+            catch (Exception)
+            {
                 throw;
             }
         }
