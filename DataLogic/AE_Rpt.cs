@@ -4179,9 +4179,9 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             {
                 // 1. 查詢當前選擇日期的 ACH 詳細清單 (您原本的 SQL)
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"select case when (Ach_State <> 'FS'or (LEN(AccountNo)<8 or AccountNo is null))  then 'ACH未設定' else '' end Ach_DESC ,RCD_id,proName,dbo.GetDateToChin(ACH_DATE)dis_ACH_DATE,dbo.GetDateToChin(RC_date)disRC_date,format(ACH_DATE,'yyyy-MM-dd') ACH_DATE,RC_date,CS_name,RC_amount,isSetting,CS_PID from (
+                var T_SQL = @"select distinct case when (Ach_State <> 'FS'or (LEN(AccountNo)<8 or AccountNo is null))  then 'ACH未設定' else '' end Ach_DESC ,RCD_id,proName,dbo.GetDateToChin(ACH_DATE)dis_ACH_DATE,dbo.GetDateToChin(RC_date)disRC_date,format(ACH_DATE,'yyyy-MM-dd') ACH_DATE,RC_date,CS_name,RC_amount,isSetting,CS_PID,RCM_id  from (
                         select M.AccountNo, M.Ach_State, D.RCD_id, proName,[dbo].[fn_GetWorkday]( DATEADD(day,-1, RC_date)) ACH_DATE,format(RC_date,'yyyy-MM-dd')RC_date, M.HA_id,M.HS_id,A.CS_name,D.RC_amount,check_pay_type
-                        ,Case when ACH.RCD_id is null then '0' else '1' end isSetting,CS_PID  from Receivable_D D 
+                        ,Case when ACH.RCD_id is null then '0' else '1' end isSetting,M.RCM_id,CS_PID  from Receivable_D D 
                         left join Receivable_M M on D.RCM_ID=M.RCM_id
                         Left join ACH_Setting ACH on D.RCD_id=ACH.RCD_id
                         left join House_apply A on M.HA_id=A.HA_id
@@ -4190,16 +4190,20 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                         LEFT JOIN (select item_D_code,item_D_name proName from Item_list where item_M_code='project_title' and item_D_type='Y') I
                         on project_title=item_D_code
                         where D.del_tag='0' and  M.del_tag='0'   AND P.del_tag='0'and check_pay_type<>'S'
-                        and project_title in ( 'PJ00046','PJ00047','PJ00048')  and (Ach_Bank is null or Ach_Bank=@Ach_Bank)
+                        /*and project_title in ( 'PJ00046','PJ00047','PJ00048')*/  and (Ach_Bank is null or Ach_Bank=@Ach_Bank)
                         and RC_date between DATEADD(month,-1,@ACH_DATE) and DATEADD(DAY,5,@ACH_DATE)
                         ) A where  ACH_DATE =@ACH_DATE
                         order by RC_date";
+
+               
+
 
                 parameters.Add(new SqlParameter("@ACH_DATE", ACH_DATE));
                 parameters.Add(new SqlParameter("@Ach_Bank", Ach_Bank));
 
                 var currentList = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
                     RCD_id = row.Field<decimal>("RCD_id"),
+                    RCM_id = row.Field<decimal>("RCM_id"),
                     CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
                     proName = row.Field<string>("proName"),
                     dis_ACH_DATE = row.Field<string>("dis_ACH_DATE"),
