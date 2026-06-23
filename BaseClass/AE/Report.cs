@@ -109,4 +109,32 @@
         public string? all_pre_addCity { get; set; }
         public string? all_pre_addresses { get; set; }
     }
+
+    public class AccountReceivable
+    {
+        public string CS_name { get; set; }
+        public string get_amount_date { get; set; }
+        public decimal pass_amount { get; set; }
+        public decimal RemainingPrincipal { get; set; }
+        public decimal TotalAccount { get; set; }
+        public int AccountCount { get; set; }
+        public int month_total { get; set; }
+        public decimal AmountMonth { get; set; }
+        public int fee { get; set; }
+        public decimal AmountMonthF { get; set; }
+        public int Nfee { get; set; }
+        public string interest_rate_pass { get; set; }
+    }
+
+    public class AccountOverdue
+    {
+        public string CS_name { get; set; }
+        public decimal Remain { get; set; }
+        public decimal NotOverdue { get; set; }
+        public decimal Day60 { get; set; }
+        public decimal Day90 { get; set; }
+        public decimal Day180 { get; set; }
+        public decimal Day365 { get; set; }
+        public decimal Day366 { get; set; }
+    }
 }

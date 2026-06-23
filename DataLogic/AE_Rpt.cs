@@ -4374,6 +4374,34 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             }
         }
 
+        public List<AccountReceivable> GetAccountReceivable(string YMD)
+        {
+            try
+            {
+                var T_SQL = $"EXEC GetAccountingReceivable '{YMD}'";
+                var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new AccountReceivable
+                {
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    get_amount_date = row.Field<string>("get_amount_date"),
+                    pass_amount = row.Field<decimal>("pass_amount"),
+                    RemainingPrincipal = row.Field<decimal>("RemainingPrincipal"),
+                    TotalAccount = row.Field<decimal>("TotalAccount"),
+                    AccountCount = row.Field<int>("AccountCount"),
+                    month_total = row.Field<int>("month_total"),
+                    AmountMonth = row.Field<decimal>("AmountMonth"),
+                    fee = row.Field<int>("fee"),
+                    AmountMonthF = row.Field<decimal>("AmountMonthF"),
+                    Nfee = row.Field<int>("Nfee"),
+                    interest_rate_pass = row.Field<string>("interest_rate_pass")
+                }).ToList();
+                return result;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         public List<AccountOverdue> GetAccountOverdue(string YMD)
         {
             try
