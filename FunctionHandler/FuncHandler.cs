@@ -27,6 +27,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using static OfficeOpenXml.ExcelErrorValue;
 
+
 namespace KF_WebAPI.FunctionHandler
 {
     public class FuncHandler
@@ -3527,6 +3528,348 @@ namespace KF_WebAPI.FunctionHandler
             }
 
             return debugSql.ToString();
+        }
+
+        public static byte[] AccountReceivableExcel<T>(List<T> items, Dictionary<string, string> headers)
+        {
+            if (items == null || items.Count == 0)
+                throw new ArgumentException("The list cannot be null or empty.", nameof(items));
+
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial; // EPPlus 5+
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add(typeof(T).Name);
+                var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+                //添加表頭
+                worksheet.Cells[1, 1].Value = "序號";
+                worksheet.Cells[1, 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                worksheet.Cells[1, 1].Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                worksheet.Cells[1, 1].Style.WrapText = true;
+
+                for (int i = 0; i < properties.Length; i++)
+                {
+                    var propertyName = properties[i].Name;
+                    worksheet.Cells[1, i + 2].Value = headers.TryGetValue(propertyName, out var header) ? header : propertyName;
+                    worksheet.Cells[1, i + 2].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    worksheet.Cells[1, i + 2].Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                    worksheet.Cells[1, i + 2].Style.WrapText = true;
+                }
+
+                //添加表頭邊框
+                using (var range = worksheet.Cells[1, 1, 1, properties.Length + 1])
+                {
+                    range.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+                    range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                    range.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                    range.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+                }
+
+                //添加表身
+                for (int i = 0; i < items.Count; i++)
+                {
+                    var item = items[i];
+                    worksheet.Cells[i + 2, 1].Value = i + 1; // 序號
+                    worksheet.Cells[i + 2, 1].Style.WrapText = true;
+
+                    for (int j = 0; j < properties.Length; j++)
+                    {
+                        var value = properties[j].GetValue(item);
+
+                        if (value is int || value is long || value is float || value is double || value is decimal)
+                        {
+                            worksheet.Cells[i + 2, j + 2].Style.Numberformat.Format = "#,##0";
+                            worksheet.Cells[i + 2, j + 2].Value = value;
+                        }
+                        else if (value is string strValue)
+                        {
+                            // 支援換行
+                            strValue = strValue.Replace("<br>", "\n").Replace("&#10;", "\n");
+                            worksheet.Cells[i + 2, j + 2].Value = strValue;
+                            worksheet.Cells[i + 2, j + 2].Style.WrapText = true;
+                        }
+                        else if (value != null)
+                        {
+                            worksheet.Cells[i + 2, j + 2].Value = value.ToString();
+                            worksheet.Cells[i + 2, j + 2].Style.WrapText = true;
+                        }
+                    }
+
+                    // 添加表身邊框
+                    using (var range = worksheet.Cells[i + 2, 1, i + 2, properties.Length + 1])
+                    {
+                        range.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+                        range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                        range.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                        range.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+                    }
+
+                    // 自動行高
+                    worksheet.Row(i + 2).CustomHeight = true;
+                }
+
+                // 加總
+                int totalRowIndex = items.Count + 2;
+                int startDataRow = 2;
+                int endDataRow = items.Count + 1;
+                worksheet.Cells[totalRowIndex, 3].Value = "總計"; // 在C欄顯示"總計"
+                worksheet.Cells[totalRowIndex, 3].Style.Font.Bold = true;
+                for (int col = 4; col <= 12; col++)
+                {
+                    // 確保泛型物件的屬性數量有夠，避免 properties 欄位不足時 OOR 噴錯
+                    if (col <= properties.Length + 1 && col != 7)
+                    {
+                        string colLetter = ((char)('A' + col - 1)).ToString();
+
+                        // 寫入公式，例如: =SUM(C2:C11)
+                        worksheet.Cells[totalRowIndex, col].Formula = $"SUM({colLetter}{startDataRow}:{colLetter}{endDataRow})";
+                        worksheet.Cells[totalRowIndex, col].Style.Numberformat.Format = "#,##0";
+                        worksheet.Cells[totalRowIndex, col].Style.Font.Bold = true;
+                    }
+                }
+
+                // 幫總計列加上邊框與背景色
+                using (var totalRange = worksheet.Cells[totalRowIndex, 1, totalRowIndex, properties.Length + 1])
+                {
+                    totalRange.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+                    totalRange.Style.Border.Bottom.Style = ExcelBorderStyle.Double; // 總計習慣用雙底線
+                    totalRange.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                    totalRange.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+                    totalRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    totalRange.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(240, 240, 240)); // 淺灰色背景
+                }
+
+                //自動調整列寬（考慮多行文字）
+                for (int j = 0; j < properties.Length + 1; j++)
+                {
+                    double maxLength = 0;
+
+                    for (int i = 0; i < items.Count; i++)
+                    {
+                        var item = items[i];
+                        var prop = (j == 0) ? null : properties[j - 1];
+                        string text = j == 0 ? (i + 1).ToString() : prop.GetValue(item)?.ToString() ?? "";
+
+                        //找最長的一行
+                        var lines = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                        foreach (var line in lines)
+                        {
+                            if (line.Length > maxLength)
+                                maxLength = line.Length;
+                        }
+                    }
+
+                    worksheet.Column(j + 1).Width = maxLength + 5; // +5作為緩衝
+                }
+
+                // 自動調整列寬
+                int totalRowsCount = items.Count + 2;
+                for (int j = 0; j < properties.Length + 1; j++)
+                {
+                    double maxLength = 0;
+
+                    for (int i = 0; i < totalRowsCount; i++)
+                    {
+                        var cellValue = worksheet.Cells[i + 1, j + 1].Value?.ToString() ?? "";
+                        var cellFormula = worksheet.Cells[i + 1, j + 1].Formula;
+
+                        // 如果是公式欄位，給予基本預估長度，避免自動寬度縮成 0
+                        if (!string.IsNullOrEmpty(cellFormula) && string.IsNullOrEmpty(cellValue))
+                        {
+                            maxLength = Math.Max(maxLength, 10);
+                            continue;
+                        }
+
+                        var lines = cellValue.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                        foreach (var line in lines)
+                        {
+                            if (line.Length > maxLength)
+                                maxLength = line.Length;
+                        }
+                    }
+
+                    worksheet.Column(j + 1).Width = maxLength + 5;
+                }
+
+                // 整表格格式調整
+                var allCells = worksheet.Cells[1, 1, totalRowsCount, properties.Length + 1];
+                allCells.Style.WrapText = true;
+                allCells.Style.VerticalAlignment = ExcelVerticalAlignment.Top;
+
+                return package.GetAsByteArray();
+            }
+        }
+
+        public static byte[] AccountOverdueExcel<T>(List<T> items, Dictionary<string, string> headers)
+        {
+            if (items == null || items.Count == 0)
+                throw new ArgumentException("The list cannot be null or empty.", nameof(items));
+
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial; // EPPlus 5+
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add(typeof(T).Name);
+                var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+                //添加表頭
+                worksheet.Cells[1, 1].Value = "序號";
+                worksheet.Cells[1, 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                worksheet.Cells[1, 1].Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                worksheet.Cells[1, 1].Style.WrapText = true;
+
+                for (int i = 0; i < properties.Length; i++)
+                {
+                    var propertyName = properties[i].Name;
+                    worksheet.Cells[1, i + 2].Value = headers.TryGetValue(propertyName, out var header) ? header : propertyName;
+                    worksheet.Cells[1, i + 2].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    worksheet.Cells[1, i + 2].Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                    worksheet.Cells[1, i + 2].Style.WrapText = true;
+                }
+
+                //添加表頭邊框
+                using (var range = worksheet.Cells[1, 1, 1, properties.Length + 1])
+                {
+                    range.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+                    range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                    range.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                    range.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+                }
+
+                //添加表身
+                for (int i = 0; i < items.Count; i++)
+                {
+                    var item = items[i];
+                    worksheet.Cells[i + 2, 1].Value = i + 1; // 序號
+                    worksheet.Cells[i + 2, 1].Style.WrapText = true;
+
+                    for (int j = 0; j < properties.Length; j++)
+                    {
+                        var value = properties[j].GetValue(item);
+
+                        if (value is int || value is long || value is float || value is double || value is decimal)
+                        {
+                            worksheet.Cells[i + 2, j + 2].Style.Numberformat.Format = "#,##0";
+                            worksheet.Cells[i + 2, j + 2].Value = value;
+                        }
+                        else if (value is string strValue)
+                        {
+                            // 支援換行
+                            strValue = strValue.Replace("<br>", "\n").Replace("&#10;", "\n");
+                            worksheet.Cells[i + 2, j + 2].Value = strValue;
+                            worksheet.Cells[i + 2, j + 2].Style.WrapText = true;
+                        }
+                        else if (value != null)
+                        {
+                            worksheet.Cells[i + 2, j + 2].Value = value.ToString();
+                            worksheet.Cells[i + 2, j + 2].Style.WrapText = true;
+                        }
+                    }
+
+                    // 添加表身邊框
+                    using (var range = worksheet.Cells[i + 2, 1, i + 2, properties.Length + 1])
+                    {
+                        range.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+                        range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                        range.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                        range.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+                    }
+
+                    // 自動行高
+                    worksheet.Row(i + 2).CustomHeight = true;
+                }
+
+                // 加總
+                int totalRowIndex = items.Count + 2;
+                int startDataRow = 2;
+                int endDataRow = items.Count + 1;
+                worksheet.Cells[totalRowIndex, 2].Value = "總計"; // 在B欄顯示"總計"
+                worksheet.Cells[totalRowIndex, 2].Style.Font.Bold = true;
+                for (int col = 3; col <= 9; col++)
+                {
+                    // 確保泛型物件的屬性數量有夠，避免 properties 欄位不足時 OOR 噴錯
+                    if (col <= properties.Length + 1)
+                    {
+                        string colLetter = ((char)('A' + col - 1)).ToString();
+
+                        // 寫入公式，例如: =SUM(C2:C11)
+                        worksheet.Cells[totalRowIndex, col].Formula = $"SUM({colLetter}{startDataRow}:{colLetter}{endDataRow})";
+                        worksheet.Cells[totalRowIndex, col].Style.Numberformat.Format = "#,##0";
+                        worksheet.Cells[totalRowIndex, col].Style.Font.Bold = true;
+                    }
+                }
+
+                // 幫總計列加上邊框與背景色
+                using (var totalRange = worksheet.Cells[totalRowIndex, 1, totalRowIndex, properties.Length + 1])
+                {
+                    totalRange.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+                    totalRange.Style.Border.Bottom.Style = ExcelBorderStyle.Double; // 總計習慣用雙底線
+                    totalRange.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                    totalRange.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+                    totalRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    totalRange.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(240, 240, 240)); // 淺灰色背景
+                }
+
+                //自動調整列寬（考慮多行文字）
+                for (int j = 0; j < properties.Length + 1; j++)
+                {
+                    double maxLength = 0;
+
+                    for (int i = 0; i < items.Count; i++)
+                    {
+                        var item = items[i];
+                        var prop = (j == 0) ? null : properties[j - 1];
+                        string text = j == 0 ? (i + 1).ToString() : prop.GetValue(item)?.ToString() ?? "";
+
+                        //找最長的一行
+                        var lines = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                        foreach (var line in lines)
+                        {
+                            if (line.Length > maxLength)
+                                maxLength = line.Length;
+                        }
+                    }
+
+                    worksheet.Column(j + 1).Width = maxLength + 5; // +5作為緩衝
+                }
+
+                // 自動調整列寬
+                int totalRowsCount = items.Count + 2;
+                for (int j = 0; j < properties.Length + 1; j++)
+                {
+                    double maxLength = 0;
+
+                    for (int i = 0; i < totalRowsCount; i++)
+                    {
+                        var cellValue = worksheet.Cells[i + 1, j + 1].Value?.ToString() ?? "";
+                        var cellFormula = worksheet.Cells[i + 1, j + 1].Formula;
+
+                        // 如果是公式欄位，給予基本預估長度，避免自動寬度縮成 0
+                        if (!string.IsNullOrEmpty(cellFormula) && string.IsNullOrEmpty(cellValue))
+                        {
+                            maxLength = Math.Max(maxLength, 10);
+                            continue;
+                        }
+
+                        var lines = cellValue.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                        foreach (var line in lines)
+                        {
+                            if (line.Length > maxLength)
+                                maxLength = line.Length;
+                        }
+                    }
+
+                    worksheet.Column(j + 1).Width = maxLength + 5;
+                }
+
+                // 整表格格式調整
+                var allCells = worksheet.Cells[1, 1, totalRowsCount, properties.Length + 1];
+                allCells.Style.WrapText = true;
+                allCells.Style.VerticalAlignment = ExcelVerticalAlignment.Top;
+
+                return package.GetAsByteArray();
+            }
         }
 
     }

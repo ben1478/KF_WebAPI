@@ -7213,7 +7213,7 @@ namespace KF_WebAPI.Controllers
                         { "Nfee","未實現手續費部分" },
                         { "interest_rate_pass","利率" }
                     };
-                var fileBytes = FuncHandler.ExportToExcel(result, Excel_Headers);
+                var fileBytes = FuncHandler.AccountReceivableExcel(result, Excel_Headers);
                 return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             }
             catch (Exception ex)
@@ -7241,7 +7241,7 @@ namespace KF_WebAPI.Controllers
                         { "Day365", "181-365天" },
                         { "Day366","365天以上" }
                     };
-                var fileBytes = FuncHandler.ExportToExcel(result, Excel_Headers);
+                var fileBytes = FuncHandler.AccountOverdueExcel(result, Excel_Headers);
                 return File(fileBytes,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             }
             catch (Exception ex)
