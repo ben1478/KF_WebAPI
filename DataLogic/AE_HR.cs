@@ -441,5 +441,29 @@ namespace KF_WebAPI.DataLogic
 
         }
 
+
+
+        /// <summary>
+        /// FR_id 取得請假資料
+        /// </summary>
+        /// <param name="p_FR_id"></param>
+        /// <returns></returns>
+        public DataTable GetFlow_rest(string p_FR_id)
+        {
+            DataTable m_dtResult = new DataTable();
+            try
+            {
+                string m_SQL = " SELECT * FROM dbo.Flow_rest where  FR_id=@FR_id   ";
+                var parameters = new List<SqlParameter>();
+                parameters.Add(new SqlParameter("@FR_id", p_FR_id));
+                ADOData _adoData = new ADOData();
+                m_dtResult = _adoData.ExecuteQuery(m_SQL, parameters);
+            }
+            catch
+            {
+                throw;
+            }
+            return m_dtResult;
+        }
     }
 }

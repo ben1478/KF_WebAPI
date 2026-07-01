@@ -216,7 +216,7 @@ namespace KF_WebAPI.DataLogic
             return resultClass;
         }
 
-        public int InsertFile( AE_Files[] p_attachmentFiles, string p_Key, string p_Key_Type, string p_User, string ACH )
+        public int InsertFile( AE_Files[] p_attachmentFiles, string p_Key, string p_Key_Type, string p_User )
         {
             Common _Comm = new();
           
