@@ -3613,17 +3613,17 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                                     string resultCode = "01"; // 預設為失敗
                                     string isSuccess = "0";   // 預設為失敗
                                     string returnReason = "";
-                                    if (statusText.Contains("交易成功"))
+                                    if (statusText.Contains("交易成功") )
                                     {
                                         resultCode = "00";
                                         isSuccess = "1";
                                         returnReason = "";
                                     }
-                                    else if (statusText.Contains("存款不足"))
+                                    else if (statusText.Contains("存款不足") || statusText.Contains("警示戶"))
                                     {
                                         resultCode = "01";
                                         isSuccess = "0";
-                                        returnReason = "存款不足";
+                                        returnReason = statusText;
                                     }
                                     // 備註：若日後有擴充其他錯誤狀態（例如：無此帳號），可在此繼續追加 else if
                                     var fileRow = new WinInvFileRow
