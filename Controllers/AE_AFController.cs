@@ -1,5 +1,6 @@
 ﻿using KF_WebAPI.BaseClass;
 using KF_WebAPI.BaseClass.AE;
+using KF_WebAPI.DataLogic;
 using KF_WebAPI.FunctionHandler;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,7 @@ using System.Data;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using static UglyToad.PdfPig.Core.PdfSubpath;
 
 namespace KF_WebAPI.Controllers
 {
@@ -780,5 +782,171 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+        /// <summary>
+        /// 從外部獲取待審核假單列表
+        /// </summary>
+        [HttpGet("LF_FR_LQuery")]
+        public ActionResult<ResultClass<string>> LF_FR_LQuery(string User)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"   select * from ( SELECT R.FR_id,R.FR_cknum,M.U_name FR_U_name ,FR_kind_show,  convert(varchar(16), R.FR_date_begin, 121) FR_date_begin , 
+                                 convert(varchar(16), R.FR_date_begin, 121) +'<br>'+convert(varchar(16), R.FR_date_end, 121) FR_date ,R.FR_total_hour,FR_note 
+                                 ,case when FR_step_now ='1' then FR_step_01_num when FR_step_now ='2' then FR_step_02_num 
+                                 when FR_step_now ='3' then FR_step_03_num  end Sign_num     
+                                ,case when FR_step_now ='1' then '代理人' when FR_step_now ='2' then '直屬主管' when FR_step_now ='3' then '單位主管'  end sign_type
+                                FROM Flow_rest R  Left join User_M M on R.FR_U_num=M.U_num       
+                                 Left join  
+                                 ( 
+                                       SELECT item_D_name FR_kind_show,item_D_code FROM Item_list   
+                                       WHERE item_M_code = 'FR_kind' AND item_D_type='Y' AND del_tag='0'   
+                                 ) I on R.FR_kind=I.item_D_code  
+                                 WHERE R.del_tag = '0' AND [cancel_date] IS NULL  
+                                 and FR_step_now in ('1','2','3')  and 'FSIGN001' = case when FR_step_now ='1' then FR_step_01_sign  when FR_step_now ='2' then FR_step_02_sign  when FR_step_now ='3' then FR_step_03_sign end 
+                                 AND FR_date_begin between  DATEADD(month, -2, GETDATE()) AND  DATEADD(month, 3, GETDATE())  ) A where Sign_num=@Sign_num ";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@Sign_num",User)
+                };
+                #endregion
+
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
+                {
+                    FR_id = row.Field<Int32>("FR_id"),
+                    FR_U_name = row.Field<string>("FR_U_name"),
+                    FR_kind_show = row.Field<string>("FR_kind_show"),
+                    FR_date = row.Field<string>("FR_date"),
+                    FR_note = row.Field<string>("FR_note"),
+                    FR_total_hour = row.Field<decimal>("FR_total_hour"),
+                    User = User
+                });
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// 外部假單審核
+        /// </summary>
+        [HttpPost("LF_FR_Upd")]
+        public ActionResult<ResultClass<string>> LF_FR_Upd(string User,string[] p_arrFR_id)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
+            Int32 iResult = 0;
+            try
+            {
+                AE_HR _HR = new AE_HR();
+                ADOData _adoData = new ADOData();
+                foreach (string m_FR_ID in p_arrFR_id)
+                {
+                    DataTable m_dt = _HR.GetFlow_rest(m_FR_ID);
+                    foreach (DataRow dr in m_dt.Rows)
+                    {
+                        string m_msg_num = "";
+                        string m_FR_u_num = dr["FR_u_num"].ToString();
+                        string m_FR_step_now_upd = "";
+                        string m_FR_sign_type = "FSIGN001";
+                        string m_FR_step_now = dr["FR_step_now"].ToString();
+                        string m_FR_kind = dr["FR_kind"].ToString();
+                        string m_FR_step_03_type = dr["FR_step_03_type"].ToString();
+                        string m_FR_step_02_num = dr["FR_step_02_num"].ToString();
+                        string m_FR_step_03_num = dr["FR_step_03_num"].ToString();
+                      
+                        string m_SQL = "update  [dbo].[Flow_rest]  set FR_sign_type=@FR_sign_type,edit_num=@edit_num,edit_date=SYSDATETIME(),edit_ip=@edit_ip  ";
+                        m_SQL += ",FR_step_now=@FR_step_now";
+                        switch (m_FR_step_now)
+                        {
+                            case "1":
+                                m_SQL += " , FR_step_01_type=@FR_step_type,FR_step_01_sign=@FR_step_sign, FR_step_01_date=SYSDATETIME()    ";
+                                m_FR_step_now_upd = "2";
+                                m_msg_num = m_FR_step_02_num;
+                                break;
+                            case "2":
+                                m_SQL += " , FR_step_02_type=@FR_step_type,FR_step_02_sign=@FR_step_sign , FR_step_02_date=SYSDATETIME()    ";
+                                if (m_FR_step_03_type == "FSTEP001")
+                                {
+                                    m_msg_num = m_FR_step_03_num;
+                                    m_FR_step_now_upd = "3";
+                                }
+                                else
+                                {
+                                    //'公出 FRK016 忘打卡 FRK017
+                                    if (m_FR_kind == "FRK016" || m_FR_kind == "FRK017")
+                                    {
+                                        m_FR_sign_type = "FSIGN002";
+                                        m_FR_step_now_upd = "0";
+                                    }
+                                    else
+                                    {
+                                        m_FR_step_now_upd = "9";
+                                    }
+                                }
+                                break;
+                            case "3":
+                                m_SQL += " , FR_step_03_type=@FR_step_type,FR_step_03_sign=@FR_step_sign , FR_step_03_date=SYSDATETIME()    ";
+                                m_FR_step_now_upd = "9";
+                                break;
+                        }
+
+                        var parameters = new List<SqlParameter>();
+                        parameters.Add(new SqlParameter("@FR_sign_type", m_FR_sign_type));
+                        parameters.Add(new SqlParameter("@edit_num", User));
+                        parameters.Add(new SqlParameter("@edit_ip", clientIp));
+                        parameters.Add(new SqlParameter("@FR_step_now", m_FR_step_now_upd));
+                        parameters.Add(new SqlParameter("@FR_step_sign", "FSIGN002"));
+                        parameters.Add(new SqlParameter("@FR_step_type", "FSTEP002"));
+                        parameters.Add(new SqlParameter("@FR_ID", m_FR_ID));
+                        m_SQL += " where FR_ID=@FR_ID  ";
+
+
+                        iResult += _adoData.ExecuteNonQuery(m_SQL, parameters);
+
+
+                        parameters = new List<SqlParameter>();
+                      
+
+                        m_SQL = "insert into Msg (Msg_cknum,Msg_source,Msg_kind,Msg_to_num,Msg_title,Msg_show_date,add_num,add_ip) values(@Msg_cknum,@Msg_source,@Msg_kind,@Msg_to_num,@Msg_title,@Msg_show_date,@add_num,@add_ip) ";
+                        parameters.Add(new SqlParameter("@Msg_cknum", DateTime.Now.ToString("yyyyMMddHHmmssfffffff")));
+                        parameters.Add(new SqlParameter("@Msg_source", "OUTsys"));
+                        parameters.Add(new SqlParameter("@Msg_kind", "MSGK0004"));
+                        parameters.Add(new SqlParameter("@Msg_to_num", m_msg_num));
+                        parameters.Add(new SqlParameter("@Msg_title", "請假單簽核通知,請前往處理!!"));
+                        parameters.Add(new SqlParameter("@Msg_show_date", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")));
+                        parameters.Add(new SqlParameter("@add_num", User));
+                        parameters.Add(new SqlParameter("@add_ip", clientIp));
+                        _adoData.ExecuteNonQuery(m_SQL, parameters);
+
+
+                    }
+                }
+
+
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "審核成功";
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+
+
     }
 }

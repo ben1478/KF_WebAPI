@@ -442,6 +442,29 @@ namespace KF_WebAPI.DataLogic
         }
 
         /// <summary>
+        /// FR_id 取得請假資料
+        /// </summary>
+        /// <param name="p_FR_id"></param>
+        /// <returns></returns>
+        public DataTable GetFlow_rest(string p_FR_id)
+        {
+            DataTable m_dtResult = new DataTable();
+            try
+            {
+                string m_SQL = " SELECT * FROM dbo.Flow_rest where  FR_id=@FR_id   ";
+                var parameters = new List<SqlParameter>();
+                parameters.Add(new SqlParameter("@FR_id", p_FR_id));
+                ADOData _adoData = new ADOData();
+                m_dtResult = _adoData.ExecuteQuery(m_SQL, parameters);
+            }
+            catch
+            {
+                throw;
+            }
+            return m_dtResult;
+        }
+
+        /// <summary>
         /// 出勤紀錄查詢
         /// </summary>
         /// <param name="YM"></param>
@@ -449,7 +472,7 @@ namespace KF_WebAPI.DataLogic
         /// <param name="User_Num"></param>
         /// <param name="Type">1:個人查詢 2:部門整體查詢</param>
         /// <returns></returns>
-        public List<Attendance_per_res> Attendance_Query(string YM, int? AttStatus, string User_Num,string Type,string U_BC)
+        public List<Attendance_per_res> Attendance_Query(string YM, int? AttStatus, string User_Num, string Type, string U_BC)
         {
             try
             {
@@ -460,74 +483,74 @@ namespace KF_WebAPI.DataLogic
                 }
 
                 var T_SQL = @"SELECT CASE WHEN ad.[attendance_date]= '2024/12/20' AND U.U_BC='BC0100' THEN 20 
-                              WHEN ad.[attendance_date]= '2024/12/20' AND (U.U_BC like 'BC08%' OR U.U_BC='BC0900') THEN 10
-                              WHEN ad.[attendance_date]= '2025/06/13' AND U.U_BC='BC0100' THEN 15 
-                              WHEN ad.[attendance_date]= '2025/06/13' AND U.U_BC like 'BC08%' THEN 10
-                              WHEN ad.[attendance_date]= '2025/12/19' AND U.U_BC='BC0100' THEN 20
-                              WHEN ad.[attendance_date]= '2025/12/19' AND U.U_BC like 'BC08%' THEN 15
-                              WHEN ad.[attendance_date]= '2026/02/13' THEN 120 
-                              WHEN ad.[attendance_date]= '2026/06/05' AND U.U_BC='BC0100' THEN 20
-                              WHEN ad.[attendance_date]= '2026/06/05' AND U.U_BC like 'BC08%' THEN 15 ELSE 0 END EarlyMin,
-                              U_name,userID,ad.attendance_date,work_time,
-                              CASE WHEN Holiday_NA IS NULL THEN CASE WHEN OT='N' THEN 
-                              CASE WHEN isnull([work_time], '')='' THEN 0 WHEN [work_time] >= '12:00' AND [work_time] <= '13:00' THEN 180
-                              WHEN [work_time] > '09:00' AND [work_time] < '12:00' THEN DATEDIFF(MINUTE, '09:00', [work_time])
-                              WHEN [work_time] > '13:00' THEN DATEDIFF(MINUTE, '09:00', [work_time]) - DATEDIFF(MINUTE, '12:00', '13:00') ELSE 0 END ELSE 0 END ELSE 0 END Late,
-                              CASE WHEN Holiday_NA IS NULL THEN CASE WHEN OT='N' THEN CASE WHEN isnull([work_time], '')='' THEN '未刷卡'
-                              WHEN [work_time]>'09:00' THEN CASE WHEN isnull(U_num_NL, 'N')='N' THEN 
-                              CASE WHEN convert(varchar, U_arrive_date, 112)= convert(varchar, CAST(ad.[attendance_date] AS datetime), 112)THEN '到職日' ELSE'遲到' END ELSE '' END ELSE '' END ELSE '加班' END ELSE Holiday_NA END work_status,
-                              getoffwork_time,CASE WHEN Holiday_NA IS NULL THEN CASE WHEN OT='N' THEN CASE WHEN isnull([getoffwork_time], '')='' THEN 0
-                              WHEN [getoffwork_time] <= '12:00' THEN DATEDIFF(MINUTE, [getoffwork_time], '18:00') - DATEDIFF(MINUTE, '12:00', '13:00')
-                              WHEN [getoffwork_time] > '12:00' AND [getoffwork_time] <= '13:00' THEN DATEDIFF(MINUTE, '13:00', '18:00')
-                              WHEN [getoffwork_time] > '13:00' AND [getoffwork_time] <= '18:00' THEN DATEDIFF(MINUTE, [getoffwork_time], '18:00') ELSE 0 END ELSE 0 END ELSE 0 END early,
-                              CASE WHEN Holiday_NA IS NULL THEN CASE WHEN OT='N' THEN CASE WHEN isnull([getoffwork_time], '')='' THEN '未刷卡' 
-                              WHEN [getoffwork_time]<'18:00' THEN CASE WHEN isnull(U_num_NL, 'N')='N' THEN '早退' ELSE '' END ELSE '' END ELSE '加班' END ELSE Holiday_NA END offwork_status,
-                              U.U_Na,U.U_BC,isnull(RestCount, 0)RestCount 
+                      WHEN ad.[attendance_date]= '2024/12/20' AND (U.U_BC like 'BC08%' OR U.U_BC='BC0900') THEN 10
+                      WHEN ad.[attendance_date]= '2025/06/13' AND U.U_BC='BC0100' THEN 15 
+                      WHEN ad.[attendance_date]= '2025/06/13' AND U.U_BC like 'BC08%' THEN 10
+                      WHEN ad.[attendance_date]= '2025/12/19' AND U.U_BC='BC0100' THEN 20
+                      WHEN ad.[attendance_date]= '2025/12/19' AND U.U_BC like 'BC08%' THEN 15
+                      WHEN ad.[attendance_date]= '2026/02/13' THEN 120 
+                      WHEN ad.[attendance_date]= '2026/06/05' AND U.U_BC='BC0100' THEN 20
+                      WHEN ad.[attendance_date]= '2026/06/05' AND U.U_BC like 'BC08%' THEN 15 ELSE 0 END EarlyMin,
+                      U_name,userID,ad.attendance_date,work_time,
+                      CASE WHEN Holiday_NA IS NULL THEN CASE WHEN OT='N' THEN 
+                      CASE WHEN isnull([work_time], '')='' THEN 0 WHEN [work_time] >= '12:00' AND [work_time] <= '13:00' THEN 180
+                      WHEN [work_time] > '09:00' AND [work_time] < '12:00' THEN DATEDIFF(MINUTE, '09:00', [work_time])
+                      WHEN [work_time] > '13:00' THEN DATEDIFF(MINUTE, '09:00', [work_time]) - DATEDIFF(MINUTE, '12:00', '13:00') ELSE 0 END ELSE 0 END ELSE 0 END Late,
+                      CASE WHEN Holiday_NA IS NULL THEN CASE WHEN OT='N' THEN CASE WHEN isnull([work_time], '')='' THEN '未刷卡'
+                      WHEN [work_time]>'09:00' THEN CASE WHEN isnull(U_num_NL, 'N')='N' THEN 
+                      CASE WHEN convert(varchar, U_arrive_date, 112)= convert(varchar, CAST(ad.[attendance_date] AS datetime), 112)THEN '到職日' ELSE'遲到' END ELSE '' END ELSE '' END ELSE '加班' END ELSE Holiday_NA END work_status,
+                      getoffwork_time,CASE WHEN Holiday_NA IS NULL THEN CASE WHEN OT='N' THEN CASE WHEN isnull([getoffwork_time], '')='' THEN 0
+                      WHEN [getoffwork_time] <= '12:00' THEN DATEDIFF(MINUTE, [getoffwork_time], '18:00') - DATEDIFF(MINUTE, '12:00', '13:00')
+                      WHEN [getoffwork_time] > '12:00' AND [getoffwork_time] <= '13:00' THEN DATEDIFF(MINUTE, '13:00', '18:00')
+                      WHEN [getoffwork_time] > '13:00' AND [getoffwork_time] <= '18:00' THEN DATEDIFF(MINUTE, [getoffwork_time], '18:00') ELSE 0 END ELSE 0 END ELSE 0 END early,
+                      CASE WHEN Holiday_NA IS NULL THEN CASE WHEN OT='N' THEN CASE WHEN isnull([getoffwork_time], '')='' THEN '未刷卡' 
+                      WHEN [getoffwork_time]<'18:00' THEN CASE WHEN isnull(U_num_NL, 'N')='N' THEN '早退' ELSE '' END ELSE '' END ELSE '加班' END ELSE Holiday_NA END offwork_status,
+                      U.U_Na,U.U_BC,isnull(RestCount, 0)RestCount 
+                      FROM (
+                              SELECT FORMAT(cast(D.attendance_date AS datetime), 'yyyyMM') yyyymm,'N' OT,D.attendance_date,d.U_num userID,d.[user_name],
+                              isnull(ad.work_time, '') work_time,isnull(ad.getoffwork_time, '') getoffwork_time
                               FROM (
-                                      SELECT FORMAT(cast(D.attendance_date AS datetime), 'yyyyMM') yyyymm,'N' OT,D.attendance_date,d.U_num userID,d.[user_name],
-                                      isnull(ad.work_time, '') work_time,isnull(ad.getoffwork_time, '') getoffwork_time
-                                      FROM (
-                                             SELECT D.*,M.U_num,M.U_name user_name,M.U_BC FROM fun_GetWorkDays(@yyyy + '/' + @MM) D
-                                             JOIN USER_M M ON 1=1 WHERE m.U_NUM NOT IN('K0001','K0002','K0000','AA999','K0999')
-                                             AND (M.U_leave_date IS NULL OR FORMAT(cast(M.U_leave_date AS datetime), 'yyyyMM')=@yyyyMM)) D
-                                      LEFT JOIN (SELECT userID,yyyymm,attendance_date,work_time,getoffwork_time FROM dbo.attendance WHERE yyyymm=@yyyyMM ) ad 
-                                      ON D.U_num=userID AND D.attendance_date=convert(varchar,convert(datetime, @yyyy + '/' +ad.[attendance_date]), 111)
-                                      UNION ALL SELECT FORMAT(cast(H.attendance_date AS datetime), 'yyyyMM')yyyymm,'Y' OT,H.attendance_date,ad.userID,
-                                      ad.user_name,isnull(ad.work_time, '') work_time,isnull(ad.getoffwork_time, '') getoffwork_time FROM [dbo].[attendance] ad
-                                      LEFT JOIN User_M U ON ad.userID=U.U_num
-                                      JOIN (
-                                             SELECT userID,yyyymm,FORMAT(cast(Hdate AS datetime), 'yyyy/MM/dd') attendance_date 
-                                             FROM attendance A
-                                             JOIN (
-                                                    SELECT H.*,D.Influence FROM Holidays H
-                                                    LEFT JOIN Holidays_D D ON H.HDate=D.HDate WHERE Holiday_kind <> 'Hk_04' OR Holiday_kind IS NULL) H
-                                                    ON cast(A.yyyymm AS varchar(4))+'/'+attendance_date=FORMAT(cast(Hdate AS datetime), 'yyyy/MM/dd')
-                                                    WHERE yyyymm = @yyyyMM) H ON ad.userID=H.userID AND ad.yyyymm=H.yyyymm AND cast(ad.yyyymm AS varchar(4))+'/'+ad.attendance_date=H.attendance_date
-                                                    WHERE ad.yyyymm = @yyyyMM AND work_time <> '') ad
-                                             LEFT JOIN (
-                                                         SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na,U_arrive_date FROM User_M U
-                                                         LEFT JOIN (SELECT item_D_code,item_D_name FROM Item_list
-                                                                    WHERE item_M_code='branch_company' AND item_D_type='Y' AND del_tag='0') I ON U.u_bc=I.item_D_code
-                                                                    WHERE del_tag='0') U ON ad.userID=U.U_num
-                                             LEFT JOIN ( /*特殊節日颱風天*/ 
-                                                         SELECT FORMAT(convert(datetime, H.HDate), 'yyyy/MM/dd') HDate,isnull(HD.Influence, 'HD')U_BC,
-                                                         isnull(HD.Holiday_kind, 'HD') Holiday_kind,isnull(Holiday_NA, '假日') Holiday_NA FROM Holidays H
-                                                         LEFT JOIN Holidays_D HD ON H.HDate=HD.HDate
-                                                         LEFT JOIN (
-                                                                     SELECT item_D_code Holiday_kind,item_D_name Holiday_NA 
-                                                                     FROM Item_list WHERE item_M_code='Holiday_kind'
-                                                                     AND item_D_type='Y')I ON HD.Holiday_kind=I.Holiday_kind
-                                                         WHERE HD.Holiday_kind='Hk_04' AND H.HDate like @yyyy + '%') HD ON ad.attendance_date=HD.HDate AND U.U_BC=HD.U_BC
-                                             LEFT JOIN (
-                                                         SELECT item_D_code U_num_NL FROM Item_list WHERE /*不計遲到人員*/ item_M_code = 'NonLate'
-                                                         AND item_M_type='N')NL ON U.U_num=NL.U_num_NL
-                                             LEFT JOIN (
-                                                         SELECT FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,convert(varchar, FR_date_end, 111) FR_date_E,
-                                                         count(FR_U_num) RestCount FROM Flow_rest WHERE del_tag = '0' AND FR_cancel<>'Y' GROUP BY FR_U_num,
-                                                         convert(varchar, FR_date_begin, 111),convert(varchar, FR_date_end, 111)) R ON ad.userID=R.FR_U_num
-                                                         AND ad.attendance_date BETWEEN R.FR_date_S AND FR_date_E
-                                             WHERE [work_time] < '24:00' AND Userid<>'' AND yyyymm = @yyyyMM";
-                if(Type == "1")
+                                     SELECT D.*,M.U_num,M.U_name user_name,M.U_BC FROM fun_GetWorkDays(@yyyy + '/' + @MM) D
+                                     JOIN USER_M M ON 1=1 WHERE m.U_NUM NOT IN('K0001','K0002','K0000','AA999','K0999')
+                                     AND (M.U_leave_date IS NULL OR FORMAT(cast(M.U_leave_date AS datetime), 'yyyyMM')=@yyyyMM)) D
+                              LEFT JOIN (SELECT userID,yyyymm,attendance_date,work_time,getoffwork_time FROM dbo.attendance WHERE yyyymm=@yyyyMM ) ad 
+                              ON D.U_num=userID AND D.attendance_date=convert(varchar,convert(datetime, @yyyy + '/' +ad.[attendance_date]), 111)
+                              UNION ALL SELECT FORMAT(cast(H.attendance_date AS datetime), 'yyyyMM')yyyymm,'Y' OT,H.attendance_date,ad.userID,
+                              ad.user_name,isnull(ad.work_time, '') work_time,isnull(ad.getoffwork_time, '') getoffwork_time FROM [dbo].[attendance] ad
+                              LEFT JOIN User_M U ON ad.userID=U.U_num
+                              JOIN (
+                                     SELECT userID,yyyymm,FORMAT(cast(Hdate AS datetime), 'yyyy/MM/dd') attendance_date 
+                                     FROM attendance A
+                                     JOIN (
+                                            SELECT H.*,D.Influence FROM Holidays H
+                                            LEFT JOIN Holidays_D D ON H.HDate=D.HDate WHERE Holiday_kind <> 'Hk_04' OR Holiday_kind IS NULL) H
+                                            ON cast(A.yyyymm AS varchar(4))+'/'+attendance_date=FORMAT(cast(Hdate AS datetime), 'yyyy/MM/dd')
+                                            WHERE yyyymm = @yyyyMM) H ON ad.userID=H.userID AND ad.yyyymm=H.yyyymm AND cast(ad.yyyymm AS varchar(4))+'/'+ad.attendance_date=H.attendance_date
+                                            WHERE ad.yyyymm = @yyyyMM AND work_time <> '') ad
+                                     LEFT JOIN (
+                                                 SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na,U_arrive_date FROM User_M U
+                                                 LEFT JOIN (SELECT item_D_code,item_D_name FROM Item_list
+                                                            WHERE item_M_code='branch_company' AND item_D_type='Y' AND del_tag='0') I ON U.u_bc=I.item_D_code
+                                                            WHERE del_tag='0') U ON ad.userID=U.U_num
+                                     LEFT JOIN ( /*特殊節日颱風天*/ 
+                                                 SELECT FORMAT(convert(datetime, H.HDate), 'yyyy/MM/dd') HDate,isnull(HD.Influence, 'HD')U_BC,
+                                                 isnull(HD.Holiday_kind, 'HD') Holiday_kind,isnull(Holiday_NA, '假日') Holiday_NA FROM Holidays H
+                                                 LEFT JOIN Holidays_D HD ON H.HDate=HD.HDate
+                                                 LEFT JOIN (
+                                                             SELECT item_D_code Holiday_kind,item_D_name Holiday_NA 
+                                                             FROM Item_list WHERE item_M_code='Holiday_kind'
+                                                             AND item_D_type='Y')I ON HD.Holiday_kind=I.Holiday_kind
+                                                 WHERE HD.Holiday_kind='Hk_04' AND H.HDate like @yyyy + '%') HD ON ad.attendance_date=HD.HDate AND U.U_BC=HD.U_BC
+                                     LEFT JOIN (
+                                                 SELECT item_D_code U_num_NL FROM Item_list WHERE /*不計遲到人員*/ item_M_code = 'NonLate'
+                                                 AND item_M_type='N')NL ON U.U_num=NL.U_num_NL
+                                     LEFT JOIN (
+                                                 SELECT FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,convert(varchar, FR_date_end, 111) FR_date_E,
+                                                 count(FR_U_num) RestCount FROM Flow_rest WHERE del_tag = '0' AND FR_cancel<>'Y' GROUP BY FR_U_num,
+                                                 convert(varchar, FR_date_begin, 111),convert(varchar, FR_date_end, 111)) R ON ad.userID=R.FR_U_num
+                                                 AND ad.attendance_date BETWEEN R.FR_date_S AND FR_date_E
+                                     WHERE [work_time] < '24:00' AND Userid<>'' AND yyyymm = @yyyyMM";
+                if (Type == "1")
                 {
                     T_SQL += " AND userID = @user";
                 }
@@ -559,19 +582,19 @@ namespace KF_WebAPI.DataLogic
                         break;
                 }
                 T_SQL += @"  ORDER BY u_BC,userID,attendance_date";
-                
+
                 var YYYY = YM.Substring(0, 4);
                 var MM = YM.Substring(4, 2);
 
                 var parameters = new List<SqlParameter>()
-                {
-                    new SqlParameter("@yyyy", YYYY),
-                    new SqlParameter("@MM", MM),
-                    new SqlParameter("@yyyyMM", YM),
-                    new SqlParameter("@user", User_Num)
-                };
+        {
+            new SqlParameter("@yyyy", YYYY),
+            new SqlParameter("@MM", MM),
+            new SqlParameter("@yyyyMM", YM),
+            new SqlParameter("@user", User_Num)
+        };
 
-                var result = _ADO.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select( row => new Attendance_per_res 
+                var result = _ADO.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Attendance_per_res
                 {
                     EarlyMin = row.Field<int>("EarlyMin"),
                     user_name = row.Field<string>("U_name"),
@@ -599,18 +622,18 @@ namespace KF_WebAPI.DataLogic
                         var inClause = string.Join(",", dateParams.Select(p => p.ParameterName));
 
                         var SQL_FR = $@"select case when FR_step_now = 1 then '代理人-'+FR_01_U_name when FR_step_now = 2 then '直屬主管-'+FR_02_U_name
-                           when FR_step_now = 3 then '單位主管-'+FR_03_U_name when FR_step_now = 9 then '人資-' when FR_step_now = 0 then ''
-                           end +  FR_sign_type_name as FR_sign_type_name_desc,* from (
-                           select FR_U_num,convert(varchar, FR_date_begin, 111) FR_date,convert(varchar(16),FR_date_begin, 120) FR_date_begin,
-                           convert(varchar(16),FR_date_end, 120) FR_date_end,FR_total_hour ,FR_step_now
-                           ,(select top 1 U_name from User_M where u_num= FR_step_01_num)FR_01_U_name
-                           ,(select top 1 U_name from User_M where u_num= FR_step_02_num)FR_02_U_name
-                           ,(select top 1 U_name from User_M where u_num= FR_step_03_num)FR_03_U_name
-                           ,(select item_D_name from Item_list where item_M_code = 'FR_kind' AND item_D_type='Y' AND item_D_code = Flow_rest.FR_kind AND del_tag='0') as FR_kind_show
-                           ,(select item_D_name from Item_list where item_M_code = 'Flow_sign_type' AND item_D_type='Y' AND item_D_code = Flow_rest.FR_sign_type AND del_tag='0') as FR_sign_type_name
-                           ,(select item_D_color from Item_list where item_M_code = 'Flow_sign_type' AND item_D_type='Y' AND item_D_code = Flow_rest.FR_sign_type AND del_tag='0') as FR_sign_type_color
-                           from Flow_rest where del_tag = '0' and FR_cancel<>'Y' and FR_U_num=@user_FR
-                           and convert(varchar, FR_date_begin, 111) IN ({inClause}) ) A"; // <-- 關鍵修改：改成 IN
+                   when FR_step_now = 3 then '單位主管-'+FR_03_U_name when FR_step_now = 9 then '人資-' when FR_step_now = 0 then ''
+                   end +  FR_sign_type_name as FR_sign_type_name_desc,* from (
+                   select FR_U_num,convert(varchar, FR_date_begin, 111) FR_date,convert(varchar(16),FR_date_begin, 120) FR_date_begin,
+                   convert(varchar(16),FR_date_end, 120) FR_date_end,FR_total_hour ,FR_step_now
+                   ,(select top 1 U_name from User_M where u_num= FR_step_01_num)FR_01_U_name
+                   ,(select top 1 U_name from User_M where u_num= FR_step_02_num)FR_02_U_name
+                   ,(select top 1 U_name from User_M where u_num= FR_step_03_num)FR_03_U_name
+                   ,(select item_D_name from Item_list where item_M_code = 'FR_kind' AND item_D_type='Y' AND item_D_code = Flow_rest.FR_kind AND del_tag='0') as FR_kind_show
+                   ,(select item_D_name from Item_list where item_M_code = 'Flow_sign_type' AND item_D_type='Y' AND item_D_code = Flow_rest.FR_sign_type AND del_tag='0') as FR_sign_type_name
+                   ,(select item_D_color from Item_list where item_M_code = 'Flow_sign_type' AND item_D_type='Y' AND item_D_code = Flow_rest.FR_sign_type AND del_tag='0') as FR_sign_type_color
+                   from Flow_rest where del_tag = '0' and FR_cancel<>'Y' and FR_U_num=@user_FR
+                   and convert(varchar, FR_date_begin, 111) IN ({inClause}) ) A"; // <-- 關鍵修改：改成 IN
 
                         // 加入使用者參數與動態生成的日期參數
                         var parameters_FR = new List<SqlParameter> { new SqlParameter("@user_FR", User_Num) };
@@ -659,29 +682,29 @@ namespace KF_WebAPI.DataLogic
                 {
                     var SQL_NC = @"delete attendance where substring(@yyyyMM_NC,1,4)+'/'+attendance_date = format( SYSDATETIME(),'yyyy/MM/dd')  and userID = @user_NC";
                     var parameters_NC = new List<SqlParameter>()
-                    {
-                        new SqlParameter("@yyyyMM_NC", YM),
-                        new SqlParameter("@user_NC", User_Num)
-                    };
+            {
+                new SqlParameter("@yyyyMM_NC", YM),
+                new SqlParameter("@user_NC", User_Num)
+            };
                     _ADO.ExecuteQuery(SQL_NC, parameters_NC);
                     var SQL_IN = @"insert into  dbo.attendance select U_name,userID,CONVERT(varchar(6), convert(datetime ,Date_Record), 112) yyyymm,U_BC user_apart
-                                   ,CONVERT(varchar(5), convert(datetime ,Date_Record), 101) attendance_date,work_time, getoffwork_time,SYSDATETIME() inputdate,
-                                   'Card_SYS'user_num,'N' ac_flag 
-                                   from (
-                                          select WT.userID,WT.Date_Record,CAST(WO.Time_Record as varchar(5)) work_time,CAST(WT.Time_Record as varchar(5)) getoffwork_time 
-                                          from (
-                                                 SELECT userID,Date_Record,MAX(Time_Record) Time_Record FROM Card_Machine group by userID,Date_Record ) WT
-                                          Join (
-                                                 SELECT userID,Date_Record,min(Time_Record) Time_Record FROM Card_Machine 
-                                                 where Time_Record between '04:00' and '17:00' group by userID,Date_Record ) WO on WT.userID=WO.userID AND WT.Date_Record=WO.Date_Record
-                                        ) A
-                                   Left Join User_M M on A.userID= M.u_num
-                                   where  U_BC in ('BC0100','BC0200','BC0400','BC0500','BC0300','BC0600','BC0700','BC0800','BC0801','BC0802','BC0803','BC0804','BC0900')
-                                   and [Date_Record]=format( SYSDATETIME(),'yyyy-MM-dd') and userID=@user_IN";
+                           ,CONVERT(varchar(5), convert(datetime ,Date_Record), 101) attendance_date,work_time, getoffwork_time,SYSDATETIME() inputdate,
+                           'Card_SYS'user_num,'N' ac_flag 
+                           from (
+                                  select WT.userID,WT.Date_Record,CAST(WO.Time_Record as varchar(5)) work_time,CAST(WT.Time_Record as varchar(5)) getoffwork_time 
+                                  from (
+                                         SELECT userID,Date_Record,MAX(Time_Record) Time_Record FROM Card_Machine group by userID,Date_Record ) WT
+                                  Join (
+                                         SELECT userID,Date_Record,min(Time_Record) Time_Record FROM Card_Machine 
+                                         where Time_Record between '04:00' and '17:00' group by userID,Date_Record ) WO on WT.userID=WO.userID AND WT.Date_Record=WO.Date_Record
+                                ) A
+                           Left Join User_M M on A.userID= M.u_num
+                           where  U_BC in ('BC0100','BC0200','BC0400','BC0500','BC0300','BC0600','BC0700','BC0800','BC0801','BC0802','BC0803','BC0804','BC0900')
+                           and [Date_Record]=format( SYSDATETIME(),'yyyy-MM-dd') and userID=@user_IN";
                     var parameters_IN = new List<SqlParameter>()
-                    {
-                        new SqlParameter("@user_IN", User_Num)
-                    };
+            {
+                new SqlParameter("@user_IN", User_Num)
+            };
                     _ADO.ExecuteQuery(SQL_IN, parameters_IN);
                 }
             }
