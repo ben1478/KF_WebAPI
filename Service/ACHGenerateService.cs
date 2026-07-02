@@ -16,9 +16,9 @@
     {
         // 固定參數
         private const string ORIG_ID = "52611690";          // 發動者公司統一編號
-        private  string ORIG_ACC = "0012101800165758";    // 發動者帳號 (14碼)
+        private string ORIG_ACC = "0012101800165758";    // 發動者帳號 (14碼)
         private const string TX_TYPE = "NSD";               // 交易型態 (樣張中明細為 NSD)
-        private  string TX_CODE = "902";               // 交易代碼 (分期款代收)
+        private string TX_CODE = "902";               // 交易代碼 (分期款代收)
         private string SEND_ORG = "8070014";          // 發送單位代號 (永豐銀行通常為 8070014)
         private const string RECV_ORG = "9990250";          // 接收單位代號 (票交所 ACH 中心碼)
 
@@ -50,7 +50,7 @@
                 textFileName = "ACHP01_" + minguoDate + TX_CODE + ORIG_ID + ".txt";
                 fileName = "ACHP01_" + minguoDate + TX_CODE + ORIG_ID + ".zip"; // 中信最終輸出檔名改為 .zip
                 SEND_ORG = "8220901";
-                ORIG_ACC="0000901119913718";
+                ORIG_ACC = "0000901119913718";
 
             }
             else
@@ -176,7 +176,7 @@
                             zip.AlternateEncoding = big5;
                             zip.AlternateEncodingUsage = ZipOption.AsNecessary;
 
-                           
+
                             zip.Password = "a52611690"; // 解壓縮密碼
 
                             // 將記憶體中的文字檔陣列注入 ZIP 結構中

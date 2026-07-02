@@ -72,7 +72,7 @@ namespace KF_WebAPI.DataLogic
             }
             catch
             {
-                throw ;
+                throw;
             }
         }
 
@@ -100,18 +100,18 @@ namespace KF_WebAPI.DataLogic
                     return new MotocaseSummary
                     {
                         YYYYMM = row.Field<string>("YYYYMM"),
-                
+
                         SendCount = sendCount,
                         PassCount = passCount,
                         GetCount = getCount,
-                
+
                         PassAmount = passAmount,
                         GetAmount = getAmount,
-                
+
                         PassRate = sendCount == 0
                             ? "0.00%"
                             : ((decimal)passCount / sendCount).ToString("0.00%"),
-                
+
                         GetRate = passCount == 0
                             ? "0.00%"
                             : ((decimal)getCount / passCount).ToString("0.00%")
@@ -120,7 +120,7 @@ namespace KF_WebAPI.DataLogic
 
                 return result;
             }
-            catch 
+            catch
             {
                 throw;
             }
@@ -474,7 +474,7 @@ namespace KF_WebAPI.DataLogic
         /// 取得機車清償資料
         /// </summary>
         /// <param name="yyyyMM">202404</param>
-        public List<SettDetailList> GetMotoSettList(int yyyyMM,string type, string? chkSale)
+        public List<SettDetailList> GetMotoSettList(int yyyyMM, string type, string? chkSale)
         {
             try
             {
@@ -543,7 +543,7 @@ namespace KF_WebAPI.DataLogic
         /// <summary>
         /// 匯出機車貸清償EXCEL
         /// </summary>
-        public byte[] GetMotoSettExcel(int yyyyMM,string type, string? chkSale)
+        public byte[] GetMotoSettExcel(int yyyyMM, string type, string? chkSale)
         {
             try
             {
@@ -687,9 +687,9 @@ namespace KF_WebAPI.DataLogic
                     SettAmount = row.Field<decimal>("SettAmount"),
                     BadCount = row.Field<int>("BadCount"),
                     BadAmount = row.Field<decimal>("BadAmount"),
-                    PassRate = row.Field<int>("SendCount") == 0 ? "0.00%": ((decimal)row.Field<int>("PassCount") / row.Field<int>("SendCount")).ToString("0.00%"),
-                    GetRate = row.Field<int>("PassCount") == 0 ? "0.00%": ((decimal)row.Field<int>("GetCount") / row.Field<int>("PassCount")).ToString("0.00%")
-                
+                    PassRate = row.Field<int>("SendCount") == 0 ? "0.00%" : ((decimal)row.Field<int>("PassCount") / row.Field<int>("SendCount")).ToString("0.00%"),
+                    GetRate = row.Field<int>("PassCount") == 0 ? "0.00%" : ((decimal)row.Field<int>("GetCount") / row.Field<int>("PassCount")).ToString("0.00%")
+
                 }).ToList();
 
 
@@ -1112,7 +1112,7 @@ namespace KF_WebAPI.DataLogic
                               WHERE b.Send_result_type = 'SRT002' AND b.get_amount_type = 'GTAT002' AND date_begin_settle IS NOT NULL
                               AND b.project_title NOT IN ('PJ00046','PJ00047','PJ00048')";
 
-                if(chkSale!=null && chkSale == "1")
+                if (chkSale != null && chkSale == "1")
                 {
                     T_SQL += @" AND ISNULL(rm.court_sale,'') = 1 ";
                 }
@@ -2497,7 +2497,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                             TotRow_C["month_get_amount_num_Car"] = imonth_get_amount_num_Car;
                             TotRow_C["month_get_amount_PJ00048"] = imonth_get_amount_PJ00048;
                             TotRow_C["month_pass_amount_PJ00048"] = imonth_pass_amount_PJ00048;
-                            
+
 
                             if (Dis_BC != "BC0900" && Dis_BC != "BC0901")
                             {
@@ -2836,7 +2836,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
                 throw;
             }
-            
+
         }
 
         /// <summary>
@@ -2844,7 +2844,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
         /// </summary>
         public IEnumerable<dynamic> GetIncoming(Incoming_req model)
         {
-            
+
             #region SQL
             var T_SQL = @"SELECT InTime,COUNT(*) as _count FROM TelemarketingCSList tc
                           LEFT JOIN Telemarketing_M tm ON tm.HA_id = tc.TC_id AND tm.TM_type = 2
@@ -2854,7 +2854,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                           SUBSTRING(InDate, CHARINDEX('/', InDate)+1, CHARINDEX('/', InDate, CHARINDEX('/', InDate)+1) - CHARINDEX('/', InDate) - 1) + '/' + 
                           RIGHT(InDate, LEN(InDate) - CHARINDEX('/', InDate, CHARINDEX('/', InDate)+1)), 111 ) 
                           BETWEEN @checkDateS AND @checkDateE ";
-            var parameters = new List<SqlParameter> 
+            var parameters = new List<SqlParameter>
             {
                 new SqlParameter("@checkDateS", model.checkDateS),
                 new SqlParameter("@checkDateE", model.checkDateE)
@@ -2881,7 +2881,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 InTime = row.Field<string>("InTime"),
                 Count = row.Field<int>("_count")
             });
-            return result;  
+            return result;
         }
 
         /// <summary>
@@ -2889,7 +2889,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
         /// </summary>
         public DataTable GetSalesDataByDate(string BaseDate)
         {
-           
+
             // 1. 解析傳入的字串 (建議使用 ParseExact 確保格式正確)
             // 假設輸入格式為 "yyyy/MM/dd" 或 "yyyy-MM-dd"
             if (!DateTime.TryParse(BaseDate, out DateTime parsedDate))
@@ -2968,7 +2968,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 new SqlParameter("@StartDate", startDate),
                 new SqlParameter("@Pre_BaseDate", preBaseDate),
                 new SqlParameter("@Pre_StartDate", preStartDate)
-               
+
             };
             DataTable dt = _adoData.ExecuteQuery(T_SQL, parameters);
 
@@ -3170,12 +3170,12 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             {
                 new SqlParameter("@BaseDate", baseDate),
                 new SqlParameter("@Pre_BaseDate", preBaseDate)
-              
+
             };
             DataTable dt1 = _adoData.ExecuteQuery(T_SQL, parameters1);
-            FuncHandler func =new FuncHandler();
-            
-            return func.MergeSalesDataToDataTable(dt, dt1); 
+            FuncHandler func = new FuncHandler();
+
+            return func.MergeSalesDataToDataTable(dt, dt1);
         }
 
 
@@ -3267,7 +3267,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 dtNew_CarRow["DiffType"] = "逾期類別";
                 dtNew_Car.Rows.Add(dtNew_CarRow);
                 DataTable dtNew_Moto = dtNew_Car.Copy();
-               
+
 
                 int iSEQ = 1;
                 if (dtCar.Rows.Count == 0)
@@ -3472,7 +3472,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 }
 
                 DateTime paymentDate = DateTime.ParseExact(
-                    match.Value.Replace("R_",""),
+                    match.Value.Replace("R_", ""),
                     "yyyyMMdd",
                     System.Globalization.CultureInfo.InvariantCulture
                 );
@@ -3508,7 +3508,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                         {
                             Col1 = csPid,
                             Col2 = paymentDate.ToString("yyyy/MM/dd")
-                          
+
                         };
                         FileList.Add(fileRow);
 
@@ -3584,7 +3584,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
             try
             {
-              
+
                 using (var stream = new MemoryStream())
                 {
                     file.CopyTo(stream);
@@ -3613,7 +3613,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                                     string resultCode = "01"; // 預設為失敗
                                     string isSuccess = "0";   // 預設為失敗
                                     string returnReason = "";
-                                    if (statusText.Contains("交易成功") )
+                                    if (statusText.Contains("交易成功"))
                                     {
                                         resultCode = "00";
                                         isSuccess = "1";
@@ -3648,8 +3648,8 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                                     }
 
                                     // 4. 執行 SQL 查詢對應應收帳款,先針對繳款日期下條件,有符合日期已繳款日期為準
-                                    var T_SQL = @"SELECT TOP "+ ProCount.ToString() + " * FROM Receivable_M RM ";
-                                    T_SQL +=@" INNER JOIN Receivable_D RD ON RD.RCM_id = RM.RCM_id AND RD.del_tag = 0
+                                    var T_SQL = @"SELECT TOP " + ProCount.ToString() + " * FROM Receivable_M RM ";
+                                    T_SQL += @" INNER JOIN Receivable_D RD ON RD.RCM_id = RM.RCM_id AND RD.del_tag = 0
                                       INNER JOIN House_apply HA ON HA.HA_id = RM.HA_id
                                       WHERE RM.del_tag = 0 AND check_pay_type = 'N' AND cancel_type <> 'Y' AND bad_debt_type = 'N'
                                       AND HA.CS_PID = @CS_PID 
@@ -3675,12 +3675,12 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                                             Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
                                             amount_total = row.Field<decimal>("amount_total"),
                                             month_total = row.Field<int>("month_total"),
-                                            RecPayDate =  Convert.ToDateTime(payDate), // 帶入檔名日期
+                                            RecPayDate = Convert.ToDateTime(payDate), // 帶入檔名日期
                                             Win_Msg = returnReason,// 存入對象變數供後續判斷
-                                            ProCount= ProCount
+                                            ProCount = ProCount
                                         }).ToList();
                                     }
-                                    
+
                                     ReceivableWinList.AddRange(lisReceivableWinList);
                                 }
                             }
@@ -3689,7 +3689,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 }
 
 
-                
+
 
                 // 5. 缺失比對判斷
                 var missingInList = FileList.Where(f => !ReceivableWinList.Any(r => r.CS_PID == f.Col1)).ToList();
@@ -3765,7 +3765,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                     FileList.Add(item);
                     var T_SQL1 = "";
                     var parameters1 = new List<SqlParameter>();
-                    
+
                     if (RCD_id == "")
                     {
                         parameters1 = new List<SqlParameter>
@@ -3796,7 +3796,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                              new SqlParameter("@RCD_id",RCD_id)
                         };
                     }
-                   
+
                     var result = _adoData.ExecuteQuery(T_SQL1, parameters1).AsEnumerable().Select(row => new Receivable_Win_ACH
                     {
                         HS_id = row.Field<decimal>("HS_id"),
@@ -3816,10 +3816,10 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                         PayDate = item.Col2,
                         Invoice_No = row.Field<string>("invoice_no"),
                         FileKeyID = FileKeyID,
-                        file_index= file_index,
-                        IsSuccess= IsSuccess
+                        file_index = file_index,
+                        IsSuccess = IsSuccess
                     }).ToList();
-                   
+
                     ReceivableWinList.AddRange(result);
 
                 }
@@ -3935,7 +3935,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
         //    }
         //}
 
-        public string CheckInvGp(string yyyMM , string GpNO)
+        public string CheckInvGp(string yyyMM, string GpNO)
         {
             try
             {
@@ -3952,7 +3952,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                     ColumnVal = row.Field<string>("ColumnVal")
                 }).FirstOrDefault();
 
-                if ( model == null)
+                if (model == null)
                 {
                     var T_SQL_in = @"Insert into LogTable (TableNA,KeyVal,ColumnVal,LogID,LogDate) values ('Winton',@yyyMM,@GpNO,'sys',getdate())";
                     var parameters_in = new List<SqlParameter>
@@ -4000,7 +4000,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             }
         }
 
-        public void UpdClientPay(string RCD_id,string user)
+        public void UpdClientPay(string RCD_id, string user)
         {
             try
             {
@@ -4035,7 +4035,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                                  INNER JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id
                                  INNER JOIN House_sendcase HS ON HS.HS_id = RM.HS_id
                                  WHERE RD.RCD_id = @RCD_id";
-                if (uType == "1") 
+                if (uType == "1")
                 {
                     T_SQL += ",RD.RemainingPrincipal = RD.Ex_RemainingPrincipal,RC_note = @RC_note";
                     T_SQL += ",RD.Delaymoney = CASE WHEN HS.sendcase_handle_date >= '2023-04-24 00:00:00.000' THEN dbo.getDelaymoney(@check_pay_date, RD.RCD_cknum) ELSE NULL END";
@@ -4054,8 +4054,8 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
                     _adoData.ExecuteNonQuery(T_SQL, parameters);
                 }
-                
-                if(uType == "2")
+
+                if (uType == "2")
                 {
                     T_SQL += ",RD.RemainingPrincipal = RD.Ex_RemainingPrincipal,RD.Delaymoney = CASE WHEN HS.sendcase_handle_date >= '2023-04-24 00:00:00.000' THEN dbo.getDelaymoney(@check_pay_date, RD.RCD_cknum) ELSE NULL END";
                     T_SQL += T_SQL_B;
@@ -4072,8 +4072,8 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
                     _adoData.ExecuteNonQuery(T_SQL, parameters);
                 }
-               
-                if(uType == "3") 
+
+                if (uType == "3")
                 {
                     T_SQL += T_SQL_B;
                     parameters.Add(new SqlParameter("@RecPayDate", model.RecPayDate));
@@ -4136,7 +4136,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                     parameters.Add(new SqlParameter("@RCD_id", model.RCD_id));
                     _adoData.ExecuteNonQuery(T_SQL, parameters);
                 }
-                
+
             }
             catch (Exception)
             {
@@ -4145,7 +4145,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             }
         }
 
-                /// <summary>
+        /// <summary>
         /// 取得貸款相關資訊
         /// </summary>
         public DataTable GetRCMInfo(string LaunchDate)
@@ -4195,7 +4195,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                         ) A where  ACH_DATE =@ACH_DATE
                         order by RC_date";
 
-               
+
 
 
                 parameters.Add(new SqlParameter("@ACH_DATE", ACH_DATE));
@@ -4260,7 +4260,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
-                
+
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"select check_pay_type, RCD_id,dbo.GetDateToChin(ACH_DATE)dis_ACH_DATE,Ach_Bank_Na,dbo.GetDateToChin(RC_date)disRC_date,format(ACH_DATE,'yyyy-MM-dd') ACH_DATE,RC_date,CS_name,RC_amount,Ach_Bank,CS_PID from
                                 (select M.AccountNo, M.Ach_State, D.RCD_id,[dbo].[fn_GetWorkday]( DATEADD(day,-1, RC_date)) ACH_DATE,format(RC_date,'yyyy-MM-dd')RC_date, M.HA_id,M.HS_id,A.CS_name,D.RC_amount,check_pay_type

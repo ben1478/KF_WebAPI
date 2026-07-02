@@ -21,7 +21,7 @@ namespace KF_WebAPI.DataLogic
         private Int32 GetFilesCountByKeyID(string p_Key, string p_Key_Type, string p_isLike)
         {
             Common _Comm = new();
-            Int32 m_FileCount =0;
+            Int32 m_FileCount = 0;
             try
             {
                 ADOData _adoData = new ADOData();
@@ -90,12 +90,12 @@ namespace KF_WebAPI.DataLogic
         }
 
 
-        public ResultClass<AE_Files[]> GetFilesByKeyID(string p_Key, string p_Key_Type,string p_isLike)
+        public ResultClass<AE_Files[]> GetFilesByKeyID(string p_Key, string p_Key_Type, string p_isLike)
         {
 
             ResultClass<AE_Files[]> resultClass = new();
             Common _Comm = new();
-            Int32 _FileCount = GetFilesCountByKeyID(p_Key, p_Key_Type, p_isLike);   
+            Int32 _FileCount = GetFilesCountByKeyID(p_Key, p_Key_Type, p_isLike);
             AE_Files[] m_AE_Files = new AE_Files[_FileCount];
             try
             {
@@ -138,7 +138,7 @@ namespace KF_WebAPI.DataLogic
                                     m_AE_File.file_name = reader["file_name"].ToString();
                                     m_AE_File.content_type = reader["content_type"].ToString();
                                     m_AE_File.add_date = reader["Add_YYMMDD"].ToString();
-                                    
+
                                     m_AE_Files[m_Count] = (m_AE_File);
                                     m_Count++;
                                 }
@@ -194,7 +194,7 @@ namespace KF_WebAPI.DataLogic
                                 {
                                     m_attachmentFile.file_body_encode = _Comm.DecompressFile(base64String);
                                 }
-                                
+
                                 m_attachmentFile.file_size = reader["file_size"].ToString();
                                 m_attachmentFile.file_index = reader["file_index"].ToString();
                                 m_attachmentFile.file_name = reader["file_name"].ToString();
@@ -216,10 +216,10 @@ namespace KF_WebAPI.DataLogic
             return resultClass;
         }
 
-        public int InsertFile( AE_Files[] p_attachmentFiles, string p_Key, string p_Key_Type, string p_User, string ACH )
+        public int InsertFile(AE_Files[] p_attachmentFiles, string p_Key, string p_Key_Type, string p_User)
         {
             Common _Comm = new();
-          
+
             int m_Execut = 0;
             Int32 _MaxIndex = GetFilesMaxIndexByKeyID(p_Key, p_Key_Type);
 
@@ -243,13 +243,13 @@ namespace KF_WebAPI.DataLogic
                         command.Parameters.AddWithValue("@KeyID", p_Key);
                         command.Parameters.AddWithValue("@Key_Type", p_Key_Type);
 
-                        command.Parameters.AddWithValue("@file_index",Convert.ToInt32(file.file_index)+ _MaxIndex);
+                        command.Parameters.AddWithValue("@file_index", Convert.ToInt32(file.file_index) + _MaxIndex);
                         command.Parameters.AddWithValue("@file_body_encode", imageBytes);
                         command.Parameters.AddWithValue("@file_size", file.file_size);
                         command.Parameters.AddWithValue("@content_type", file.content_type);
                         command.Parameters.AddWithValue("@file_name", file.file_name);
                         command.Parameters.AddWithValue("@add_num", p_User);
-                     
+
                         // 執行 SQL 命令
                         m_Execut += command.ExecuteNonQuery();
                     }
@@ -260,7 +260,7 @@ namespace KF_WebAPI.DataLogic
                 catch (Exception ex)
                 {
                     transaction.Rollback();
-                    throw new Exception("檔案上傳失敗!!"+ ex.Message);
+                    throw new Exception("檔案上傳失敗!!" + ex.Message);
                 }
             }
             catch (Exception ex)
@@ -277,7 +277,7 @@ namespace KF_WebAPI.DataLogic
             Common _Comm = new();
 
             int m_Execut = 0;
-           
+
 
             try
             {
@@ -330,20 +330,20 @@ namespace KF_WebAPI.DataLogic
         }
 
 
-        public int DeleteFile( string p_KeyID, string p_Key_Type, string p_file_index)
+        public int DeleteFile(string p_KeyID, string p_Key_Type, string p_file_index)
         {
             Common _Comm = new();
             int m_Execut = 0;
             try
             {
-               
+
                 List<SqlParameter> Params = new List<SqlParameter>()
                 {
                     new SqlParameter() {ParameterName = "@KeyID", SqlDbType = SqlDbType.VarChar, Value= p_KeyID},
                     new SqlParameter() {ParameterName = "@Key_Type", SqlDbType = SqlDbType.VarChar, Value= p_Key_Type},
                     new SqlParameter() {ParameterName = "@file_index", SqlDbType = SqlDbType.VarChar, Value= p_file_index}
                 };
-                m_Execut= _ADO.ExecuteNonQuery("Delete FROM dbo.AE_Files where KeyID=@KeyID and  Key_Type=@Key_Type and file_index=@file_index ", Params);
+                m_Execut = _ADO.ExecuteNonQuery("Delete FROM dbo.AE_Files where KeyID=@KeyID and  Key_Type=@Key_Type and file_index=@file_index ", Params);
             }
             catch (Exception ex)
             {
@@ -357,7 +357,7 @@ namespace KF_WebAPI.DataLogic
         {
             Common _Comm = new();
             string m_URL = "";
-             AE_Files m_attachmentFile = new();
+            AE_Files m_attachmentFile = new();
             try
             {
                 string m_Key = "websiteURL";
@@ -369,7 +369,7 @@ namespace KF_WebAPI.DataLogic
                 #endregion
 
                 parameters.Add(new SqlParameter("@Key", m_Key));
-               
+
 
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
@@ -408,7 +408,7 @@ namespace KF_WebAPI.DataLogic
                     m_Count = Convert.ToInt32(dtResult.Rows[0]["LineCount"]);
                 }
             }
-            catch 
+            catch
             {
                 throw;
             }
@@ -456,7 +456,7 @@ namespace KF_WebAPI.DataLogic
                     new SqlParameter("@Remark",model.Remark),
                     new SqlParameter("@LogID",model.LogID)
                 };
-                _ADO.ExecuteQuery(T_SQL,parameters);    
+                _ADO.ExecuteQuery(T_SQL, parameters);
             }
             catch (Exception)
             {

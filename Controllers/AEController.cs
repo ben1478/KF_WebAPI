@@ -27,7 +27,7 @@ namespace KF_WebAPI.Controllers
     [Route("[controller]")]
     public class AEController : ControllerBase
     {
-       // private readonly string _storagePath = @"C:\UploadedFiles";
+        // private readonly string _storagePath = @"C:\UploadedFiles";
         private readonly string _storagePath = @"D:\AE_Web_UpLoad";
         private AEData _AEData = new();
         private ADOData _db = new ADOData();
@@ -88,13 +88,13 @@ namespace KF_WebAPI.Controllers
                 {
                     var USER_NAME = dtResult.Rows[0]["USER_NAME"].ToString();
 
-                    string accessToken  = GetAuth0Token().Result; ;
-                   
+                    string accessToken = GetAuth0Token().Result; ;
+
                     return Ok(new
                     {
                         success = true,
                         token = accessToken,
-                        USER_NAME= USER_NAME
+                        USER_NAME = USER_NAME
                     });
                 }
                 else
@@ -211,7 +211,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); 
+                return StatusCode(500, resultClass);
             }
         }
 
@@ -231,7 +231,7 @@ namespace KF_WebAPI.Controllers
                     and (Menu_set.per_read = 1 or Menu_set.per_add = 1 or Menu_set.per_edit = 1 or Menu_set.per_del = 1) 
                     and Menu_list.del_tag = '0'
                     ORDER BY  Menu_list.top_id, Menu_list.sub_id, Menu_list.item_id";
-                var parameters = new List<SqlParameter> 
+                var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@U_num", U_num)
                 };
@@ -254,7 +254,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); 
+                return StatusCode(500, resultClass);
             }
         }
 
@@ -343,7 +343,7 @@ namespace KF_WebAPI.Controllers
                     ( @cknum,@upload_name_show,@upload_name_code,@upload_folder,@upload_code,@del_tag,@add_date,@add_num,
                     @add_ip,@send_api_name_code )";
 
-                var parameters = new List<SqlParameter> 
+                var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@cknum", cknum),
                     new SqlParameter("@upload_name_show", file.FileName),
@@ -376,7 +376,7 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "500";
                 resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass); 
+                return StatusCode(500, resultClass);
             }
 
         }
@@ -388,7 +388,7 @@ namespace KF_WebAPI.Controllers
             {
                 var _Fun = new FuncHandler();
                 var T_SQL = "select upload_name_code,upload_name_show from ASP_UpLoad where upload_id=@upload_id";
-                var parameters = new List<SqlParameter> 
+                var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@upload_id", upload_id)
                 };
@@ -434,7 +434,7 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 var T_SQL = "Update ASP_UpLoad set del_tag=@del_tag,del_date=@del_date,del_ip=@del_ip,del_num=@del_num where upload_id=@upload_id";
-                var parameters = new List<SqlParameter> 
+                var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@del_tag", "1"),
                     new SqlParameter("@del_date", DateTime.Now),
@@ -589,7 +589,7 @@ namespace KF_WebAPI.Controllers
 
                 string T_SQL = $@"SELECT  {sumColumns} FROM ( SELECT *,{caseColumns} FROM Msg WHERE del_tag = '0' AND Msg_read_type = 'N' 
                                AND msg_to_num = @num and Msg_show_date between @StartDate and @EndDate) AS SubQuery";
-                var parameters = new List<SqlParameter> 
+                var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@num", User),
                     new SqlParameter("@StartDate", StartDate),
@@ -634,7 +634,7 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                
+
 
                 var queryBuilder = new StringBuilder();
 
@@ -647,7 +647,7 @@ namespace KF_WebAPI.Controllers
                                           Left join User_M Um on Um.U_num=Msg.Msg_to_num
                                           Left join User_M Um_1 on Um_1.U_num=Msg.add_num
                                           where Msg_show_date between @StartDate and @EndDate");
-                var parameters = new List<SqlParameter> 
+                var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@StartDate", model.StartDate),
                     new SqlParameter("@EndDate", model.EndDate)
@@ -704,9 +704,9 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var queryBuilder = new StringBuilder();
-                queryBuilder.AppendLine( @"Update Msg set Msg_read_type='Y',edit_date=GETDATE(),edit_num=@User,edit_ip=@UserIp 
+                queryBuilder.AppendLine(@"Update Msg set Msg_read_type='Y',edit_date=GETDATE(),edit_num=@User,edit_ip=@UserIp 
                                            where Msg_read_type='N' and Msg_show_date between @StartDate and @EndDate");
-                var parameters = new List<SqlParameter> 
+                var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@User", model.User),
                     new SqlParameter("@UserIp", clientIp),
@@ -717,7 +717,7 @@ namespace KF_WebAPI.Controllers
                 if (model.UserType == "kind_get")
                 {
                     queryBuilder.AppendLine(" and Msg.Msg_to_num = @User");
-                  
+
                 }
                 if (model.UserType == "kind_add")
                 {
@@ -761,7 +761,7 @@ namespace KF_WebAPI.Controllers
         /// 單筆變更已讀 MesRead_Upd
         /// </summary>
         [HttpGet("MesRead_Upd")]
-        public ActionResult<ResultClass<string>> MesRead_Upd(string Msg_id,string User)
+        public ActionResult<ResultClass<string>> MesRead_Upd(string Msg_id, string User)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
@@ -770,7 +770,7 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var T_SQL = @"Update Msg set Msg_read_type='Y',edit_date=GETDATE(),edit_num=@User,edit_ip=@UserIp where Msg_id=@Msg_id";
-                var parameters = new List<SqlParameter> 
+                var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@Msg_id", Msg_id),
                     new SqlParameter("@User", User),
@@ -803,7 +803,7 @@ namespace KF_WebAPI.Controllers
         /// 特殊權限判定
         /// </summary>
         [HttpGet("SpecialCkeck")]
-        public ActionResult<ResultClass<string>> SpecialCkeck(string User,string Sp_ID)
+        public ActionResult<ResultClass<string>> SpecialCkeck(string User, string Sp_ID)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -855,7 +855,7 @@ namespace KF_WebAPI.Controllers
                 {
                     new SqlParameter("@item_M_code",item_M_code)
                 };
-                var result = _adoData.ExecuteQuery(T_SQL,parameters).AsEnumerable().Select(row => new
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
                 {
                     item_D_code = row.Field<string>("item_D_code"),
                     item_D_name = _Fun.DeCodeBNWords(row.Field<string>("item_D_name"))
@@ -876,7 +876,7 @@ namespace KF_WebAPI.Controllers
         /// 取得GUID
         /// </summary>
         [HttpGet("GetWebToken")]
-        public ActionResult<ResultClass<string>> GetWebToken(string chknum,string Type,string user)
+        public ActionResult<ResultClass<string>> GetWebToken(string chknum, string Type, string user)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             var clientIp = HttpContext.Connection.RemoteIpAddress.ToString();
@@ -888,7 +888,7 @@ namespace KF_WebAPI.Controllers
                 #region SQL
                 var T_SQL = @"Insert into AE_WebToken(GUID,chk_num,TokenType,isConfirm,Effect_time,add_num,add_date,add_ip,ErrCount,isVerify) 
                               Values (@GUID,@chk_num,@TokenType,'N',DATEADD(MINUTE, 30, GETDATE()),@add_num,GETDATE(),@add_ip,0,'N')";
-                var parameters = new List<SqlParameter> 
+                var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@GUID",guid),
                     new SqlParameter("@chk_num",chknum),
@@ -939,7 +939,7 @@ namespace KF_WebAPI.Controllers
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 if (dtResult.Rows.Count > 0)
                 {
-                   
+
                     dtResult.AsEnumerable().Select(row => new
                     {
                         User = row.Field<string>("User"),
@@ -1032,7 +1032,7 @@ namespace KF_WebAPI.Controllers
 
         [Route("GetFilesByKeyID")]
         [HttpPost]
-        public ActionResult<string> GetFilesByKeyID(string KeyID, string Type , string isLike)
+        public ActionResult<string> GetFilesByKeyID(string KeyID, string Type, string isLike)
         {
             ResultClass<AE_Files[]> resultClass = new();
             try
@@ -1049,29 +1049,29 @@ namespace KF_WebAPI.Controllers
 
         [Route("InsertFile")]
         [HttpPost]
-        public ActionResult<ResultClass<string>> InsertFile([FromBody] AE_Files[] AE_Files, string KeyID, string Type, string u_num, string ACH )
+        public ActionResult<ResultClass<string>> InsertFile([FromBody] AE_Files[] AE_Files, string KeyID, string Type, string u_num, string ACH)
         {
             ResultClass<string> resultClass = new();
             try
             {
                 int m_Execut = _AEData.InsertFile(AE_Files, KeyID, Type, u_num);
 
-                
+
 
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "";
-               /* if (ACH == "Y")
-                {
-                    if (AE_Files != null && AE_Files.Length > 0 && AE_Files[0] != null)
-                    {
-                        IronOcrService _IronOcrService = new IronOcrService();
-                        ACHBankInfo _ACHBankInfo = _IronOcrService.ParsePDF_Base64(AE_Files[0].file_body_encode);
-                        if (_ACHBankInfo.IsSuccess)
-                        {
-                            resultClass.ResultMsg= System.Text.Json.JsonSerializer.Serialize(_ACHBankInfo); 
-                        }
-                    }
-                }*/
+                /* if (ACH == "Y")
+                 {
+                     if (AE_Files != null && AE_Files.Length > 0 && AE_Files[0] != null)
+                     {
+                         IronOcrService _IronOcrService = new IronOcrService();
+                         ACHBankInfo _ACHBankInfo = _IronOcrService.ParsePDF_Base64(AE_Files[0].file_body_encode);
+                         if (_ACHBankInfo.IsSuccess)
+                         {
+                             resultClass.ResultMsg= System.Text.Json.JsonSerializer.Serialize(_ACHBankInfo); 
+                         }
+                     }
+                 }*/
                 resultClass.objResult = m_Execut.ToString();
             }
             catch (Exception ex)
@@ -1092,7 +1092,7 @@ namespace KF_WebAPI.Controllers
                 int m_Execut = _AEData.BatchInsertFile(AE_Files);
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "";
-                
+
                 resultClass.objResult = m_Execut;
             }
             catch (Exception ex)
@@ -1112,7 +1112,7 @@ namespace KF_WebAPI.Controllers
             ResultClass<int> resultClass = new();
             try
             {
-                int m_Execut  = _AEData.DeleteFile( KeyID, Type, file_index);
+                int m_Execut = _AEData.DeleteFile(KeyID, Type, file_index);
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "";
                 resultClass.objResult = m_Execut;
@@ -1430,7 +1430,7 @@ namespace KF_WebAPI.Controllers
                     FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 5, ''), '') AS BookingSummary
             FROM DateRange D
             LEFT JOIN Holidays H ON FORMAT(D.DateValue, 'yyyy/MM/dd') = H.HDate
-            ORDER BY D.DateValue"; 
+            ORDER BY D.DateValue";
 
                 var paramsList = new List<SqlParameter> {
             new SqlParameter("@BaseDate", DateTime.Parse(startDate))
@@ -1453,7 +1453,7 @@ namespace KF_WebAPI.Controllers
 
 
         [HttpGet("GetCalendarByMonth")]
-        public ActionResult<ResultClass<string>> GetCalendarByMonth(string YYYYMM,string Ach_Bank)
+        public ActionResult<ResultClass<string>> GetCalendarByMonth(string YYYYMM, string Ach_Bank)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
@@ -1478,7 +1478,7 @@ namespace KF_WebAPI.Controllers
 						                                group by LaunchDate
 			                                ) A on LaunchDate= D.DateValue ORDER BY D.DateValue";
 
-                var paramsList = new List<SqlParameter> 
+                var paramsList = new List<SqlParameter>
                 {
                     new SqlParameter("@YYYYMM", YYYYMM),
                     new SqlParameter("@Ach_Bank", Ach_Bank)
