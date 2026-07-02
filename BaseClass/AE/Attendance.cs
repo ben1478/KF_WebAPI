@@ -101,4 +101,21 @@ namespace KF_WebAPI.BaseClass.AE
         public int item_sort { get; set; }
         public string Role_num { get; set; }
     }
+
+    public class Attendance_per_res: Attendance_res
+    {
+        public int? EarlyMin { get; set; }  
+        public string U_Na { get; set; }
+        public List<Attendance_Flow>? attendance_Flows { get; set; }
+    }
+
+    public class Attendance_Flow
+    {
+        public string? FR_kind_show { get; set; }
+        public string? FR_sign_type_name_desc { get; set; }
+        public string? FR_sign_type_color { get; set; }
+        public string? FR_date_begin { get; set; }
+        public string? FR_date_end { get; set; }
+        public decimal? FR_total_hour { get; set; }
+    }
 }
