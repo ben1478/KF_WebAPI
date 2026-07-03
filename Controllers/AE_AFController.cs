@@ -817,7 +817,7 @@ namespace KF_WebAPI.Controllers
 
                 var dtResult = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
                 {
-                    FR_id = row.Field<Int32>("FR_id"),
+                    FR_id = row.Field<decimal>("FR_id"),
                     FR_U_name = row.Field<string>("FR_U_name"),
                     FR_kind_show = row.Field<string>("FR_kind_show"),
                     FR_date = row.Field<string>("FR_date"),
