@@ -476,12 +476,13 @@ namespace KF_WebAPI.DataLogic
         {
             try
             {
-                //觸發新指紋機資料輸入
+                // 觸發新指紋機資料輸入
                 if (Type == "1")
                 {
                     AttendanceCardUpd(YM, User_Num);
                 }
 
+                #region 1. 主出勤資料查詢
                 var T_SQL = @"SELECT CASE WHEN ad.[attendance_date]= '2024/12/20' AND U.U_BC='BC0100' THEN 20 
                       WHEN ad.[attendance_date]= '2024/12/20' AND (U.U_BC like 'BC08%' OR U.U_BC='BC0900') THEN 10
                       WHEN ad.[attendance_date]= '2025/06/13' AND U.U_BC='BC0100' THEN 15 
@@ -527,29 +528,30 @@ namespace KF_WebAPI.DataLogic
                                             ON cast(A.yyyymm AS varchar(4))+'/'+attendance_date=FORMAT(cast(Hdate AS datetime), 'yyyy/MM/dd')
                                             WHERE yyyymm = @yyyyMM) H ON ad.userID=H.userID AND ad.yyyymm=H.yyyymm AND cast(ad.yyyymm AS varchar(4))+'/'+ad.attendance_date=H.attendance_date
                                             WHERE ad.yyyymm = @yyyyMM AND work_time <> '') ad
-                                     LEFT JOIN (
-                                                 SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na,U_arrive_date FROM User_M U
-                                                 LEFT JOIN (SELECT item_D_code,item_D_name FROM Item_list
-                                                            WHERE item_M_code='branch_company' AND item_D_type='Y' AND del_tag='0') I ON U.u_bc=I.item_D_code
-                                                            WHERE del_tag='0') U ON ad.userID=U.U_num
-                                     LEFT JOIN ( /*特殊節日颱風天*/ 
-                                                 SELECT FORMAT(convert(datetime, H.HDate), 'yyyy/MM/dd') HDate,isnull(HD.Influence, 'HD')U_BC,
-                                                 isnull(HD.Holiday_kind, 'HD') Holiday_kind,isnull(Holiday_NA, '假日') Holiday_NA FROM Holidays H
-                                                 LEFT JOIN Holidays_D HD ON H.HDate=HD.HDate
-                                                 LEFT JOIN (
-                                                             SELECT item_D_code Holiday_kind,item_D_name Holiday_NA 
-                                                             FROM Item_list WHERE item_M_code='Holiday_kind'
-                                                             AND item_D_type='Y')I ON HD.Holiday_kind=I.Holiday_kind
-                                                 WHERE HD.Holiday_kind='Hk_04' AND H.HDate like @yyyy + '%') HD ON ad.attendance_date=HD.HDate AND U.U_BC=HD.U_BC
-                                     LEFT JOIN (
-                                                 SELECT item_D_code U_num_NL FROM Item_list WHERE /*不計遲到人員*/ item_M_code = 'NonLate'
-                                                 AND item_M_type='N')NL ON U.U_num=NL.U_num_NL
-                                     LEFT JOIN (
-                                                 SELECT FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,convert(varchar, FR_date_end, 111) FR_date_E,
-                                                 count(FR_U_num) RestCount FROM Flow_rest WHERE del_tag = '0' AND FR_cancel<>'Y' GROUP BY FR_U_num,
-                                                 convert(varchar, FR_date_begin, 111),convert(varchar, FR_date_end, 111)) R ON ad.userID=R.FR_U_num
-                                                 AND ad.attendance_date BETWEEN R.FR_date_S AND FR_date_E
-                                     WHERE [work_time] < '24:00' AND Userid<>'' AND yyyymm = @yyyyMM";
+                              LEFT JOIN (
+                                          SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na,U_arrive_date FROM User_M U
+                                          LEFT JOIN (SELECT item_D_code,item_D_name FROM Item_list
+                                                     WHERE item_M_code='branch_company' AND item_D_type='Y' AND del_tag='0') I ON U.u_bc=I.item_D_code
+                                                     WHERE del_tag='0') U ON ad.userID=U.U_num
+                              LEFT JOIN ( /*特殊節日颱風天*/ 
+                                          SELECT FORMAT(convert(datetime, H.HDate), 'yyyy/MM/dd') HDate,isnull(HD.Influence, 'HD')U_BC,
+                                          isnull(HD.Holiday_kind, 'HD') Holiday_kind,isnull(Holiday_NA, '假日') Holiday_NA FROM Holidays H
+                                          LEFT JOIN Holidays_D HD ON H.HDate=HD.HDate
+                                          LEFT JOIN (
+                                                      SELECT item_D_code Holiday_kind,item_D_name Holiday_NA 
+                                                      FROM Item_list WHERE item_M_code='Holiday_kind'
+                                                      AND item_D_type='Y')I ON HD.Holiday_kind=I.Holiday_kind
+                                          WHERE HD.Holiday_kind='Hk_04' AND H.HDate like @yyyy + '%') HD ON ad.attendance_date=HD.HDate AND U.U_BC=HD.U_BC
+                              LEFT JOIN (
+                                          SELECT item_D_code U_num_NL FROM Item_list WHERE /*不計遲到人員*/ item_M_code = 'NonLate'
+                                          AND item_M_type='N')NL ON U.U_num=NL.U_num_NL
+                              LEFT JOIN (
+                                          SELECT FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,convert(varchar, FR_date_end, 111) FR_date_E,
+                                          count(FR_U_num) RestCount FROM Flow_rest WHERE del_tag = '0' AND FR_cancel<>'Y' GROUP BY FR_U_num,
+                                          convert(varchar, FR_date_begin, 111),convert(varchar, FR_date_end, 111)) R ON ad.userID=R.FR_U_num
+                                          AND ad.attendance_date BETWEEN R.FR_date_S AND FR_date_E
+                              WHERE [work_time] < '24:00' AND Userid<>'' AND yyyymm = @yyyyMM";
+
                 if (Type == "1")
                 {
                     T_SQL += " AND userID = @user";
@@ -558,29 +560,18 @@ namespace KF_WebAPI.DataLogic
                 {
                     T_SQL += " AND U.U_BC = @U_BC";
                 }
+
                 switch (AttStatus)
                 {
-                    case 1:
-                        T_SQL += " AND (work_time>'09:00' or getoffwork_time<'18:00')";
-                        break;
-                    case 2:
-                        T_SQL += " AND (work_time>'09:00' or getoffwork_time<'18:00') AND isnull(RestCount, 0) = 0";
-                        break;
-                    case 3:
-                        T_SQL += " AND (work_time>'09:00' or getoffwork_time<'18:00') AND isnull(RestCount, 0) <> 0";
-                        break;
-                    case 4:
-                        T_SQL += " AND work_time>'09:00'";
-                        break;
-                    case 5:
-                        T_SQL += " AND getoffwork_time<'18:00'";
-                        break;
-                    case 6:
-                        T_SQL += " AND OT='Y'";
-                        break;
-                    default:
-                        break;
+                    case 1: T_SQL += " AND (work_time>'09:00' or getoffwork_time<'18:00')"; break;
+                    case 2: T_SQL += " AND (work_time>'09:00' or getoffwork_time<'18:00') AND isnull(RestCount, 0) = 0"; break;
+                    case 3: T_SQL += " AND (work_time>'09:00' or getoffwork_time<'18:00') AND isnull(RestCount, 0) <> 0"; break;
+                    case 4: T_SQL += " AND work_time>'09:00'"; break;
+                    case 5: T_SQL += " AND getoffwork_time<'18:00'"; break;
+                    case 6: T_SQL += " AND OT='Y'"; break;
+                    default: break;
                 }
+
                 T_SQL += @"  ORDER BY u_BC,userID,attendance_date";
 
                 var YYYY = YM.Substring(0, 4);
@@ -591,7 +582,8 @@ namespace KF_WebAPI.DataLogic
             new SqlParameter("@yyyy", YYYY),
             new SqlParameter("@MM", MM),
             new SqlParameter("@yyyyMM", YM),
-            new SqlParameter("@user", User_Num)
+            new SqlParameter("@user", User_Num),
+            new SqlParameter("@U_BC", U_BC)
         };
 
                 var result = _ADO.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Attendance_per_res
@@ -610,58 +602,68 @@ namespace KF_WebAPI.DataLogic
                     U_BC = row.Field<string>("U_BC"),
                     RestCount = row.Field<int>("RestCount")
                 }).ToList();
+                #endregion
 
-                #region 請假資訊
-                // 先取出所有需要查詢的日期，並過濾掉重複值
-                var dateList = result.Where(row => row.RestCount != 0 && !string.IsNullOrEmpty(row.attendance_date)).Select(row => row.attendance_date).Distinct().ToList();
-                if (dateList.Any())
+                #region 2. 請假資訊優化 (批次查詢，抽離迴圈)
+                // 過濾出真正有請假(RestCount != 0) 且有日期與使用者的資料
+                var validRecords = result.Where(row => row.RestCount != 0 && !string.IsNullOrEmpty(row.attendance_date) && !string.IsNullOrEmpty(row.userID)).ToList();
+
+                if (validRecords.Any())
                 {
-                    {
-                        // 動態產生 SQL
-                        var dateParams = dateList.Select((date, index) => new SqlParameter($"@date{index}", date)).ToList();
-                        var inClause = string.Join(",", dateParams.Select(p => p.ParameterName));
+                    // 收集所有需要查詢的日期與員工編號
+                    var dateList = validRecords.Select(row => row.attendance_date).Distinct().ToList();
+                    var userList = validRecords.Select(row => row.userID).Distinct().ToList();
 
-                        var SQL_FR = $@"select case when FR_step_now = 1 then '代理人-'+FR_01_U_name when FR_step_now = 2 then '直屬主管-'+FR_02_U_name
-                   when FR_step_now = 3 then '單位主管-'+FR_03_U_name when FR_step_now = 9 then '人資-' when FR_step_now = 0 then ''
-                   end +  FR_sign_type_name as FR_sign_type_name_desc,* from (
-                   select FR_U_num,convert(varchar, FR_date_begin, 111) FR_date,convert(varchar(16),FR_date_begin, 120) FR_date_begin,
-                   convert(varchar(16),FR_date_end, 120) FR_date_end,FR_total_hour ,FR_step_now
-                   ,(select top 1 U_name from User_M where u_num= FR_step_01_num)FR_01_U_name
-                   ,(select top 1 U_name from User_M where u_num= FR_step_02_num)FR_02_U_name
-                   ,(select top 1 U_name from User_M where u_num= FR_step_03_num)FR_03_U_name
-                   ,(select item_D_name from Item_list where item_M_code = 'FR_kind' AND item_D_type='Y' AND item_D_code = Flow_rest.FR_kind AND del_tag='0') as FR_kind_show
-                   ,(select item_D_name from Item_list where item_M_code = 'Flow_sign_type' AND item_D_type='Y' AND item_D_code = Flow_rest.FR_sign_type AND del_tag='0') as FR_sign_type_name
-                   ,(select item_D_color from Item_list where item_M_code = 'Flow_sign_type' AND item_D_type='Y' AND item_D_code = Flow_rest.FR_sign_type AND del_tag='0') as FR_sign_type_color
-                   from Flow_rest where del_tag = '0' and FR_cancel<>'Y' and FR_U_num=@user_FR
-                   and convert(varchar, FR_date_begin, 111) IN ({inClause}) ) A"; // <-- 關鍵修改：改成 IN
+                    // 動態產生日期與員工的 SQL 參數，避免 SQL 注入風險
+                    var dateParams = dateList.Select((date, index) => new SqlParameter($"@date{index}", date)).ToList();
+                    var userParams = userList.Select((user, index) => new SqlParameter($"@user{index}", user)).ToList();
 
-                        // 加入使用者參數與動態生成的日期參數
-                        var parameters_FR = new List<SqlParameter> { new SqlParameter("@user_FR", User_Num) };
-                        parameters_FR.AddRange(dateParams);
+                    var dateInClause = string.Join(",", dateParams.Select(p => p.ParameterName));
+                    var userInClause = string.Join(",", userParams.Select(p => p.ParameterName));
 
-                        // 用來作為後續對齊日期的依據
-                        var allFlowsLookup = _ADO.ExecuteQuery(SQL_FR, parameters_FR)
-                            .AsEnumerable()
-                            .Select(row => new
-                            {
-                                FR_date = row.Field<string>("FR_date"),
-                                Flow = new Attendance_Flow
-                                {
-                                    FR_kind_show = row.Field<string>("FR_kind_show"),
-                                    FR_sign_type_name_desc = row.Field<string>("FR_sign_type_name_desc"),
-                                    FR_sign_type_color = row.Field<string>("FR_sign_type_color"),
-                                    FR_date_begin = row.Field<string>("FR_date_begin"),
-                                    FR_date_end = row.Field<string>("FR_date_end"),
-                                    FR_total_hour = row.Field<decimal>("FR_total_hour")
-                                }
-                            })
-                            .ToLookup(x => x.FR_date, x => x.Flow);
+                    var SQL_FR = $@"select case when FR_step_now = 1 then '代理人-'+FR_01_U_name when FR_step_now = 2 then '直屬主管-'+FR_02_U_name
+                            when FR_step_now = 3 then '單位主管-'+FR_03_U_name when FR_step_now = 9 then '人資-' when FR_step_now = 0 then ''
+                            end +  FR_sign_type_name as FR_sign_type_name_desc,* from (
+                            select FR_U_num,convert(varchar, FR_date_begin, 111) FR_date,convert(varchar(16),FR_date_begin, 120) FR_date_begin,
+                            convert(varchar(16),FR_date_end, 120) FR_date_end,FR_total_hour ,FR_step_now
+                            ,(select top 1 U_name from User_M where u_num= FR_step_01_num)FR_01_U_name
+                            ,(select top 1 U_name from User_M where u_num= FR_step_02_num)FR_02_U_name
+                            ,(select top 1 U_name from User_M where u_num= FR_step_03_num)FR_03_U_name
+                            ,(select item_D_name from Item_list where item_M_code = 'FR_kind' AND item_D_type='Y' AND item_D_code = Flow_rest.FR_kind AND del_tag='0') as FR_kind_show
+                            ,(select item_D_name from Item_list where item_M_code = 'Flow_sign_type' AND item_D_type='Y' AND item_D_code = Flow_rest.FR_sign_type AND del_tag='0') as FR_sign_type_name
+                            ,(select item_D_color from Item_list where item_M_code = 'Flow_sign_type' AND item_D_type='Y' AND item_D_code = Flow_rest.FR_sign_type AND del_tag='0') as FR_sign_type_color
+                            from Flow_rest where del_tag = '0' and FR_cancel<>'Y' 
+                            and FR_U_num IN ({userInClause})
+                            and convert(varchar, FR_date_begin, 111) IN ({dateInClause}) ) A";
 
-                        result.Where(row => row.RestCount != 0).ToList().ForEach(row =>
+                    var parameters_FR = new List<SqlParameter>();
+                    parameters_FR.AddRange(userParams);
+                    parameters_FR.AddRange(dateParams);
+
+                    // 1次性撈出所有對應資料，並轉換成複合型 Key (員工編號 + 日期) 的 Lookup 字典
+                    var allFlowsLookup = _ADO.ExecuteQuery(SQL_FR, parameters_FR)
+                        .AsEnumerable()
+                        .Select(row => new
                         {
-                            row.attendance_Flows = allFlowsLookup[row.attendance_date].ToList();
-                        });
-                    }
+                            UserAndDateKey = $"{row.Field<string>("FR_U_num")}_{row.Field<string>("FR_date")}",
+                            Flow = new Attendance_Flow
+                            {
+                                FR_kind_show = row.Field<string>("FR_kind_show"),
+                                FR_sign_type_name_desc = row.Field<string>("FR_sign_type_name_desc"),
+                                FR_sign_type_color = row.Field<string>("FR_sign_type_color"),
+                                FR_date_begin = row.Field<string>("FR_date_begin"),
+                                FR_date_end = row.Field<string>("FR_date_end"),
+                                FR_total_hour = row.Field<decimal>("FR_total_hour")
+                            }
+                        })
+                        .ToLookup(x => x.UserAndDateKey, x => x.Flow);
+
+                    // 在記憶體中快速完成對照與指派
+                    validRecords.ForEach(row =>
+                    {
+                        var currentKey = $"{row.userID}_{row.attendance_date}";
+                        row.attendance_Flows = allFlowsLookup[currentKey].ToList();
+                    });
                 }
                 #endregion
 
@@ -669,7 +671,6 @@ namespace KF_WebAPI.DataLogic
             }
             catch (Exception)
             {
-
                 throw;
             }
         }

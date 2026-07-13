@@ -23,6 +23,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using KF_WebAPI.DataLogic;
+using System.Xml.Linq;
 
 namespace KF_WebAPI.Controllers
 {
@@ -406,6 +407,7 @@ namespace KF_WebAPI.Controllers
 
             try
             {
+                FuncHandler _Fun = new FuncHandler();
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
@@ -426,11 +428,18 @@ namespace KF_WebAPI.Controllers
                 T_SQL = T_SQL + " ORDER BY bc.item_sort,pft.item_sort";
                 #endregion
 
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL,parameters);
-                if (dtResult.Rows.Count > 0)
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new 
+                {
+                    U_BC_name = _Fun.DeCodeBNWords(row.Field<string>("U_BC_name")),
+                    U_num = row.Field<string>("U_num"),
+                    U_name = _Fun.DeCodeBNWords(row.Field<string>("U_name")),
+                    U_PFT_name = row.Field<string>("U_PFT_name")
+                }).ToList();
+
+                if(result.Count > 0)
                 {
                     resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(dtResult);
+                    resultClass.objResult = JsonConvert.SerializeObject(result);
                     return Ok(resultClass);
                 }
                 else
@@ -1205,8 +1214,9 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
         /// <summary>
-        /// 個人出勤紀錄 Attendance_Query/Attendance_report.asp?Self=Y
+        /// 個人出勤紀錄 Attendance_SQuery/Attendance_report.asp?Self=Y
         /// </summary>
         [HttpGet("Attendance_SQuery")]
         public ActionResult<ResultClass<string>> Attendance_SQuery(string YM,int? AttStatus,string User_Num)
@@ -1226,324 +1236,22 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
-        /// <summary>
-        /// 個人出勤紀錄Excel下載 Attendance_SExcel/Attendance_report.asp? Self = Y
-        /// </ summary >
-        [HttpPost("Attendance_SExcel")]
-        public IActionResult Attendance_SExcel(Attendance_req model)
-        {
-            ResultClass<string> resultClass = new ResultClass<string>();
-
-            var User_Num = HttpContext.Session.GetString("UserID");
-
-            try
-            {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var parameters = new List<SqlParameter>();
-                var T_SQL = @"
-                    SELECT U.U_Na,[userID],U_name [user_name],@yyyy + ad.[attendance_date] attendance_date,[work_time],
-                    case When isnull([work_time], '') = '' then 0 When [work_time] > '09:00' then DATEDIFF(MINUTE, '09:00', [work_time]) else 0 end Late,
-                    case When isnull([work_time], '') = '' then '未刷卡' When [work_time] > '09:00' then case when isnull(U_num_NL, 'N') = 'N' then '遲到'  else '' end else '' end work_status,
-                    [getoffwork_time],
-                    case When isnull([getoffwork_time], '') = '' then 0 When [getoffwork_time] < '18:00' then DATEDIFF(MINUTE, [getoffwork_time], '18:00') else 0 end early,
-                    case When isnull([getoffwork_time], '') = '' then '未刷卡' When [getoffwork_time] < '18:00' then case when isnull(U_num_NL, 'N') = 'N' then '早退' else '' end else '' end offwork_status,
-                    U_BC,isnull(RestCount, 0) RestCount
-                    FROM attendance ad
-                    left join ( SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na from User_M U
-                    left join ( SELECT [item_D_code],[item_D_name] FROM Item_list WHERE item_M_code = 'branch_company'
-                    AND item_D_type = 'Y' and del_tag = '0'  ) I on U.u_bc = I.item_D_code
-                    where del_tag = '0' ) U on ad.userID = U.U_num
-                    Left Join ( SELECT [item_D_code] U_num_NL FROM Item_list where item_M_code = 'NonLate'
-                    and [item_M_type] = 'N' ) NL on U.U_num = NL.U_num_NL
-                    left join ( select FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,
-                    convert(varchar, FR_date_end, 111) FR_date_E,count(FR_U_num) RestCount
-                    from Flow_rest where  del_tag = '0' and FR_cancel <> 'Y' group by
-                    FR_U_num,convert(varchar, FR_date_begin, 111),convert(varchar, FR_date_end, 111)
-                    ) R on ad.userID = R.FR_U_num and @yyyy + ad.[attendance_date] between R.FR_date_S
-                    and FR_date_E
-                    where convert( varchar,convert(datetime, @yyyy + [attendance_date]),111
-                    ) not in ( SELECT convert(varchar, convert(datetime, [HDate]), 111) FROM Holidays )";
-                switch (model.AttStatus)
-                {
-                    case 1:
-                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00')";
-                        break;
-                    case 2:
-                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) = 0";
-                        break;
-                    case 3:
-                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) <> 0";
-                        break;
-                    case 4:
-                        T_SQL += " and work_time>'09:00'";
-                        break;
-                    case 5:
-                        T_SQL += "and getoffwork_time<'18:00'";
-                        break;
-                }
-                T_SQL += " AND userID = @userID AND yyyymm = @yyyymm order by";
-                T_SQL += " u_BC,userID,attendance_date";
-
-                
-                var YYYY = (model.yyyymm).Substring(0, 4) + "/";
-                parameters.Add(new SqlParameter("@yyyy", YYYY));
-                parameters.Add(new SqlParameter("@userID", User_Num));
-                parameters.Add(new SqlParameter("@yyyymm", model.yyyymm));
-                #endregion
-
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
-                if (dtResult.Rows.Count > 0)
-                {
-                    var modellist_m = dtResult.AsEnumerable().Select(row => new Attendance_res
-                    {
-                        U_Na = row.Field<string>("U_Na"),
-                        userID = row.Field<string>("userID"),
-                        user_name = row.Field<string>("user_name"),
-                        attendance_date = row.Field<string>("attendance_date"),
-                        work_time = row.Field<string>("work_time"),
-                        Late = row.Field<int>("Late"),
-                        work_status = row.Field<string>("work_status"),
-                        getoffwork_time = row.Field<string>("getoffwork_time"),
-                        early = row.Field<int>("early"),
-                        offwork_status = row.Field<string>("offwork_status"),
-                        U_BC = row.Field<string>("U_BC"),
-                        RestCount = row.Field<int>("RestCount")
-                    }).ToList();
-
-                    var modellist_d = modellist_m.Where(p => p.RestCount != 0).ToList();
-                    foreach (var item in modellist_d)
-                    {
-                        #region SQL
-                        var parameters_d = new List<SqlParameter>();
-                        var T_SQL_d = @"
-                            SELECT '假別:' + il1.item_D_name + ';' + CONVERT(VARCHAR, fr.FR_date_begin, 111) + '~' +
-                            CONVERT(VARCHAR, fr.FR_date_end, 111) + '狀態:' + 
-                            CASE WHEN fr.FR_step_now = 1 THEN '代理人-' + COALESCE(um1.U_name, '')
-                            WHEN fr.FR_step_now = 2 THEN '直屬主管-' + COALESCE(um2.U_name, '')
-                            WHEN fr.FR_step_now = 3 THEN '單位主管-' + COALESCE(um3.U_name, '')
-                            WHEN fr.FR_step_now = 9 THEN '人資-'
-                            WHEN fr.FR_step_now = 0 THEN '' END + COALESCE(il2.item_D_name, '') AS FR_sign_type_name_desc,
-                            fr.FR_total_hour
-                            FROM Flow_rest fr
-                            LEFT JOIN User_M um1 ON fr.FR_step_01_num = um1.u_num
-                            LEFT JOIN User_M um2 ON fr.FR_step_02_num = um2.u_num
-                            LEFT JOIN User_M um3 ON fr.FR_step_03_num = um3.u_num
-                            LEFT JOIN Item_list il1 ON fr.FR_kind = il1.item_D_code
-                            AND il1.item_M_code = 'FR_kind' AND il1.item_D_type = 'Y' AND il1.del_tag = '0'
-                            LEFT JOIN Item_list il2 ON fr.FR_sign_type = il2.item_D_code
-                            AND il2.item_M_code = 'Flow_sign_type' AND il2.item_D_type = 'Y' AND il2.del_tag = '0'
-                            WHERE fr.del_tag = '0' AND fr.FR_cancel <> 'Y' AND fr.FR_U_num = @FR_U_num AND CONVERT(VARCHAR, fr.FR_date_begin, 111) = @Date";                        
-                        parameters_d.Add(new SqlParameter("@FR_U_num", User_Num));
-                        parameters_d.Add(new SqlParameter("@Date", item.attendance_date));
-                        #endregion
-
-                        DataTable dtResult_c = _adoData.ExecuteQuery(T_SQL_d, parameters_d);
-                        if (dtResult_c.Rows.Count > 0)
-                        {
-                            DataRow row_c = dtResult_c.Rows[0];
-                            item.FR_sign_type_name_desc = row_c["FR_sign_type_name_desc"].ToString();
-                            item.FR_total_hour = (decimal)row_c["FR_total_hour"];
-                        }
-                    }
-
-                    var excellist = modellist_m.Select(p => new Attendance_res_excel
-                    {
-                        U_Na = p.U_Na,
-                        userID = p.userID,
-                        user_name = p.user_name,
-                        attendance_date = p.attendance_date,
-                        work_time = p.work_time,
-                        Late = p.Late,
-                        work_status = p.work_status,
-                        getoffwork_time = p.getoffwork_time,
-                        early = p.early,
-                        offwork_status = p.offwork_status,
-                        FR_sign_type_name_desc = p.FR_sign_type_name_desc,
-                        FR_total_hour = p.FR_total_hour
-                    }).ToList();
-
-                    var Attendance_SExcel_Headers = new Dictionary<string, string>
-                    {
-                        { "U_Na", "公司別" },
-                        { "userID", "員編" },
-                        { "user_name", "姓名" },
-                        { "attendance_date", "日期" },
-                        { "work_time", "上班刷卡" },
-                        { "work_status", "狀態" },
-                        { "Late", "遲到" },
-                        { "getoffwork_time", "下班刷卡" },
-                        { "offwork_status", "狀態" },
-                        { "early", "早退" },
-                        { "FR_sign_type_name_desc", "請假資訊" },
-                        { "FR_total_hour", "請假時數" }
-                    };
-
-                    var fileBytes = FuncHandler.ExportToExcel(excellist, Attendance_SExcel_Headers);
-                    var fileName = "請假單報表"+ DateTime.Now.ToString("yyyyMMddHHmm")+".xlsx";
-                    return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
-                }
-                else
-                {
-                    return NotFound(); // 檔案不存在時返回 404
-                }
-
-            }
-            catch (Exception ex)
-            {
-                resultClass.ResultCode = "500";
-                resultClass.ResultMsg = $" response: {ex.Message}";
-                return StatusCode(500, resultClass);
-            }
-        }
-
         #endregion
 
         #region 出勤紀錄查詢
         /// <summary>
         /// 出勤紀錄查詢 Attendance_Query/Attendance_report.asp
         /// </summary>
-        [HttpPost("Attendance_Query")]
-        public ActionResult<ResultClass<string>> Attendance_Query(Attendance_req model)
+        [HttpGet("Attendance_Query")]
+        public ActionResult<ResultClass<string>> Attendance_Query(string YM, int? AttStatus, string User_Num, string U_BC)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
-            var User_Num = HttpContext.Session.GetString("UserID");
-
             try
             {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var parameters = new List<SqlParameter>();
-                var T_SQL = @"
-                    SELECT U.U_Na,[userID],U_name [user_name],@yyyy + ad.[attendance_date] attendance_date,[work_time],
-                    case WHEN ISNULL([work_time], '') = '' THEN 0 WHEN [work_time] >= '12:00' AND [work_time] <= '13:00' THEN 180
-                    WHEN [work_time] > '09:00' AND [work_time] < '12:00' THEN DATEDIFF(MINUTE, '09:00', [work_time]) 
-                    WHEN [work_time] > '13:00' THEN DATEDIFF(MINUTE, '09:00', [work_time]) - DATEDIFF(MINUTE, '12:00', '13:00') ELSE 0 END AS Late,
-                    case When isnull([work_time], '') = '' then '未刷卡' When [work_time] > '09:00' then case when isnull(U_num_NL, 'N') = 'N' then '遲到'  else '' end else '' end work_status,
-                    [getoffwork_time],
-                    case When isnull([getoffwork_time], '') = '' then 0 
-                    WHEN [getoffwork_time] <= '12:00' THEN DATEDIFF(MINUTE,[getoffwork_time], '18:00' ) - DATEDIFF(MINUTE, '12:00', '13:00') 
-                    WHEN [getoffwork_time] > '12:00' AND [getoffwork_time] <= '13:00' THEN DATEDIFF(MINUTE, '13:00', '18:00')
-                    WHEN [getoffwork_time] > '13:00' THEN DATEDIFF(MINUTE, [getoffwork_time], '18:00') else 0 end early,
-                    case When isnull([getoffwork_time], '') = '' then '未刷卡' When [getoffwork_time] < '18:00' then case when isnull(U_num_NL, 'N') = 'N' then '早退' else '' end else '' end offwork_status,
-                    U_BC,isnull(RestCount, 0) RestCount
-                    FROM attendance ad
-                    left join ( SELECT U_PFT,U_BC,U_num,U_name,I.item_D_name U_Na from User_M U
-                    left join ( SELECT [item_D_code],[item_D_name] FROM Item_list WHERE item_M_code = 'branch_company'
-                    AND item_D_type = 'Y' and del_tag = '0'  ) I on U.u_bc = I.item_D_code
-                    where del_tag = '0' ) U on ad.userID = U.U_num
-                    Left Join ( SELECT [item_D_code] U_num_NL FROM Item_list where item_M_code = 'NonLate'
-                    and [item_M_type] = 'N' ) NL on U.U_num = NL.U_num_NL
-                    left join ( select FR_U_num,convert(varchar, FR_date_begin, 111) FR_date_S,
-                    convert(varchar, FR_date_end, 111) FR_date_E,count(FR_U_num) RestCount
-                    from Flow_rest where  del_tag = '0' and FR_cancel <> 'Y' group by
-                    FR_U_num,convert(varchar, FR_date_begin, 111),convert(varchar, FR_date_end, 111)
-                    ) R on ad.userID = R.FR_U_num and @yyyy + ad.[attendance_date] between R.FR_date_S
-                    and FR_date_E
-                    where convert( varchar,convert(datetime, @yyyy + [attendance_date]),111
-                    ) not in ( SELECT convert(varchar, convert(datetime, [HDate]), 111) FROM Holidays )";
-                switch (model.AttStatus)
-                {
-                    case 1:
-                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00')";
-                        break;
-                    case 2:
-                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) = 0";
-                        break;
-                    case 3:
-                        T_SQL += " and (work_time>'09:00' or getoffwork_time<'18:00') and isnull(RestCount, 0) <> 0";
-                        break;
-                    case 4:
-                        T_SQL += " and work_time>'09:00'";
-                        break;
-                    case 5:
-                        T_SQL += " and getoffwork_time<'18:00'";
-                        break;
-                }
-                if (!string.IsNullOrEmpty(model.U_num))
-                {
-                    T_SQL += " AND userID = @userID";
-                    parameters.Add(new SqlParameter("@userID", model.U_num));
-                }
-                if (!string.IsNullOrEmpty(model.U_BC))
-                {
-                    T_SQL += " AND u_bc=@U_BC";
-                    parameters.Add(new SqlParameter("@U_BC", model.U_BC));
-                }
-                if (!string.IsNullOrEmpty(model.U_name))
-                {
-                    T_SQL += " AND user_name=@U_name";
-                    parameters.Add(new SqlParameter("@U_name", model.U_name));
-                }
-                T_SQL += " AND yyyymm = @yyyymm order by u_BC,userID,attendance_date";
-                var YYYY = (model.yyyymm).Substring(0, 4) + "/";
-                parameters.Add(new SqlParameter("@yyyy", YYYY));
-                parameters.Add(new SqlParameter("@yyyymm", model.yyyymm));
-                #endregion
-                DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
-                if (dtResult.Rows.Count > 0)
-                {
-                    var modellist_d = dtResult.AsEnumerable().Select(row => new Attendance_res
-                    {
-                        U_Na = row.Field<string>("U_Na"),
-                        userID = row.Field<string>("userID"),
-                        user_name = row.Field<string>("user_name"),
-                        attendance_date = row.Field<string>("attendance_date"),
-                        work_time = row.Field<string>("work_time"),
-                        Late = row.Field<int>("Late"),
-                        work_status = row.Field<string>("work_status"),
-                        getoffwork_time = row.Field<string>("getoffwork_time"),
-                        early = row.Field<int>("early"),
-                        offwork_status = row.Field<string>("offwork_status"),
-                        U_BC = row.Field<string>("U_BC"),
-                        RestCount = row.Field<int>("RestCount")
-                    }).ToList();
-
-                    var modellist_c = modellist_d.Where(s => s.RestCount != 0).ToList();
-                    foreach (var item in modellist_c)
-                    {
-                        #region SQL
-                        var parameters_d = new List<SqlParameter>();
-                        var T_SQL_d = @"
-                            SELECT '假別:' + il1.item_D_name + ';' + CONVERT(VARCHAR, fr.FR_date_begin, 111) + '~' +
-                            CONVERT(VARCHAR, fr.FR_date_end, 111) + '狀態:' + 
-                            CASE WHEN fr.FR_step_now = 1 THEN '代理人-' + COALESCE(um1.U_name, '')
-                            WHEN fr.FR_step_now = 2 THEN '直屬主管-' + COALESCE(um2.U_name, '')
-                            WHEN fr.FR_step_now = 3 THEN '單位主管-' + COALESCE(um3.U_name, '')
-                            WHEN fr.FR_step_now = 9 THEN '人資-'
-                            WHEN fr.FR_step_now = 0 THEN '' END + COALESCE(il2.item_D_name, '') AS FR_sign_type_name_desc,
-                            fr.FR_total_hour
-                            FROM Flow_rest fr
-                            LEFT JOIN User_M um1 ON fr.FR_step_01_num = um1.u_num
-                            LEFT JOIN User_M um2 ON fr.FR_step_02_num = um2.u_num
-                            LEFT JOIN User_M um3 ON fr.FR_step_03_num = um3.u_num
-                            LEFT JOIN Item_list il1 ON fr.FR_kind = il1.item_D_code
-                            AND il1.item_M_code = 'FR_kind' AND il1.item_D_type = 'Y' AND il1.del_tag = '0'
-                            LEFT JOIN Item_list il2 ON fr.FR_sign_type = il2.item_D_code
-                            AND il2.item_M_code = 'Flow_sign_type' AND il2.item_D_type = 'Y' AND il2.del_tag = '0'
-                            WHERE fr.del_tag = '0' AND fr.FR_cancel <> 'Y' AND fr.FR_U_num = @FR_U_num AND CONVERT(VARCHAR, fr.FR_date_begin, 111) = @Date";                     
-                        parameters_d.Add(new SqlParameter("@FR_U_num", item.userID));
-                        parameters_d.Add(new SqlParameter("@Date", item.attendance_date));
-                        #endregion
-                        DataTable dtResult_c = _adoData.ExecuteQuery(T_SQL_d, parameters_d);
-                        if (dtResult_c.Rows.Count > 0)
-                        {
-                            DataRow row_c = dtResult_c.Rows[0];
-                            item.FR_sign_type_name_desc = row_c["FR_sign_type_name_desc"].ToString();
-                            item.FR_total_hour = (decimal)row_c["FR_total_hour"];
-                        }
-                    }
-                    resultClass.ResultCode = "000";
-                    resultClass.objResult = JsonConvert.SerializeObject(modellist_d);
-                    return Ok(resultClass);
-                }
-                else
-                {
-                    resultClass.ResultCode = "400";
-                    resultClass.ResultMsg = "查無資料";
-                    return BadRequest(resultClass);
-                }
+                var result = _HR.Attendance_Query(YM, AttStatus, User_Num, "2", U_BC);
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
             }
             catch (Exception ex)
             {
