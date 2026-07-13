@@ -4185,8 +4185,8 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                         left join Receivable_M M on D.RCM_ID=M.RCM_id
                         Left join ACH_Setting ACH on D.RCD_id=ACH.RCD_id
                         left join House_apply A on M.HA_id=A.HA_id
-                        left join House_sendcase H on A.HA_id=H.HA_id
-                        LEFT JOIN House_pre_project P ON P.HP_project_id = H.HP_project_id
+                        left join House_sendcase H on A.HA_id=H.HA_id and M.HS_id=H.HS_id
+                        LEFT JOIN House_pre_project P ON H.HP_project_id = P.HP_project_id
                         LEFT JOIN (select item_D_code,item_D_name proName from Item_list where item_M_code='project_title' and item_D_type='Y') I
                         on project_title=item_D_code
                         where D.del_tag='0' and  M.del_tag='0'   AND P.del_tag='0'and check_pay_type<>'S'

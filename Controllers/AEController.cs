@@ -1461,8 +1461,8 @@ namespace KF_WebAPI.Controllers
                 string strSQL = @"
                                WITH DateRange AS 
                                 (
-	                                SELECT TOP 30 
-	                                DATEADD(DAY, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1, @YYYYMM+'-01') AS DateValue
+	                                SELECT TOP (DAY(EOMONTH( @YYYYMM+'-01')))  
+	                                DATEADD(DAY, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1,  @YYYYMM+'-01') AS DateValue
 	                                FROM sys.objects
                                 )
                                   SELECT D.DateValue,CASE WHEN H.HDate IS NOT NULL THEN 1 ELSE 0 END AS IsHoliday,isnull(RC_amount,0)RC_amount
