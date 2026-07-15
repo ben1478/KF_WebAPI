@@ -472,7 +472,7 @@ namespace KF_WebAPI.DataLogic
         /// <param name="User_Num"></param>
         /// <param name="Type">1:個人查詢 2:部門整體查詢</param>
         /// <returns></returns>
-        public List<Attendance_per_res> Attendance_Query(string YM, int? AttStatus, string User_Num, string Type, string U_BC)
+        public List<Attendance_per_res> Attendance_Query(string YM, int? AttStatus, string? User_Num, string Type, string U_BC)
         {
             try
             {
@@ -558,7 +558,15 @@ namespace KF_WebAPI.DataLogic
                 }
                 else
                 {
-                    T_SQL += " AND U.U_BC = @U_BC";
+                    if (string.IsNullOrEmpty(User_Num))
+                    {
+                        T_SQL += " AND U.U_BC = @U_BC";
+                    }
+                    else
+                    {
+                        T_SQL += " AND userID = @user";
+                    }
+                   
                 }
 
                 switch (AttStatus)
@@ -576,15 +584,19 @@ namespace KF_WebAPI.DataLogic
 
                 var YYYY = YM.Substring(0, 4);
                 var MM = YM.Substring(4, 2);
+                if (string.IsNullOrEmpty(User_Num))
+                {
+                    User_Num="";
+                }
 
                 var parameters = new List<SqlParameter>()
-        {
-            new SqlParameter("@yyyy", YYYY),
-            new SqlParameter("@MM", MM),
-            new SqlParameter("@yyyyMM", YM),
-            new SqlParameter("@user", User_Num),
-            new SqlParameter("@U_BC", U_BC)
-        };
+                {
+                    new SqlParameter("@yyyy", YYYY),
+                    new SqlParameter("@MM", MM),
+                    new SqlParameter("@yyyyMM", YM),
+                    new SqlParameter("@user", User_Num),
+                    new SqlParameter("@U_BC", U_BC)
+                };
 
                 var result = _ADO.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Attendance_per_res
                 {

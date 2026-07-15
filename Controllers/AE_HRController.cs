@@ -1271,7 +1271,7 @@ namespace KF_WebAPI.Controllers
         /// 出勤紀錄查詢 Attendance_Query/Attendance_report.asp
         /// </summary>
         [HttpGet("Attendance_Query")]
-        public ActionResult<ResultClass<string>> Attendance_Query(string YM, int? AttStatus, string User_Num, string U_BC)
+        public ActionResult<ResultClass<string>> Attendance_Query(string YM, int? AttStatus, string? User_Num, string U_BC)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
