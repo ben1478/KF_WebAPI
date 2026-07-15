@@ -10,6 +10,7 @@ using KF_WebAPI.BaseClass.AE;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Microsoft.AspNetCore.Routing.Tree;
 
 namespace KF_WebAPI.DataLogic
 {
@@ -454,8 +455,7 @@ namespace KF_WebAPI.DataLogic
                 string m_SQL = " SELECT * FROM dbo.Flow_rest where  FR_id=@FR_id   ";
                 var parameters = new List<SqlParameter>();
                 parameters.Add(new SqlParameter("@FR_id", p_FR_id));
-                ADOData _adoData = new ADOData();
-                m_dtResult = _adoData.ExecuteQuery(m_SQL, parameters);
+                m_dtResult = _ADO.ExecuteQuery(m_SQL, parameters);
             }
             catch
             {
@@ -673,6 +673,38 @@ namespace KF_WebAPI.DataLogic
             {
                 throw;
             }
+        }
+
+        public DataTable GetSpcCompany(string userID)
+        {
+            try
+            {
+                #region 抓出可查看公司權限
+                var T_SQL_BC = @"select U_Check_BC from User_M where U_num = @U_num";
+                var parameters_bc = new List<SqlParameter>()
+            {
+                new SqlParameter("@U_num",userID)
+            };
+                var bcResult = _ADO.ExecuteQuery(T_SQL_BC, parameters_bc);
+                string checkBcResult = bcResult.Rows[0]["U_Check_BC"].ToString();
+                #endregion
+
+                var formattedCodes = checkBcResult.Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries).Select(code => $"'{code}'");
+                string inCondition = string.Join(",", formattedCodes);
+
+                var T_SQL = $@"select item_D_code,item_D_name from Item_list where item_D_type='Y' and del_tag='0' 
+                               and item_M_code = 'branch_company' and item_D_code IN ({inCondition}) order by item_sort";
+
+                var result = _ADO.ExecuteQuery(T_SQL, new List<SqlParameter>());
+
+                return result;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+            
         }
 
         public void AttendanceCardUpd(string YM, string User_Num)
