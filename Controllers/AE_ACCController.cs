@@ -18,6 +18,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using static UglyToad.PdfPig.Core.PdfSubpath;
 
 namespace KF_WebAPI.Controllers
 {
@@ -3592,6 +3593,54 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+
+        /// <summary>
+        /// 房貸3期逾放比總表
+        /// </summary>
+        /// <param name="dateE">yyyy/MM/dd</param>
+        /// <returns></returns>
+        [HttpGet("RC_Over_H_Thr_LQuery")]
+        public ActionResult<ResultClass<string>> RC_Over_H_Thr_LQuery(string dateE)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL_SP = @"exec GetHousecaseSummary '2018-10-01',@checkDateE";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@checkDateE",dateE)
+                };
+                #endregion
+                var result = _adoData.ExecuteQuery(T_SQL_SP, parameters).AsEnumerable().Select(row => new
+                {
+                    GetAmount = row.Field<decimal>("GetAmount"),
+                    SettAmount = row.Field<decimal>("SettAmount"),
+                    BadAmount = row.Field<decimal>("BadAmount")
+                }).ToList();
+
+                var model = new RC_Over_Thr_res();
+                model.totalGetAmount = result.Sum(x => x.GetAmount);
+                model.totalSettAmount = result.Sum(x => x.SettAmount);
+                model.totalBadAmount = result.Sum(x => x.BadAmount);
+                model.M1Amount = _Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M1", "House").Sum(x=>x.amount_total);
+                model.M2Amount = _Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M2", "House").Sum(x => x.amount_total);
+                model.M3Amount = _Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M3", "House").Sum(x => x.amount_total);
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(model);
+                return Ok(resultClass);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+        //機車貸3期逾放比總表
+        //汽車貸3期逾放比總表
         #endregion
 
         #region 應收帳款-本金餘額比

@@ -401,13 +401,13 @@ namespace KF_WebAPI.BaseClass.AE
         public string AS_Name { get; set; }
         public string disExpe_note { get; set; }
         public string Expe_note { get; set; }
-        public int Ex_RemainingPrincipal { get; set; }
-        public int interest { get; set; }   
-        public int Rmoney { get; set; }
+        public decimal Ex_RemainingPrincipal { get; set; }
+        public decimal interest { get; set; }   
+        public decimal Rmoney { get; set; }
         public string bad_debt_type { get; set; }
         public string check_pay_type { get; set; }
         public string cancel_type { get; set; }
-        public int RC_amount { get; set; }
+        public decimal RC_amount { get; set; }
         public decimal RCM_id { get; set; }
         public string cancel_num { get; set; }
         public string bad_debt_num { get; set; }
@@ -424,7 +424,7 @@ namespace KF_WebAPI.BaseClass.AE
         public decimal amount_per_month { get; set; }
         public DateTime date_begin { get; set; }
         public string RCM_note { get; set; }
-        public string loan_grace_num { get; set; }
+        public int loan_grace_num { get; set; }
         public string auction_status { get; set; }
         public string project_name { get; set; }
         public string add_name { get; set; }
@@ -433,5 +433,15 @@ namespace KF_WebAPI.BaseClass.AE
         public string cancel_name { get; set; }
         public string U_BC_name { get; set; }
         public string plan_name { get; set; }
+    }
+
+    public class RC_Over_Thr_res
+    {
+        public decimal totalGetAmount { get; set; }
+        public decimal totalSettAmount { get; set; }
+        public decimal totalBadAmount { get; set; }
+        public decimal M1Amount { get; set; }
+        public decimal M2Amount { get; set; }
+        public decimal M3Amount { get; set; }
     }
 }
