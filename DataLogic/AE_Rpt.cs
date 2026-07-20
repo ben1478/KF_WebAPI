@@ -4304,6 +4304,55 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             }
         }
 
+        public class CaseInfoDto
+        {
+            public string PreApplyDate { get; set; }
+            public string CsName { get; set; }
+            public string Tel { get; set; }
+            public string CsRegisterAddress { get; set; }
+        }
+
+
+        public List<CaseInfoDto> GetCaseInfo(string YYYYMM_S, string YYYYMM_E)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"SELECT distinct format( pre_apply_date,'yyyy/MM/dd')pre_apply_date, 
+                                isnull(CS_name2,CS_name)CS_name,''''+isnull(CS_MTEL1,CS_MTEL2)TEL,CS_register_address
+                                FROM House_sendcase S
+                                LEFT JOIN House_apply H ON S.HA_id = H.HA_id
+                                LEFT JOIN view_User_sales User_M ON User_M.U_num = H.plan_num
+                                LEFT JOIN House_pre P on H.HA_id=P.HA_id
+                                WHERE S.del_tag = '0' AND H.del_tag='0' AND S.sendcase_handle_type='Y'
+                                  AND isnull(S.Send_amount, '')<>'' AND User_M.U_BC='BC0900'
+                                  AND Send_result_type= 'SRT002' AND (Send_result_date >= @yyyymm_S+'-01'
+                                 AND Send_result_date <= DATEADD(day,-1, DATEADD(month,1,@yyyymm_E+'-01')) )
+                                  order by isnull(CS_name2,CS_name)";
+
+                parameters.Add(new SqlParameter("@YYYYMM_S", YYYYMM_S));
+                parameters.Add(new SqlParameter("@YYYYMM_E", YYYYMM_E));
+
+                // 使用 using 確保 DataTable 在離開區塊後正確釋放
+                using (DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters))
+                {
+                    return dtResult.AsEnumerable().Select(row => new CaseInfoDto
+                    {
+                        PreApplyDate = row.Field<string>("pre_apply_date"),
+                        CsName = row.Field<string>("CS_name"),
+                        Tel = row.Field<string>("TEL"),
+                        CsRegisterAddress = row.Field<string>("CS_register_address")
+                    }).ToList();
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+
 
 
         /// <summary>

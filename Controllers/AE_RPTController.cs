@@ -7251,6 +7251,73 @@ namespace KF_WebAPI.Controllers
                 return StatusCode(500, resultClass);
             }
         }
+
+
+
+
+
+        /// <summary>
+        /// GetCaseInfo 依進件月份取得網路客戶資料
+        /// </summary>
+        [HttpGet("GetCaseInfo")]
+        public ActionResult<ResultClass<string>> GetCaseInfo(string YYYYMM_S, string YYYYMM_E)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                // 直接取得轉好的 List<CaseInfoDto>
+                var currentList = _Rpt.GetCaseInfo(YYYYMM_S, YYYYMM_E);
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(currentList);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        /// <summary>
+        /// GetCaseInfo 依進件月份取得網路客戶資料
+        /// </summary>
+        [HttpGet("GetCaseInfoExcel")]
+        public IActionResult GetCaseInfoExcel(string YYYYMM_S, string YYYYMM_E)
+        {
+            try
+            {
+                // 共用相同的資料取得邏輯
+                var currentList = _Rpt.GetCaseInfo(YYYYMM_S, YYYYMM_E);
+
+                var excelHeaders = new Dictionary<string, string>
+                {
+                    { "PreApplyDate", "估價日期" },
+                    { "CsName", "客戶名稱" },
+                    { "Tel", "電話" },
+                    { "CsRegisterAddress", "地址" }
+                };
+
+                byte[] fileBytes = FuncHandler.ExportToExcel(currentList, excelHeaders);
+
+                // 修正：Excel API 應該直接回傳檔案供瀏覽器下載
+                string fileName = $"CaseInfo_{YYYYMM_S}_{YYYYMM_E}.xlsx";
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                var resultClass = new ResultClass<string>
+                {
+                    ResultCode = "500",
+                    ResultMsg = $" response: {ex.Message}"
+                };
+                return StatusCode(500, resultClass);
+            }
+        }
+
+
+
     }
 }
 
