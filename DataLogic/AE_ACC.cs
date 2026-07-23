@@ -254,5 +254,118 @@ namespace KF_WebAPI.DataLogic
                 throw;
             }
         }
+
+        public List<Receivable_Debt_res> RC_Debt_LQuery(string? csName,string dateS,string dateE,string mType,string pjType)
+        {
+            try
+            {
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"SELECT I.item_D_name AS_Name,REPLACE(REPLACE(Expe_note, CHAR(13), ''), CHAR(10), '<br>')disExpe_note,Expe_note,RP.Ex_RemainingPrincipal,RP.interest,
+                              RP.Rmoney,Receivable_D.*,DATEDIFF(DAY, Receivable_D.RC_date , SYSDATETIME()) DiffDay,House_apply.CS_name,Receivable_M.RCM_cknum,
+                              House_sendcase.interest_rate_pass,Receivable_M.amount_total,Receivable_M.month_total,Receivable_M.amount_per_month,Receivable_M.date_begin,
+                              Receivable_M.RCM_note,Receivable_M.loan_grace_num,Receivable_M.auction_status,
+                              (SELECT item_D_name FROM Item_list WHERE item_M_code = 'project_title' AND item_D_code = House_pre_project.project_title) AS project_name,
+                              (SELECT U_name FROM User_M WHERE U_num = Receivable_D.add_num AND del_tag='0') AS add_name,
+                              isnull( (SELECT U_name FROM User_M WHERE U_num = Receivable_D.check_pay_num AND del_tag='0'),'') AS check_pay_name,
+                              isnull( (SELECT U_name FROM User_M WHERE U_num = Receivable_D.bad_debt_num AND del_tag='0'),'') AS bad_debt_name,
+                              isnull( (SELECT U_name FROM User_M WHERE U_num = Receivable_D.cancel_num AND del_tag='0'),'') AS cancel_name,Item_list.item_D_name AS U_BC_name,
+                              (SELECT ISNULL(Item_list.item_D_name, U_name) FROM User_M LEFT JOIN Item_list ON item_M_code = 'SpecName' AND item_D_type = 'Y' AND item_D_txt_A = U_num WHERE U_num = House_apply.plan_num) AS plan_name
+                              FROM (SELECT bad_debt_type,check_pay_type,cancel_type,RC_amount,RCM_id,cancel_num,bad_debt_num,check_pay_num,add_num,min (RC_count) RC_count,
+                              min (RC_date) RC_date FROM Receivable_D WHERE del_tag = '0' AND check_pay_type='N' AND bad_debt_type='N' AND cancel_type='N'
+                              GROUP BY bad_debt_type,check_pay_type,cancel_type,RCM_id,cancel_num,bad_debt_num,check_pay_num,add_num,RC_amount) Receivable_D
+                              LEFT JOIN Receivable_M ON Receivable_M.RCM_id = Receivable_D.RCM_id
+                              LEFT JOIN Receivable_D RP ON Receivable_D.RCM_id = RP.RCM_id AND Receivable_D.RC_count = RP.RC_count
+                              LEFT JOIN House_apply ON House_apply.HA_id = Receivable_M.HA_id
+                              LEFT JOIN (SELECT U_num,U_BC FROM User_M) User_M ON User_M.U_num = House_apply.plan_num
+                              LEFT JOIN Item_list ON item_M_code = 'branch_company' AND item_D_code = User_M.U_BC
+                              LEFT JOIN House_sendcase ON House_sendcase.HS_id = Receivable_M.HS_id
+                              LEFT JOIN House_pre_project ON House_pre_project.HP_project_id = House_sendcase.HP_project_id AND House_pre_project.del_tag='0'
+                              LEFT JOIN Item_list I ON I.item_M_code = 'auction_status' AND I.item_D_code = auction_status
+                              WHERE House_sendcase.del_tag='0' AND House_apply.del_tag='0' AND Receivable_M.del_tag='0' 
+                              AND (Receivable_D.RC_date >= @dateS AND Receivable_D.RC_date <= @dateE)
+                              AND User_M.U_BC IN ('zz','BC0100','BC0200','BC0600','BC0900','BC0700','BC0800','BC0300','BC0500','BC0400','BC0800','BC0701')";
+                if (!string.IsNullOrEmpty(csName))
+                {
+                    T_SQL += @" AND (House_apply.CS_name=@CS_name)";
+                    parameters.Add(new SqlParameter("@CS_name", csName));
+                }
+                switch (mType)
+                {
+                    case "M1":
+                        T_SQL += @" AND((DATEDIFF(DAY, Receivable_D.RC_date , SYSDATETIME()) BETWEEN 31 AND 60))";
+                        break;
+                    case "M2":
+                        T_SQL += @" AND((DATEDIFF(DAY, Receivable_D.RC_date , SYSDATETIME()) BETWEEN 61 AND 90))";
+                        break;
+                    case "M3":
+                        T_SQL += @" AND((DATEDIFF(DAY, Receivable_D.RC_date , SYSDATETIME()) >= 91))";
+                        break;
+                    default:
+                        T_SQL += @" AND((DATEDIFF(DAY, Receivable_D.RC_date , SYSDATETIME()) BETWEEN 1 AND 30))";
+                        break;
+                }
+                switch (pjType)
+                {
+                    case "House":
+                        T_SQL += @" AND project_title NOT IN ('PJ00046','PJ00047','PJ00048','PJ00998')";
+                        break;
+                    case "Moto":
+                        T_SQL += @" AND project_title IN ('PJ00046','PJ00047')";
+                        break;
+                    case "Car":
+                        T_SQL += @" AND project_title IN ('PJ00048','PJ00998')";
+                        break;
+                }
+                T_SQL += @" ORDER BY Receivable_D.RC_date";
+                parameters.Add(new SqlParameter("@dateS", dateS));
+                parameters.Add(new SqlParameter("@dateE", dateE));
+
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Debt_res
+                {
+                    AS_Name = _Fun.DeCodeBNWords(row.Field<string>("AS_Name")),
+                    disExpe_note = row.Field<string>("disExpe_note"),
+                    Expe_note = row.Field<string>("Expe_note"),
+                    Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
+                    interest = row.Field<decimal>("interest"),
+                    Rmoney = row.Field<decimal>("Rmoney"),
+                    bad_debt_type = row.Field<string>("bad_debt_type"),
+                    check_pay_type = row.Field<string>("check_pay_type"),
+                    cancel_type = row.Field<string>("cancel_type"),
+                    RC_amount = row.Field<decimal>("RC_amount"),
+                    RCM_id = row.Field<decimal>("RCM_id"),
+                    cancel_num = row.Field<string>("cancel_num"),
+                    bad_debt_num = row.Field<string>("bad_debt_num"),
+                    check_pay_num = row.Field<string>("check_pay_num"),
+                    add_num = row.Field<string>("add_num"),
+                    RC_count = row.Field<int>("RC_count"),
+                    RC_date = row.Field<DateTime>("RC_date"),
+                    DiffDay = row.Field<int>("DiffDay"),
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    RCM_cknum = row.Field<string>("RCM_cknum"),
+                    interest_rate_pass = row.Field<string>("interest_rate_pass"),
+                    amount_total = row.Field<decimal>("amount_total"),
+                    month_total = row.Field<int>("month_total"),
+                    amount_per_month = row.Field<decimal>("amount_per_month"),
+                    date_begin = row.Field<DateTime>("date_begin"),
+                    RCM_note = row.Field<string>("RCM_note"),
+                    loan_grace_num = row.Field<int?>("loan_grace_num"),
+                    auction_status = row.Field<string>("auction_status"),
+                    project_name = _Fun.DeCodeBNWords(row.Field<string>("project_name")),
+                    add_name = _Fun.DeCodeBNWords(row.Field<string>("add_name")),
+                    check_pay_name = _Fun.DeCodeBNWords(row.Field<string>("check_pay_name")),
+                    bad_debt_name = _Fun.DeCodeBNWords(row.Field<string>("bad_debt_name")),
+                    cancel_name = _Fun.DeCodeBNWords(row.Field<string>("cancel_name")),
+                    U_BC_name = _Fun.DeCodeBNWords(row.Field<string>("U_BC_name")),
+                    plan_name = _Fun.DeCodeBNWords(row.Field<string>("plan_name"))
+                }).ToList();
+
+                return result;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
     }
 }
