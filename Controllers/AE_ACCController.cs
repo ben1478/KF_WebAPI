@@ -14,6 +14,7 @@ using System.Collections;
 using System.Data;
 using System.Data.SqlTypes;
 using System.Drawing.Drawing2D;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Security.Cryptography;
@@ -3624,17 +3625,23 @@ namespace KF_WebAPI.Controllers
                 model.totalGetAmount = result.Sum(x => x.GetAmount);
                 model.totalSettAmount = result.Sum(x => x.SettAmount);
                 model.totalBadAmount = result.Sum(x => x.BadAmount);
-                model.M1Amount = Math.Round(_Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M1", "House").Sum(x=>x.amount_total) / 10000);
-                model.M2Amount = Math.Round(_Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M2", "House").Sum(x => x.amount_total) / 10000);
-                model.M3Amount = Math.Round(_Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M3", "House").Sum(x => x.amount_total) / 10000);
+
+                var resultM1 = _Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M1", "House");
+                var resultM2 = _Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M2", "House");
+                var resultM3 = _Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M3", "House");
+
+                model.M1Amount = Math.Round(resultM1.Sum(x => x.amount_total) / 10000);
+                model.M2Amount = Math.Round(resultM2.Sum(x => x.amount_total) / 10000);
+                model.M3Amount = Math.Round(resultM3.Sum(x => x.amount_total) / 10000);
                 //Ｍ3 胡秀明要自動+700萬
                 model.M3Amount += 700;
-                model.DuringAmount = Math.Round((_Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M1", "House").Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total) +
-                    _Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M2", "House").Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total) +
-                    _Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M3", "House").Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)) / 10000);
-                model.RulingAmount = Math.Round((_Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M1", "House").Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total) +
-                    _Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M2", "House").Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total) +
-                    _Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M3", "House").Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)) / 10000);
+
+                model.DuringAmount = Math.Round((resultM1.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total) 
+                    + resultM2.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)
+                    + resultM3.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)) / 10000);
+                model.RulingAmount = Math.Round((resultM1.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total) 
+                    + resultM2.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)
+                    + resultM3.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)) / 10000);
 
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(model);
@@ -3677,15 +3684,21 @@ namespace KF_WebAPI.Controllers
                 model.totalGetAmount = result.Sum(x => x.GetAmount);
                 model.totalSettAmount = result.Sum(x => x.SettAmount);
                 model.totalBadAmount = result.Sum(x => x.BadAmount);
-                model.M1Amount = Math.Round(_Acc.RC_Debt_LQuery(null, "2025/10/01", dateE, "M1", "Moto").Sum(x => x.amount_total) / 10000);
-                model.M2Amount = Math.Round(_Acc.RC_Debt_LQuery(null, "2025/10/01", dateE, "M2", "Moto").Sum(x => x.amount_total) / 10000);
-                model.M3Amount = Math.Round(_Acc.RC_Debt_LQuery(null, "2025/10/01", dateE, "M3", "Moto").Sum(x => x.amount_total) / 10000);
-                model.DuringAmount = Math.Round((_Acc.RC_Debt_LQuery(null, "2025/10/01", dateE, "M1", "Moto").Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total) +
-                    _Acc.RC_Debt_LQuery(null, "2025/10/01", dateE, "M2", "Moto").Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total) +
-                    _Acc.RC_Debt_LQuery(null, "2025/10/01", dateE, "M3", "Moto").Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)) / 10000);
-                model.RulingAmount = Math.Round((_Acc.RC_Debt_LQuery(null, "2025/10/01", dateE, "M1", "Moto").Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total) +
-                    _Acc.RC_Debt_LQuery(null, "2025/10/01", dateE, "M2", "Moto").Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total) +
-                    _Acc.RC_Debt_LQuery(null, "2025/10/01", dateE, "M3", "Moto").Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)) / 10000);
+
+                var resultM1 = _Acc.RC_Debt_LQuery(null, "2025/10/01", dateE, "M1", "Moto");
+                var resultM2 = _Acc.RC_Debt_LQuery(null, "2025/10/01", dateE, "M2", "Moto");
+                var resultM3 = _Acc.RC_Debt_LQuery(null, "2025/10/01", dateE, "M3", "Moto");
+
+                model.M1Amount = Math.Round(resultM1.Sum(x => x.amount_total) / 10000);
+                model.M2Amount = Math.Round(resultM2.Sum(x => x.amount_total) / 10000);
+                model.M3Amount = Math.Round(resultM3.Sum(x => x.amount_total) / 10000);
+
+                model.DuringAmount = Math.Round((resultM1.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)
+                    + resultM2.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)
+                    + resultM3.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)) / 10000);
+                model.RulingAmount = Math.Round((resultM1.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)
+                    + resultM2.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)
+                    + resultM3.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)) / 10000);
 
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(model);
@@ -3728,15 +3741,21 @@ namespace KF_WebAPI.Controllers
                 model.totalGetAmount = result.Sum(x => x.GetAmount);
                 model.totalSettAmount = result.Sum(x => x.SettAmount);
                 model.totalBadAmount = result.Sum(x => x.BadAmount);
-                model.M1Amount = Math.Round(_Acc.RC_Debt_LQuery(null, "2025/12/01", dateE, "M1", "Car").Sum(x => x.amount_total) / 10000);
-                model.M2Amount = Math.Round(_Acc.RC_Debt_LQuery(null, "2025/12/01", dateE, "M2", "Car").Sum(x => x.amount_total) / 10000);
-                model.M3Amount = Math.Round(_Acc.RC_Debt_LQuery(null, "2025/12/01", dateE, "M3", "Car").Sum(x => x.amount_total) / 10000);
-                model.DuringAmount = Math.Round((_Acc.RC_Debt_LQuery(null, "2025/12/01", dateE, "M1", "Car").Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total) +
-                    _Acc.RC_Debt_LQuery(null, "2025/12/01", dateE, "M2", "Car").Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total) +
-                    _Acc.RC_Debt_LQuery(null, "2025/12/01", dateE, "M3", "Car").Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)) / 10000);
-                model.RulingAmount = Math.Round((_Acc.RC_Debt_LQuery(null, "2025/12/01", dateE, "M1", "Car").Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total) +
-                    _Acc.RC_Debt_LQuery(null, "2025/12/01", dateE, "M2", "Car").Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total) +
-                    _Acc.RC_Debt_LQuery(null, "2025/12/01", dateE, "M3", "Car").Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)) / 10000);
+
+                var resultM1 = _Acc.RC_Debt_LQuery(null, "2025/12/01", dateE, "M1", "Car");
+                var resultM2 = _Acc.RC_Debt_LQuery(null, "2025/12/01", dateE, "M2", "Car");
+                var resultM3 = _Acc.RC_Debt_LQuery(null, "2025/12/01", dateE, "M3", "Car");
+
+                model.M1Amount = Math.Round(resultM1.Sum(x => x.amount_total) / 10000);
+                model.M2Amount = Math.Round(resultM2.Sum(x => x.amount_total) / 10000);
+                model.M3Amount = Math.Round(resultM3.Sum(x => x.amount_total) / 10000);
+
+                model.DuringAmount = Math.Round((resultM1.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)
+                    + resultM2.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)
+                    + resultM3.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)) / 10000);
+                model.RulingAmount = Math.Round((resultM1.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)
+                    + resultM2.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)
+                    + resultM3.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)) / 10000);
 
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(model);
