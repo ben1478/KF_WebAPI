@@ -410,6 +410,30 @@ namespace KF_WebAPI.Controllers
         #endregion
 
 
+        #region 北南二區獎金計算
+        /// <summary>
+        /// 北南二區獎金計算
+        /// </summary>
+        [HttpGet("GetBonusReport")]
+        public ActionResult<ResultClass<string>> GetBonusReport(string YYYY, string Area)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+              
+                var currentList = _Ft.GetBonusReport(YYYY, Area);
 
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(currentList);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
     }
 }

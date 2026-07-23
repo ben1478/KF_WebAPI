@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
 using System.Data;
+using static KF_WebAPI.DataLogic.AE_Rpt;
 
 namespace KF_WebAPI.DataLogic
 {
@@ -766,5 +767,49 @@ namespace KF_WebAPI.DataLogic
                 throw new Exception("DB 異動失敗");
             }
         }
+
+        /// <summary>
+        /// 北南二區獎金計算
+        /// </summary>
+        /// <param name="YYYY">年度</param>
+        /// <param name="Area">區域</param>
+        /// <returns></returns>
+        public List<BonusReport> GetBonusReport(string YYYY, string Area)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"SELECT DisMM,Loc1_Amt,Loc2_Amt,Loc3_Amt,TotalAmt,BaseRate,BonusAmt,BonusFormula
+                                FROM dbo.fn_GetBonusReport(@YYYYMM, @Area)
+                                ORDER BY Season, SortGroup, DisplayYM;";
+
+                parameters.Add(new SqlParameter("@YYYY", YYYY));
+                parameters.Add(new SqlParameter("@Area", Area));
+                
+                using (DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters))
+                {
+                    return dtResult.AsEnumerable().Select(row => new BonusReport
+                    {
+                        DisMM = row.Field<string>("DisMM"),
+                        Loc1_Amt = row.Field<string>("Loc1_Amt"),
+                        Loc2_Amt = row.Field<string>("Loc2_Amt"),
+                        Loc3_Amt = row.Field<string>("Loc3_Amt"),
+                        TotalAmt = row.Field<string>("TotalAmt"),
+                        BaseRate = row.Field<string>("BaseRate"),
+                        BonusAmt = row.Field<string>("BonusAmt"),
+                        BonusFormula = row.Field<string>("BonusFormula")
+                    }).ToList();
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+
+
+
     }
 }
