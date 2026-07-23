@@ -348,7 +348,7 @@ namespace KF_WebAPI.DataLogic
                     amount_per_month = row.Field<decimal>("amount_per_month"),
                     date_begin = row.Field<DateTime>("date_begin"),
                     RCM_note = row.Field<string>("RCM_note"),
-                    loan_grace_num = row.Field<int>("loan_grace_num"),
+                    loan_grace_num = row.Field<int?>("loan_grace_num"),
                     auction_status = row.Field<string>("auction_status"),
                     project_name = _Fun.DeCodeBNWords(row.Field<string>("project_name")),
                     add_name = _Fun.DeCodeBNWords(row.Field<string>("add_name")),

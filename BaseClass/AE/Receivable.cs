@@ -424,7 +424,7 @@ namespace KF_WebAPI.BaseClass.AE
         public decimal amount_per_month { get; set; }
         public DateTime date_begin { get; set; }
         public string RCM_note { get; set; }
-        public int loan_grace_num { get; set; }
+        public int? loan_grace_num { get; set; }
         public string auction_status { get; set; }
         public string project_name { get; set; }
         public string add_name { get; set; }
@@ -443,5 +443,7 @@ namespace KF_WebAPI.BaseClass.AE
         public decimal M1Amount { get; set; }
         public decimal M2Amount { get; set; }
         public decimal M3Amount { get; set; }
+        public decimal DuringAmount { get; set; }
+        public decimal RulingAmount { get; set;}
     }
 }
