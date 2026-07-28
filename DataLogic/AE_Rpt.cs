@@ -3408,7 +3408,8 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                                 Ex_RemainingPrincipal = row.Field<decimal>("Ex_RemainingPrincipal"),
                                 amount_total = row.Field<decimal>("amount_total"),
                                 month_total = row.Field<int>("month_total"),
-                                RecPayDate = Convert.ToDateTime(item.Col2)
+                                RecPayDate = Convert.ToDateTime(item.Col2),
+                                Vehicle = row.Field<string>("Vehicle")
                             }).ToList();
 
                             foreach (var res in result)

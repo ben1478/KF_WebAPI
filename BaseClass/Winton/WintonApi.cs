@@ -221,6 +221,8 @@ namespace KF_WebAPI.BaseClass.Winton
         public string MF10091 { get; set; }
         public string MF10093 { get; set; }
         public string MF10094 { get; set; }
+        public string? MF10095 { get; set; }
+        public string? MF10096 { get; set; }
     }
 
     public class ReceivableForInv_D_req
@@ -268,6 +270,7 @@ namespace KF_WebAPI.BaseClass.Winton
         /// 中信ACH專用
         /// </summary>
         public string? FileKeyID { get; set; }
+        public string? Vehicle { get; set; }
     }
 
     public class PayOff_Win_Inv: Receivable_Win_Inv
