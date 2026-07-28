@@ -781,8 +781,8 @@ namespace KF_WebAPI.DataLogic
             {
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"SELECT DisMM,Loc1_Amt,Loc2_Amt,Loc3_Amt,TotalAmt,BaseRate,BonusAmt,BonusFormula
-                                FROM dbo.fn_GetBonusReport(@YYYYMM, @Area)
-                                ORDER BY Season, SortGroup, DisplayYM;";
+                                FROM dbo.fn_GetBonusReport(@YYYY, @Area)
+                                ORDER BY Season, SortGroup, DisMM;";
 
                 parameters.Add(new SqlParameter("@YYYY", YYYY));
                 parameters.Add(new SqlParameter("@Area", Area));

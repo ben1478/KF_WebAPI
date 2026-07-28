@@ -365,6 +365,7 @@ namespace KF_WebAPI.BaseClass.AE
     {
         public tbInfo? tbInfo { get; set; }
         public decimal RCM_id { get; set; }
+        public decimal? HA_id { get; set; }
         public string Ach_State { get; set; }
         public string Ach_Note { get; set; }
         public string? Ach_Bank { get; set; }
@@ -372,12 +373,16 @@ namespace KF_WebAPI.BaseClass.AE
         public string? BankNo { get; set; }
         //銀行帳號
         public string? AccountNo { get; set; }
+        public string? CS_company_TaxNum { get; set; }
+       
+        
 
     }
 
     public class RC_ACH_Res
     {
         public decimal RCM_id { get; set; }
+        public decimal HA_id { get; set; }
         public decimal HS_id { get; set; }
         public string str_Send_amount_date { get; set; }
         public string CS_name { get; set; }

@@ -4153,7 +4153,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             DataTable dt = new DataTable();
             try
             {
-                var T_SQL = @" select BankNo,AccountNo,Ach_Bank,A.CS_PID ,RC_amount,dbo.GetDateToChin(D.RC_date) RC_date
+                var T_SQL = @" select BankNo,AccountNo,Ach_Bank,A.CS_PID,isnull(CS_company_TaxNum,'') CS_company_TaxNum ,RC_amount,dbo.GetDateToChin(D.RC_date) RC_date
                                   from ACH_Setting AC 
                                   left join Receivable_D D on AC.RCD_id=D.RCD_id
 								  left join Receivable_M M on D.RCM_id=M.RCM_id
@@ -4179,7 +4179,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             {
                 // 1. 查詢當前選擇日期的 ACH 詳細清單 (您原本的 SQL)
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"select distinct case when (Ach_State <> 'FS'or (LEN(AccountNo)<8 or AccountNo is null))  then 'ACH未設定' else '' end Ach_DESC ,RCD_id,proName,dbo.GetDateToChin(ACH_DATE)dis_ACH_DATE,dbo.GetDateToChin(RC_date)disRC_date,format(ACH_DATE,'yyyy-MM-dd') ACH_DATE,RC_date,CS_name,RC_amount,isSetting,CS_PID,RCM_id  from (
+                var T_SQL = @"select distinct HA_id, case when (Ach_State <> 'FS'or (LEN(AccountNo)<8 or AccountNo is null))  then 'ACH未設定' else '' end Ach_DESC ,RCD_id,proName,dbo.GetDateToChin(ACH_DATE)dis_ACH_DATE,dbo.GetDateToChin(RC_date)disRC_date,format(ACH_DATE,'yyyy-MM-dd') ACH_DATE,RC_date,CS_name,RC_amount,isSetting,CS_PID,RCM_id  from (
                         select M.AccountNo, M.Ach_State, D.RCD_id, proName,[dbo].[fn_GetWorkday]( DATEADD(day,-1, RC_date)) ACH_DATE,format(RC_date,'yyyy-MM-dd')RC_date, M.HA_id,M.HS_id,A.CS_name,D.RC_amount,check_pay_type
                         ,Case when ACH.RCD_id is null then '0' else '1' end isSetting,M.RCM_id,CS_PID  from Receivable_D D 
                         left join Receivable_M M on D.RCM_ID=M.RCM_id
@@ -4202,6 +4202,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 parameters.Add(new SqlParameter("@Ach_Bank", Ach_Bank));
 
                 var currentList = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
+                    HA_id = row.Field<decimal>("HA_id"),
                     RCD_id = row.Field<decimal>("RCD_id"),
                     RCM_id = row.Field<decimal>("RCM_id"),
                     CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
