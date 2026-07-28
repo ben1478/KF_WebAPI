@@ -112,8 +112,15 @@
                         {
                             nsd.Append("00B" + ORIG_ID.PadRightBytes(10));
                         }
-
-                        nsd.Append(dr["CS_PID"].ToString().PadRightBytes(10));
+                        if (dr["CS_company_TaxNum"].ToString() != "")
+                        {
+                            nsd.Append(dr["CS_company_TaxNum"].ToString().PadRightBytes(10));
+                        }
+                        else
+                        {
+                            nsd.Append(dr["CS_PID"].ToString().PadRightBytes(10));
+                        }
+                       
 
                         if (Ach_Bank == "CTBC")
                         {

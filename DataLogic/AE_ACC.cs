@@ -30,7 +30,7 @@ namespace KF_WebAPI.DataLogic
             try
             {
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"select rm.RCM_id,b.HS_id,b.Send_amount_date,ha.CS_name,um.U_name,li_1.item_D_name as U_BC,b.get_amount
+                var T_SQL = @"select ha.ha_id,rm.RCM_id,b.HS_id,b.Send_amount_date,ha.CS_name,um.U_name,li_1.item_D_name as U_BC,b.get_amount
                               ,b.get_amount_date,b.interest_rate_pass,li_2.item_D_name as pjName,rm.month_total,b.Loan_rate,li_3.item_D_name as str_Ach_State,Ach_Note
                               ,rm.RCM_cknum,(select COUNT(*) from AE_Files where KeyID = rm.RCM_cknum) as FileCount                              
                               from view_HS_Base b
@@ -88,6 +88,7 @@ namespace KF_WebAPI.DataLogic
                 var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row=> new RC_ACH_Res
                 {
                     RCM_id = row.Field<decimal>("RCM_id"),
+                    HA_id = row.Field<decimal>("HA_id"),
                     HS_id = row.Field<decimal>("HS_id"),
                     str_Send_amount_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("Send_amount_date").ToString("yyyy/MM/dd")),
                     CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
@@ -121,7 +122,7 @@ namespace KF_WebAPI.DataLogic
             try
             {
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"SELECT  case when  rd.RCM_id is null then 'N' else 'Y' end isPayOff , ha.CS_name,rm.*,(select COUNT(*) from AE_Files where KeyID = rm.RCM_cknum) as FileCount
+                var T_SQL = @"SELECT  case when  rd.RCM_id is null then 'N' else 'Y' end isPayOff , ha.CS_name,ha.CS_company_TaxNum,rm.*,(select COUNT(*) from AE_Files where KeyID = rm.RCM_cknum) as FileCount
                               FROM Receivable_M rm Left join (select distinct RCM_ID from  Receivable_D where check_pay_type='S') rd on rm.RCM_id=rd.RCM_id
                               INNER JOIN House_apply ha ON ha.HA_id = rm.HA_id AND ha.del_tag = 0
                               WHERE rm.RCM_id = @Rcm_id";
@@ -135,7 +136,8 @@ namespace KF_WebAPI.DataLogic
                     AccountNo = row.Field<string>("AccountNo"),
                     RCM_cknum = row.Field<string>("RCM_cknum"),
                     FileCount = row.Field<int>("FileCount"),
-                    isPayOff = row.Field<string>("isPayOff")
+                    isPayOff = row.Field<string>("isPayOff"),
+                    CS_company_TaxNum = row.Field<string>("CS_company_TaxNum") 
                 }).ToList();
 
                 resultClass.ResultCode = "000";
@@ -165,6 +167,18 @@ namespace KF_WebAPI.DataLogic
                     new SqlParameter("@Rcm_id",model.RCM_id)
                 };
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
+
+
+                if (model.CS_company_TaxNum != null && model.CS_company_TaxNum != "")
+                {
+                    var T_SQL1 = @"Update House_apply Set CS_company_TaxNum=@CS_company_TaxNum  WHERE HA_id = @HA_id";
+                    var parameters1 = new List<SqlParameter>()
+                    {
+                        new SqlParameter("@HA_id",model.HA_id),
+                        new SqlParameter("@CS_company_TaxNum",model.CS_company_TaxNum)
+                    };
+                    int result1 = _adoData.ExecuteNonQuery(T_SQL1, parameters1);
+                }
 
                 if (result == 0)
                 {
