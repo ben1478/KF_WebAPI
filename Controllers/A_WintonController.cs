@@ -301,10 +301,9 @@ namespace KF_WebAPI.Controllers
                     model.ADataSet.SU01112 = "Y";
 
                     //存入載具
-                    if (dtResult.Rows[0]["IsVehicle"].ToString() == "Y")
-                    {
+                    if (!string.IsNullOrEmpty(dtResult.Rows[0]["Vehicle"].ToString())){
                         model.ADataSet.SU01123 = 1;
-                        model.ADataSet.SU01124 = "EJ0110";
+                        model.ADataSet.SU01124 = "3J0002";
                         model.ADataSet.SU01125 = dtResult.Rows[0]["Vehicle"].ToString();
                     }
                 }
