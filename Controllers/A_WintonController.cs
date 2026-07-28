@@ -368,7 +368,16 @@ namespace KF_WebAPI.Controllers
                         model_M.MF10066 = DateTime.Now.ToString("yyyy-MM-dd");
                         model_M.MF10091 = "N";
                         model_M.MF10093 = "Y";
-                        model_M.MF10094 = "Y";
+                        if (string.IsNullOrEmpty(List[i].Vehicle))
+                        {
+                            model_M.MF10094 = "Y";
+                        }
+                        else
+                        {
+                            model_M.MF10094 = "N";
+                            model_M.MF10095 = "3J0002";
+                            model_M.MF10096 = List[i].Vehicle;
+                        }
                         model.ADataSetMaster.Add(model_M);
 
                        
