@@ -545,7 +545,16 @@ namespace KF_WebAPI.Controllers
                         model_M.MF10066 = DateTime.Now.ToString("yyyy-MM-dd");
                         model_M.MF10091 = "N";
                         model_M.MF10093 = "Y";
-                        model_M.MF10094 = "Y";
+                        if (string.IsNullOrEmpty(List[i].Vehicle))
+                        {
+                            model_M.MF10094 = "Y";
+                        }
+                        else
+                        {
+                            model_M.MF10095 = "3J0002";
+                            model_M.MF10096 = List[i].Vehicle;
+                        }
+                        
                         model.ADataSetMaster.Add(model_M);
 
                         ReceivableForInv_D_req model_D1 = new ReceivableForInv_D_req();
@@ -707,7 +716,7 @@ namespace KF_WebAPI.Controllers
                         model_M.MF10066 = DateTime.Now.ToString("yyyy-MM-dd");
                         model_M.MF10091 = "N";
                         model_M.MF10093 = "Y";
-                        model_M.MF10094 = "Y";
+                        model_M.MF10094 = "Y"; //這裡要先判斷是某有載具 有:N 沒有Y //95(類別) 96(號碼)
                         model.ADataSetMaster.Add(model_M);
 
                         ReceivableForInv_D_req model_D1 = new ReceivableForInv_D_req();
