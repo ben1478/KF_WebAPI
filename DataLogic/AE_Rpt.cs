@@ -3539,6 +3539,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                             amount_total = row.Field<decimal>("amount_total"),
                             month_total = row.Field<int>("month_total"),
                             RecPayDate = paymentDate, // 帶入檔名日期
+                            Vehicle = row.Field<string>("Vehicle"),
                             Win_Msg = returnReason // 存入對象變數供後續判斷
                         }).ToList();
 
@@ -3678,6 +3679,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                                             month_total = row.Field<int>("month_total"),
                                             RecPayDate = Convert.ToDateTime(payDate), // 帶入檔名日期
                                             Win_Msg = returnReason,// 存入對象變數供後續判斷
+                                            Vehicle = row.Field<string>("Vehicle"),
                                             ProCount = ProCount
                                         }).ToList();
                                     }
@@ -3818,6 +3820,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                         Invoice_No = row.Field<string>("invoice_no"),
                         FileKeyID = FileKeyID,
                         file_index = file_index,
+                        Vehicle = row.Field<string>("Vehicle"),
                         IsSuccess = IsSuccess
                     }).ToList();
 
