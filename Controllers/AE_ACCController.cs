@@ -2917,7 +2917,7 @@ namespace KF_WebAPI.Controllers
                     var T_SQL_bad = @"WITH ProjectCode AS ( SELECT HA_id,CASE WHEN project_title = 'PJ00001' THEN 'PJ00005' ELSE project_title END AS project_code,del_tag
                                       FROM House_pre_project ),
                                       BaseData AS ( SELECT distinct RM.RCM_id, I.item_D_name AS pro_name,SM.amount_total AS amount_bad_total,
-                                      CASE WHEN RM.amount_total > 500000 THEN 'U' ELSE 'D' END AS amount_type
+                                      CASE WHEN RM.amount_total > @Base_AMT THEN 'U' ELSE 'D' END AS amount_type
                                       FROM StagnationDebt_M SM
                                       JOIN Receivable_M RM ON RM.RCM_id = SM.RCM_id
                                       JOIN House_sendcase HS ON HS.HS_id = RM.HS_id
@@ -2927,7 +2927,8 @@ namespace KF_WebAPI.Controllers
                                       SELECT pro_name,amount_type,COUNT(*) AS TOT_bad_Count,SUM(amount_bad_total) AS TOT_bad_debt 
                                       FROM BaseData 
                                       GROUP BY pro_name, amount_type ORDER BY pro_name, amount_type";
-                    var badResult = _adoData.ExecuteSQuery(T_SQL_bad).AsEnumerable().Select(row => new {
+                    var parameters_bad = new List<SqlParameter> { new SqlParameter("@Base_AMT", Base_AMT) };
+                    var badResult = _adoData.ExecuteQuery(T_SQL_bad,parameters_bad).AsEnumerable().Select(row => new {
                         amount_type = row.Field<string>("amount_type"),
                         pro_name = string.IsNullOrEmpty(row.Field<string>("pro_name")) ? string.Empty : _FuncHandler.DeCodeBNWords(row.Field<string>("pro_name")),
                         TOT_bad_Count = row.Field<int>("TOT_bad_Count"),
@@ -4547,6 +4548,7 @@ namespace KF_WebAPI.Controllers
             try
             {
                 ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
                 #region SQL
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"select cs_name,CS_PID,loan_amount,certificate_date_S,certificate_date_E,Remark 
@@ -4557,7 +4559,7 @@ namespace KF_WebAPI.Controllers
                 #endregion
                 var result = _adoData.ExecuteQuery(T_SQL,parameters).AsEnumerable().Select(row => new Debt_Certificate_res
                 {
-                    cs_name = row.Field<string>("cs_name"),
+                    cs_name = _Fun.DeCodeBNWords(row.Field<string>("cs_name")),
                     CS_PID = row.Field<string>("CS_PID"),
                     loan_amount = row.Field<decimal>("loan_amount"),
                     str_certificate_date_S = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("certificate_date_S").ToString("yyyy/MM/dd")),

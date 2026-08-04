@@ -2744,44 +2744,54 @@ namespace KF_WebAPI.FunctionHandler
             {
                 return string.Empty;
             }
-            string decodeWords = string.Empty;
-            if (strName.Contains("&#"))
+
+            // 先處理字串中的 NCR 格式 (無論有無分號、全半形分號、Big5 內碼或標準 Unicode NCR)
+            string decodedStr = fromNCR(strName);
+
+            // 針對解碼後的字串進行二次難字/HKSCS 檢測
+            StringBuilder finalResult = new StringBuilder();
+
+            // 使用 StringInfo 逐個「字形 (Grapheme)」走訪，避免 UTF-32 難字 (Surrogate Pair) 被 foreach 切斷
+            var charEnum = StringInfo.GetTextElementEnumerator(decodedStr);
+
+            while (charEnum.MoveNext())
             {
-                string fixedCSName = FixNCRIfNeeded(strName);//為符合NCR格式
-                decodeWords = fromNCR(fixedCSName);
-            }
-            else
-            {
-                var words = CheckRareChineseCharacters(strName);
-                foreach (var word in words)
+                string singleChar = charEnum.GetTextElement();
+                var words = CheckRareChineseCharacters(singleChar);
+                bool isHandled = false;
+
+                if (words != null)
                 {
-                    if (word.IsRare)
+                    foreach (var word in words)
                     {
-                        string HtmlEncode = ConvertDecimalToUrlEncoded(word.Character);
-                        //符合HKSCS編碼在處理
-                        if (HtmlEncode.Replace("%", "").Length == 4)
+                        if (word.IsRare)
                         {
-                            ResultClass<string> resUniCode = GetUniCode(HtmlEncode.Replace("%", ""));
-                            if (resUniCode.ResultCode != "000")
+                            string htmlEncode = ConvertDecimalToUrlEncoded(word.Character);
+                            string hexCode = htmlEncode.Replace("%", "");
+
+                            // 符合 HKSCS 編碼長度 4 位元時進行轉碼
+                            if (hexCode.Length == 4)
                             {
-                                continue;
+                                ResultClass<string> resUniCode = GetUniCode(hexCode);
+                                if (resUniCode != null && resUniCode.ResultCode == "000")
+                                {
+                                    finalResult.Append(ConvertHexToUnicodeChar(resUniCode.objResult));
+                                    isHandled = true;
+                                    break;
+                                }
                             }
-                            string result = ConvertHexToUnicodeChar(resUniCode.objResult);
-                            decodeWords += result; // 將解碼後的字元累加
                         }
-                        else
-                        {
-                            decodeWords += word.Character;
-                        }
-                       
-                    }
-                    else
-                    {
-                        decodeWords += word.Character; // 將解碼後的字元累加
                     }
                 }
+
+                // 若非難字或 HKSCS 查無對應，保留原字元
+                if (!isHandled)
+                {
+                    finalResult.Append(singleChar);
+                }
             }
-            return decodeWords;
+
+            return finalResult.ToString();
         }
 
         /// <summary>
@@ -2804,11 +2814,50 @@ namespace KF_WebAPI.FunctionHandler
         /// </summary>
         public string fromNCR(string value)
         {
-            return System.Text.RegularExpressions.Regex.Replace(
-                value,
-                @"&#(\d+);",  // 注意分號必須出現在pattern裡
-                m => char.ConvertFromUtf32(int.Parse(m.Groups[1].Value))
-            );
+            if (string.IsNullOrEmpty(value)) return string.Empty;
+
+            // 正則圖解：
+            // &#              : 匹配 NCR 開頭
+            // (?<codeNum>\d+) : 強制抓取後面「所有連續數字」(解決只抓到 201 留下 20 截斷變亂碼的問題)
+            // [;；]?          : 分號設為可有可無 (相容無分號或全形分號)
+            string pattern = @"&#(?<codeNum>\d+)[;；]?";
+
+            return Regex.Replace(value, pattern, m =>
+            {
+                string numStr = m.Groups["codeNum"].Value;
+
+                if (int.TryParse(numStr, out int code))
+                {
+                    // 將十進位數字轉為 4 位十六進位 Hex (例如：20124 -> 4E8C，20120 -> 4E98)
+                    string hexCode = code.ToString("X4");
+
+                    // Big5 / HKSCS 難字服務查詢
+                    try
+                    {
+                        ResultClass<string> resUniCode = GetUniCode(hexCode);
+                        if (resUniCode != null && resUniCode.ResultCode == "000")
+                        {
+                            return ConvertHexToUnicodeChar(resUniCode.objResult);
+                        }
+                    }
+                    catch
+                    {
+                        // 忽略服務異常，降級嘗試 Unicode 解碼
+                    }
+
+                    // 【備用路徑】：若非 Big5/HKSCS 特殊難字，當作標準 Unicode (UTF-32) 解碼
+                    try
+                    {
+                        return char.ConvertFromUtf32(code);
+                    }
+                    catch
+                    {
+                        return m.Value; // 數值不合法時保留原文，避免 Crash
+                    }
+                }
+
+                return m.Value;
+            });
         }
 
         /// <summary>
