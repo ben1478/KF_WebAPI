@@ -24,6 +24,7 @@ using System.Text.RegularExpressions;
 using System.Globalization;
 using KF_WebAPI.DataLogic;
 using System.Xml.Linq;
+using static UglyToad.PdfPig.Core.PdfSubpath;
 
 namespace KF_WebAPI.Controllers
 {
@@ -401,7 +402,7 @@ namespace KF_WebAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("GetUserMenuList")]
-        public ActionResult<ResultClass<string>> GetUserMenuList(string? U_BC) 
+        public ActionResult<ResultClass<string>> GetUserMenuList(string? U_BC,string jobStatus) 
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -418,12 +419,20 @@ namespace KF_WebAPI.Controllers
                     LEFT JOIN Item_list bc ON bc.item_M_code = 'branch_company'  AND bc.item_D_code = um.U_BC AND bc.item_D_type = 'Y' AND bc.show_tag = '0' AND bc.del_tag = '0'
                     LEFT JOIN Item_list pft ON pft.item_M_code = 'professional_title' AND pft.item_D_code = um.U_PFT AND pft.item_D_type = 'Y' AND pft.show_tag = '0' AND pft.del_tag = '0'
                     left join Item_list Lis on Lis.item_M_code = 'SpecName' AND Lis.item_D_type = 'Y' and Lis.item_D_txt_A = um.U_num                    
-                    WHERE um.del_tag = '0' AND bc.item_D_name is not null AND U_num <> 'AA999'
-                    AND ( U_leave_date is null OR U_leave_date >= GETDATE())";
+                    WHERE um.del_tag = '0' AND bc.item_D_name is not null AND U_num <> 'AA999'";
+ 
                 if (!string.IsNullOrEmpty(U_BC))
                 {
                     T_SQL = T_SQL + " and um.U_BC=@U_BC";
                     parameters.Add(new SqlParameter("@U_BC", U_BC));
+                }
+                if (jobStatus == "Y")
+                {
+                    T_SQL += " AND ( U_leave_date is null OR U_leave_date >= GETDATE())";
+                }
+                else
+                {
+                    T_SQL += " AND ( U_leave_date is not null OR U_leave_date < GETDATE())";
                 }
                 T_SQL = T_SQL + " ORDER BY bc.item_sort,pft.item_sort";
                 #endregion
