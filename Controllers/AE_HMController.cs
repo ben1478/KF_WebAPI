@@ -290,7 +290,7 @@ namespace KF_WebAPI.Controllers
                     FileCount = row.Field<int>("FileCount"),
                     CP_bus_remark = row.Field<string?>("RC_note"),
                     CP_Pay_Amt = row.Field<decimal?>("RecPayAmt")
-                }).ToList();
+                }).ToList().OrderBy(x=>x.RCD_id);
 
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "成功";
