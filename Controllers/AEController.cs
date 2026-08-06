@@ -1498,6 +1498,62 @@ namespace KF_WebAPI.Controllers
             }
         }
 
+        [HttpGet("GenerateVirtualAccount")]
+        public ActionResult<ResultClass<string>> GenerateVirtualAccount(string YYYYMM, decimal RCD_id)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                // 產出 VA
+                string VirtualAccount = OBankHelper.GenerateVirtualAccount("88052", RCD_id);
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = VirtualAccount;
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = ex.Message;
+                return StatusCode(500, resultClass);
+            }
+        }
+
+
+        [HttpGet("GenerateSupermarketBarcodes")]
+        public ActionResult<ResultClass<SupermarketBarcodeResult>> GenerateSupermarketBarcodes(decimal RCD_id,DateTime dueDate,decimal amount,bool isFeeIncluded = false)
+        {
+            ResultClass<SupermarketBarcodeResult> resultClass = new ResultClass<SupermarketBarcodeResult>();
+            try
+            {
+                // 1. 呼叫 OBankHelper 算出一二三段條碼字串
+                var barcodes = OBankHelper.GenerateSupermarketBarcodes(
+                    dueDate,
+                    isFeeIncluded,
+                    "88052",
+                    RCD_id,
+                    amount);
+
+                // 2. 封裝結果
+                var barcodeObj = new SupermarketBarcodeResult
+                {
+                    Barcode1 = barcodes.Barcode1,
+                    Barcode2 = barcodes.Barcode2,
+                    Barcode3 = barcodes.Barcode3
+                };
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = barcodeObj;
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = ex.Message;
+                return StatusCode(500, resultClass);
+            }
+        }
+
     }
 
 }
