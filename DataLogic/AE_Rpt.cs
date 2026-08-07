@@ -4376,6 +4376,56 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
         }
 
 
+        public class RecInfoDto
+        {
+            public string RCD_id { get; set; }
+            public decimal RC_amount { get; set; }
+            public string RC_date { get; set; }
+        }
+
+        public List<RecInfoDto> GetRecInfo(string? RCD_id)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"SELECT Top 10 Cast( RD.RCD_id as varchar)RCD_id,RD.RC_count,RD.RC_amount,RM.RCM_id,HA.HA_id,    format(Rd.RC_date,'yyyy/MM/dd')RC_date
+                FROM Receivable_D RD WITH (NOLOCK)
+                INNER JOIN Receivable_M RM WITH (NOLOCK) ON RD.RCM_id = RM.RCM_id AND RM.del_tag = '0'
+                INNER JOIN House_apply HA WITH (NOLOCK) ON RM.HA_id = HA.HA_id
+                WHERE Rd.RC_date between DATEADD(day,-5, SYSDATETIME()) and DATEADD(day,10, SYSDATETIME())
+                and RD.del_tag = '0' and RD.check_pay_type = 'N' and cancel_type <> 'Y' and bad_debt_type = 'N'
+               ";
+                if (RCD_id is not null)
+                {
+                    T_SQL += " and RD.RCD_id=@RCD_id ";
+                    parameters.Add(new SqlParameter("@RCD_id", RCD_id));
+                }
+                else
+                {
+                    T_SQL += " order by Rd.RC_date";
+                }
+                
+
+                // 使用 using 確保 DataTable 在離開區塊後正確釋放
+                using (DataTable dtResult = _adoData.ExecuteQuery(T_SQL, parameters))
+                {
+                    return dtResult.AsEnumerable().Select(row => new RecInfoDto
+                    {
+                        RCD_id = row.Field<string>("RCD_id"),
+                        RC_amount = row.Field<decimal>("RC_amount"),
+                        RC_date = row.Field<string>("RC_date")
+                    }).ToList();
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+
+        
 
 
         /// <summary>

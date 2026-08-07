@@ -7317,6 +7317,31 @@ namespace KF_WebAPI.Controllers
         }
 
 
+        /// <summary>
+        /// GetRecInfo 
+        /// </summary>
+        [HttpGet("GetRecInfo")]
+        public ActionResult<ResultClass<string>> GetRecInfo(string? RCD_id)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+               
+                // 直接取得轉好的 List<CaseInfoDto>
+                var currentList = _Rpt.GetRecInfo(RCD_id);
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(currentList);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
 
     }
 }

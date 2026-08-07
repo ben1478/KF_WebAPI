@@ -10,9 +10,11 @@ namespace KF_WebAPI.Service
         public string Barcode2 { get; set; }
         public string Barcode3 { get; set; }
     }
-
+    
     public static class OBankHelper
     {
+        private static readonly string corpCode = "88052";
+
         #region 1. 王道虛擬帳號生成與還原 (16碼)
 
         /// <summary>
@@ -21,7 +23,7 @@ namespace KF_WebAPI.Service
         /// <param name="corpCode">5碼企業識別碼 (例如 "88052")</param>
         /// <param name="rcdId">Receivable_D 的 PK (RCD_id，如 10000001)</param>
         /// <returns>16碼完整虛擬帳號 (例如: 8805200100000013)</returns>
-        public static string GenerateVirtualAccount(string corpCode, decimal rcdId)
+        public static string GenerateVirtualAccount( decimal rcdId)
         {
             if (string.IsNullOrWhiteSpace(corpCode) || corpCode.Length != 5)
                 throw new ArgumentException("企業識別碼須為 5 碼");
@@ -96,7 +98,6 @@ namespace KF_WebAPI.Service
         public static (string Barcode1, string Barcode2, string Barcode3) GenerateSupermarketBarcodes(
             DateTime dueDate,
             bool isFeeIncluded,
-            string corpCode,
             decimal rcdId,
             decimal amount)
         {

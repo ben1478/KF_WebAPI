@@ -1499,13 +1499,13 @@ namespace KF_WebAPI.Controllers
         }
 
         [HttpGet("GenerateVirtualAccount")]
-        public ActionResult<ResultClass<string>> GenerateVirtualAccount(string YYYYMM, decimal RCD_id)
+        public ActionResult<ResultClass<string>> GenerateVirtualAccount(decimal RCD_id)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
                 // 產出 VA
-                string VirtualAccount = OBankHelper.GenerateVirtualAccount("88052", RCD_id);
+                string VirtualAccount = OBankHelper.GenerateVirtualAccount(RCD_id);
 
                 resultClass.ResultCode = "000";
                 resultClass.objResult = VirtualAccount;
@@ -1530,7 +1530,6 @@ namespace KF_WebAPI.Controllers
                 var barcodes = OBankHelper.GenerateSupermarketBarcodes(
                     dueDate,
                     isFeeIncluded,
-                    "88052",
                     RCD_id,
                     amount);
 
