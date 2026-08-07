@@ -3360,6 +3360,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                             FileList.Add(item);
 
                             var T_SQL = "";
+                            var parameters = new List<SqlParameter>();
                             if (string.IsNullOrEmpty(item.Col3))
                             {
                                 T_SQL = @"select top 1  * 
@@ -3369,30 +3370,47 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                                               where RM.del_tag = 0 and check_pay_type = 'N' and cancel_type <> 'Y' and bad_debt_type = 'N'
                                               and HA.CS_PID = @CS_PID
                                               order by RC_date,RC_count";
-                            }
-                            else
-                            {
-                                T_SQL = @"select H.*,D.*,M.amount_per_month,M.HS_id,amount_total,month_total from (select HA_id,CS_Name,CS_PID from House_apply where CS_PID= @CS_PID) H
-                                              left join House_sendcase S on H.HA_id=S.HA_id                                           
-                                              left join Receivable_M M on H.HA_id=M.HA_id 
-                                              left join (
-                                              select * from Receivable_D where cast(RCM_id as varchar)+'-'+ cast( (RC_count) as varchar) in 
-                                              (/*抓出最近一期沒繳款的資料*/
-                                              select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) as varchar)RC_count 
-                                              from Receivable_D where check_pay_type ='N' group by RCM_id
-                                              union all
-                                              select cast(RCM_id as varchar)+'-'+ cast( min(RC_count) +1 as varchar)RC_count 
-                                              from Receivable_D where check_pay_type ='N' group by RCM_id)
-                                              ) D on M.RCM_id=D.RCM_id
-                                              where RCM_note not like '%清償%' and D.check_pay_type ='N' and M.del_tag='0' and D.del_tag='0' 
-                                              and S.del_tag='0' and fund_company='FDCOM003'
-                                              order by RC_date";
-                            }
 
-                            var parameters = new List<SqlParameter>
+                                parameters = new List<SqlParameter>
                                 {
                                     new SqlParameter("@CS_PID",item.Col1)
                                 };
+                            }
+                            else
+                            {
+                                T_SQL = @" SELECT H.*, D.*, M.amount_per_month, M.HS_id, amount_total, month_total 
+                                                FROM (
+                                                    SELECT HA_id, CS_Name, CS_PID, Vehicle 
+                                                    FROM House_apply 
+                                                    WHERE CS_PID = @CS_PID  
+                                                ) H
+                                                LEFT JOIN House_sendcase S ON H.HA_id = S.HA_id                                            
+                                                LEFT JOIN Receivable_M M ON H.HA_id = M.HA_id 
+                                                LEFT JOIN (
+                                                    SELECT * 
+                                                    FROM (
+                                                        SELECT *, 
+                                                               ROW_NUMBER() OVER (PARTITION BY RCM_id ORDER BY RC_count ASC) AS RowNum
+                                                        FROM Receivable_D 
+                                                        WHERE check_pay_type = 'N' 
+                                                          AND del_tag = '0'
+                                                    ) AS D_Sub
+                                                    WHERE RowNum <= @TopN  
+                                                ) D ON M.RCM_id = D.RCM_id
+                                                WHERE M.RCM_note NOT LIKE '%清償%' 
+                                                  AND M.del_tag = '0' 
+                                                  AND S.del_tag = '0' 
+                                                  AND fund_company = 'FDCOM003'
+                                                ORDER BY RC_date;
+                                            ";
+                                parameters = new List<SqlParameter>
+                                {
+                                    new SqlParameter("@CS_PID",item.Col1),
+                                     new SqlParameter("@TopN",item.Col3)
+                                };
+                            }
+
+                            
                             var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Win_Inv
                             {
                                 HS_id = row.Field<decimal>("HS_id"),

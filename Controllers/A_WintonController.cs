@@ -525,7 +525,8 @@ namespace KF_WebAPI.Controllers
                     var apiName = "rest/TdmServerMethodsIN/ImpWD4MF10";
                     var url = urlBase + apiName;
 
-                    for (int i = 0; i < List.Count; i++){
+                    for (int i = 0; i < List.Count; i++)
+                    {
 
                         #region 抓取可用的發票組別
                         string yyyMM = (DateTime.Now.Year - 1911).ToString() + DateTime.Now.Month.ToString("D2");
@@ -563,7 +564,7 @@ namespace KF_WebAPI.Controllers
                             model_M.MF10095 = "3J0002";
                             model_M.MF10096 = List[i].Vehicle;
                         }
-                        
+
                         model.ADataSetMaster.Add(model_M);
 
                         ReceivableForInv_D_req model_D1 = new ReceivableForInv_D_req();
@@ -609,7 +610,7 @@ namespace KF_WebAPI.Controllers
                                 errmsg = "";
                             }
                         }
-                        
+
 
                         string Status = (string)responJson["status"];
 
@@ -629,10 +630,10 @@ namespace KF_WebAPI.Controllers
 
                             #region 中信ACH回寫處理
                             if (List[i].FileKeyID != null)
-                            { 
-                                 _Rpt.UpdACH_History(List[i]);
+                            {
+                                _Rpt.UpdACH_History(List[i]);
                             }
-                           
+
                             #endregion
 
 
@@ -641,7 +642,7 @@ namespace KF_WebAPI.Controllers
                         {
                             errmsg = "失敗:" + errmsg;
 
-                           
+
 
                             if (errmsg.Contains("無可用的發票號碼"))
                             {
@@ -663,9 +664,15 @@ namespace KF_WebAPI.Controllers
                             List[i].Win_Msg = errmsg;
                         }
                     }
+                    resultClass.objResult = JsonConvert.SerializeObject(List);
+                }
+                else
+                {
+                    resultClass.ResultCode = "500";
+                    resultClass.ResultMsg = "呼叫文中失敗!!";
                 }
 
-                resultClass.objResult = JsonConvert.SerializeObject(List);
+               
                 return resultClass;
             }
             catch (Exception ex)
