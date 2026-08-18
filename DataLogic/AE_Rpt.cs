@@ -4044,19 +4044,21 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
         /// <summary>
         /// 異動Receivable_D(uType=>自主繳款:1 ACH:2 清償:3) 
         /// </summary>
-        public void UpdReceivableD(Receivable_Win_Inv model, string clientIp, string INV_NO, decimal RecPayAmt, string uType)
+        public void UpdReceivableD(Receivable_Win_Inv model, string clientIp, string INV_NO, decimal RecPayAmt, string uType, string Random_code)
         {
             try
             {
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"UPDATE RD
                               SET RecPayDate = @RecPayDate,RecPayAmt = @RecPayAmt,RecPayType = @RecPayType ,check_pay_date = @check_pay_date,
-                              check_pay_type = @check_pay_type,check_pay_num = @check_pay_num,invoice_no = @invoice_no,invoice_date = getdate(),
+                              check_pay_type = @check_pay_type,check_pay_num = @check_pay_num,invoice_no = @invoice_no,Random_code = @Random_code,invoice_date = getdate(),
                               edit_date = getdate(),edit_num = @edit_num,edit_ip = @edit_ip";
                 var T_SQL_B = @" FROM Receivable_D RD
                                  INNER JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id
                                  INNER JOIN House_sendcase HS ON HS.HS_id = RM.HS_id
                                  WHERE RD.RCD_id = @RCD_id";
+
+
                 if (uType == "1")
                 {
                     T_SQL += ",RD.RemainingPrincipal = RD.Ex_RemainingPrincipal,RC_note = @RC_note";
@@ -4067,6 +4069,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                     parameters.Add(new SqlParameter("@check_pay_num", model.User));
                     parameters.Add(new SqlParameter("@RecPayAmt", RecPayAmt));
                     parameters.Add(new SqlParameter("@invoice_no", INV_NO));
+                    parameters.Add(new SqlParameter("@Random_code", Random_code));
                     parameters.Add(new SqlParameter("@edit_ip", clientIp));
                     parameters.Add(new SqlParameter("@edit_num", model.User));
                     parameters.Add(new SqlParameter("@check_pay_type", "Y"));
@@ -4086,6 +4089,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                     parameters.Add(new SqlParameter("@check_pay_num", model.User));
                     parameters.Add(new SqlParameter("@RecPayAmt", RecPayAmt));
                     parameters.Add(new SqlParameter("@invoice_no", INV_NO));
+                    parameters.Add(new SqlParameter("@Random_code", Random_code));
                     parameters.Add(new SqlParameter("@edit_ip", clientIp));
                     parameters.Add(new SqlParameter("@edit_num", model.User));
                     parameters.Add(new SqlParameter("@check_pay_type", "Y"));
@@ -4103,6 +4107,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                     parameters.Add(new SqlParameter("@check_pay_num", model.User));
                     parameters.Add(new SqlParameter("@RecPayAmt", RecPayAmt));
                     parameters.Add(new SqlParameter("@invoice_no", INV_NO));
+                    parameters.Add(new SqlParameter("@Random_code", Random_code));
                     parameters.Add(new SqlParameter("@edit_ip", clientIp));
                     parameters.Add(new SqlParameter("@edit_num", model.User));
                     parameters.Add(new SqlParameter("@check_pay_type", "S"));

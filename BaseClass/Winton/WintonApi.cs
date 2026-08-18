@@ -324,4 +324,12 @@ namespace KF_WebAPI.BaseClass.Winton
         public string ANoB { get; set; }
         public string ANoE { get; set; }
     }
+
+    public class Invoice_req
+    {
+        public string AToken { get; set; }
+        public string AExpRange { get; set; }
+        public string AInvoiceNoB { get; set; }
+        public string AInvoiceNoE { get; set; }
+    }
 }

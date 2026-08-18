@@ -20,6 +20,7 @@ using static OfficeOpenXml.ExcelErrorValue;
 using System.Collections.Generic;
 using Grpc.Core;
 using System.Linq;
+using UglyToad.PdfPig.Tokens;
 
 namespace KF_WebAPI.Controllers
 {
@@ -465,8 +466,16 @@ namespace KF_WebAPI.Controllers
                             string INV_NO = await GetSalesOrder(okResult.Value.ToString(), model_M.MF10003);
                             #endregion
 
+                            #region 用發票號碼抓隨機碼
+                            string Random_code = "";
+                            if (INV_NO != "")
+                            {
+                                Random_code = await ExpWD4MFTX(model.AToken, INV_NO);
+                            }
+                            #endregion
+
                             #region 異動Receivable_D
-                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, 0, "3");
+                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, 0, "3", Random_code);
                             #endregion
                         }
                         else
@@ -624,8 +633,16 @@ namespace KF_WebAPI.Controllers
                             string INV_NO = await GetSalesOrder(okResult.Value.ToString(), model_M.MF10003);
                             #endregion
 
+                            #region 用發票號碼抓隨機碼
+                            string Random_code = "";
+                            if (INV_NO != "")
+                            {
+                                Random_code = await ExpWD4MFTX(model.AToken, INV_NO);
+                            }
+                            #endregion
+
                             #region 異動Receivable_D
-                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, List[i].amount_per_month, "2");
+                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, List[i].amount_per_month, "2", Random_code);
                             #endregion
 
                             #region 中信ACH回寫處理
@@ -793,10 +810,20 @@ namespace KF_WebAPI.Controllers
                             string INV_NO = await GetSalesOrder(okResult.Value.ToString(), model_M.MF10003);
                             #endregion
 
+
+                            #region 用發票號碼抓隨機碼
+                            string Random_code = "";
+                            if (INV_NO != "")
+                            {
+                                Random_code = await ExpWD4MFTX(model.AToken, INV_NO);
+                            }
+                            #endregion
+
+
                             #region 異動Receivable_D
                             var cpPayAmt = List[i].CP_Pay_Amt ?? 0;
                             List[i].RC_note = List[i].CP_bus_remark;
-                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, cpPayAmt, "1");
+                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, cpPayAmt, "1", Random_code);
                             #endregion
 
                             #region 異動自主繳款資料
@@ -884,5 +911,80 @@ namespace KF_WebAPI.Controllers
             }
             
         }
+
+
+        private async Task<string> ExpWD4MFTX(string Token, string InvoiceNo)
+        {
+            var apiName = "rest/TdmServerMethodsIN/ExpWD4MFTX";
+            var url = urlBase + apiName;
+
+            try
+            {
+                var MFTX050 = "";
+
+                Invoice_req model = new Invoice_req();
+                model.AToken = Token;
+                model.AExpRange = "2";
+                model.AInvoiceNoB = InvoiceNo;
+                model.AInvoiceNoE = InvoiceNo;
+
+                var jsonData = "";
+                jsonData = JsonConvert.SerializeObject(model);
+                var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync(url, content);
+                response.EnsureSuccessStatusCode();
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responJson = JObject.Parse(responseContent);
+
+                string Status = (string)responJson["status"];
+
+                if (Status == "200")
+                {
+                    if (((Newtonsoft.Json.Linq.JContainer)responJson["data"]["adatasetmaster"]).Count > 0)
+                    {
+                        MFTX050 = (string)responJson["data"]["adatasetmaster"][0]["mftx050"];
+                    }
+                }
+                _fun.ExtAPILogIns(apiCode, "ExpWD4MFTX", InvoiceNo, model.AToken, jsonData, Status, JsonConvert.SerializeObject(responJson));
+                return MFTX050;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+        }
+
+        [HttpPost("GetInvoiceInfo")]
+        public async Task<ResultClass<string>> GetInvoiceInfo( string InvoiceNo)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var result = await GetLoginToken(ACompNo);
+                if (result is OkObjectResult okResult)
+                {
+                    string Token = okResult.Value.ToString();
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "異動成功";
+                    string MFTX050 = await ExpWD4MFTX(Token, InvoiceNo);
+                    resultClass.objResult = MFTX050;
+                }
+               
+                
+
+                return resultClass;
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return resultClass;
+            }
+        }
+
     }
 }
