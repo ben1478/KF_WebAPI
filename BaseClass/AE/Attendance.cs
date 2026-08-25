@@ -105,6 +105,7 @@ namespace KF_WebAPI.BaseClass.AE
     public class Attendance_per_res: Attendance_res
     {
         public int? EarlyMin { get; set; }  
+        public int? LateMin { get; set; }
         public string U_Na { get; set; }
         public List<Attendance_Flow>? attendance_Flows { get; set; }
     }

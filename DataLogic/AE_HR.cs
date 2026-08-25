@@ -483,7 +483,8 @@ namespace KF_WebAPI.DataLogic
                 }
 
                 #region 1. 主出勤資料查詢
-                var T_SQL = @"SELECT CASE WHEN ad.[attendance_date]= '2024/12/20' AND U.U_BC='BC0100' THEN 20 
+                var T_SQL = @"SELECT CASE 
+                      WHEN ad.[attendance_date]= '2024/12/20' AND U.U_BC='BC0100' THEN 20 
                       WHEN ad.[attendance_date]= '2024/12/20' AND (U.U_BC like 'BC08%' OR U.U_BC='BC0900') THEN 10
                       WHEN ad.[attendance_date]= '2025/06/13' AND U.U_BC='BC0100' THEN 15 
                       WHEN ad.[attendance_date]= '2025/06/13' AND U.U_BC like 'BC08%' THEN 10
@@ -492,6 +493,7 @@ namespace KF_WebAPI.DataLogic
                       WHEN ad.[attendance_date]= '2026/02/13' THEN 120 
                       WHEN ad.[attendance_date]= '2026/06/05' AND U.U_BC='BC0100' THEN 20
                       WHEN ad.[attendance_date]= '2026/06/05' AND U.U_BC like 'BC08%' THEN 15 ELSE 0 END EarlyMin,
+                      CASE WHEN ad.[attendance_date]= '2026/08/25' AND U.U_BC='BC0500' THEN 60 ELSE 0 END LateMin,
                       U_name,userID,ad.attendance_date,work_time,
                       CASE WHEN Holiday_NA IS NULL THEN CASE WHEN OT='N' THEN 
                       CASE WHEN isnull([work_time], '')='' THEN 0 WHEN [work_time] >= '12:00' AND [work_time] <= '13:00' THEN 180
@@ -601,6 +603,7 @@ namespace KF_WebAPI.DataLogic
                 var result = _ADO.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Attendance_per_res
                 {
                     EarlyMin = row.Field<int>("EarlyMin"),
+                    LateMin = row.Field<int>("LateMin"),
                     user_name = row.Field<string>("U_name"),
                     userID = row.Field<string>("userID"),
                     attendance_date = row.Field<string>("attendance_date"),

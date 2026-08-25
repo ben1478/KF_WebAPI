@@ -1455,7 +1455,20 @@ namespace KF_WebAPI.FunctionHandler
                                     }
 
                                 }
-                                
+
+                                //遲到判定
+                                if (!isRest)
+                                {
+                                    // 因2026/08/25 台南電梯故障所以延後一小時
+                                    if (bcGroup.Key == "BC0500" && items[j].attendance_date == "2026/08/25")
+                                    {
+                                        if (items[j].Late <= 60)
+                                        {
+                                            items[j].Late = 0;
+                                        }
+                                    }
+                                }
+
                                 //到職日
                                 if (items[j].arrive_date.HasValue && items[j].attendance_date == items[j].arrive_date.Value.ToString("yyyy/MM/dd"))
                                 {
