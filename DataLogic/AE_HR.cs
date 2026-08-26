@@ -493,7 +493,7 @@ namespace KF_WebAPI.DataLogic
                       WHEN ad.[attendance_date]= '2026/02/13' THEN 120 
                       WHEN ad.[attendance_date]= '2026/06/05' AND U.U_BC='BC0100' THEN 20
                       WHEN ad.[attendance_date]= '2026/06/05' AND U.U_BC like 'BC08%' THEN 15 ELSE 0 END EarlyMin,
-                      CASE WHEN ad.[attendance_date]= '2026/08/25' AND U.U_BC='BC0500' THEN 60 ELSE 0 END LateMin,
+                      CASE WHEN ad.[attendance_date] between '2026/08/25' and '2026/09/05' AND U.U_BC='BC0500' THEN 60 ELSE 0 END LateMin,
                       U_name,userID,ad.attendance_date,work_time,
                       CASE WHEN Holiday_NA IS NULL THEN CASE WHEN OT='N' THEN 
                       CASE WHEN isnull([work_time], '')='' THEN 0 WHEN [work_time] >= '12:00' AND [work_time] <= '13:00' THEN 180

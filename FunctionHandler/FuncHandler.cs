@@ -1459,13 +1459,10 @@ namespace KF_WebAPI.FunctionHandler
                                 //遲到判定
                                 if (!isRest)
                                 {
-                                    // 因2026/08/25 台南電梯故障所以延後一小時
-                                    if (bcGroup.Key == "BC0500" && items[j].attendance_date == "2026/08/25")
+                                    // 2026/08/25~2026/09/05 台南電梯故障所以延後一小時
+                                    if (bcGroup.Key == "BC0500" && attendanceDate >= DateTime.Parse("2026/08/25") && attendanceDate <= DateTime.Parse("2026/09/05"))
                                     {
-                                        if (items[j].Late <= 60)
-                                        {
-                                            items[j].Late = 0;
-                                        }
+                                        items[j].Late = Math.Max(0, (int)items[j].Late - 60);
                                     }
                                 }
 
