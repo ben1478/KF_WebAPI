@@ -959,23 +959,15 @@ namespace KF_WebAPI.Controllers
         }
 
         [HttpPost("GetInvoiceInfo")]
-        public async Task<ResultClass<string>> GetInvoiceInfo( string InvoiceNo)
+        public async Task<ResultClass<string>> GetInvoiceInfo(string Token, string InvoiceNo)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
-                var result = await GetLoginToken(ACompNo);
-                if (result is OkObjectResult okResult)
-                {
-                    string Token = okResult.Value.ToString();
-                    resultClass.ResultCode = "000";
-                    resultClass.ResultMsg = "異動成功";
-                    string MFTX050 = await ExpWD4MFTX(Token, InvoiceNo);
-                    resultClass.objResult = MFTX050;
-                }
-               
-                
-
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "異動成功";
+                string MFTX050 = await ExpWD4MFTX(Token, InvoiceNo);
+                resultClass.objResult = MFTX050;
                 return resultClass;
             }
             catch (Exception ex)

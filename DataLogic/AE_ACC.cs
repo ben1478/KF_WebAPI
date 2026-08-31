@@ -381,5 +381,69 @@ namespace KF_WebAPI.DataLogic
                 throw;
             }
         }
+
+
+        public ResultClass<string> GetInvoice_prize(string YYYY, string MM)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"
+                          select I.*,format(invoice_date,'yyyy-MM-dd')yyyymmdd,CS_name,CS_MTEL1,CS_EMAIL from [dbo].fn_Invoice_prize(@YYYY,@MM)I
+                          left join (select RCM_ID,CS_name,CS_MTEL1,CS_EMAIL from  Receivable_M M join House_apply H on M.HA_id=h.HA_id WHERE h.del_tag=0)H
+                          ON I.RCM_ID=H.RCM_id";
+                parameters.Add(new SqlParameter("@YYYY", YYYY));
+                parameters.Add(new SqlParameter("@MM", MM));
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
+                    yyyymmdd = row.Field<string>("yyyymmdd"),
+                    invoice_no = row.Field<string>("invoice_no"),
+                    prize_name = row.Field<string>("prize_name"),
+                    prize_amount = row.Field<Int32>("prize_amount"),
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    CS_MTEL1 = row.Field<string>("CS_MTEL1"),
+                }).ToList();
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+
+                return resultClass;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+
+        public ResultClass<string> Getlottery_Mon()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @" 
+SELECT distinct top 3  lottery_yyyy+'-'+lottery_mon lottery_mon,lottery_yyyy+'年'+ lottery_mon+'-'+ cast((cast(lottery_mon as int)+1) as varchar)+'月'  lottery_Desc FROM [dbo].[LotteryTable] order by lottery_yyyy+'-'+lottery_mon
+ ";
+               
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
+                    lottery_mon = row.Field<string>("lottery_mon"),
+                    lottery_Desc = row.Field<string>("lottery_Desc")
+                }).ToList();
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+
+                return resultClass;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+
     }
 }
