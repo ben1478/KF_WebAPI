@@ -5073,5 +5073,44 @@ namespace KF_WebAPI.Controllers
             }
         }
         #endregion
+
+
+        [HttpGet("GetInvoice_prize")]
+        public ActionResult<ResultClass<string>> GetInvoice_prize(string YYYY, string MM)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                
+                var result = _Acc.GetInvoice_prize(YYYY, MM);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        [HttpGet("Getlottery_Mon")]
+        public ActionResult<ResultClass<string>> Getlottery_Mon()
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                resultClass = _Acc.Getlottery_Mon();
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
     }
 }
