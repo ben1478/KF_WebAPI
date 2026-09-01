@@ -1295,6 +1295,48 @@ namespace KF_WebAPI.Controllers
 
         #region 應收帳款分期管理
         /// <summary>
+        /// 案件委外催收變動
+        /// </summary>
+        /// <param name="RCM_id"></param>
+        /// <param name="RC_date_E"></param>
+        /// <returns></returns>
+        [HttpGet("RC_OutCollection_Upd")]
+        public ActionResult<ResultClass<string>> RC_OutCollection_Upd(string RCM_id, string value)
+        {
+            ResultClass<string> resultClass = new ();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"Update Receivable_M set OutCollection = @value where RCM_id = @RCM_id";
+                var parameters = new List<SqlParameter>
+                {
+                    new SqlParameter("@RCM_id", RCM_id),
+                    new SqlParameter("@value",value)
+                };
+                #endregion
+                var intResult = _adoData.ExecuteNonQuery(T_SQL, parameters);
+                if (intResult != 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "異動成功";
+                }
+                else
+                {
+                    resultClass.ResultCode = "401";
+                    resultClass.ResultMsg = "無資料異動";
+                }
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        /// <summary>
         /// 應收帳款分期管理清單查詢 RC_D_LQuery/RC_D_list.asp
         /// </summary>
         //[HttpPost("RC_D_LQuery")]
