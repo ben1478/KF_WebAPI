@@ -124,7 +124,7 @@ namespace KF_WebAPI.FunctionHandler
         /// <param name="dataSet">包含多個 DataTable 的 DataSet</param>
         /// <param name="sheetNames">ArrayList，紀錄每個 Sheet 的名稱</param>
         /// <returns>Excel 檔案的 byte[]，可用於下載</returns>
-        public static byte[] ExportDailyReportToExcel(DataSet dataSet, ArrayList sheetNames,bool isSum=true)
+        public static byte[] ExportDailyReportToExcel(DataSet dataSet, ArrayList sheetNames, bool isSum = true)
         {
             if (dataSet == null || dataSet.Tables.Count == 0)
                 throw new ArgumentException("DataSet 不可為空");
@@ -147,9 +147,9 @@ namespace KF_WebAPI.FunctionHandler
                     // 輸出資料列
                     for (int row = 0; row < table.Rows.Count; row++)
                     {
-                        if(isSum)
+                        if (isSum)
                         {
-                            if (table.Rows[row]["U_PFT_name"].ToString() == "" && table.Rows[row]["plan_name"].ToString() != "" && table.Rows[row]["plan_name"].ToString() != "合計" && table.Rows[row]["plan_name"].ToString() != "總計")
+                            if (table.Rows[row]["U_PFT_name"].ToString() == "" && table.Rows[row]["plan_name"].ToString() != "" && table.Rows[row]["plan_name"].ToString() != "合計" && table.Rows[row]["plan_name"].ToString() != "總計" && table.Rows[row]["plan_name"].ToString() != "區小計")
                             {
                                 arrFromRow.Add(row + 2);
                             }
@@ -158,12 +158,13 @@ namespace KF_WebAPI.FunctionHandler
                                 arrToRow.Add(row + 1);
                             }
                         }
-                       
+
+                        // 判斷當前列是否為「區小計」
+                        bool isSubTotalRow = (table.Rows[row]["plan_name"].ToString() == "區小計");
 
                         for (int col = 0; col < table.Columns.Count; col++)
                         {
                             var cellValue = table.Rows[row][col];
-
                             var cell = worksheet.Cells[row + 1, col + 1];
 
                             if (cellValue != DBNull.Value)
@@ -193,12 +194,23 @@ namespace KF_WebAPI.FunctionHandler
                             {
                                 cell.Value = null;
                             }
+
+                            // 【新增：區小計套用黃色背景與粗體】
+                            if (isSubTotalRow)
+                            {
+                                cell.Style.Font.Bold = true;
+                                cell.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                                cell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.Yellow);
+                                cell.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+                                cell.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                            }
                         }
                     }
+
                     if (isSum)
                     {
                         foreach (Int32 FromRow in arrFromRow)
-                        {//FromRow , FromCol,ToRow , ToCol
+                        {
                             var range = worksheet.Cells[FromRow, 1, FromRow, table.Columns.Count];
                             range.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
                             range.Style.Border.Top.Style = ExcelBorderStyle.Medium;
@@ -206,7 +218,7 @@ namespace KF_WebAPI.FunctionHandler
                             range.Style.Font.Bold = true;
                         }
                         foreach (Int32 ToRow in arrToRow)
-                        {//FromRow , FromCol,ToRow , ToCol
+                        {
                             var range = worksheet.Cells[ToRow, 1, ToRow, table.Columns.Count];
                             range.Style.Border.Top.Style = ExcelBorderStyle.Thin;
                             range.Style.Border.Bottom.Style = ExcelBorderStyle.Medium;
@@ -217,7 +229,6 @@ namespace KF_WebAPI.FunctionHandler
                         rangeEnd.Style.Border.Top.Style = ExcelBorderStyle.Medium;
                         rangeEnd.Style.Font.Bold = true;
                     }
-                   
 
                     worksheet.Cells.AutoFitColumns();
                 }
