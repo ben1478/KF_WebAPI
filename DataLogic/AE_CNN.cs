@@ -39,11 +39,11 @@ namespace KF_WebAPI.DataLogic
 
                 if(model.tbInfo.edit_num== "K0378")
                 {
-                    T_SQL += @" AND tm.Assign_num IN ('K0379','K0380')";
+                    T_SQL += @" AND tm.Assign_num IN ('K0379','K0380','K0371')";
                 }
                 else
                 {
-                    T_SQL += @" AND tm.Assign_num NOT IN ('K0379','K0380')";
+                    T_SQL += @" AND tm.Assign_num NOT IN ('K0379','K0380','K0371')";
                 }
                 if(!string.IsNullOrEmpty(model.CS_Name))
                 {
