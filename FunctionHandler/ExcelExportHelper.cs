@@ -160,7 +160,7 @@ namespace KF_WebAPI.FunctionHandler
                         }
 
                         // 判斷當前列是否為「區小計」
-                        bool isSubTotalRow = (table.Rows[row]["plan_name"].ToString() == "區小計");
+                        bool isSubTotalRow = (table.Rows[row]["plan_name"].ToString() == "部小計");
 
                         for (int col = 0; col < table.Columns.Count; col++)
                         {

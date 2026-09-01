@@ -392,7 +392,7 @@ namespace KF_WebAPI.DataLogic
                 var T_SQL = @"
                           select I.*,format(invoice_date,'yyyy-MM-dd')yyyymmdd,CS_name,CS_MTEL1,CS_EMAIL from [dbo].fn_Invoice_prize(@YYYY,@MM)I
                           left join (select RCM_ID,CS_name,CS_MTEL1,CS_EMAIL from  Receivable_M M join House_apply H on M.HA_id=h.HA_id WHERE h.del_tag=0)H
-                          ON I.RCM_ID=H.RCM_id";
+                          ON I.RCM_ID=H.RCM_id order by invoice_date ";
                 parameters.Add(new SqlParameter("@YYYY", YYYY));
                 parameters.Add(new SqlParameter("@MM", MM));
                 var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
@@ -424,7 +424,7 @@ namespace KF_WebAPI.DataLogic
             {
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @" 
-SELECT distinct top 3  lottery_yyyy+'-'+lottery_mon lottery_mon,lottery_yyyy+'年'+ lottery_mon+'-'+ cast((cast(lottery_mon as int)+1) as varchar)+'月'  lottery_Desc FROM [dbo].[LotteryTable] order by lottery_yyyy+'-'+lottery_mon
+SELECT distinct top 3  lottery_yyyy+'-'+lottery_mon lottery_mon,lottery_yyyy+'年'+ lottery_mon+'-'+ cast((cast(lottery_mon as int)+1) as varchar)+'月'  lottery_Desc FROM [dbo].[LotteryTable] order by lottery_yyyy+'-'+lottery_mon desc
  ";
                
                 var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
@@ -444,6 +444,70 @@ SELECT distinct top 3  lottery_yyyy+'-'+lottery_mon lottery_mon,lottery_yyyy+'�
             }
         }
 
+        public ResultClass<string> GetLotteryTable(string YYYY, string MM)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @" 
+                              SELECT lottery_yyyy,lottery_mon,lottery_num
+                              ,case when lottery_type='SPEC1'then '特別獎'
+			                        when lottery_type='SPEC2'then '特獎'
+			                        when lottery_type='SPEC3'then '頭獎'
+			                        end lottery_type
+                              ,format(L.edit_date,'yyyy-MM-dd')edit_date
+                              ,L.edit_num,M.U_name
+                          FROM dbo.LotteryTable L left join User_M M on L.edit_num= M.u_num ";
+                if (YYYY ==null || YYYY=="")
+                {
+                    T_SQL += @" where lottery_yyyy+'-'+lottery_mon in(
+                                  select max( lottery_yyyy+'-'+lottery_mon) FROM LotteryTable
+                                  ) ";
+                   
+                }
+                else
+                {
+                    T_SQL += "where lottery_yyyy= @YYYY and lottery_mon = @MM ";
+                    parameters.Add(new SqlParameter("@YYYY", YYYY));
+                    parameters.Add(new SqlParameter("@MM", MM));
+                }
+                          
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
+                    lottery_type = row.Field<string>("lottery_type"),
+                    lottery_num = row.Field<string>("lottery_num"),
+                    edit_date = row.Field<string>("edit_date"),
+                    U_name = row.Field<string>("U_name")
+                }).ToList();
 
+                var parameters1 = new List<SqlParameter>();
+                var T_SQL1 = @" select distinct( lottery_yyyy+'-'+lottery_mon)lottery_YM  FROM LotteryTable ";
+                var lislottery_YM = _adoData.ExecuteQuery(T_SQL1, parameters1).AsEnumerable().Select(row => new {
+                    lottery_YM = row.Field<string>("lottery_YM")
+                }).ToList();
+
+
+                var finalResult = new
+                {
+                    lotteryList = result,
+                    lislottery_YM = lislottery_YM
+                };
+
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(finalResult);
+
+                return resultClass;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+
+
+
+      
     }
 }

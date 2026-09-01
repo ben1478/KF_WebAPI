@@ -3410,13 +3410,13 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 Int32 imonth_get_amount_num_T = 0, imonth_get_amount_FDCOM001_T = 0, imonth_get_amount_FDCOM003_T = 0, imonth_pass_amount_FDCOM001_T = 0, imonth_pass_amount_FDCOM003_T = 0, iPE_target_T = 0, itarget_quota_T = 0;
                 Int32 BC_Count = 0;
 
-                /* 一區(台北一、台北二、新北、桃園) 房貸累加 */
+                /* 一部(台北一、台北二、新北、桃園) 房貸累加 */
                 Int32 z1_day_incase_num_FDCOM001 = 0, z1_month_incase_num_FDCOM001 = 0, z1_day_incase_num_FDCOM003 = 0, z1_month_incase_num_FDCOM003 = 0;
                 Int32 z1_day_get_amount_num = 0, z1_day_get_amount = 0, z1_month_pass_num = 0, z1_month_get_amount_num = 0;
                 Int32 z1_month_get_amount_FDCOM001 = 0, z1_month_get_amount_FDCOM003 = 0, z1_month_pass_amount_FDCOM001 = 0, z1_month_pass_amount_FDCOM003 = 0;
                 Int32 z1_PE_target = 0, z1_target_quota = 0;
 
-                /* 二區(台中、台南、高雄) 房貸累加 */
+                /* 二部(台中、台南、高雄) 房貸累加 */
                 Int32 z2_day_incase_num_FDCOM001 = 0, z2_month_incase_num_FDCOM001 = 0, z2_day_incase_num_FDCOM003 = 0, z2_month_incase_num_FDCOM003 = 0;
                 Int32 z2_day_get_amount_num = 0, z2_day_get_amount = 0, z2_month_pass_num = 0, z2_month_get_amount_num = 0;
                 Int32 z2_month_get_amount_FDCOM001 = 0, z2_month_get_amount_FDCOM003 = 0, z2_month_pass_amount_FDCOM001 = 0, z2_month_pass_amount_FDCOM003 = 0;
@@ -3430,12 +3430,12 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 Int32 imonth_pass_num_engine = 0, imonth_get_amount_num_engine = 0, imonth_get_amount_PJ00046 = 0, imonth_get_amount_PJ00047 = 0, imonth_pass_amount_PJ00046 = 0, imonth_pass_amount_PJ00047 = 0, isum_amount = 0;
                 Int32 imonth_pass_num_engine_T = 0, imonth_get_amount_num_engine_T = 0, imonth_get_amount_PJ00046_T = 0, imonth_get_amount_PJ00047_T = 0, imonth_pass_amount_PJ00046_T = 0, imonth_pass_amount_PJ00047_T = 0, isum_amount_T = 0;
 
-                /* 一區 機車貸累加 */
+                /* 一部 機車貸累加 */
                 Int32 z1_day_incase_num_PJ00046 = 0, z1_month_incase_num_PJ00046 = 0, z1_day_incase_num_PJ00047 = 0, z1_month_incase_num_PJ00047 = 0;
                 Int32 z1_day_get_amount_num_engine = 0, z1_day_get_amount_engine = 0, z1_month_pass_num_engine = 0, z1_month_get_amount_num_engine = 0;
                 Int32 z1_month_get_amount_PJ00046 = 0, z1_month_get_amount_PJ00047 = 0, z1_month_pass_amount_PJ00046 = 0, z1_month_pass_amount_PJ00047 = 0, z1_sum_amount = 0;
 
-                /* 二區 機車貸累加 */
+                /* 二部 機車貸累加 */
                 Int32 z2_day_incase_num_PJ00046 = 0, z2_month_incase_num_PJ00046 = 0, z2_day_incase_num_PJ00047 = 0, z2_month_incase_num_PJ00047 = 0;
                 Int32 z2_day_get_amount_num_engine = 0, z2_day_get_amount_engine = 0, z2_month_pass_num_engine = 0, z2_month_get_amount_num_engine = 0;
                 Int32 z2_month_get_amount_PJ00046 = 0, z2_month_get_amount_PJ00047 = 0, z2_month_pass_amount_PJ00046 = 0, z2_month_pass_amount_PJ00047 = 0, z2_sum_amount = 0;
@@ -3446,11 +3446,11 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 Int32 iday_incase_num_PJ00048_T = 0, imonth_incase_num_PJ00048_T = 0, iday_get_amount_num_Car_T = 0, iday_get_amount_Car_T = 0;
                 Int32 imonth_pass_num_Car_T = 0, imonth_get_amount_num_Car_T = 0, imonth_get_amount_PJ00048_T = 0, imonth_pass_amount_PJ00048_T = 0;
 
-                /* 一區 汽車貸累加 */
+                /* 一部 汽車貸累加 */
                 Int32 z1_day_incase_num_PJ00048 = 0, z1_month_incase_num_PJ00048 = 0, z1_day_get_amount_num_Car = 0, z1_day_get_amount_Car = 0;
                 Int32 z1_month_pass_num_Car = 0, z1_month_get_amount_num_Car = 0, z1_month_get_amount_PJ00048 = 0, z1_month_pass_amount_PJ00048 = 0;
 
-                /* 二區 汽車貸累加 */
+                /* 二部 汽車貸累加 */
                 Int32 z2_day_incase_num_PJ00048 = 0, z2_month_incase_num_PJ00048 = 0, z2_day_get_amount_num_Car = 0, z2_day_get_amount_Car = 0;
                 Int32 z2_month_pass_num_Car = 0, z2_month_get_amount_num_Car = 0, z2_month_get_amount_PJ00048 = 0, z2_month_pass_amount_PJ00048 = 0;
 
@@ -3629,7 +3629,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                         target_quota = "--";
                     }
 
-                    // 【按所屬分區進行累加 (一區 / 二區)】
+                    // 【按所屬分區進行累加 (一部 / 二部)】
                     bool isZone1 = (BC_Name.IndexOf("台北一") != -1 || BC_Name.IndexOf("台北二") != -1 || BC_Name.IndexOf("新北") != -1 || BC_Name.IndexOf("桃園") != -1);
                     bool isZone2 = (BC_Name.IndexOf("台中") != -1 || BC_Name.IndexOf("台南") != -1 || BC_Name.IndexOf("高雄") != -1);
 
@@ -3945,14 +3945,14 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                             dtCar.Rows.Add(TotRow_C);
 
                             // ==========================================
-                            // 需求1: 桃園合計下方插入「一區」小計
+                            // 需求1: 桃園合計下方插入「一部」小計
                             // ==========================================
                             if (BC_Name.IndexOf("桃園") != -1)
                             {
                                 DataRow Zone1Row = dtTotle.NewRow();
                                 Zone1Row["SEQ"] = "";
-                                Zone1Row["U_PFT_name"] = "一區";
-                                Zone1Row["plan_name"] = "區小計";
+                                Zone1Row["U_PFT_name"] = "一部";
+                                Zone1Row["plan_name"] = "部小計";
                                 Zone1Row["day_incase_num_FDCOM001"] = z1_day_incase_num_FDCOM001;
                                 Zone1Row["month_incase_num_FDCOM001"] = z1_month_incase_num_FDCOM001;
                                 Zone1Row["day_incase_num_FDCOM003"] = z1_day_incase_num_FDCOM003;
@@ -3980,8 +3980,8 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
                                 DataRow Zone1Row_E = dtEngine.NewRow();
                                 Zone1Row_E["SEQ"] = "";
-                                Zone1Row_E["U_PFT_name"] = "一區";
-                                Zone1Row_E["plan_name"] = "區小計";
+                                Zone1Row_E["U_PFT_name"] = "一部";
+                                Zone1Row_E["plan_name"] = "部小計";
                                 Zone1Row_E["day_incase_num_PJ00046"] = z1_day_incase_num_PJ00046;
                                 Zone1Row_E["month_incase_num_PJ00046"] = z1_month_incase_num_PJ00046;
                                 Zone1Row_E["day_incase_num_PJ00047"] = z1_day_incase_num_PJ00047;
@@ -3999,8 +3999,8 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
                                 DataRow Zone1Row_C = dtCar.NewRow();
                                 Zone1Row_C["SEQ"] = "";
-                                Zone1Row_C["U_PFT_name"] = "一區";
-                                Zone1Row_C["plan_name"] = "區小計";
+                                Zone1Row_C["U_PFT_name"] = "一部";
+                                Zone1Row_C["plan_name"] = "部小計";
                                 Zone1Row_C["day_incase_num_PJ00048"] = z1_day_incase_num_PJ00048;
                                 Zone1Row_C["month_incase_num_PJ00048"] = z1_month_incase_num_PJ00048;
                                 Zone1Row_C["day_get_amount_num_Car"] = z1_day_get_amount_num_Car;
@@ -4013,14 +4013,14 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                             }
 
                             // ==========================================
-                            // 需求2: 高雄合計下方插入「二區」小計
+                            // 需求2: 高雄合計下方插入「二部」小計
                             // ==========================================
                             if (BC_Name.IndexOf("高雄") != -1)
                             {
                                 DataRow Zone2Row = dtTotle.NewRow();
                                 Zone2Row["SEQ"] = "";
-                                Zone2Row["U_PFT_name"] = "二區";
-                                Zone2Row["plan_name"] = "區小計";
+                                Zone2Row["U_PFT_name"] = "二部";
+                                Zone2Row["plan_name"] = "部小計";
                                 Zone2Row["day_incase_num_FDCOM001"] = z2_day_incase_num_FDCOM001;
                                 Zone2Row["month_incase_num_FDCOM001"] = z2_month_incase_num_FDCOM001;
                                 Zone2Row["day_incase_num_FDCOM003"] = z2_day_incase_num_FDCOM003;
@@ -4048,8 +4048,8 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
                                 DataRow Zone2Row_E = dtEngine.NewRow();
                                 Zone2Row_E["SEQ"] = "";
-                                Zone2Row_E["U_PFT_name"] = "二區";
-                                Zone2Row_E["plan_name"] = "區小計";
+                                Zone2Row_E["U_PFT_name"] = "二部";
+                                Zone2Row_E["plan_name"] = "部小計";
                                 Zone2Row_E["day_incase_num_PJ00046"] = z2_day_incase_num_PJ00046;
                                 Zone2Row_E["month_incase_num_PJ00046"] = z2_month_incase_num_PJ00046;
                                 Zone2Row_E["day_incase_num_PJ00047"] = z2_day_incase_num_PJ00047;
@@ -4067,8 +4067,8 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
                                 DataRow Zone2Row_C = dtCar.NewRow();
                                 Zone2Row_C["SEQ"] = "";
-                                Zone2Row_C["U_PFT_name"] = "二區";
-                                Zone2Row_C["plan_name"] = "區小計";
+                                Zone2Row_C["U_PFT_name"] = "二部";
+                                Zone2Row_C["plan_name"] = "部小計";
                                 Zone2Row_C["day_incase_num_PJ00048"] = z2_day_incase_num_PJ00048;
                                 Zone2Row_C["month_incase_num_PJ00048"] = z2_month_incase_num_PJ00048;
                                 Zone2Row_C["day_get_amount_num_Car"] = z2_day_get_amount_num_Car;
@@ -4189,13 +4189,13 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                         TotRow_C["month_pass_amount_PJ00048"] = imonth_pass_amount_PJ00048;
                         dtCar.Rows.Add(TotRow_C);
 
-                        // 若最後一個單位恰為高雄，補上一區/二區小計防護
+                        // 若最後一個單位恰為高雄，補上一部/二部小計防護
                         if (BC_Name.IndexOf("高雄") != -1)
                         {
                             DataRow Zone2Row = dtTotle.NewRow();
                             Zone2Row["SEQ"] = "";
-                            Zone2Row["U_PFT_name"] = "二區";
-                            Zone2Row["plan_name"] = "區小計";
+                            Zone2Row["U_PFT_name"] = "二部";
+                            Zone2Row["plan_name"] = "部小計";
                             Zone2Row["day_incase_num_FDCOM001"] = z2_day_incase_num_FDCOM001;
                             Zone2Row["month_incase_num_FDCOM001"] = z2_month_incase_num_FDCOM001;
                             Zone2Row["day_incase_num_FDCOM003"] = z2_day_incase_num_FDCOM003;
@@ -4223,8 +4223,8 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
                             DataRow Zone2Row_E = dtEngine.NewRow();
                             Zone2Row_E["SEQ"] = "";
-                            Zone2Row_E["U_PFT_name"] = "二區";
-                            Zone2Row_E["plan_name"] = "區小計";
+                            Zone2Row_E["U_PFT_name"] = "二部";
+                            Zone2Row_E["plan_name"] = "部小計";
                             Zone2Row_E["day_incase_num_PJ00046"] = z2_day_incase_num_PJ00046;
                             Zone2Row_E["month_incase_num_PJ00046"] = z2_month_incase_num_PJ00046;
                             Zone2Row_E["day_incase_num_PJ00047"] = z2_day_incase_num_PJ00047;
@@ -4242,8 +4242,8 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
                             DataRow Zone2Row_C = dtCar.NewRow();
                             Zone2Row_C["SEQ"] = "";
-                            Zone2Row_C["U_PFT_name"] = "二區";
-                            Zone2Row_C["plan_name"] = "區小計";
+                            Zone2Row_C["U_PFT_name"] = "二部";
+                            Zone2Row_C["plan_name"] = "部小計";
                             Zone2Row_C["day_incase_num_PJ00048"] = z2_day_incase_num_PJ00048;
                             Zone2Row_C["month_incase_num_PJ00048"] = z2_month_incase_num_PJ00048;
                             Zone2Row_C["day_get_amount_num_Car"] = z2_day_get_amount_num_Car;
@@ -4338,7 +4338,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                     m_RowIdx++;
                 }
 
-                // 只有合計的 sheet - 房貸 (過濾 SEQ = ''，會自動包含 合計、一區區小計、二區區小計、總計)
+                // 只有合計的 sheet - 房貸 (過濾 SEQ = ''，會自動包含 合計、一部部小計、二部部小計、總計)
                 DataRow[] filteredRows = dtTotle.Select("SEQ = ''");
                 dtTotle_T = filteredRows.CopyToDataTable();
 

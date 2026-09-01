@@ -5070,5 +5070,24 @@ namespace KF_WebAPI.Controllers
             }
         }
 
+        [HttpGet("GetLotteryTable")]
+        public ActionResult<ResultClass<string>> GetLotteryTable(string? YYYY, string? MM)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                resultClass = _Acc.GetLotteryTable(YYYY, MM);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+        
+
     }
 }
