@@ -2904,8 +2904,8 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 var parameters = new List<SqlParameter>();
                 if (U_BC == "")
                 {
-                    T_SQL = @"select isnull(G.Spec_Group, U_BC)U_BC,BC_Name,bc_sort,count(*) PelCount
-                     from (select U_num,U_BC from User_M where U_BC between 'BC0100' and 'BC0600' and U_PFT in('PFT050','PFT030','PFT060','PFT300') and U_num<>'K0064'  and  (U_leave_date is null or convert(varchar, U_arrive_date, 112) =@ThisMon) ) U
+                    T_SQL = @"select isnull(G.Spec_Group, U_BC)U_BC,BC_Name,bc_sort,count(*)-1 PelCount
+                    from (select U_num,U_BC from User_M where U_BC between 'BC0100' and 'BC0600' and U_PFT in('PFT020','PFT050','PFT030','PFT060','PFT300') and U_num<>'K0064'  and  (U_leave_date is null or convert(varchar, U_arrive_date, 112) =@ThisMon) ) U
                     Left join  User_Spec_Group G  on U.U_num=G.U_num 
                     left join (
                     select item_D_code,item_D_name BC_Name,0 bc_sort from Item_list where item_M_code = 'Spec_Group' and item_M_type='N'
@@ -3722,7 +3722,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
                     if (Dis_BC != "BC0900" && Dis_BC != "BC0901")
                     {
-                        if ((U_PFT_sort == "120" || U_PFT_sort == "130"))//其他部門:職稱:區經理或經理
+                        if ((U_PFT_sort == "120" || U_PFT_sort == "130" || U_PFT_sort == "140"))//其他部門:職稱:區經理或經理或副理
                         {
                             DataRow TotRow = dtTotle.NewRow();
                             TotRow["SEQ"] = "";
