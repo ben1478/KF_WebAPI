@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using OfficeOpenXml;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Dynamic;
@@ -85,7 +86,7 @@ namespace KF_WebAPI.DataLogic
                         break;
                 }
 
-                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row=> new RC_ACH_Res
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new RC_ACH_Res
                 {
                     RCM_id = row.Field<decimal>("RCM_id"),
                     HA_id = row.Field<decimal>("HA_id"),
@@ -113,7 +114,7 @@ namespace KF_WebAPI.DataLogic
 
                 throw;
             }
-            
+
         }
 
         public ResultClass<string> RC_Ach_SQuery(string Rcm_id)
@@ -127,7 +128,8 @@ namespace KF_WebAPI.DataLogic
                               INNER JOIN House_apply ha ON ha.HA_id = rm.HA_id AND ha.del_tag = 0
                               WHERE rm.RCM_id = @Rcm_id";
                 parameters.Add(new SqlParameter("@Rcm_id", Rcm_id));
-                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
+                {
                     RCM_id = row.Field<decimal>("RCM_id"),
                     CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
                     Ach_State = row.Field<string>("Ach_State"),
@@ -137,7 +139,7 @@ namespace KF_WebAPI.DataLogic
                     RCM_cknum = row.Field<string>("RCM_cknum"),
                     FileCount = row.Field<int>("FileCount"),
                     isPayOff = row.Field<string>("isPayOff"),
-                    CS_company_TaxNum = row.Field<string>("CS_company_TaxNum") 
+                    CS_company_TaxNum = row.Field<string>("CS_company_TaxNum")
                 }).ToList();
 
                 resultClass.ResultCode = "000";
@@ -207,7 +209,7 @@ namespace KF_WebAPI.DataLogic
                 {
                     var worksheet = package.Workbook.Worksheets.Add("撥款清冊");
                     #region 撥款資料
-                    var rcList = GetRcACH_LQuery(yyyyMM, type, pjtype,"","");
+                    var rcList = GetRcACH_LQuery(yyyyMM, type, pjtype, "", "");
 
                     string[] headers = { "件數", "案件編號", "進件日期", "申請人", "經辦人", "區域", "撥款金額", "撥款日期", "利率", "專案", "期數", "成數", "ACH", "ACH備註" };
 
@@ -222,12 +224,12 @@ namespace KF_WebAPI.DataLogic
                         cell.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
                     }
 
-                    
+
 
                     // 添加表身
                     colIndex = 1;
                     int index = 1;
-                    foreach  (var item in rcList)
+                    foreach (var item in rcList)
                     {
                         rowIndex++;
                         worksheet.Cells[rowIndex, colIndex++].Value = index++;
@@ -269,7 +271,7 @@ namespace KF_WebAPI.DataLogic
             }
         }
 
-        public List<Receivable_Debt_res> RC_Debt_LQuery(string? csName,string dateS,string dateE,string mType,string pjType)
+        public List<Receivable_Debt_res> RC_Debt_LQuery(string? csName, string dateS, string dateE, string mType, string pjType)
         {
             try
             {
@@ -395,7 +397,8 @@ namespace KF_WebAPI.DataLogic
                           ON I.RCM_ID=H.RCM_id order by invoice_date ";
                 parameters.Add(new SqlParameter("@YYYY", YYYY));
                 parameters.Add(new SqlParameter("@MM", MM));
-                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
+                {
                     yyyymmdd = row.Field<string>("yyyymmdd"),
                     invoice_no = row.Field<string>("invoice_no"),
                     prize_name = row.Field<string>("prize_name"),
@@ -426,8 +429,9 @@ namespace KF_WebAPI.DataLogic
                 var T_SQL = @" 
 SELECT distinct top 3  lottery_yyyy+'-'+lottery_mon lottery_mon,lottery_yyyy+'年'+ lottery_mon+'-'+ cast((cast(lottery_mon as int)+1) as varchar)+'月'  lottery_Desc FROM [dbo].[LotteryTable] order by lottery_yyyy+'-'+lottery_mon desc
  ";
-               
-                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
+
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
+                {
                     lottery_mon = row.Field<string>("lottery_mon"),
                     lottery_Desc = row.Field<string>("lottery_Desc")
                 }).ToList();
@@ -459,12 +463,12 @@ SELECT distinct top 3  lottery_yyyy+'-'+lottery_mon lottery_mon,lottery_yyyy+'�
                               ,format(L.edit_date,'yyyy-MM-dd')edit_date
                               ,L.edit_num,M.U_name
                           FROM dbo.LotteryTable L left join User_M M on L.edit_num= M.u_num ";
-                if (YYYY ==null || YYYY=="")
+                if (YYYY == null || YYYY == "")
                 {
                     T_SQL += @" where lottery_yyyy+'-'+lottery_mon in(
                                   select max( lottery_yyyy+'-'+lottery_mon) FROM LotteryTable
                                   ) ";
-                   
+
                 }
                 else
                 {
@@ -472,8 +476,9 @@ SELECT distinct top 3  lottery_yyyy+'-'+lottery_mon lottery_mon,lottery_yyyy+'�
                     parameters.Add(new SqlParameter("@YYYY", YYYY));
                     parameters.Add(new SqlParameter("@MM", MM));
                 }
-                          
-                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
+
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
+                {
                     lottery_type = row.Field<string>("lottery_type"),
                     lottery_num = row.Field<string>("lottery_num"),
                     edit_date = row.Field<string>("edit_date"),
@@ -482,7 +487,8 @@ SELECT distinct top 3  lottery_yyyy+'-'+lottery_mon lottery_mon,lottery_yyyy+'�
 
                 var parameters1 = new List<SqlParameter>();
                 var T_SQL1 = @" select distinct( lottery_yyyy+'-'+lottery_mon)lottery_YM  FROM LotteryTable ";
-                var lislottery_YM = _adoData.ExecuteQuery(T_SQL1, parameters1).AsEnumerable().Select(row => new {
+                var lislottery_YM = _adoData.ExecuteQuery(T_SQL1, parameters1).AsEnumerable().Select(row => new
+                {
                     lottery_YM = row.Field<string>("lottery_YM")
                 }).ToList();
 
@@ -506,8 +512,62 @@ SELECT distinct top 3  lottery_yyyy+'-'+lottery_mon lottery_mon,lottery_yyyy+'�
         }
 
 
+        public ResultClass<string> SaveLotteryTable(List<LotteryTable> list, string u_num)
+        {
+            try
+            {
+                var resultClass = new ResultClass<string>();
 
+                if (list == null || list.Count == 0)
+                {
+                    resultClass.ResultCode = "999";
+                    resultClass.ResultMsg = "無可儲存的發票資料";
+                    return resultClass;
+                }
 
-      
+                // 取出該期的 YYYY 與 MM
+                string yyyy = list[0].lottery_yyyy;
+                string mm = list[0].lottery_mon;
+               
+
+                // 1. 先刪除同期的舊資料
+                var delSql = "DELETE FROM dbo.LotteryTable WHERE lottery_yyyy = @YYYY AND lottery_mon = @MM";
+                var delParams = new List<SqlParameter>
+        {
+            new SqlParameter("@YYYY", yyyy),
+            new SqlParameter("@MM", mm)
+        };
+                _adoData.ExecuteNonQuery(delSql, delParams);
+
+                // 2. 批次新增每筆獎號
+                var insertSql = @"
+            INSERT INTO dbo.LotteryTable (lottery_yyyy, lottery_mon, lottery_type, lottery_num, edit_date, edit_num)
+            VALUES (@YYYY, @MM, @Type, @Num, GETDATE(), @EditNum)"
+                ;
+
+                foreach (var item in list)
+                {
+                    var insertParams = new List<SqlParameter>
+            {
+                new SqlParameter("@YYYY", item.lottery_yyyy),
+                new SqlParameter("@MM", item.lottery_mon),
+                new SqlParameter("@Type", item.lottery_type),
+                new SqlParameter("@Num", item.lottery_num),
+                new SqlParameter("@EditNum", u_num)
+            };
+                    _adoData.ExecuteNonQuery(insertSql, insertParams);
+                }
+
+                resultClass.ResultCode = "000";
+                resultClass.ResultMsg = "儲存成功";
+                return resultClass;
+
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
     }
 }

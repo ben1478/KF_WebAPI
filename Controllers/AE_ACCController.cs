@@ -5129,7 +5129,35 @@ namespace KF_WebAPI.Controllers
             }
         }
 
-        
+        [HttpPost("SaveLotteryTable")]
+        public ActionResult<ResultClass<string>> SaveLotteryTable([FromBody] List<LotteryTable> list, [FromQuery] string u_num)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                // 呼叫商業邏輯層
+                var res = _Acc.SaveLotteryTable(list, u_num);
+
+                // 防呆：若 _Acc 回傳 null，避免產生空 Body
+                if (res != null)
+                {
+                    resultClass = res;
+                }
+                else
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.ResultMsg = "儲存成功";
+                }
+
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
 
     }
 }
