@@ -392,8 +392,8 @@ namespace KF_WebAPI.DataLogic
             {
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"
-                          select I.*,format(invoice_date,'yyyy-MM-dd')yyyymmdd,CS_name,CS_MTEL1,CS_EMAIL from [dbo].fn_Invoice_prize(@YYYY,@MM)I
-                          left join (select RCM_ID,CS_name,CS_MTEL1,CS_EMAIL from  Receivable_M M join House_apply H on M.HA_id=h.HA_id WHERE h.del_tag=0)H
+                          select I.*,CAST(YEAR(invoice_date) - 1911 AS VARCHAR(3)) + RIGHT(CONVERT(VARCHAR(10), invoice_date, 120), 6)yyyymmdd,CS_name,CS_MTEL1,CS_EMAIL,CS_address from [dbo].fn_Invoice_prize(@YYYY,@MM)I
+                          left join (select RCM_ID,CS_name,CS_MTEL1,CS_EMAIL,CS_register_address CS_address  from  Receivable_M M join House_apply H on M.HA_id=h.HA_id WHERE h.del_tag=0)H
                           ON I.RCM_ID=H.RCM_id order by invoice_date ";
                 parameters.Add(new SqlParameter("@YYYY", YYYY));
                 parameters.Add(new SqlParameter("@MM", MM));
@@ -405,6 +405,7 @@ namespace KF_WebAPI.DataLogic
                     prize_amount = row.Field<Int32>("prize_amount"),
                     CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
                     CS_MTEL1 = row.Field<string>("CS_MTEL1"),
+                    CS_address = row.Field<string>("CS_address"),
                 }).ToList();
 
                 resultClass.ResultCode = "000";
@@ -427,8 +428,10 @@ namespace KF_WebAPI.DataLogic
             {
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @" 
-SELECT distinct top 3  lottery_yyyy+'-'+lottery_mon lottery_mon,lottery_yyyy+'年'+ lottery_mon+'-'+ cast((cast(lottery_mon as int)+1) as varchar)+'月'  lottery_Desc FROM [dbo].[LotteryTable] order by lottery_yyyy+'-'+lottery_mon desc
- ";
+                            SELECT distinct top 3  lottery_yyyy+'-'+lottery_mon lottery_mon,cast((cast(lottery_yyyy as int) -1911)as varchar)+'年'+ lottery_mon+'-'+ 
+                            RIGHT('0' + CAST(cast((cast(lottery_mon as int)+1) as varchar) AS VARCHAR(2)), 2)+'月' 
+                            lottery_Desc FROM [dbo].[LotteryTable] order by lottery_yyyy+'-'+lottery_mon desc
+                             ";
 
                 var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
                 {
