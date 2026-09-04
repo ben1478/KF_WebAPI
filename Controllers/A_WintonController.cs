@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using Grpc.Core;
 using System.Linq;
 using UglyToad.PdfPig.Tokens;
+using static UglyToad.PdfPig.Core.PdfSubpath;
 
 namespace KF_WebAPI.Controllers
 {
@@ -467,15 +468,18 @@ namespace KF_WebAPI.Controllers
                             #endregion
 
                             #region 用發票號碼抓隨機碼
-                            string Random_code = "";
+                            string Random_code = "", Vehicle = "";
                             if (INV_NO != "")
                             {
-                                Random_code = await ExpWD4MFTX(model.AToken, INV_NO);
+                                ExpWD4MFTX _ExpWD4MFTX=new ExpWD4MFTX();    
+                                 _ExpWD4MFTX = await ExpWD4MFTX(model.AToken, INV_NO);
+                                Random_code = _ExpWD4MFTX.MFTX050;
+                                Vehicle = _ExpWD4MFTX.MFTX052;
                             }
                             #endregion
 
                             #region 異動Receivable_D
-                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, 0, "3", Random_code);
+                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, 0, "3", Random_code, Vehicle);
                             #endregion
                         }
                         else
@@ -634,15 +638,18 @@ namespace KF_WebAPI.Controllers
                             #endregion
 
                             #region 用發票號碼抓隨機碼
-                            string Random_code = "";
+                            string Random_code = "", Vehicle = "";
                             if (INV_NO != "")
                             {
-                                Random_code = await ExpWD4MFTX(model.AToken, INV_NO);
+                                ExpWD4MFTX _ExpWD4MFTX = new ExpWD4MFTX();
+                                _ExpWD4MFTX = await ExpWD4MFTX(model.AToken, INV_NO);
+                                Random_code = _ExpWD4MFTX.MFTX050;
+                                Vehicle = _ExpWD4MFTX.MFTX052;
                             }
                             #endregion
 
                             #region 異動Receivable_D
-                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, List[i].amount_per_month, "2", Random_code);
+                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, List[i].amount_per_month, "2", Random_code, Vehicle);
                             #endregion
 
                             #region 中信ACH回寫處理
@@ -812,18 +819,22 @@ namespace KF_WebAPI.Controllers
 
 
                             #region 用發票號碼抓隨機碼
-                            string Random_code = "";
+                            string Random_code = "", Vehicle = "";
                             if (INV_NO != "")
                             {
-                                Random_code = await ExpWD4MFTX(model.AToken, INV_NO);
+                                ExpWD4MFTX _ExpWD4MFTX = new ExpWD4MFTX();
+                                _ExpWD4MFTX = await ExpWD4MFTX(model.AToken, INV_NO);
+                                Random_code = _ExpWD4MFTX.MFTX050;
+                                Vehicle = _ExpWD4MFTX.MFTX052;
                             }
+
                             #endregion
 
 
                             #region 異動Receivable_D
                             var cpPayAmt = List[i].CP_Pay_Amt ?? 0;
                             List[i].RC_note = List[i].CP_bus_remark;
-                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, cpPayAmt, "1", Random_code);
+                            _Rpt.UpdReceivableD(List[i], clientIp, INV_NO, cpPayAmt, "1", Random_code, Vehicle);
                             #endregion
 
                             #region 異動自主繳款資料
@@ -913,15 +924,15 @@ namespace KF_WebAPI.Controllers
         }
 
 
-        private async Task<string> ExpWD4MFTX(string Token, string InvoiceNo)
+        private async Task<ExpWD4MFTX> ExpWD4MFTX(string Token, string InvoiceNo)
         {
             var apiName = "rest/TdmServerMethodsIN/ExpWD4MFTX";
             var url = urlBase + apiName;
 
             try
             {
-                var MFTX050 = "";
-
+               
+                ExpWD4MFTX _ExpWD4MFTX = new ExpWD4MFTX();
                 Invoice_req model = new Invoice_req();
                 model.AToken = Token;
                 model.AExpRange = "2";
@@ -944,11 +955,12 @@ namespace KF_WebAPI.Controllers
                 {
                     if (((Newtonsoft.Json.Linq.JContainer)responJson["data"]["adatasetmaster"]).Count > 0)
                     {
-                        MFTX050 = (string)responJson["data"]["adatasetmaster"][0]["mftx050"];
+                        _ExpWD4MFTX.MFTX050 = (string)responJson["data"]["adatasetmaster"][0]["mftx050"];
+                        _ExpWD4MFTX.MFTX052 = (string)responJson["data"]["adatasetmaster"][0]["mftx052"];
                     }
                 }
                 _fun.ExtAPILogIns(apiCode, "ExpWD4MFTX", InvoiceNo, model.AToken, jsonData, Status, JsonConvert.SerializeObject(responJson));
-                return MFTX050;
+                return _ExpWD4MFTX;
             }
             catch (Exception)
             {
@@ -966,8 +978,9 @@ namespace KF_WebAPI.Controllers
             {
                 resultClass.ResultCode = "000";
                 resultClass.ResultMsg = "異動成功";
-                string MFTX050 = await ExpWD4MFTX(Token, InvoiceNo);
-                resultClass.objResult = MFTX050;
+                ExpWD4MFTX _ExpWD4MFTX = new ExpWD4MFTX();
+                _ExpWD4MFTX = await ExpWD4MFTX(Token, InvoiceNo);
+                resultClass.objResult = JsonConvert.SerializeObject(_ExpWD4MFTX); ;
                 return resultClass;
             }
             catch (Exception ex)

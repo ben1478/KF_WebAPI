@@ -332,4 +332,17 @@ namespace KF_WebAPI.BaseClass.Winton
         public string AInvoiceNoB { get; set; }
         public string AInvoiceNoE { get; set; }
     }
+
+    public class ExpWD4MFTX
+    {
+        /// <summary>
+        /// 隨機碼
+        /// </summary>
+        public string MFTX050 { get; set; }
+        /// <summary>
+        /// 載具號碼
+        /// </summary>
+        public string MFTX052 { get; set; }
+    }
+
 }
