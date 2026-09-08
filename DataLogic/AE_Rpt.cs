@@ -4957,8 +4957,8 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                                      new SqlParameter("@TopN",item.Col3)
                                 };
                             }
+                           
 
-                            
                             var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new Receivable_Win_Inv
                             {
                                 HS_id = row.Field<decimal>("HS_id"),
@@ -5599,7 +5599,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"UPDATE RD
                               SET RecPayDate = @RecPayDate,RecPayAmt = @RecPayAmt,RecPayType = @RecPayType ,check_pay_date = @check_pay_date,
-                              check_pay_type = @check_pay_type,check_pay_num = @check_pay_num,invoice_no = @invoice_no,Random_code = @Vehicle,Vehicle = @Random_code,invoice_date = getdate(),
+                              check_pay_type = @check_pay_type,check_pay_num = @check_pay_num,invoice_no = @invoice_no,Random_code = @Random_code,Vehicle = @Vehicle,invoice_date = getdate(),
                               edit_date = getdate(),edit_num = @edit_num,edit_ip = @edit_ip";
                 var T_SQL_B = @" FROM Receivable_D RD
                                  INNER JOIN Receivable_M RM ON RM.RCM_id = RD.RCM_id
