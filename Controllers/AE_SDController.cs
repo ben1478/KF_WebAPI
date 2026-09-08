@@ -135,8 +135,8 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"Insert into StagnationDebt_M(RCM_id,amount_total,RemainingPrincipal,total_due_amount,total_paid_amount,total_bad_debt,remarks,is_close,del_tag,add_date,add_num,add_ip) 
-                              Values (@RCM_id,@amount_total,@RemainingPrincipal,@total_due_amount,@total_paid_amount,@total_bad_debt,@remarks,'N','0',getdate(),@add_num,@add_ip)";
+                var T_SQL = @"Insert into StagnationDebt_M(RCM_id,amount_total,RemainingPrincipal,total_due_amount,total_paid_amount,total_bad_debt,OutDebtDate,remarks,is_close,del_tag,add_date,add_num,add_ip) 
+                              Values (@RCM_id,@amount_total,@RemainingPrincipal,@total_due_amount,@total_paid_amount,@total_bad_debt,@OutDebtDate,@remarks,'N','0',getdate(),@add_num,@add_ip)";
                 var parameters = new List<SqlParameter>()
                 {
                     new SqlParameter("@RCM_id",model.RCM_id),
@@ -145,6 +145,7 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@total_due_amount",model.total_due_amount),
                     new SqlParameter("@total_paid_amount",model.total_paid_amount),
                     new SqlParameter("@total_bad_debt",model.total_bad_debt),
+                    new SqlParameter("@OutDebtDate",model.OutDebtDate),
                     new SqlParameter("@remarks",model.remarks),
                     new SqlParameter("@add_num",model.tbInfo.add_num),
                     new SqlParameter("@add_ip",clientIp)
@@ -199,6 +200,7 @@ namespace KF_WebAPI.Controllers
                     total_due_amount = row.Field<decimal>("total_due_amount"),
                     total_paid_amount = row.Field<decimal>("total_paid_amount"),
                     total_bad_debt = row.Field<decimal>("total_bad_debt"),
+                    OutDebtDate = row.Field<string?>("OutDebtDate"),
                     remarks = row.Field<string>("remarks")
                 }).ToList();
                 resultClass.ResultCode = "000";
@@ -225,7 +227,7 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var T_SQL = @"Update StagnationDebt_M set RemainingPrincipal=@RemainingPrincipal, total_due_amount=@total_due_amount,total_paid_amount=@total_paid_amount,total_bad_debt=@total_bad_debt,
-                             remarks=@remarks,edit_date=getdate(),edit_num=@edit_num,edit_ip=@edit_ip where sdm_id=@sdm_id";
+                              OutDebtDate=@OutDebtDate,remarks=@remarks,edit_date=getdate(),edit_num=@edit_num,edit_ip=@edit_ip where sdm_id=@sdm_id";
                 var parameters = new List<SqlParameter>()
                 {
                     new SqlParameter("@sdm_id",model.sdm_id),
@@ -233,6 +235,7 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@total_due_amount",model.total_due_amount),
                     new SqlParameter("@total_paid_amount",model.total_paid_amount),
                     new SqlParameter("@total_bad_debt",model.total_bad_debt),
+                    new SqlParameter("@OutDebtDate",model.OutDebtDate),
                     new SqlParameter("@remarks",model.remarks),
                     new SqlParameter("@edit_num",model.tbInfo.edit_num),
                     new SqlParameter("@edit_ip",clientIp)
@@ -272,7 +275,7 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 var _Fun = new FuncHandler();
                 #region SQL
-                var T_SQL = @"select SM.sdm_id,HA.CS_name,HA.CS_PID,SM.remarks
+                var T_SQL = @"select SM.sdm_id,HA.CS_name,HA.CS_PID,SM.remarks,SM.OutDebtDate
                               ,FORMAT(SM.total_due_amount,'N0') as str_total_due_amount
                               ,FORMAT(SM.total_paid_amount + ISNULL(PD.total_payment,0),'N0') as str_total_paid_amount
                               ,FORMAT(SM.total_bad_debt - ISNULL(PD.total_payment,0),'N0') as str_total_bad_debt
@@ -309,6 +312,7 @@ namespace KF_WebAPI.Controllers
                     str_total_paid_amount = row.Field<string>("str_total_paid_amount"),
                     str_total_bad_debt = row.Field<string>("str_total_bad_debt"),
                     SD_Name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    OutDebtDate = row.Field<string?>("OutDebtDate"),
                     remarks = row.Field<string>("remarks"),
                     SD_CID = row.Field<string>("CS_PID"),
                     HG_Name = _Fun.DeCodeBNWords(row.Field<string>("HG_name")),
@@ -578,7 +582,7 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 var _Fun = new FuncHandler();
                 #region SQL
-                var T_SQL = @"SELECT SM.sdm_id,HA.CS_name,HA.CS_PID,
+                var T_SQL = @"SELECT SM.sdm_id,HA.CS_name,HA.CS_PID,SM.OutDebtDate,
                               FORMAT(SM.total_bad_debt - ISNULL(PD.total_payment, 0), 'N0') AS str_total_bad_debt,SM.remarks,
                               ISNULL(CAST(YEAR(MAX_SD.latest_collection_date) - 1911 AS varchar) + '/' 
                               + RIGHT('0' + CAST(MONTH(MAX_SD.latest_collection_date) AS varchar), 2) + '/' 
@@ -589,7 +593,7 @@ namespace KF_WebAPI.Controllers
                               CASE WHEN SM.is_close = 'Y' THEN '已結清' ELSE '未結清' END AS str_close
                               FROM StagnationDebt_M SM
                               INNER JOIN Receivable_M RM ON RM.RCM_id = SM.rcm_id
-                              INNER JOIN view_HS_Base VS ON VS.HS_id = RM.HS_id and VS.project_title NOT IN ('PJ00046','PJ00047','PJ00048')
+                              INNER JOIN view_HS_Base VS ON VS.HS_id = RM.HS_id and VS.project_title NOT IN ('PJ00046','PJ00047','PJ00048','PJ00998')
                               INNER JOIN House_apply HA ON HA.HA_id = RM.HA_id
                               LEFT JOIN (SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id
                               ) PD ON PD.sdm_id = SM.sdm_id
@@ -607,7 +611,8 @@ namespace KF_WebAPI.Controllers
                     collection_date_roc = row.Field<string>("collection_date_roc"),
                     str_amount_total = row.Field<string>("str_amount_total"),
                     str_RemainingPrincipal = row.Field<string>("str_RemainingPrincipal"),
-                    str_close = row.Field<string>("str_close")
+                    str_close = row.Field<string>("str_close"),
+                    OutDebtDate = row.Field<string?>("OutDebtDate")
                 }).ToList();
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(result);
@@ -636,7 +641,7 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 var _Fun = new FuncHandler();
                 #region SQL
-                var T_SQL = @"SELECT SM.sdm_id,HA.CS_name,HA.CS_PID,
+                var T_SQL = @"SELECT SM.sdm_id,HA.CS_name,HA.CS_PID,SM.OutDebtDate,
                               FORMAT(SM.total_bad_debt - ISNULL(PD.total_payment, 0), 'N0') AS str_total_bad_debt,SM.remarks,
                               ISNULL(CAST(YEAR(MAX_SD.latest_collection_date) - 1911 AS varchar) + '/' 
                               + RIGHT('0' + CAST(MONTH(MAX_SD.latest_collection_date) AS varchar), 2) + '/' 
@@ -665,7 +670,8 @@ namespace KF_WebAPI.Controllers
                     collection_date_roc = row.Field<string>("collection_date_roc"),
                     str_amount_total = row.Field<string>("str_amount_total"),
                     str_RemainingPrincipal = row.Field<string>("str_RemainingPrincipal"),
-                    str_close = row.Field<string>("str_close")
+                    str_close = row.Field<string>("str_close"),
+                    OutDebtDate = row.Field<string?>("OutDebtDate")
                 }).ToList();
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(result);
@@ -694,7 +700,7 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 var _Fun = new FuncHandler();
                 #region SQL
-                var T_SQL = @"SELECT SM.sdm_id,HA.CS_name,HA.CS_PID,
+                var T_SQL = @"SELECT SM.sdm_id,HA.CS_name,HA.CS_PID,SM.OutDebtDate,
                               FORMAT(SM.total_bad_debt - ISNULL(PD.total_payment, 0), 'N0') AS str_total_bad_debt,SM.remarks,
                               ISNULL(CAST(YEAR(MAX_SD.latest_collection_date) - 1911 AS varchar) + '/' 
                               + RIGHT('0' + CAST(MONTH(MAX_SD.latest_collection_date) AS varchar), 2) + '/' 
@@ -705,7 +711,7 @@ namespace KF_WebAPI.Controllers
                               CASE WHEN SM.is_close = 'Y' THEN '已結清' ELSE '未結清' END AS str_close
                               FROM StagnationDebt_M SM
                               INNER JOIN Receivable_M RM ON RM.RCM_id = SM.rcm_id
-                              INNER JOIN view_HS_Base VS ON VS.HS_id = RM.HS_id and VS.project_title IN ('PJ00048')
+                              INNER JOIN view_HS_Base VS ON VS.HS_id = RM.HS_id and VS.project_title IN ('PJ00048','PJ00998')
                               INNER JOIN House_apply HA ON HA.HA_id = RM.HA_id
                               LEFT JOIN (SELECT sdm_id,ISNULL(SUM(payment_amount),0) AS total_payment FROM StagnationDebt_D WHERE del_tag = '0' GROUP BY sdm_id
                               ) PD ON PD.sdm_id = SM.sdm_id
@@ -723,7 +729,8 @@ namespace KF_WebAPI.Controllers
                     collection_date_roc = row.Field<string>("collection_date_roc"),
                     str_amount_total = row.Field<string>("str_amount_total"),
                     str_RemainingPrincipal = row.Field<string>("str_RemainingPrincipal"),
-                    str_close = row.Field<string>("str_close")
+                    str_close = row.Field<string>("str_close"),
+                    OutDebtDate = row.Field<string?>("OutDebtDate")
                 }).ToList();
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(result);

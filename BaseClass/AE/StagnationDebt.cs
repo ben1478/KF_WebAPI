@@ -10,6 +10,7 @@
         public decimal? total_due_amount { get; set; }
         public decimal? total_paid_amount { get; set; }
         public decimal? total_bad_debt { get; set; }
+        public string? OutDebtDate { get; set; }
         public string remarks { get; set; }
     }
 
