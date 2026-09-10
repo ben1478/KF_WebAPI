@@ -2933,7 +2933,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                     and U_PFT in('PFT050','PFT030','PFT060','PFT300') 
                     and U_num<>'K0064'  and U_susp_date is null 
                     and (U_leave_date is null or convert(varchar, U_arrive_date, 112) ='202609')
-                    group by  U_BC,BC_Name,bc_sort";
+                    group by  U_BC,BC_Name,bc_sort order by bc_sort";
 
                     parameters.Add(new SqlParameter("@ThisMon", ThisMon));
                 }
