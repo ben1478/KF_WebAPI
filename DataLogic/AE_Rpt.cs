@@ -471,7 +471,7 @@ namespace KF_WebAPI.DataLogic
         }
 
         /// <summary>
-        /// 取得機車清償資料
+        /// 取得機車清償明細資料
         /// </summary>
         /// <param name="yyyyMM">202404</param>
         public List<SettDetailList> GetMotoSettList(int yyyyMM, string type, string? chkSale)
@@ -541,7 +541,7 @@ namespace KF_WebAPI.DataLogic
         }
 
         /// <summary>
-        /// 匯出機車貸清償EXCEL
+        /// 匯出機車貸清償明細EXCEL
         /// </summary>
         public byte[] GetMotoSettExcel(int yyyyMM, string type, string? chkSale)
         {
@@ -1087,7 +1087,7 @@ namespace KF_WebAPI.DataLogic
         }
 
         /// <summary>
-        /// 取得房貸清償資料
+        /// 取得房貸清償明細資料
         /// </summary>
         /// <param name="yyyyMM">202404</param>
         public List<SettDetailList> GetHouseSettList(int yyyyMM, string type, string? chkSale)
@@ -1095,7 +1095,7 @@ namespace KF_WebAPI.DataLogic
             try
             {
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"SELECT rm.RCM_id,ha.CS_name,b.get_amount_date,rm.capital_AMT,rm.Breach_rate,rm.Break_AMT,
+                var T_SQL = @"SELECT rm.RCM_id,ha.CS_name,b.get_amount_date,rm.capital_AMT,isnull(rm.Breach_rate,0),rm.Break_AMT,
                               rm.Interest_AMT,rm.Delay_AMT,rm.date_begin_settle,b.get_amount,
                               (rm.Break_AMT + rm.Interest_AMT + rm.Delay_AMT) AS TotalAmount,
                               b.Loan_rate,addr.all_pre_addCity,addr.all_pre_addresses,rm.court_sale
@@ -1110,7 +1110,7 @@ namespace KF_WebAPI.DataLogic
                               WHERE hn.pawn_type = 'Y' AND hn.del_tag = '0' AND hn.appraise_company = b.appraise_company AND hn.HA_id = b.HA_id
                               FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)') AS all_pre_addCity ) addr
                               WHERE b.Send_result_type = 'SRT002' AND b.get_amount_type = 'GTAT002' AND date_begin_settle IS NOT NULL
-                              AND b.project_title NOT IN ('PJ00046','PJ00047','PJ00048')";
+                              AND b.project_title NOT IN ('PJ00046','PJ00047','PJ00048','PJ00998') AND RCM_id <> 10020690 ";
 
                 if (chkSale != null && chkSale == "1")
                 {
@@ -1163,7 +1163,7 @@ namespace KF_WebAPI.DataLogic
         }
 
         /// <summary>
-        /// 匯出房貸清償EXCEL
+        /// 匯出房貸清償明細EXCEL
         /// </summary>
         public byte[] GetHouseSettExcel(int yyyyMM, string type)
         {
@@ -1289,7 +1289,7 @@ namespace KF_WebAPI.DataLogic
         }
 
         /// <summary>
-        /// 匯出法拍房貸清償EXCEL
+        /// 匯出法拍房貸清償明細EXCEL
         /// </summary>
         public byte[] GetHouseChkExcel(int yyyyMM, string type, string chkSale)
         {
@@ -1419,6 +1419,12 @@ namespace KF_WebAPI.DataLogic
                 throw;
             }
         }
+
+        ///匯出清償總表BY月份(房/機車/汽車)
+        ///GetSettByM
+
+        ///匯出清償總表BY月份(房/機車/汽車)_Excel
+        ///GetSettByMExcel
 
         /// <summary>
         /// 業績報表_日報表
@@ -2839,8 +2845,6 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
         }
 
-
-
         public DataSet GetDailyReportByDate(string Base_Date, string U_BC, Boolean isPreDay)
         {
             try
@@ -2920,9 +2924,16 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                     where U_BC='BC0900' and U_num <> 'K9999' and U_PFT in('PFT050','PFT030','PFT060','PFT300') and U_num<>'K0064'  and U_susp_date is null 
                     and (U_leave_date is null or convert(varchar, U_arrive_date, 112) =@ThisMon)
                     group by  U_BC,BC_Name,bc_sort 
-                    union all 
-                    select 'BC0901','電銷','999',2
-                    order by bc_sort,isnull(G.Spec_Group, U_BC) ";
+                    union all
+                    select U_BC,BC_Name,bc_sort,count(*)PelCount  from USER_M M Left Join
+                    (select  item_D_code,item_D_name BC_Name,item_sort bc_sort from Item_list  where item_M_code = 'branch_company' and item_M_type='N' )
+                    D on M.U_BC=D.item_D_code
+                    where U_BC='BC0701' 
+                    and U_num <> 'K9999' 
+                    and U_PFT in('PFT050','PFT030','PFT060','PFT300') 
+                    and U_num<>'K0064'  and U_susp_date is null 
+                    and (U_leave_date is null or convert(varchar, U_arrive_date, 112) ='202609')
+                    group by  U_BC,BC_Name,bc_sort";
 
                     parameters.Add(new SqlParameter("@ThisMon", ThisMon));
                 }
@@ -4385,8 +4396,6 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             }
         }
 
-
-
         /// <summary>
         /// 取得客戶來電資料
         /// </summary>
@@ -4725,7 +4734,6 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
 
             return func.MergeSalesDataToDataTable(dt, dt1);
         }
-
 
         /// <summary>
         ///汽機車逾期資訊
