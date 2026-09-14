@@ -6946,6 +6946,28 @@ namespace KF_WebAPI.Controllers
         }
         #endregion
 
+        /// <summary>
+        /// 匯出清償總表BY月份(1:房/2:機車/3:汽車)_Excel
+        /// </summary>
+        /// <param name="projectType"></param>
+        /// <returns></returns>
+        [HttpGet("GetSettByMExcel")]
+        public IActionResult GetSettByMExcel(string projectType)
+        {
+            try
+            {
+                var fileBytes = _Rpt.GetSettByMExcel(projectType);
+
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "");
+            }
+            catch (Exception ex)
+            {
+                ResultClass<string> resultClass = new ResultClass<string>();
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
         #region 上傳文中發票
         [HttpPost("GetRecForWin")]
         public async Task<IActionResult> GetRecForWin(IFormFile file)
