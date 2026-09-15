@@ -1523,7 +1523,8 @@ namespace KF_WebAPI.DataLogic
                     worksheet.Cells[rowIndex, 1, rowIndex, colIndex].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
                     worksheet.Cells[rowIndex, 1, rowIndex, colIndex].Style.Font.Bold = true;
                     colIndex++;
-                    worksheet.Cells[rowIndex, colIndex++].Value = SettByMList.Sum(x=>x.TolCount);
+                    worksheet.Cells[rowIndex, colIndex].Value = SettByMList.Sum(x=>x.TolCount);
+                    worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0";
                     worksheet.Cells[rowIndex, colIndex].Value = SettByMList.Sum(x=>x.TolGetAmt);
                     worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0\"萬\"";
 
