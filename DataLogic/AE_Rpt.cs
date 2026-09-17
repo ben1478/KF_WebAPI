@@ -1486,7 +1486,7 @@ namespace KF_WebAPI.DataLogic
 
                     var SettByMList = GetSettByM(projectType);
 
-                    string[] headers = { "年份", "月", "撥款日", "件數", "清償總金額" };
+                    string[] headers = { "年份", "月", "件數", "清償總金額" };
 
                     int rowIndex = 1;
                     int colIndex = 1;
