@@ -110,6 +110,14 @@
         public string? all_pre_addresses { get; set; }
     }
 
+    public class SettByMonList
+    {
+        public string YYY { get;set; }
+        public string MM { get;set; }
+        public int TolCount { get; set; }  
+        public decimal TolGetAmt { get; set; }
+    }
+
     public class AccountReceivable
     {
         public string CS_name { get; set; }

@@ -1420,11 +1420,134 @@ namespace KF_WebAPI.DataLogic
             }
         }
 
-        ///匯出清償總表BY月份(房/機車/汽車)
-        ///GetSettByM
+        /// <summary>
+        /// 匯出清償總表BY月份(1:房/2:機車/3:汽車)
+        /// </summary>
+        /// <param name="caseType"></param>
+        /// <returns></returns>
+        public List<SettByMonList> GetSettByM(string projectType)
+        {
+            try
+            {
+                var parameters = new List<SqlParameter>();
+                var T_SQL = @"SELECT CAST(YEAR(rm.date_begin_settle) - 1911 AS varchar) + '-' + RIGHT('0' + CAST(MONTH(rm.date_begin_settle) AS varchar), 2) AS YYYMM,
+                              COUNT(*) AS TolCount,SUM(ISNULL(TRY_CAST(b.get_amount AS decimal(18, 2)), 0)) AS TolGetAmt
+                              FROM view_HS_Base b 
+                              INNER JOIN Receivable_M rm ON rm.HS_id = b.HS_id AND rm.del_tag = 0
+                              INNER JOIN House_pre_project ht ON b.HP_project_id = ht.HP_project_id AND ht.del_tag = '0'
+                              INNER JOIN House_apply ha ON ha.HA_id = b.HA_id AND ha.del_tag = '0'
+                              WHERE b.Send_result_type = 'SRT002' AND b.get_amount_type = 'GTAT002' AND rm.date_begin_settle IS NOT NULL
+                              AND ISNULL(rm.court_sale,'') = '' AND rm.RCM_id <> 10020690";
+                switch (projectType)
+                {
+                    case "1":
+                        T_SQL += " AND b.project_title NOT IN ('PJ00046','PJ00047','PJ00048','PJ00998') ";
+                        break;
+                    case "2":
+                        T_SQL += " AND b.project_title IN ('PJ00046','PJ00047') ";
+                        break;
+                    case "3":
+                        T_SQL += " AND b.project_title IN ('PJ00048','PJ00998') ";
+                        break;
+                    default:
+                        break;
+                }
+                T_SQL += @" GROUP BY CAST(YEAR(rm.date_begin_settle) - 1911 AS varchar) + '-' + RIGHT('0' + CAST(MONTH(rm.date_begin_settle) AS varchar), 2) ORDER BY YYYMM ASC";
+                
+                var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new SettByMonList
+                {
+                    YYY = row.Field<string>("YYYMM").Split("-")[0],
+                    MM = row.Field<string>("YYYMM").Split("-")[1],
+                    TolCount = row.Field<int>("TolCount"),
+                    TolGetAmt = row.Field<decimal>("TolGetAmt")
+                }).ToList();
 
-        ///匯出清償總表BY月份(房/機車/汽車)_Excel
-        ///GetSettByMExcel
+                return result;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 匯出清償總表BY月份(1:房/2:機車/3:汽車)_Excel
+        /// </summary>
+        /// <param name="projectType"></param>
+        /// <returns></returns>
+        public byte[] GetSettByMExcel(string projectType)
+        {
+            try
+            {
+                using(var package = new ExcelPackage())
+                {
+                    var worksheet = package.Workbook.Worksheets.Add("清償年度明細");
+
+                    var SettByMList = GetSettByM(projectType);
+
+                    string[] headers = { "年份", "月", "撥款日", "件數", "清償總金額" };
+
+                    int rowIndex = 1;
+                    int colIndex = 1;
+
+                    foreach (var header in headers)
+                    {
+                        var cell = worksheet.Cells[rowIndex, colIndex++];
+                        cell.Value = header;
+                        // 設置儲存格底色為淺藍色
+                        cell.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                        cell.Style.Fill.BackgroundColor.SetColor(Color.LightBlue);
+                    }
+
+                    // 添加表身
+                    colIndex = 1;
+                    foreach (var item in SettByMList)
+                    {
+                        rowIndex++;
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.YYY;
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.MM + "月";
+                        worksheet.Cells[rowIndex, colIndex++].Value = item.TolCount;
+
+                        worksheet.Cells[rowIndex, colIndex].Value = item.TolGetAmt;
+                        worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0\"萬\"";
+
+                        colIndex = 1;
+                    }
+
+                    //總計
+                    rowIndex++;
+                    colIndex = 1;
+                    worksheet.Cells[rowIndex, colIndex++].Value = "總計";
+                    worksheet.Cells[rowIndex, 1, rowIndex, colIndex].Merge = true;
+                    worksheet.Cells[rowIndex, 1, rowIndex, colIndex].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+                    worksheet.Cells[rowIndex, 1, rowIndex, colIndex].Style.Font.Bold = true;
+                    colIndex++;
+                    worksheet.Cells[rowIndex, colIndex].Value = SettByMList.Sum(x=>x.TolCount);
+                    worksheet.Cells[rowIndex, colIndex++].Style.Numberformat.Format = "#,##0";
+                    worksheet.Cells[rowIndex, colIndex].Value = SettByMList.Sum(x=>x.TolGetAmt);
+                    worksheet.Cells[rowIndex, colIndex].Style.Numberformat.Format = "#,##0\"萬\"";
+
+                    // 框線
+                    using (var range = worksheet.Cells[1, 1, rowIndex, headers.Length])
+                    {
+                        range.Style.Border.Top.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Bottom.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Left.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                        range.Style.Border.Right.Style = OfficeOpenXml.Style.ExcelBorderStyle.Thin;
+                    }
+
+                    // 調整列寬
+                    worksheet.Cells[1, 1, rowIndex, headers.Length].AutoFitColumns();
+                    return package.GetAsByteArray();
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
 
         /// <summary>
         /// 業績報表_日報表
@@ -5294,8 +5417,6 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             }
         }
 
-
-
         /// <summary>
         /// 中信銀行ACH
         /// </summary>
@@ -5427,91 +5548,6 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
             }
 
         }
-
-
-        //public void UpdWinToRecD(Receivable_Win_Inv model, string clientIp, string INV_NO, string check_pay_type = "Y", string RecPayType = "C")
-        //{
-        //    try
-        //    {
-        //        var T_SQL = @"Update Receivable_D set RecPayDate = @RecPayDate,RecPayAmt = 0,RecPayType = @RecPayType ,check_pay_date=@check_pay_date
-        //                      ,check_pay_type =  @check_pay_type,check_pay_num = @check_pay_num,invoice_no=@invoice_no,invoice_date = getdate(),edit_date = getdate()
-        //                      ,edit_num = @edit_num,edit_ip = @edit_ip where RCD_id = @RCD_id";
-        //        var parameters = new List<SqlParameter>
-        //        {
-        //            new SqlParameter("@RecPayDate",model.RecPayDate),
-        //            new SqlParameter("@check_pay_date",model.RecPayDate),
-        //            new SqlParameter("@check_pay_num",model.User),
-        //            new SqlParameter("@invoice_no",INV_NO),
-        //            new SqlParameter("@edit_ip",clientIp),
-        //            new SqlParameter("@edit_num",model.User),
-        //            new SqlParameter("@check_pay_type",check_pay_type),
-        //            new SqlParameter("@RecPayType",RecPayType),
-        //            new SqlParameter("@RCD_id",model.RCD_id)
-        //        };
-        //        _adoData.ExecuteNonQuery(T_SQL, parameters);
-        //    }
-        //    catch (Exception)
-        //    {
-        //        throw;
-        //    }
-        //}
-
-        //public void UpdWinToRecAuto(Receivable_Win_Inv model, string clientIp, string INV_NO, decimal RecPayAmt, string check_pay_type = "Y", string RecPayType = "C")
-        //{
-        //    try
-        //    {
-        //        var T_SQL = @"Update Receivable_D set RecPayDate = @RecPayDate,RecPayAmt = @RecPayAmt,RecPayType = @RecPayType ,check_pay_date=@check_pay_date
-        //                      ,check_pay_type =  @check_pay_type,check_pay_num = @check_pay_num,invoice_no=@invoice_no,invoice_date = getdate(),edit_date = getdate()
-        //                      ,edit_num = @edit_num,edit_ip = @edit_ip where RCD_id = @RCD_id";
-        //        var parameters = new List<SqlParameter>
-        //        {
-        //            new SqlParameter("@RecPayDate",model.RecPayDate),
-        //            new SqlParameter("@check_pay_date",model.RecPayDate),
-        //            new SqlParameter("@check_pay_num",model.User),
-        //            new SqlParameter("@RecPayAmt",RecPayAmt),
-        //            new SqlParameter("@invoice_no",INV_NO),
-        //            new SqlParameter("@edit_ip",clientIp),
-        //            new SqlParameter("@edit_num",model.User),
-        //            new SqlParameter("@check_pay_type",check_pay_type),
-        //            new SqlParameter("@RecPayType",RecPayType),
-        //            new SqlParameter("@RCD_id",model.RCD_id)
-        //        };
-        //        _adoData.ExecuteNonQuery(T_SQL, parameters);
-        //    }
-        //    catch (Exception)
-        //    {
-        //        throw;
-        //    }
-        //}
-
-        //public void UpdWinToRecDetail(Receivable_Win_Inv model, string clientIp, string INV_NO, decimal RecPayAmt, string check_pay_type = "Y", string RecPayType = "C")
-        //{
-        //    try
-        //    {
-        //        var T_SQL = @"Update Receivable_D set RecPayDate = @RecPayDate,RecPayAmt = @RecPayAmt,RecPayType = @RecPayType ,check_pay_date=@check_pay_date
-        //                      ,check_pay_type =  @check_pay_type,check_pay_num = @check_pay_num,invoice_no=@invoice_no,invoice_date = getdate(),edit_date = getdate()
-        //                      ,RC_note=@RC_note,edit_num = @edit_num,edit_ip = @edit_ip where RCD_id = @RCD_id";
-        //        var parameters = new List<SqlParameter>
-        //        {
-        //            new SqlParameter("@RecPayDate",model.RecPayDate),
-        //            new SqlParameter("@check_pay_date",model.RecPayDate),
-        //            new SqlParameter("@check_pay_num",model.User),
-        //            new SqlParameter("@RecPayAmt",RecPayAmt),
-        //            new SqlParameter("@invoice_no",INV_NO),
-        //            new SqlParameter("@edit_ip",clientIp),
-        //            new SqlParameter("@edit_num",model.User),
-        //            new SqlParameter("@check_pay_type",check_pay_type),
-        //            new SqlParameter("@RecPayType",RecPayType),
-        //            new SqlParameter("@RCD_id",model.RCD_id),
-        //            new SqlParameter("@RC_note",model.RC_note)
-        //        };
-        //        _adoData.ExecuteNonQuery(T_SQL, parameters);
-        //    }
-        //    catch (Exception)
-        //    {
-        //        throw;
-        //    }
-        //}
 
         public string CheckInvGp(string yyyMM, string GpNO)
         {
