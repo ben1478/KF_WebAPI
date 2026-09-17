@@ -28,6 +28,7 @@ using Microsoft.Extensions.Configuration;
 using System.Runtime.InteropServices;
 using System.Collections;
 using KF_WebAPI.Service;
+using static UglyToad.PdfPig.Core.PdfSubpath;
 
 namespace KF_WebAPI.Controllers
 {
@@ -6946,6 +6947,24 @@ namespace KF_WebAPI.Controllers
         }
         #endregion
 
+        [HttpGet("GetSettByM")]
+        public ActionResult<ResultClass<string>> GetSettByM(string projectType)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            try
+            {
+                var result = _Rpt.GetSettByM(projectType);
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
         /// <summary>
         /// 匯出清償總表BY月份(1:房/2:機車/3:汽車)_Excel
         /// </summary>
