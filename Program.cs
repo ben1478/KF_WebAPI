@@ -26,6 +26,27 @@ builder.Services.AddHttpClient<YuRichAPIController>();
 builder.Services.AddScoped<IWebRobotService, WebRobotService>();
 
 
+// 註冊 BopBankService 的 HttpClient
+builder.Services.AddHttpClient<BopBankService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(60);
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    // 依設定檔決定是否忽略憑證錯誤（測試環境設為 true，正式環境設為 false）
+    bool ignoreSsl = builder.Configuration.GetValue<bool>("Bop:IgnoreServerCertificateErrors");
+    if (ignoreSsl)
+    {
+        handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true;
+    }
+    return handler;
+});
+
+// 註冊業務層 Service
+builder.Services.AddScoped<VirtualAccountService>();
+
+
 
 // CORS 設定
 builder.Services.AddCors(options =>
