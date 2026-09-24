@@ -445,11 +445,18 @@ namespace KF_WebAPI.BaseClass.AE
         public decimal totalGetAmount { get; set; }
         public decimal totalSettAmount { get; set; }
         public decimal totalBadAmount { get; set; }
+        public decimal totalGetCount { get; set; }
+        public decimal totalStockCount { get; set; }
         public decimal M1Amount { get; set; }
+        public decimal M1Count { get; set; }
         public decimal M2Amount { get; set; }
+        public decimal M2Count { get; set; }
         public decimal M3Amount { get; set; }
+        public decimal M3Count { get; set; }
         public decimal DuringAmount { get; set; }
+        public decimal DuringCount { get; set; }
         public decimal RulingAmount { get; set;}
+        public decimal RulingCount { get; set; }
     }
 
     public class CPay_req

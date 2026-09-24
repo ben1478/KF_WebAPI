@@ -3646,55 +3646,7 @@ namespace KF_WebAPI.Controllers
         [HttpGet("RC_Over_H_Thr_LQuery")]
         public ActionResult<ResultClass<string>> RC_Over_H_Thr_LQuery(string dateE)
         {
-            ResultClass<string> resultClass = new ResultClass<string>();
-            try
-            {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var T_SQL_SP = @"exec GetHousecaseSummary '2018-10-01',@checkDateE";
-                var parameters = new List<SqlParameter>
-                {
-                    new SqlParameter("@checkDateE",dateE)
-                };
-                #endregion
-                var result = _adoData.ExecuteQuery(T_SQL_SP, parameters).AsEnumerable().Select(row => new
-                {
-                    GetAmount = row.Field<decimal>("GetAmount"),
-                    SettAmount = row.Field<decimal>("SettAmount"),
-                    BadAmount = row.Field<decimal>("BadAmount")
-                }).ToList();
-
-                var model = new RC_Over_Thr_res();
-                model.totalGetAmount = result.Sum(x => x.GetAmount);
-                model.totalSettAmount = result.Sum(x => x.SettAmount);
-                model.totalBadAmount = result.Sum(x => x.BadAmount);
-
-                var resultM1 = _Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M1", "House");
-                var resultM2 = _Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M2", "House");
-                var resultM3 = _Acc.RC_Debt_LQuery(null, "2018/5/20", dateE, "M3", "House");
-
-                model.M1Amount = Math.Round(resultM1.Sum(x => x.amount_total) / 10000);
-                model.M2Amount = Math.Round(resultM2.Sum(x => x.amount_total) / 10000);
-                model.M3Amount = Math.Round(resultM3.Sum(x => x.amount_total) / 10000);
-                //Ｍ3 胡秀明要自動+700萬
-                model.M3Amount += 700;
-
-                model.DuringAmount = Math.Round((resultM1.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total) 
-                    + resultM2.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)
-                    + resultM3.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)) / 10000);
-                model.RulingAmount = Math.Round((resultM1.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total) 
-                    + resultM2.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)
-                    + resultM3.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)) / 10000);
-
-                resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(model);
-                return Ok(resultClass);
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
+            return GetOverThrData("GetHousecaseSummary", "2018-05-01", "House", dateE);
         }
         
         /// <summary>
@@ -3705,53 +3657,7 @@ namespace KF_WebAPI.Controllers
         [HttpGet("RC_Over_M_Thr_LQuery")]
         public ActionResult<ResultClass<string>> RC_Over_M_Thr_LQuery(string dateE)
         {
-            ResultClass<string> resultClass = new ResultClass<string>();
-            try
-            {
-                ADOData _adoData = new ADOData();
-                #region SQL
-                var T_SQL_SP = @"exec GetMotocaseSummary '2025-10-01',@checkDateE";
-                var parameters = new List<SqlParameter>
-                {
-                    new SqlParameter("@checkDateE",dateE)
-                };
-                #endregion
-                var result = _adoData.ExecuteQuery(T_SQL_SP, parameters).AsEnumerable().Select(row => new
-                {
-                    GetAmount = row.Field<decimal>("GetAmount"),
-                    SettAmount = row.Field<decimal>("SettAmount"),
-                    BadAmount = row.Field<decimal>("BadAmount")
-                }).ToList();
-
-                var model = new RC_Over_Thr_res();
-                model.totalGetAmount = result.Sum(x => x.GetAmount);
-                model.totalSettAmount = result.Sum(x => x.SettAmount);
-                model.totalBadAmount = result.Sum(x => x.BadAmount);
-
-                var resultM1 = _Acc.RC_Debt_LQuery(null, "2025/10/01", dateE, "M1", "Moto");
-                var resultM2 = _Acc.RC_Debt_LQuery(null, "2025/10/01", dateE, "M2", "Moto");
-                var resultM3 = _Acc.RC_Debt_LQuery(null, "2025/10/01", dateE, "M3", "Moto");
-
-                model.M1Amount = Math.Round(resultM1.Sum(x => x.amount_total) / 10000);
-                model.M2Amount = Math.Round(resultM2.Sum(x => x.amount_total) / 10000);
-                model.M3Amount = Math.Round(resultM3.Sum(x => x.amount_total) / 10000);
-
-                model.DuringAmount = Math.Round((resultM1.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)
-                    + resultM2.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)
-                    + resultM3.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)) / 10000);
-                model.RulingAmount = Math.Round((resultM1.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)
-                    + resultM2.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)
-                    + resultM3.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)) / 10000);
-
-                resultClass.ResultCode = "000";
-                resultClass.objResult = JsonConvert.SerializeObject(model);
-                return Ok(resultClass);
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
+            return GetOverThrData("GetMotocaseSummary", "2025-10-01", "Moto", dateE);
         }
 
         /// <summary>
@@ -3762,54 +3668,82 @@ namespace KF_WebAPI.Controllers
         [HttpGet("RC_Over_C_Thr_LQuery")]
         public ActionResult<ResultClass<string>> RC_Over_C_Thr_LQuery(string dateE)
         {
+            return GetOverThrData("GetCarcaseSummary", "2025-12-01", "Car", dateE);
+        }
+
+
+        private ActionResult<ResultClass<string>> GetOverThrData(string spName, string startDate, string loanType, string dateE)
+        {
             ResultClass<string> resultClass = new ResultClass<string>();
             try
             {
                 ADOData _adoData = new ADOData();
-                #region SQL
-                var T_SQL_SP = @"exec GetCarcaseSummary '2025-12-01',@checkDateE";
+
+                // 組合 SQL 語法
+                var T_SQL_SP = $"exec {spName} '{startDate}',@checkDateE";
                 var parameters = new List<SqlParameter>
-                {
-                    new SqlParameter("@checkDateE",dateE)
-                };
-                #endregion
+        {
+            new SqlParameter("@checkDateE", dateE)
+        };
+
                 var result = _adoData.ExecuteQuery(T_SQL_SP, parameters).AsEnumerable().Select(row => new
                 {
                     GetAmount = row.Field<decimal>("GetAmount"),
                     SettAmount = row.Field<decimal>("SettAmount"),
-                    BadAmount = row.Field<decimal>("BadAmount")
+                    BadAmount = row.Field<decimal>("BadAmount"),
+                    GetCount = row.Field<int>("GetCount"),
+                    SettCount = row.Field<int>("SettCount"),
+                    BadCount = row.Field<int>("BadCount")
                 }).ToList();
 
                 var model = new RC_Over_Thr_res();
                 model.totalGetAmount = result.Sum(x => x.GetAmount);
                 model.totalSettAmount = result.Sum(x => x.SettAmount);
                 model.totalBadAmount = result.Sum(x => x.BadAmount);
+                model.totalGetCount = result.Sum(x => x.GetCount);
+                model.totalStockCount = result.Sum(x => x.GetCount) - result.Sum(x => x.SettCount) - result.Sum(x => x.BadCount);
 
-                var resultM1 = _Acc.RC_Debt_LQuery(null, "2025/12/01", dateE, "M1", "Car");
-                var resultM2 = _Acc.RC_Debt_LQuery(null, "2025/12/01", dateE, "M2", "Car");
-                var resultM3 = _Acc.RC_Debt_LQuery(null, "2025/12/01", dateE, "M3", "Car");
-
+                string accStartDate = startDate.Replace("-", "/");
+                var resultM1 = _Acc.RC_Debt_LQuery(null, accStartDate, dateE, "M1", loanType);
+                var resultM2 = _Acc.RC_Debt_LQuery(null, accStartDate, dateE, "M2", loanType);
+                var resultM3 = _Acc.RC_Debt_LQuery(null, accStartDate, dateE, "M3", loanType);
+               
                 model.M1Amount = Math.Round(resultM1.Sum(x => x.amount_total) / 10000);
+                model.M1Count = resultM1.Count;
                 model.M2Amount = Math.Round(resultM2.Sum(x => x.amount_total) / 10000);
+                model.M2Count = resultM2.Count;
                 model.M3Amount = Math.Round(resultM3.Sum(x => x.amount_total) / 10000);
+                model.M3Count = resultM3.Count;
 
-                model.DuringAmount = Math.Round((resultM1.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)
-                    + resultM2.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)
-                    + resultM3.Where(x => x.AS_Name.Equals("法拍中")).Sum(x => x.amount_total)) / 10000);
-                model.RulingAmount = Math.Round((resultM1.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)
-                    + resultM2.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)
-                    + resultM3.Where(x => x.AS_Name.Equals("本裁中")).Sum(x => x.amount_total)) / 10000);
+                if (loanType == "House")
+                {   //房貸Ｍ3 胡秀明要自動+700萬
+                    model.M3Amount += 700;
+                }
+
+                string asName1 = "法拍中";
+                string asName2 = "本裁中";
+
+                var allResults = resultM1.Concat(resultM2).Concat(resultM3).ToList(); // 將M1~M3合併計算
+
+                model.DuringAmount = Math.Round(allResults.Where(x => x.AS_Name == asName1).Sum(x => x.amount_total) / 10000);
+                model.DuringCount= allResults.Where(x => x.AS_Name == asName1).Count();
+                model.RulingAmount = Math.Round(allResults.Where(x => x.AS_Name == asName2).Sum(x => x.amount_total) / 10000);
+                model.RulingCount = allResults.Where(x => x.AS_Name == asName2).Count();
 
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(model);
                 return Ok(resultClass);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
-                throw;
+                // 建議這裡記錄 Log，並回傳錯誤代碼給前端，而不是直接 throw
+                resultClass.ResultCode = "999";
+                resultClass.objResult = ex.Message;
+                return StatusCode(500, resultClass);
             }
         }
+
+
         #endregion
 
         #region 應收帳款-本金餘額比
