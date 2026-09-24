@@ -744,7 +744,7 @@ namespace KF_WebAPI.Controllers
             }
         }
         #endregion
-        
+
         /// <summary>
         /// 取得業務所有呆帳資料
         /// </summary>
@@ -770,7 +770,7 @@ namespace KF_WebAPI.Controllers
                     new SqlParameter("@plan_num",planNum)
                 };
                 #endregion
-                var dtResult=_adoData.ExecuteQuery(T_SQL, parameters);
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(dtResult);
                 return Ok(resultClass);
@@ -853,7 +853,7 @@ AND HP.project_title IN('PJ00046','PJ00047') and format(HS.get_amount_date,'yyyy
         /// <param name="RCM_id"></param>
         /// <returns></returns>
         [HttpGet("SD_MotoRC_LQuery")]
-        public ActionResult<ResultClass<string>> SD_MotoRC_LQuery(string RCM_id,string GetType)
+        public ActionResult<ResultClass<string>> SD_MotoRC_LQuery(string RCM_id, string GetType)
         {
             ResultClass<string> resultClass = new ResultClass<string>();
 
@@ -893,7 +893,7 @@ AND HP.project_title IN('PJ00046','PJ00047') and format(HS.get_amount_date,'yyyy
                 T_SQL += " ) M ";
 
                 #endregion
-               var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
+                var dtResult = _adoData.ExecuteQuery(T_SQL, parameters);
                 resultClass.ResultCode = "000";
                 resultClass.objResult = JsonConvert.SerializeObject(dtResult);
                 return Ok(resultClass);
@@ -905,7 +905,5 @@ AND HP.project_title IN('PJ00046','PJ00047') and format(HS.get_amount_date,'yyyy
                 return StatusCode(500, resultClass);
             }
         }
-
-        
     }
 }

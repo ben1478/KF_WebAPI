@@ -5074,6 +5074,124 @@ namespace KF_WebAPI.Controllers
         }
         #endregion
 
+        #region 客戶繳款紀錄查詢
+        /// <summary>
+        /// 查詢客戶已繳款列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("CPay_LQuery")]
+        public ActionResult<ResultClass<string>> CPay_LQuery(CPay_req model)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
+                #region SQL
+                var T_SQL = @"WITH RankedData AS ( SELECT rd.RCM_id,ha.CS_name,ha.CS_PID,rm.amount_total,rm.month_total,rd.RC_count,rd.rc_date,rm.amount_per_month,
+                              rd.check_pay_date,rd.invoice_no,rd.invoice_date,ua.U_name,ha.plan_num,ROW_NUMBER() OVER ( PARTITION BY rd.RCM_id ORDER BY rd.RC_count DESC ) AS seq
+                              FROM Receivable_M rm
+                              LEFT JOIN Receivable_D rd ON rm.RCM_id = rd.RCM_id 
+                              LEFT JOIN House_sendcase hs ON hs.HS_id = rm.HS_id
+                              LEFT JOIN House_apply ha ON ha.HA_id = hs.HA_id
+                              LEFT JOIN User_M ua ON ua.U_num = ha.plan_num
+                              WHERE rd.check_pay_type = 'Y' AND rd.bad_debt_type = 'N' AND ISNULL(rm.date_begin_settle, '') = '' 
+                              AND not exists (select 1 from StagnationDebt_M sm where sm.RCM_id = rm.RCM_id))
+                              SELECT RCM_id,CS_name,CS_PID,amount_total,month_total,RC_count AS max_RC_count,rc_date, amount_per_month,check_pay_date,
+                              invoice_no,invoice_date,U_name,plan_num
+                              FROM RankedData
+                              WHERE seq = 1 AND RC_count <> month_total";
+                var parameters = new List<SqlParameter>();
+                if(!string.IsNullOrEmpty(model.CS_name)) 
+                {
+                    T_SQL += @" AND CS_name = @CS_name";
+                    parameters.Add(new SqlParameter("@CS_name", model.CS_name));
+                }
+                if (!string.IsNullOrEmpty(model.CS_PID))
+                {
+                    T_SQL += @" AND CS_PID = @CS_PID";
+                    parameters.Add(new SqlParameter("@CS_PID", model.CS_PID));
+                }
+                #endregion
+                var result = _adoData.ExecuteQuery(T_SQL,parameters).AsEnumerable().Select(row => new
+                {
+                    RCM_id = row.Field<decimal>("RCM_id"),
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    amount_total = row.Field<decimal>("amount_total"),
+                    month_total = row.Field<int>("month_total"),
+                    max_RC_count = row.Field<int>("max_RC_count"),
+                    rc_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("rc_date").ToString("yyyy/MM/dd")),
+                    amount_per_month = row.Field<decimal>("amount_per_month"),
+                    check_pay_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("check_pay_date").ToString("yyyy/MM/dd")),
+                    invoice_no = row.Field<string>("invoice_no"),
+                    invoice_date = row.Field<DateTime?>("invoice_date").HasValue ? FuncHandler.ConvertGregorianToROC(row.Field<DateTime?>("invoice_date").Value.ToString("yyyy/MM/dd")) : null,
+                    U_name = _Fun.DeCodeBNWords(row.Field<string>("U_name"))
+                });
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+
+
+        /// <summary>
+        /// 查詢客戶已繳款明細
+        /// </summary>
+        /// <param name="rcmID"></param>
+        /// <returns></returns>
+        [HttpGet("CPay_SQuery")]
+        public ActionResult<ResultClass<string>> CPay_SQuery(string rcmID)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+            var _Fun = new FuncHandler();
+            try
+            {
+                ADOData _adoData = new ADOData();
+                #region SQL
+                var T_SQL = @"SELECT ha.CS_name,ha.CS_PID,rm.amount_total,rm.month_total,rd.RC_count,rd.rc_date,rm.amount_per_month,
+                              rd.check_pay_date,rd.invoice_no,rd.invoice_date
+                              FROM Receivable_M rm
+                              LEFT JOIN Receivable_D rd ON rm.RCM_id = rd.RCM_id
+                              LEFT JOIN House_apply ha ON ha.HA_id = rm.HA_id
+                              WHERE rd.check_pay_type = 'Y' AND rd.bad_debt_type = 'N' AND rm.RCM_id = @RCM_id";
+                var parameters = new List<SqlParameter>()
+                {
+                    new SqlParameter("@RCM_id",rcmID)
+                };
+                #endregion
+                var result = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new
+                {
+                    CS_name = _Fun.DeCodeBNWords(row.Field<string>("CS_name")),
+                    CS_PID = row.Field<string>("CS_PID"),
+                    amount_total = row.Field<decimal>("amount_total"),
+                    month_total = row.Field<int>("month_total"),
+                    RC_count = row.Field<int>("RC_count"),
+                    rc_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("rc_date").ToString("yyyy/MM/dd")),
+                    amount_per_month = row.Field<decimal>("amount_per_month"),
+                    check_pay_date = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("check_pay_date").ToString("yyyy/MM/dd")),
+                    invoice_no = row.Field<string>("invoice_no"),
+                    invoice_date = row.Field<DateTime?>("invoice_date").HasValue ? FuncHandler.ConvertGregorianToROC(row.Field<DateTime?>("invoice_date").Value.ToString("yyyy/MM/dd")) : null
+                });
+                resultClass.ResultCode = "000";
+                resultClass.objResult = JsonConvert.SerializeObject(result);
+                return Ok(resultClass);
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
+        #endregion
 
         [HttpGet("GetInvoice_prize")]
         public ActionResult<ResultClass<string>> GetInvoice_prize(string YYYY, string MM)

@@ -451,4 +451,12 @@ namespace KF_WebAPI.BaseClass.AE
         public decimal DuringAmount { get; set; }
         public decimal RulingAmount { get; set;}
     }
+
+    public class CPay_req
+    {
+        public string? CS_name { get; set; }
+        public string? CS_PID { get; set; }
+
+        public tbInfo? tbInfo { get; set; }
+    }
 }
