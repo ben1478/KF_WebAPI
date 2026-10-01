@@ -461,9 +461,11 @@ namespace KF_WebAPI.BaseClass.AE
 
     public class CPay_req
     {
+        public tbInfo? tbInfo { get; set; }
         public string? CS_name { get; set; }
         public string? CS_PID { get; set; }
-
-        public tbInfo? tbInfo { get; set; }
+        public string? U_BC { get; set; }
+        public string? U_name { get; set; }
+        public string roleType { get; set; }
     }
 }

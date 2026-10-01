@@ -1553,6 +1553,51 @@ namespace KF_WebAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// 提供員工可查看公司別
+        /// </summary>
+        [HttpGet("GetCheckBCList")]
+        public ActionResult<ResultClass<string>> GetCheckBCList(string user)
+        {
+            ResultClass<string> resultClass = new ResultClass<string>();
+
+            try
+            {
+                #region SQL
+                ADOData _adoData = new ADOData();
+                var _Fun = new FuncHandler();
+                var T_SQL = @"SELECT item_D_code,item_D_name FROM Item_list WHERE item_M_code = 'branch_company' AND ISNULL(item_D_code, '') <> ''
+                              AND EXISTS ( SELECT 1 FROM User_M WHERE U_num = @U_num AND CHARINDEX('#' + RTRIM(Item_list.item_D_code) + '#', '#' + ISNULL(U_Check_BC, '') + '#') > 0)";
+                #endregion
+                var paramsList = new List<SqlParameter> {
+                    new SqlParameter("@U_num",user)
+                };
+                var result = _adoData.ExecuteQuery(T_SQL,paramsList).AsEnumerable().Select(row => new
+                {
+                    U_BC = row.Field<string>("item_D_code"),
+                    U_BC_Name = _Fun.DeCodeBNWords(row.Field<string>("item_D_name"))
+                }).ToList();
+                if (result.Count > 0)
+                {
+                    resultClass.ResultCode = "000";
+                    resultClass.objResult = JsonConvert.SerializeObject(result);
+                    return Ok(resultClass);
+                }
+                else
+                {
+                    resultClass.ResultCode = "400";
+                    resultClass.ResultMsg = "查無資料";
+                    return BadRequest(resultClass);
+                }
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+
+        }
     }
 
 }
