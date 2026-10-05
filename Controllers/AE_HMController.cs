@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Collections.Generic;
 using KF_WebAPI.DataLogic;
 using System.Xml.Linq;
+using static UglyToad.PdfPig.Core.PdfSubpath;
 
 namespace KF_WebAPI.Controllers
 {
@@ -770,5 +771,26 @@ namespace KF_WebAPI.Controllers
             }
         }
         #endregion
+
+        /// <summary>
+        /// 匯出估價名單
+        /// </summary>
+        [HttpPost("House_Pre_Excel")]
+        public IActionResult House_Pre_Excel(House_Pre_req model)
+        {
+            ResultClass<string> resultClass = new();
+
+            try
+            {
+                var fileBytes = _HM.House_Pre_Excel(model);
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"); ;
+            }
+            catch (Exception ex)
+            {
+                resultClass.ResultCode = "500";
+                resultClass.ResultMsg = $" response: {ex.Message}";
+                return StatusCode(500, resultClass);
+            }
+        }
     }
 }

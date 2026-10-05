@@ -529,6 +529,48 @@ namespace KF_WebAPI.DataLogic
         }
         #endregion
 
+        public byte[] House_Pre_Excel(House_Pre_req model)
+        {
+            
+            try
+            {
+                var T_SQL = @"SELECT pre_apply_name,House_apply.CS_MTEL1,pre_address, CONVERT(VARCHAR, pre_apply_date, 111) AS pre_apply_date
+                              FROM House_pre
+                              LEFT JOIN House_apply on House_apply.HA_id = House_pre.HA_id
+                              LEFT JOIN (SELECT U_num,U_BC FROM User_M WHERE del_tag='0') User_M ON User_M.U_num = House_pre.add_num
+                              LEFT JOIN (SELECT apiLog.RESULT_CODE,lastLog.API_KEY,lastLog.Add_Date FROM External_API_Log AS apiLog
+                              JOIN (SELECT API_KEY, Max(Add_date) Add_Date FROM [dbo].[External_API_Log] WHERE API_CODE = 'LoanSky' GROUP BY API_KEY) AS lastLog ON apiLog.API_KEY = lastLog.API_KEY
+                              AND apiLog.Add_date = lastLog.Add_Date) AS apiLog ON apiLog.API_KEY = cast(house_pre.HP_id AS varchar(18))
+                              WHERE House_pre.del_tag = '0' AND pre_process_type IN ('PRCT0002','PRCT0003','PRCT0005')
+                              AND User_M.U_BC = @U_BC AND (pre_apply_date >= @dateS +' 00:00:00' AND pre_apply_date <= @dateE +' 23:59:59') ORDER BY HP_id DESC";
+                var parameters = new List<SqlParameter>()
+                {
+                    new SqlParameter("@U_BC",model.U_BC),
+                    new SqlParameter("@dateS",FuncHandler.ConvertROCToGregorian(model.dateS.Replace('/','-'))),
+                    new SqlParameter("@dateE",FuncHandler.ConvertROCToGregorian(model.dateE.Replace('/','-')))
+                };
+                var excelList = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
+                    pre_apply_name = _Fun.DeCodeBNWords(row.Field<string>("pre_apply_name")),
+                    CS_MTEL1 = row.Field<string>("CS_MTEL1"),
+                    pre_address = row.Field<string>("pre_address"),
+                    pre_apply_date = row.Field<string>("pre_apply_date")
+                }).ToList();
+                var Excel_Headers = new Dictionary<string, string>
+                {
+                    { "pre_apply_name","申請人" },
+                    { "CS_MTEL1", "電話" },
+                    { "pre_address", "地址" },
+                    { "pre_apply_date", "受理日期" }
+                };
+                var fileBytes = FuncHandler.ExportToExcel(excelList, Excel_Headers);
+                return fileBytes;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
 
         void SetHeader(ExcelRange range, string text)
         {

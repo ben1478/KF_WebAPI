@@ -90,5 +90,12 @@ namespace KF_WebAPI.BaseClass.AE
                 errors.Add("需建號/地號其中之一");
             return errors;
         }
+
+        public class House_Pre_req
+        {
+            public string U_BC { get; set; }
+            public string dateS { get; set; }
+            public string dateE { get; set; }
+        }
     }
 }
