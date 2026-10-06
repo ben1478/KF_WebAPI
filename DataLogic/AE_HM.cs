@@ -549,7 +549,8 @@ namespace KF_WebAPI.DataLogic
                     new SqlParameter("@dateS",FuncHandler.ConvertROCToGregorian(model.dateS.Replace('/','-'))),
                     new SqlParameter("@dateE",FuncHandler.ConvertROCToGregorian(model.dateE.Replace('/','-')))
                 };
-                var excelList = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new {
+                var excelList = _adoData.ExecuteQuery(T_SQL, parameters).AsEnumerable().Select(row => new House_Pre_Excel
+                {
                     pre_apply_name = _Fun.DeCodeBNWords(row.Field<string>("pre_apply_name")),
                     CS_MTEL1 = row.Field<string>("CS_MTEL1"),
                     pre_address = row.Field<string>("pre_address"),
