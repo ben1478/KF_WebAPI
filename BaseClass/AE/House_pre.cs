@@ -91,11 +91,12 @@ namespace KF_WebAPI.BaseClass.AE
             return errors;
         }
 
-        public class House_Pre_req
-        {
-            public string U_BC { get; set; }
-            public string dateS { get; set; }
-            public string dateE { get; set; }
-        }
+        
+    }
+    public class House_Pre_req
+    {
+        public string U_BC { get; set; }
+        public string dateS { get; set; }
+        public string dateE { get; set; }
     }
 }
