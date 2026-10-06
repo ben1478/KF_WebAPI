@@ -29,7 +29,7 @@
             Encoding big5 = Encoding.GetEncoding("big5");
 
             AE_Rpt _AE_Rpt = new AE_Rpt();
-            DataTable m_dt = _AE_Rpt.GetRCMInfo(LaunchDate);
+            DataTable m_dt = _AE_Rpt.GetRCMInfo(LaunchDate, Ach_Bank);
             string fileName = "";
             byte[] finalResultBytes = null;
 
@@ -52,6 +52,12 @@
                 SEND_ORG = "8220901";
                 ORIG_ACC = "0000901119913718";
 
+            }
+            else if (Ach_Bank == "OBANK")//王道銀行
+            {
+                SEND_ORG = "0480011";
+                ORIG_ACC = "0000001111704657";
+                textFileName = ORIG_ID + "_P01_" + LaunchDate.Replace("/", "").Replace("-", "") + "_OBANK.txt";
             }
             else
             {
@@ -104,7 +110,7 @@
                         long amtInt = (long)Math.Round(Convert.ToDecimal(dr["RC_amount"].ToString()), 0);
                         nsd.Append(amtInt.ToString("D10"));
 
-                        if (Ach_Bank == "CTBC")
+                        if (Ach_Bank == "CTBC"|| Ach_Bank == "OBANK")
                         {
                             nsd.Append("  B" + ORIG_ID.PadRightBytes(10));
                         }
@@ -122,7 +128,7 @@
                         }
                        
 
-                        if (Ach_Bank == "CTBC")
+                        if (Ach_Bank == "CTBC"|| Ach_Bank == "OBANK")
                         {
                             nsd.Append("".PadRightBytes(22));
                         }

@@ -5770,7 +5770,7 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
         /// <summary>
         /// 取得貸款相關資訊
         /// </summary>
-        public DataTable GetRCMInfo(string LaunchDate)
+        public DataTable GetRCMInfo(string LaunchDate, string Ach_Bank)
         {
             DataTable dt = new DataTable();
             try
@@ -5779,10 +5779,11 @@ day_incase_num_PJ00046, day_incase_num_PJ00047, month_incase_num_PJ00046, month_
                                   from ACH_Setting AC 
                                   left join Receivable_D D on AC.RCD_id=D.RCD_id
 								  left join Receivable_M M on D.RCM_id=M.RCM_id
-                                  Left Join House_apply A on M.HA_id=A.HA_id  where  LaunchDate=@LaunchDate ";
+                                  Left Join House_apply A on M.HA_id=A.HA_id  where  LaunchDate=@LaunchDate  and Ach_Bank=@Ach_Bank ";
                 var parameters = new List<SqlParameter>
                 {
                     new SqlParameter("@LaunchDate", LaunchDate),
+                     new SqlParameter("@Ach_Bank", Ach_Bank),
                 };
                 dt = _adoData.ExecuteQuery(T_SQL, parameters);
             }
