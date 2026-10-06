@@ -99,4 +99,12 @@ namespace KF_WebAPI.BaseClass.AE
         public string dateS { get; set; }
         public string dateE { get; set; }
     }
+
+    public class House_Pre_Excel
+    {
+        public string pre_apply_name { get; set; }
+        public string CS_MTEL1 { get; set; }
+        public string pre_address { get; set; }
+        public string pre_apply_date { get; set; }
+    }
 }
