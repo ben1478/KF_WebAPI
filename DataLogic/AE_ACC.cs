@@ -171,7 +171,7 @@ namespace KF_WebAPI.DataLogic
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
 
 
-                if (model.CS_company_TaxNum != null && model.CS_company_TaxNum != "")
+                if (model.CS_company_TaxNum != null )
                 {
                     var T_SQL1 = @"Update House_apply Set CS_company_TaxNum=@CS_company_TaxNum  WHERE HA_id = @HA_id";
                     var parameters1 = new List<SqlParameter>()
@@ -181,6 +181,7 @@ namespace KF_WebAPI.DataLogic
                     };
                     int result1 = _adoData.ExecuteNonQuery(T_SQL1, parameters1);
                 }
+
 
                 if (result == 0)
                 {
