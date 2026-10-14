@@ -20,6 +20,7 @@ using System.Reflection.Metadata;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using static UglyToad.PdfPig.Core.PdfSubpath;
+using System.Net;
 
 namespace KF_WebAPI.Controllers
 {
@@ -4431,7 +4432,7 @@ namespace KF_WebAPI.Controllers
                 var result = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row => new Debt_Certificate_Lres
                 {
                     Debt_ID = row.Field<int>("Debt_ID"),
-                    cs_name = row.IsNull("cs_name") ? "" : _FuncHandler.DeCodeBNWords(row.Field<string>("cs_name")),
+                    cs_name = row.IsNull("cs_name") ? "" : WebUtility.HtmlDecode(row.Field<string>("cs_name")),
                     CS_PID = row.Field<string>("CS_PID"),
                     str_loan_amount = row.Field<string>("loan_amount"),
                     str_certificate_date_S = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("certificate_date_S").ToString("yyyy/MM/dd")),
@@ -4480,7 +4481,7 @@ namespace KF_WebAPI.Controllers
                 #endregion
                 var excelList = _adoData.ExecuteSQuery(T_SQL).AsEnumerable().Select(row=>new Debt_Certificate_Excel 
                 {
-                    cs_name = row.Field<string>("cs_name"),
+                    cs_name = WebUtility.HtmlDecode(row.Field<string>("cs_name")),
                     CS_PID = row.Field<string>("CS_PID"),
                     loan_amount = row.Field<decimal>("loan_amount"),
                     str_certificate_date_S = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("certificate_date_S").ToString("yyyy/MM/dd")),
@@ -4535,7 +4536,7 @@ namespace KF_WebAPI.Controllers
                 #endregion
                 var result = _adoData.ExecuteQuery(T_SQL,parameters).AsEnumerable().Select(row => new Debt_Certificate_res
                 {
-                    cs_name = _Fun.DeCodeBNWords(row.Field<string>("cs_name")),
+                    cs_name = WebUtility.HtmlDecode(row.Field<string>("cs_name")),
                     CS_PID = row.Field<string>("CS_PID"),
                     loan_amount = row.Field<decimal>("loan_amount"),
                     str_certificate_date_S = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("certificate_date_S").ToString("yyyy/MM/dd")),
