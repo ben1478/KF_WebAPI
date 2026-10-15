@@ -30,6 +30,7 @@
         public string str_certificate_date_E { get; set; }
         public string Remark { get; set; }
         public decimal? loan_amount { get; set; }
+        public string isClose { get; set; }
     }
 
     public class Debt_Certificate_Lres
@@ -62,9 +63,8 @@
         public string str_certificate_date_S { get; set; }
         public string str_certificate_date_E { get; set; }
         public string Remark { get; set; }
-
         public string? add_num { get; set; }
         public string? edit_num { get; set; }
-
+        public string isClose { get; set; }
     }
 }
