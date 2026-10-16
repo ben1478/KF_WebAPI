@@ -4415,7 +4415,7 @@ namespace KF_WebAPI.Controllers
         /// 債權憑證查詢 Debt_Certificate_LQuery/Debt_certificate_list.asp
         /// </summary>
         [HttpGet("Debt_Certificate_LQuery")]
-        public ActionResult<ResultClass<string>> Debt_Certificate_LQuery(string? cs_name,string isClose)
+        public ActionResult<ResultClass<string>> Debt_Certificate_LQuery(string? cs_name,string isClose,string? debtType)
         {
             FuncHandler _FuncHandler = new FuncHandler();
             ResultClass<string> resultClass = new ResultClass<string>();
@@ -4424,7 +4424,7 @@ namespace KF_WebAPI.Controllers
             {
                 ADOData _adoData = new ADOData();
                 #region SQL
-                var T_SQL = @"select Debt_ID, cs_name, CS_PID, FORMAT(loan_amount,'N0') loan_amount,certificate_date_S,certificate_date_E,Remark 
+                var T_SQL = @"select Debt_ID, cs_name, CS_PID, FORMAT(loan_amount,'N0') loan_amount,certificate_date_S,certificate_date_E,Remark,debtType 
                     from Debt_certificate
                     where del_tag = '0' and isClose = @isClose
                     order by certificate_date_S";
@@ -4436,6 +4436,7 @@ namespace KF_WebAPI.Controllers
                 var result = _adoData.ExecuteQuery(T_SQL,parameters).AsEnumerable().Select(row => new Debt_Certificate_Lres
                 {
                     Debt_ID = row.Field<int>("Debt_ID"),
+                    debtType = row.Field<string>("debtType"),
                     cs_name = row.IsNull("cs_name") ? "" : WebUtility.HtmlDecode(row.Field<string>("cs_name")),
                     CS_PID = row.Field<string>("CS_PID"),
                     str_loan_amount = row.Field<string>("loan_amount"),
@@ -4447,8 +4448,11 @@ namespace KF_WebAPI.Controllers
                 {
                     result = result.Where(x => x.cs_name.Equals(cs_name)).ToList();
                 }
-
-                if(result != null && result.Count > 0)
+                if (!string.IsNullOrEmpty(debtType))
+                {
+                    result = result.Where(x => x.debtType.Equals(debtType)).ToList();
+                }
+                if (result != null && result.Count > 0)
                 {
                     resultClass.ResultCode = "000";
                     resultClass.objResult = JsonConvert.SerializeObject(result);
@@ -4532,7 +4536,7 @@ namespace KF_WebAPI.Controllers
                 var _Fun = new FuncHandler();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"select cs_name,CS_PID,loan_amount,certificate_date_S,certificate_date_E,Remark,isClose 
+                var T_SQL = @"select cs_name,CS_PID,loan_amount,certificate_date_S,certificate_date_E,Remark,isClose,debtType 
                     from Debt_certificate
                     where del_tag = '0' and Debt_ID = @Debt_ID
                     order by certificate_date_S";
@@ -4546,7 +4550,8 @@ namespace KF_WebAPI.Controllers
                     str_certificate_date_S = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("certificate_date_S").ToString("yyyy/MM/dd")),
                     str_certificate_date_E = FuncHandler.ConvertGregorianToROC(row.Field<DateTime>("certificate_date_E").ToString("yyyy/MM/dd")),
                     Remark = row.Field<string>("Remark"),
-                    isClose = row.Field<string>("isClose")
+                    isClose = row.Field<string>("isClose"),
+                    debtType = row.Field<string>("debtType")
                 }).ToList();
 
                 if (result != null && result.Count > 0)
@@ -4587,7 +4592,7 @@ namespace KF_WebAPI.Controllers
                 var parameters = new List<SqlParameter>();
                 var T_SQL = @"Update Debt_certificate set cs_name = @cs_name,CS_PID = @CS_PID,loan_amount = @loan_amount,
                     certificate_date_S = @certificate_date_S,certificate_date_E = @certificate_date_E,Remark = @Remark,isClose = @isClose,
-                    edit_date = GETDATE(),edit_num = @edit_num,edit_ip = @edit_ip where Debt_ID = @Debt_ID";
+                    debtType = @debtType,edit_date = GETDATE(),edit_num = @edit_num,edit_ip = @edit_ip where Debt_ID = @Debt_ID";
                 parameters.Add(new SqlParameter("@cs_name", model.cs_name));
                 parameters.Add(new SqlParameter("@CS_PID", model.CS_PID));
                 parameters.Add(new SqlParameter("@loan_amount", model.loan_amount));
@@ -4598,6 +4603,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@edit_ip", clientIp)); 
                 parameters.Add(new SqlParameter("@Debt_ID", model.Debt_ID));
                 parameters.Add(new SqlParameter("@isClose", model.isClose));
+                parameters.Add(new SqlParameter("@debtType", model.debtType));
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
@@ -4678,8 +4684,8 @@ namespace KF_WebAPI.Controllers
                 ADOData _adoData = new ADOData();
                 #region SQL
                 var parameters = new List<SqlParameter>();
-                var T_SQL = @"Insert into Debt_certificate (cs_name,CS_PID,loan_amount,certificate_date_S,certificate_date_E,Remark,add_date,add_num,add_ip,del_tag,isClose)
-                    Values (@cs_name,@CS_PID,@loan_amount,@certificate_date_S,@certificate_date_E,@Remark,GETDATE(),@add_num,@add_ip,@del_tag,@isClose)";
+                var T_SQL = @"Insert into Debt_certificate (cs_name,CS_PID,loan_amount,certificate_date_S,certificate_date_E,Remark,add_date,add_num,add_ip,del_tag,isClose,debtType)
+                    Values (@cs_name,@CS_PID,@loan_amount,@certificate_date_S,@certificate_date_E,@Remark,GETDATE(),@add_num,@add_ip,@del_tag,@isClose,@debtType)";
                 parameters.Add(new SqlParameter("@cs_name", model.cs_name));
                 parameters.Add(new SqlParameter("@CS_PID", model.CS_PID));
                 parameters.Add(new SqlParameter("@loan_amount", model.loan_amount));
@@ -4690,6 +4696,7 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@add_ip",clientIp));
                 parameters.Add(new SqlParameter("@del_tag", "0"));
                 parameters.Add(new SqlParameter("@isClose", model.isClose));
+                parameters.Add(new SqlParameter("@debtType", model.debtType));
                 #endregion
                 int result = _adoData.ExecuteNonQuery(T_SQL, parameters);
                 if (result == 0)
