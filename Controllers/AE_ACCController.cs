@@ -4594,8 +4594,8 @@ namespace KF_WebAPI.Controllers
                 parameters.Add(new SqlParameter("@certificate_date_S", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_certificate_date_S))));
                 parameters.Add(new SqlParameter("@certificate_date_E", DateTime.Parse(FuncHandler.ConvertROCToGregorian(model.str_certificate_date_E))));
                 parameters.Add(new SqlParameter("@Remark", model.Remark));
-                parameters.Add(new SqlParameter("@edit_num", model.edit_num)); // User_Num
-                parameters.Add(new SqlParameter("@edit_ip", clientIp)); // 
+                parameters.Add(new SqlParameter("@edit_num", model.edit_num)); 
+                parameters.Add(new SqlParameter("@edit_ip", clientIp)); 
                 parameters.Add(new SqlParameter("@Debt_ID", model.Debt_ID));
                 parameters.Add(new SqlParameter("@isClose", model.isClose));
                 #endregion
